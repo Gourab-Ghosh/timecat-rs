@@ -10,7 +10,7 @@ def timed_run(func):
     res = func()
     if res:
         return res
-    print(f"\nRun time: {round(time.time() - start, 3)} seconds")
+    print(f"Run time: {round(time.time() - start, 3)} seconds")
     return res
 
 if is_error_free:

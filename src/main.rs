@@ -162,5 +162,6 @@ fn main() {
     let clock = Instant::now();
     _main();
     let elapsed_time = clock.elapsed().as_secs_f32();
-    println!("\nTime Taken: {} s", elapsed_time);
+    let precision = 3;
+    println!("\nTime Taken: {:.1$} s", elapsed_time, precision);
 }
