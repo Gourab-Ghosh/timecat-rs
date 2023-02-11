@@ -37,6 +37,7 @@ use evaluate::*;
 use fxhash::FxHashMap as HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 use utils::classes::*;
 use utils::command_utils::*;
 use utils::string_utils::*;
@@ -100,11 +101,12 @@ fn self_play(depth: u8) {
     println!("Game PGN:\n\n{}", engine.board.get_pgn());
 }
 
-fn main() {
+fn _main() {
     // self_play(7);
 
     let mut engine = Engine::default();
     let (best_move, score) = engine.get_best_move_and_score(8);
+    println!("{}\n", engine.board);
     println!(
         "{}: {}\nnum nodes searched: {}",
         best_move,
@@ -153,4 +155,12 @@ fn main() {
     // for i in BB_RANK_1 {
     //     println!("{}", i)
     // }
+}
+
+fn main() {
+    println!();
+    let clock = Instant::now();
+    _main();
+    let elapsed_time = clock.elapsed().as_secs_f32();
+    println!("\nTime Taken: {} s", elapsed_time);
 }

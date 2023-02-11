@@ -3,7 +3,6 @@ use super::*;
 pub mod command_utils {
     use super::*;
     use std::io::Write;
-    use std::time::Instant;
 
     pub fn input<T: std::fmt::Display>(q: T) -> String {
         print!("{q}");

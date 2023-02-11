@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os
+import os, time
 
 is_error_free = not os.system("cargo check")
 
@@ -14,4 +14,6 @@ if is_error_free:
     # print(command)
     if not os.system(command):
         os.environ["RUST_BACKTRACE"] = "1"
-        os.system("time perf record -g ./target/release/timecat")
+        if os.system("perf record -g ./target/release/timecat"):
+            print("Running without using perf")
+            os.system("./target/release/timecat")
