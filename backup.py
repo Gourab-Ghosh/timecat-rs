@@ -1,7 +1,20 @@
 #!/usr/bin/env python3
 
 import os
-from inquirer.shortcuts import confirm
+
+try:
+    from inquirer.shortcuts import confirm
+except ImportError:
+    try:
+        from pip._internal.cli.main import main as pip_main
+    except ImportError:
+        print("\npip not found, installing...\n")
+        import ensurepip
+        ensurepip.bootstrap()
+        from pip._internal.cli.main import main as pip_main
+    print("\ninquirer not found, installing...\n")
+    pip_main(["install", "inquirer"])
+    from inquirer.shortcuts import confirm
 
 add_command = "git add ."
 status_command = "git status"
