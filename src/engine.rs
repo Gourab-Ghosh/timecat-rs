@@ -26,7 +26,7 @@ impl MoveSorter {
     }
 
     fn capture_value(&self, _move: Move, board: &Board) -> u32 {
-        return board.piece_at(_move.get_dest()).unwrap_or(Pawn) as u32;
+        board.piece_at(_move.get_dest()).unwrap_or(Pawn) as u32
     }
 
     fn move_value(&self, _move: Move, board: &Board, ply: Ply) -> u32 {
@@ -51,7 +51,7 @@ impl MoveSorter {
         let history_moves_score = self.history_moves
             [board.piece_type_at(_move.get_source()) as usize]
             [board.color_at(_move.get_source()).unwrap() as usize][_move.get_dest().to_index()];
-        return 4289000000 + history_moves_score;
+        4289000000 + history_moves_score
     }
 
     pub fn moves_sort<T: IntoIterator<Item = Move>>(
@@ -67,7 +67,7 @@ impl MoveSorter {
             moves_score_dict.insert(_move, self.move_value(_move, board, ply));
         }
         moves.sort_by(|a, b| moves_score_dict[b].cmp(&moves_score_dict[a]));
-        return moves;
+        moves
     }
 
     pub fn capture_sort<T: IntoIterator<Item = Move>>(
@@ -82,16 +82,16 @@ impl MoveSorter {
             moves_score_dict.insert(_move, self.capture_value(_move, board));
         }
         moves.sort_by(|a, b| moves_score_dict[b].cmp(&moves_score_dict[a]));
-        return moves;
+        moves
     }
 }
 
 impl Default for MoveSorter {
     fn default() -> Self {
-        return Self {
+        Self {
             killer_moves: [[Move::default(); MAX_DEPTH]; NUM_KILLER_MOVES],
             history_moves: [[[0; 64]; 2]; 7],
-        };
+        }
     }
 }
 
@@ -106,14 +106,14 @@ pub struct Engine {
 
 impl Engine {
     pub fn new(board: Board) -> Self {
-        return Self {
+        Self {
             board,
             num_nodes_searched: 0,
             ply: 0,
             pv_length: [0; MAX_DEPTH],
             pv_table: [[Move::default(); MAX_DEPTH]; MAX_DEPTH],
             move_sorter: MoveSorter::default(),
-        };
+        }
     }
 
     pub fn push(&mut self, _move: Move) {
@@ -123,7 +123,7 @@ impl Engine {
 
     pub fn pop(&mut self) -> Move {
         self.ply -= 1;
-        return self.board.pop();
+        self.board.pop()
     }
 
     fn reset_constants(&mut self) {
@@ -176,7 +176,7 @@ impl Engine {
                 }
             }
         }
-        return (best_move, alpha);
+        (best_move, alpha)
     }
 
     fn alpha_beta(&mut self, depth: Depth, alpha: i16, beta: i16, apply_null_move: bool) -> i16 {
@@ -221,7 +221,7 @@ impl Engine {
                 }
             }
         }
-        return alpha;
+        alpha
     }
 
     fn quiescence(&mut self, alpha: i16, beta: i16) -> i16 {
@@ -248,7 +248,7 @@ impl Engine {
                 }
             }
         }
-        return alpha;
+        alpha
     }
 
     fn get_pv(&self, depth: u8) -> Vec<Move> {
@@ -256,14 +256,14 @@ impl Engine {
         for i in 0..self.pv_length[depth as usize] {
             pv.push(self.pv_table[depth as usize][i]);
         }
-        return pv;
+        pv
     }
 
     fn get_pv_as_uci(&self, depth: u8) -> String {
         let mut pv_string = String::new();
         for _move in self.get_pv(depth) {
             pv_string.push_str(&_move.to_string());
-            pv_string.push_str(" ");
+            pv_string.push(' ');
         }
         return pv_string.trim().to_string();
     }
@@ -299,29 +299,29 @@ impl Engine {
     }
 
     pub fn get_pv_string(&self) -> String {
-        return self.get_pv_as_san(0);
+        self.get_pv_as_san(0)
     }
 
     pub fn get_num_nodes_searched(&self) -> u32 {
-        return self.num_nodes_searched;
+        self.num_nodes_searched
     }
 
     pub fn get_best_move_and_score(&mut self, depth: u8) -> (Move, i16) {
         self.reset_constants();
         let (best_move, score) = self.search(depth, -INFINITY, INFINITY);
-        return (
+        (
             best_move.unwrap(),
             if self.board.turn() == White {
                 score
             } else {
                 -score
             },
-        );
+        )
     }
 }
 
 impl Default for Engine {
     fn default() -> Self {
-        return Self::new(Board::new());
+        Self::new(Board::new())
     }
 }

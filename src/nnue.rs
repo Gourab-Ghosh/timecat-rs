@@ -186,6 +186,6 @@ impl Network {
 
 impl Default for Network {
     fn default() -> Self {
-        return Self::new();
+        Self::new()
     }
 }

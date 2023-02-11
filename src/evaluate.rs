@@ -9,18 +9,18 @@ pub struct Evaluator {
 
 impl Evaluator {
     pub fn new() -> Self {
-        return Self {
+        Self {
             network: Network::new(),
             network_backup: Vec::new(),
-        };
+        }
     }
 
     pub fn default() -> Self {
-        return Self::new();
+        Self::new()
     }
 
     fn convert_piece_to_p_piece(&self, piece: Piece, color: Color) -> P {
-        return match color {
+        match color {
             Color::White => match piece {
                 Piece::Pawn => P::WhitePawn,
                 Piece::Knight => P::WhiteKnight,
@@ -37,7 +37,7 @@ impl Evaluator {
                 Piece::Queen => P::BlackQueen,
                 Piece::King => P::BlackKing,
             },
-        };
+        }
     }
 
     pub fn activate_nnue(&mut self, piece: Piece, color: Color, square: Square) {
@@ -63,6 +63,6 @@ impl Evaluator {
     }
 
     pub fn evaluate(&self, board: &Board) -> i16 {
-        return self.network.eval(board) as i16;
+        self.network.eval(board) as i16
     }
 }

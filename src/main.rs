@@ -49,9 +49,9 @@ fn main_loop(board: &mut Board) {
     loop {
         let user_input: String;
         if is_colored_output() {
-            println!("");
+            println!();
             user_input = input(colorize("Enter Command: ", INPUT_MESSAGE_STYLE));
-            println!("");
+            println!();
         } else {
             user_input = input("");
         }

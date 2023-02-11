@@ -12,7 +12,7 @@ pub mod command_utils {
         std::io::stdin()
             .read_line(&mut user_input)
             .expect("Failed to read line!");
-        return user_input;
+        user_input
     }
 
     fn simplify_command(user_input: &String) -> String {
@@ -22,7 +22,7 @@ pub mod command_utils {
             user_input = user_input.replace(_char, " ")
         }
         user_input = remove_double_spaces(&user_input);
-        return user_input;
+        user_input
     }
 
     pub fn parse_command(board: &mut Board, user_input: &String) -> Option<String> {
@@ -38,9 +38,9 @@ pub mod command_utils {
             "The move you are trying to make is illegal! Try again!",
         ));
 
-        let user_input = simplify_command(&user_input);
+        let user_input = simplify_command(user_input);
         let user_input = user_input.as_str();
-        let mut commands = user_input.split(" ");
+        let mut commands = user_input.split(' ');
         let first_command = match commands.next() {
             Some(second_command) => second_command,
             None => return DEFAULT_ERROR,
@@ -104,7 +104,7 @@ pub mod command_utils {
                     let mut fen = String::new();
                     for fen_part in commands {
                         fen.push_str(fen_part);
-                        fen.push_str(" ");
+                        fen.push(' ');
                     }
                     if !Board::is_good_fen(&fen) {
                         return BAD_FEN_ERROR;
@@ -165,7 +165,7 @@ pub mod command_utils {
             return None;
         }
 
-        return DEFAULT_ERROR;
+        DEFAULT_ERROR
     }
 }
 
@@ -183,7 +183,7 @@ pub mod string_utils {
     }
 
     pub fn simplify_fen(fen: &String) -> String {
-        return remove_double_spaces(fen);
+        remove_double_spaces(fen)
     }
 
     fn colorize_string(s: ColoredString, color: &str) -> ColoredString {
@@ -214,14 +214,14 @@ pub mod string_utils {
             return s.to_string();
         }
         let mut colored_string = s.clear();
-        for style in remove_double_spaces(&styles.to_string()).split(" ") {
+        for style in remove_double_spaces(&styles.to_string()).split(' ') {
             colored_string = colorize_string(colored_string, style);
         }
-        return colored_string.to_string();
+        colored_string.to_string()
     }
 
     pub fn score_to_string(score: i16) -> String {
-        return (score as f32 / 100.0).to_string();
+        (score as f32 / 100.0).to_string()
     }
 
     pub fn hash_to_string(hash: u64) -> String {
@@ -233,7 +233,7 @@ pub mod square_utils {
     use super::*;
 
     pub fn square_mirror(square: Square) -> Square {
-        return SQUARES_180[square.to_index()];
+        SQUARES_180[square.to_index()]
     }
 }
 
@@ -280,14 +280,14 @@ pub mod classes {
             let mut count_map = self.count.lock().unwrap();
             let count_entry = count_map.entry(key).or_insert(0);
             *count_entry += 1;
-            return count_entry.clone() as u8;
+            *count_entry as u8
         }
 
         pub fn insert_and_detect_threefold_repetition(&self, key: u64) -> bool {
             let mut count_map = self.count.lock().unwrap();
             let count_entry = count_map.entry(key).or_insert(0);
             *count_entry += 1;
-            return *count_entry > 3;
+            *count_entry > 3
         }
 
         pub fn remove(&self, key: u64) {
@@ -323,7 +323,7 @@ pub mod unsafe_utils {
     static mut COLORED_OUTPUT: bool = true;
 
     pub fn is_colored_output() -> bool {
-        return unsafe { COLORED_OUTPUT };
+        unsafe { COLORED_OUTPUT }
     }
 
     pub fn set_colored_output(b: bool) {

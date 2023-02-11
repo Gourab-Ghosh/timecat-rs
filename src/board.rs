@@ -84,9 +84,9 @@ impl Board {
                 square,
             );
         }
-        let fen = simplify_fen(&fen);
+        let fen = simplify_fen(fen);
         self.board = ChessBoard::from_str(fen.as_str()).expect("Valid Position");
-        let mut splitted_fen = fen.split(" ");
+        let mut splitted_fen = fen.split(' ');
         self.halfmove_clock = splitted_fen.nth(4).unwrap_or("0").parse().unwrap();
         self.fullmove_number = splitted_fen.next().unwrap_or("1").parse().unwrap();
         self.repetition_table.clear();
@@ -106,35 +106,35 @@ impl Board {
         let fen = simplify_fen(fen);
         let mut board = Self::new();
         board.set_fen(&fen);
-        return board;
+        board
     }
 
     pub fn from_str(s: &str) -> Self {
-        return Self::from_fen(&s.to_string());
+        Self::from_fen(&s.to_string())
     }
 
     pub fn from(board: &Self) -> Self {
-        return Self::from_fen(&board.get_fen());
+        Self::from_fen(&board.get_fen())
     }
 
     pub fn get_fen(&self) -> String {
         // check later
         let parent_class_fen = self.board.to_string();
-        let splitted_parent_class_fen = parent_class_fen.split(" ");
+        let splitted_parent_class_fen = parent_class_fen.split(' ');
         let mut fen = String::new();
         for (i, part) in splitted_parent_class_fen.enumerate() {
             fen.push_str(part);
-            fen.push_str(" ");
+            fen.push(' ');
             if i == 3 {
                 break;
             }
         }
         fen.push_str(format!("{} {}", self.halfmove_clock, self.fullmove_number).as_str());
-        return fen;
+        fen
     }
 
     pub fn get_sub_board(&self) -> ChessBoard {
-        return self.board.clone();
+        self.board
     }
 
     pub fn is_good_fen(fen: &String) -> bool {
@@ -142,7 +142,7 @@ impl Board {
         if ChessBoard::from_str(fen.as_str()).is_err() {
             return false;
         }
-        let mut splitted_fen = fen.split(" ");
+        let mut splitted_fen = fen.split(' ');
         if splitted_fen.nth(4).unwrap_or("0").parse().unwrap_or(-1) < 0 {
             return false;
         };
@@ -152,11 +152,11 @@ impl Board {
         if splitted_fen.next().is_some() {
             return false;
         };
-        return true;
+        true
     }
 
     pub fn empty() -> Self {
-        return Self::from_fen(&EMPTY_BOARD_FEN.to_string());
+        Self::from_fen(&EMPTY_BOARD_FEN.to_string())
     }
 
     pub fn reset(&mut self) {
@@ -168,7 +168,7 @@ impl Board {
     }
 
     pub fn piece_type_at(&self, square: Square) -> u8 {
-        return match self.board.piece_on(square) {
+        match self.board.piece_on(square) {
             None => 0,
             Some(p) => match p {
                 Pawn => 1,
@@ -178,15 +178,15 @@ impl Board {
                 Queen => 5,
                 King => 6,
             },
-        };
+        }
     }
 
     pub fn color_at(&self, square: Square) -> Option<Color> {
-        return self.board.color_on(square);
+        self.board.color_on(square)
     }
 
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
-        return self.board.piece_on(square);
+        self.board.piece_on(square)
     }
 
     pub fn piece_symbol_at(&self, square: Square) -> String {
@@ -209,7 +209,7 @@ impl Board {
             },
             None => symbol,
         };
-        return symbol;
+        symbol
     }
 
     pub fn piece_unicode_symbol_at(&self, square: Square, flip_color: bool) -> String {
@@ -223,18 +223,18 @@ impl Board {
             white_pieces = WHITE_PIECE_UNICODE_SYMBOLS;
             black_pieces = BLACK_PIECE_UNICODE_SYMBOLS;
         }
-        return match self.color_at(square) {
+        match self.color_at(square) {
             Some(color) => match color {
                 White => white_pieces[piece_type as usize],
                 Black => black_pieces[piece_type as usize],
             },
             None => " ",
         }
-        .to_string();
+        .to_string()
     }
 
     pub fn repr(&self) -> String {
-        return stringify!(self.board).to_string();
+        stringify!(self.board).to_string()
     }
 
     fn get_skeleton(&self) -> String {
@@ -249,12 +249,12 @@ impl Board {
             } else {
                 ""
             };
-            return colorize(_char, style);
+            colorize(_char, style)
         }
         for c in skeleton.chars() {
             colored_skeleton.push_str(get_colored_char(c).as_str());
         }
-        return String::from(colored_skeleton);
+        colored_skeleton
     }
 
     pub fn get_checkers(&self) -> BitBoard {
@@ -262,17 +262,14 @@ impl Board {
     }
 
     pub fn get_king_square(&self, color: Color) -> Square {
-        return self.board.king_square(color);
+        self.board.king_square(color)
     }
 
     fn to_board_string(&self, use_unicode: bool) -> String {
         let mut skeleton = self.get_skeleton();
         let checkers = self.get_checkers();
         let king_square = self.get_king_square(self.board.side_to_move());
-        let last_move = match self.stack.get(self.stack.len() - 1) {
-            Some((_, m)) => Some(m),
-            None => None,
-        };
+        let last_move = self.stack.last().map(|(_, m)| m);
         for square_index in 0..64usize {
             let square = SQUARES_180[square_index];
             let symbol = if use_unicode {
@@ -303,7 +300,7 @@ impl Board {
             }
             skeleton = skeleton.replacen("{}", colorize(symbol, style.as_str()).as_str(), 1);
         }
-        skeleton.push_str("\n");
+        skeleton.push('\n');
         let mut checkers_string = String::new();
         for square in checkers {
             checkers_string += square.to_string().as_str();
@@ -323,24 +320,24 @@ impl Board {
             )
             .as_str(),
         );
-        return skeleton;
+        skeleton
     }
 
     pub fn to_unicode_string(&self) -> String {
-        return self.to_board_string(true);
+        self.to_board_string(true)
     }
 
     fn get_board_state(&self) -> BoardState {
-        return BoardState {
-            board: self.board.clone(),
+        BoardState {
+            board: self.board,
             halfmove_clock: self.halfmove_clock,
             fullmove_number: self.fullmove_number,
             num_repetitions: self.num_repetitions,
-        };
+        }
     }
 
     pub fn turn(&self) -> Color {
-        return self.board.side_to_move();
+        self.board.side_to_move()
     }
 
     pub fn occupied(&self) -> &BitBoard {
@@ -360,40 +357,40 @@ impl Board {
     }
 
     pub fn is_check(&self) -> bool {
-        return self.get_checkers() != BB_EMPTY;
+        self.get_checkers() != BB_EMPTY
     }
 
     pub fn is_checkmate(&self) -> bool {
         if self.is_check() {
             return self.generate_legal_moves().len() == 0;
         }
-        return false;
+        false
     }
 
     pub fn gives_check(&self, _move: Move) -> bool {
-        let mut temp_board = self.board.clone();
+        let mut temp_board = self.board;
         self.board.make_move(_move, &mut temp_board);
         return temp_board.checkers() != &BB_EMPTY;
     }
 
     pub fn status(&self) -> BoardStatus {
-        return self.board.status();
+        self.board.status()
     }
 
     pub fn get_current_position_repetition(&self) -> u8 {
-        return self.num_repetitions;
+        self.num_repetitions
     }
 
     pub fn is_threefold_repetition(&self) -> bool {
-        return self.num_repetitions >= 3;
+        self.num_repetitions >= 3
     }
 
     fn is_halfmoves(&self, n: u8) -> bool {
-        return self.halfmove_clock >= n;
+        self.halfmove_clock >= n
     }
 
     pub fn is_fifty_moves(&self) -> bool {
-        return self.is_halfmoves(100);
+        self.is_halfmoves(100)
     }
 
     fn has_insufficient_material(&self, color: Color) -> bool {
@@ -429,17 +426,17 @@ impl Board {
     }
 
     pub fn is_other_draw(&self) -> bool {
-        return self.is_threefold_repetition()
+        self.is_threefold_repetition()
             || self.is_fifty_moves()
-            || self.is_insufficient_material();
+            || self.is_insufficient_material()
     }
 
     pub fn is_game_over(&self) -> bool {
-        return self.is_other_draw() || self.board.status() != BoardStatus::Ongoing;
+        self.is_other_draw() || self.board.status() != BoardStatus::Ongoing
     }
 
     pub fn is_en_passant(&self, _move: Move) -> bool {
-        if !self.ep_square().is_some() {
+        if self.ep_square().is_none() {
             return false;
         }
         if self.ep_square().unwrap() != _move.get_dest() {
@@ -476,11 +473,11 @@ impl Board {
     }
 
     pub fn get_enpassant_square(&self) -> Option<Square> {
-        return self.board.en_passant();
+        self.board.en_passant()
     }
 
     pub fn has_legal_en_passant(&self) -> bool {
-        return self.get_enpassant_square().is_some();
+        self.get_enpassant_square().is_some()
     }
 
     pub fn clean_castling_rights(&self) -> BitBoard {
@@ -496,7 +493,7 @@ impl Board {
             CastleRights::QueenSide => BB_A8,
             CastleRights::NoRights => BB_EMPTY,
         };
-        return white_castling_righrs | black_castling_righrs;
+        white_castling_righrs | black_castling_righrs
     }
 
     pub fn get_piece_mask(&self, piece: Piece) -> &BitBoard {
@@ -515,13 +512,13 @@ impl Board {
     }
 
     pub fn is_irreversible(&self, _move: Move) -> bool {
-        return self.is_zeroing(_move)
+        self.is_zeroing(_move)
             || self.reduces_castling_rights(_move)
-            || self.has_legal_en_passant();
+            || self.has_legal_en_passant()
     }
 
     pub fn ep_square(&self) -> Option<Square> {
-        return self.board.en_passant();
+        self.board.en_passant()
     }
 
     pub fn is_castling(&self, _move: Move) -> bool {
@@ -537,7 +534,7 @@ impl Board {
                     & BB_SQUARES[_move.get_dest().to_index()])
                     != BB_EMPTY;
         }
-        return false;
+        false
     }
 
     fn push_nnue(&mut self, _move: Move) {
@@ -618,11 +615,11 @@ impl Board {
         self.repetition_table.remove(self.get_hash());
         self.restore(board_state);
         self.pop_nnue();
-        return _move;
+        _move
     }
 
     pub fn get_move_from_san(&self, san: &str) -> Result<Move, ChessError> {
-        return Move::from_san(&self.board, san.replace("0", "O").as_str());
+        return Move::from_san(&self.board, san.replace('0', "O").as_str());
     }
 
     pub fn push_san(&mut self, san: &str) {
@@ -637,7 +634,7 @@ impl Board {
     }
 
     pub fn get_move_from_uci(&self, uci: &str) -> Result<Move, ChessError> {
-        return Move::from_str(uci);
+        Move::from_str(uci)
     }
 
     pub fn push_uci(&mut self, uci: &str) {
@@ -753,7 +750,7 @@ impl Board {
             None => (),
         }
 
-        return san;
+        san
     }
 
     fn algebraic_and_push(&mut self, _move: Move, long: bool) -> String {
@@ -766,7 +763,7 @@ impl Board {
 
         // Add check or checkmate suffix.
         if is_checkmate && _move.get_source() != _move.get_dest() {
-            return san + "#";
+            san + "#"
         } else if is_check && _move.get_source() != _move.get_dest() {
             return san + "+";
         } else {
@@ -775,27 +772,27 @@ impl Board {
     }
 
     fn algebraic(&self, _move: Move, long: bool) -> String {
-        return self.clone().algebraic_and_push(_move, long);
+        self.clone().algebraic_and_push(_move, long)
     }
 
     pub fn san(&self, _move: Move) -> String {
         // Gets the standard algebraic notation of the given move in the context
         // of the current position.
-        return self.algebraic(_move, false);
+        self.algebraic(_move, false)
     }
 
     pub fn san_and_push(&mut self, _move: Move) -> String {
-        return self.algebraic_and_push(_move, false);
+        self.algebraic_and_push(_move, false)
     }
 
     pub fn lan(&self, _move: Move) -> String {
         // Gets the long algebraic notation of the given move in the context of
         // the current position.
-        return self.algebraic(_move, true);
+        self.algebraic(_move, true)
     }
 
     pub fn lan_and_push(&mut self, _move: Move) -> String {
-        return self.algebraic_and_push(_move, true);
+        self.algebraic_and_push(_move, true)
     }
 
     fn variation_san(&self, board: &Board, variation: Vec<Move>) -> String {
@@ -834,46 +831,46 @@ impl Board {
     pub fn get_pgn(&self) -> String {
         // Returns a string representing the game in Portable Game Notation (PGN).
         // The result of the game is included in the tags.
-        return self.variation_san(
+        self.variation_san(
             &Self::new(),
             Vec::from_iter(self.stack.clone().into_iter().map(|(_, m)| m)),
-        );
+        )
     }
 
     pub fn is_legal(&self, _move: Move) -> bool {
-        return self.board.legal(_move);
+        self.board.legal(_move)
     }
 
     pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGen {
         let mut moves = MoveGen::new_legal(&self.board);
         moves.set_iterator_mask(to_bitboard);
-        return moves;
+        moves
     }
 
     pub fn generate_legal_moves(&self) -> MoveGen {
-        return MoveGen::new_legal(&self.board);
+        MoveGen::new_legal(&self.board)
     }
 
     pub fn generate_legal_captures(&self) -> MoveGen {
         let targets = self.occupied_co(!self.turn());
-        return self.generate_masked_legal_moves(*targets);
+        self.generate_masked_legal_moves(*targets)
     }
 
     pub fn get_hash(&self) -> u64 {
-        return self.board.get_hash();
+        self.board.get_hash()
     }
 
     pub fn get_pawn_hash(&self) -> u64 {
-        return self.board.get_pawn_hash();
+        self.board.get_pawn_hash()
     }
 
     pub fn evaluate(&self) -> i16 {
-        return self.evaluator.evaluate(&self);
+        self.evaluator.evaluate(self)
     }
 
     pub fn evaluate_flipped(&self) -> i16 {
         let score = self.evaluate();
-        return if self.turn() == White { score } else { -score };
+        if self.turn() == White { score } else { -score }
     }
 }
 
@@ -886,20 +883,20 @@ impl fmt::Display for Board {
 
 impl Clone for Board {
     fn clone(&self) -> Self {
-        return Self {
-            board: self.board.clone(),
+        Self {
+            board: self.board,
             halfmove_clock: self.halfmove_clock,
             fullmove_number: self.fullmove_number,
             stack: self.stack.clone(),
             evaluator: self.evaluator.clone(),
             repetition_table: RepetitionTable::default(),
             num_repetitions: 1,
-        };
+        }
     }
 }
 
 impl Default for Board {
     fn default() -> Self {
-        return Self::new();
+        Self::new()
     }
 }
