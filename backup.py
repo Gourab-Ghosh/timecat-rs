@@ -17,7 +17,7 @@ print()
 os.system(status_command)
 print()
 
-if confirm("Do you want to continue", default = True):
+if confirm("Do you want to continue?", default = True):
     print()
     commit_message = input("Enter commit message: ").strip()
     if commit_message == "":
