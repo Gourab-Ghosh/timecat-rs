@@ -6,14 +6,14 @@ try:
     from inquirer.shortcuts import confirm
 except ImportError:
     try:
-        from pip._internal.cli.main import main as pip_main
+        import pip
     except ImportError:
         print("\npip not found, installing...\n")
         import ensurepip
         ensurepip.bootstrap()
-        from pip._internal.cli.main import main as pip_main
     print("\ninquirer not found, installing...\n")
-    pip_main(["install", "inquirer"])
+    import sys, subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "inquirer"])
     from inquirer.shortcuts import confirm
 
 add_command = "git add ."
