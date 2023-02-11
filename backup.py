@@ -1,19 +1,13 @@
 #!/usr/bin/env python3
 
 import os
+from python_scripts.utils import install_package
 
 try:
     from inquirer.shortcuts import confirm
 except ImportError:
-    try:
-        import pip
-    except ImportError:
-        print("\npip not found, installing...\n")
-        import ensurepip
-        ensurepip.bootstrap()
     print("\ninquirer not found, installing...\n")
-    import sys, subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "inquirer"])
+    install_package("inquirer")
     from inquirer.shortcuts import confirm
 
 add_command = "git add ."

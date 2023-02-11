@@ -1,7 +1,7 @@
 /target
 /build
 /.vscode
-/__pycache__
+**/__pycache__/
 perf*
 src/*.bak
 Cargo.lock
