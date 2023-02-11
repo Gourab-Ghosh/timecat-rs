@@ -1,0 +1,8 @@
+/target
+/build
+/.vscode
+/__pycache__
+perf*
+src/*.bak
+Cargo.lock
+temp*

@@ -1,0 +1,30 @@
+[package]
+name = "timecat"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# [build]
+# RUSTFLAGS = "-C target-cpu=native"
+
+# [profile.release]
+# opt-level = 3
+# lto = true
+# codegen-units = 1
+# debug = true
+# # rustflags = ["-C target-cpu=native -C link-args=-Ofast -C link-args=-s -C inline-threshold=1000"]
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+debug-assertions = false
+codegen-units = 1
+lto = true
+panic = "abort"
+
+[dependencies]
+chess = "3.2.0"
+colored = "2.0.0"
+fxhash = "0.2.1"
