@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import time
 import requests
+from shutil import which
 
 def timed_run(func):
     start = time.time()
@@ -23,6 +25,14 @@ for file in files:
         print(f"Downloading {file} from url {full_url}...")
         with open(file_path, "w") as f:
             f.write(requests.get(full_url).text)
+
+if which("cargo") is None:
+    print(f"Installing Rust...")
+    if sys.platform == "win32":
+        os.system("Please install Rust manually and add it to PATH and run this script again.")
+        sys.exit(1)
+    else:
+        os.system("curl --proto '=https' -sSf https://sh.rustup.rs | sh")
 
 is_error_free = not os.system("cargo check")
 
