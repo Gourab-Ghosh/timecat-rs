@@ -7,6 +7,7 @@
 #![allow(unused_variables)]
 #![allow(unused_macros)]
 #![allow(non_snake_case)]
+#![allow(clippy::only_used_in_recursion)]
 // #![allow(private_in_public)]
 // #[allow(improper_ctypes)]
 
@@ -69,13 +70,11 @@ fn main_loop(board: &mut Board) {
         }
         match parse_command(&mut board, &user_input) {
             Some(e) => {
-                let error_message: String;
-                if e.is_empty() {
-                    error_message =
-                        format!("Unknown command: {}\nPlease try again!", user_input.trim());
+                let error_message = if e.is_empty() {
+                    format!("Unknown command: {}\nPlease try again!", user_input.trim())
                 } else {
-                    error_message = e;
-                }
+                    e
+                };
                 println!("{}", colorize(error_message, ERROR_MESSAGE_STYLE));
             }
             None => continue,
@@ -102,11 +101,16 @@ fn self_play(depth: u8) {
 }
 
 fn main() {
-    self_play(7);
+    // self_play(7);
 
-    // let mut engine = Engine::default();
-    // let (best_move, score) = engine.get_best_move_and_score(8);
-    // println!("{}: {}\nnum nodes searched: {}", best_move, score_to_string(score), engine.get_num_nodes_searched());
+    let mut engine = Engine::default();
+    let (best_move, score) = engine.get_best_move_and_score(8);
+    println!(
+        "{}: {}\nnum nodes searched: {}",
+        best_move,
+        score_to_string(score),
+        engine.get_num_nodes_searched()
+    );
 
     // parse_command(&mut Board::new(), &"go perft 7".to_string());
 

@@ -15,7 +15,7 @@ pub mod command_utils {
         user_input
     }
 
-    fn simplify_command(user_input: &String) -> String {
+    fn simplify_command(user_input: &str) -> String {
         let user_input = user_input.trim();
         let mut user_input = user_input.to_string();
         for _char in [",", ":"] {
@@ -25,7 +25,7 @@ pub mod command_utils {
         user_input
     }
 
-    pub fn parse_command(board: &mut Board, user_input: &String) -> Option<String> {
+    pub fn parse_command(board: &mut Board, user_input: &str) -> Option<String> {
         let DEFAULT_ERROR = Some(String::new());
         let NOT_IMPLEMENTED_ERROR = Some(String::from(
             "Sorry, this command is not implemented yet :(",
@@ -174,15 +174,15 @@ pub mod string_utils {
     use colored::{ColoredString, Colorize};
     use std::fmt::Display;
 
-    pub fn remove_double_spaces(s: &String) -> String {
-        let mut s = s.clone();
+    pub fn remove_double_spaces(s: &str) -> String {
+        let mut s = s.to_owned();
         while s.contains("  ") {
             s = s.replace("  ", " ");
         }
         return s.trim().to_string();
     }
 
-    pub fn simplify_fen(fen: &String) -> String {
+    pub fn simplify_fen(fen: &str) -> String {
         remove_double_spaces(fen)
     }
 
@@ -208,13 +208,13 @@ pub mod string_utils {
         if !is_colored_output() {
             return s.to_string();
         }
-        let styles = remove_double_spaces(&styles.to_string());
+        let styles = remove_double_spaces(styles);
         let styles = styles.trim();
         if styles.is_empty() {
             return s.to_string();
         }
         let mut colored_string = s.clear();
-        for style in remove_double_spaces(&styles.to_string()).split(' ') {
+        for style in remove_double_spaces(styles).split(' ') {
             colored_string = colorize_string(colored_string, style);
         }
         colored_string.to_string()

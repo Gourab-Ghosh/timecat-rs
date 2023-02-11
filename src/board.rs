@@ -76,7 +76,7 @@ impl Board {
         board
     }
 
-    pub fn set_fen(&mut self, fen: &String) {
+    pub fn set_fen(&mut self, fen: &str) {
         for square in *self.occupied() {
             self.evaluator.deactivate_nnue(
                 self.piece_at(square).unwrap(),
@@ -102,7 +102,7 @@ impl Board {
         }
     }
 
-    pub fn from_fen(fen: &String) -> Self {
+    pub fn from_fen(fen: &str) -> Self {
         let fen = simplify_fen(fen);
         let mut board = Self::new();
         board.set_fen(&fen);
@@ -110,7 +110,7 @@ impl Board {
     }
 
     pub fn from_str(s: &str) -> Self {
-        Self::from_fen(&s.to_string())
+        Self::from_fen(s)
     }
 
     pub fn from(board: &Self) -> Self {
@@ -137,7 +137,7 @@ impl Board {
         self.board
     }
 
-    pub fn is_good_fen(fen: &String) -> bool {
+    pub fn is_good_fen(fen: &str) -> bool {
         let fen = simplify_fen(fen);
         if ChessBoard::from_str(fen.as_str()).is_err() {
             return false;
@@ -156,15 +156,15 @@ impl Board {
     }
 
     pub fn empty() -> Self {
-        Self::from_fen(&EMPTY_BOARD_FEN.to_string())
+        Self::from_fen(EMPTY_BOARD_FEN)
     }
 
     pub fn reset(&mut self) {
-        self.set_fen(&STARTING_BOARD_FEN.to_string());
+        self.set_fen(STARTING_BOARD_FEN);
     }
 
     pub fn clear(&mut self) {
-        self.set_fen(&EMPTY_BOARD_FEN.to_string());
+        self.set_fen(EMPTY_BOARD_FEN);
     }
 
     pub fn piece_type_at(&self, square: Square) -> u8 {
@@ -270,8 +270,7 @@ impl Board {
         let checkers = self.get_checkers();
         let king_square = self.get_king_square(self.board.side_to_move());
         let last_move = self.stack.last().map(|(_, m)| m);
-        for square_index in 0..64usize {
-            let square = SQUARES_180[square_index];
+        for square in SQUARES_180 {
             let symbol = if use_unicode {
                 self.piece_unicode_symbol_at(square, false)
             } else {
@@ -426,9 +425,7 @@ impl Board {
     }
 
     pub fn is_other_draw(&self) -> bool {
-        self.is_threefold_repetition()
-            || self.is_fifty_moves()
-            || self.is_insufficient_material()
+        self.is_threefold_repetition() || self.is_fifty_moves() || self.is_insufficient_material()
     }
 
     pub fn is_game_over(&self) -> bool {
@@ -512,9 +509,7 @@ impl Board {
     }
 
     pub fn is_irreversible(&self, _move: Move) -> bool {
-        self.is_zeroing(_move)
-            || self.reduces_castling_rights(_move)
-            || self.has_legal_en_passant()
+        self.is_zeroing(_move) || self.reduces_castling_rights(_move) || self.has_legal_en_passant()
     }
 
     pub fn ep_square(&self) -> Option<Square> {
@@ -745,9 +740,8 @@ impl Board {
         san += _move.get_dest().to_string().as_str();
 
         // Promotion.
-        match _move.get_promotion() {
-            Some(promotion) => san += format!("={}", promotion.to_string(White)).as_str(),
-            None => (),
+        if let Some(promotion) = _move.get_promotion() {
+            san += format!("={}", promotion.to_string(White)).as_str()
         }
 
         san
@@ -870,7 +864,11 @@ impl Board {
 
     pub fn evaluate_flipped(&self) -> i16 {
         let score = self.evaluate();
-        if self.turn() == White { score } else { -score }
+        if self.turn() == White {
+            score
+        } else {
+            -score
+        }
     }
 }
 

@@ -10,7 +10,7 @@ struct MoveSorter {
 
 impl MoveSorter {
     pub fn update_killer_moves(&mut self, killer_move: Move, ply: Ply) {
-        for i in (NUM_KILLER_MOVES - 1)..1 {
+        for i in (1..(NUM_KILLER_MOVES - 1)).rev() {
             self.killer_moves[i][ply] = self.killer_moves[i - 1][ply];
         }
         self.killer_moves[0][ply] = killer_move;
