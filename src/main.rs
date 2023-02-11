@@ -102,7 +102,7 @@ fn self_play(depth: u8) {
 }
 
 fn _main() {
-    // self_play(7);
+    // self_play(8);
 
     let mut engine = Engine::default();
     let (best_move, score) = engine.get_best_move_and_score(8);

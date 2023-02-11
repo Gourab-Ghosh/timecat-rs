@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
 
-import os, time
+import os
+import time
 
 is_error_free = not os.system("cargo check")
+
+def timed_run(func):
+    start = time.time()
+    res = func()
+    if res:
+        return res
+    print(f"\nRun time: {round(time.time() - start, 3)} seconds")
+    return res
 
 if is_error_free:
     # external_flags = "-static -Ofast -mavx2 -funroll-loops"
@@ -14,6 +23,6 @@ if is_error_free:
     # print(command)
     if not os.system(command):
         os.environ["RUST_BACKTRACE"] = "1"
-        if os.system("perf record -g ./target/release/timecat"):
+        if timed_run(lambda: os.system("perf record -g ./target/release/timecat")):
             print("Running without using perf")
-            os.system("./target/release/timecat")
+            timed_run(lambda: os.system("./target/release/timecat"))
