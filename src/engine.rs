@@ -1,7 +1,6 @@
 // use std::io::Write;
 
 use super::*;
-// use chess::MoveGen;
 
 struct MoveSorter {
     killer_moves: [[Move; NUM_KILLER_MOVES]; MAX_DEPTH],
@@ -22,8 +21,48 @@ impl MoveSorter {
             [board.color_at(src).unwrap() as usize][dest.to_index()] += depth;
     }
 
+    fn get_least_attackers_square(&self, square: Square, board: &chess::Board) -> Option<Square> {
+        let mut capture_moves = chess::MoveGen::new_legal(&board);
+        capture_moves.set_iterator_mask(BB_SQUARES[square.to_index()]);
+        let mut least_attackers_square = None;
+        let mut least_attacker_type = 6;
+        for _move in capture_moves {
+            let attacker_type = board.piece_on(_move.get_source()).unwrap() as u8;
+            if attacker_type < least_attacker_type {
+                least_attackers_square = Some(_move.get_source());
+                least_attacker_type = attacker_type;
+            }
+            if least_attacker_type == 0 {
+                return least_attackers_square;
+            }
+        }
+        least_attackers_square
+    }
+
+    fn see(&self, square: Square, board: &mut chess::Board, evaluator: &Evaluator) -> i16 {
+        let least_attackers_square = match self.get_least_attackers_square(square, &board) {
+            Some(square) => square,
+            None => return 0,
+        };
+        let capture_piece = board.piece_on(square).unwrap_or(Pawn);
+        board.clone().make_move(Move::new(least_attackers_square, square, None), board);
+        (evaluator.evaluate_piece(capture_piece) - self.see(square, board, evaluator)).max(0)
+    }
+
+    fn see_capture(&self, square: Square, board: &mut chess::Board, evaluator: &Evaluator) -> i16 {
+        let least_attackers_square = match self.get_least_attackers_square(square, &board) {
+            Some(square) => square,
+            None => return 0,
+        };
+        let capture_piece = board.piece_on(square).unwrap_or(Pawn);
+        board.clone().make_move(Move::new(least_attackers_square, square, None), board);
+        evaluator.evaluate_piece(capture_piece) - self.see(square, board, evaluator)
+    }
+
     fn capture_value(&self, _move: Move, board: &Board) -> u32 {
-        board.piece_at(_move.get_dest()).unwrap_or(Pawn) as u32
+        // (self.see_capture(_move.get_dest(), &mut board.get_sub_board(), &board.evaluator) + 900) as u32
+        MVV_LVA[board.piece_at(_move.get_source()).unwrap().to_index()]
+            [board.piece_at(_move.get_dest()).unwrap_or(Pawn).to_index()]
     }
 
     fn move_value(&self, _move: Move, board: &Board, ply: Ply) -> u32 {

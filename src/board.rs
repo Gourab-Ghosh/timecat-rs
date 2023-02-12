@@ -1,11 +1,9 @@
 use super::*;
-use chess::{Board as ChessBoard, CastleRights, File, MoveGen};
-use std::str::FromStr;
 
 // #[derive(Clone, PartialEq, Debug, Eq)]
 #[derive(Clone)]
 struct BoardState {
-    board: ChessBoard,
+    board: chess::Board,
     halfmove_clock: u8,
     fullmove_number: u8,
     num_repetitions: u8,
@@ -43,7 +41,7 @@ pub mod perft_test {
 }
 
 pub struct Board {
-    board: ChessBoard,
+    board: chess::Board,
     stack: Vec<(BoardState, Move)>,
     halfmove_clock: u8,
     fullmove_number: u8,
@@ -55,7 +53,7 @@ pub struct Board {
 impl Board {
     pub fn new() -> Self {
         let mut board = Self {
-            board: ChessBoard::from_str(STARTING_BOARD_FEN).unwrap(),
+            board: chess::Board::from_str(STARTING_BOARD_FEN).unwrap(),
             stack: Vec::new(),
             halfmove_clock: 0,
             fullmove_number: 1,
@@ -85,7 +83,7 @@ impl Board {
             );
         }
         let fen = simplify_fen(fen);
-        self.board = ChessBoard::from_str(fen.as_str()).expect("Valid Position");
+        self.board = chess::Board::from_str(fen.as_str()).expect("Valid Position");
         let mut splitted_fen = fen.split(' ');
         self.halfmove_clock = splitted_fen.nth(4).unwrap_or("0").parse().unwrap();
         self.fullmove_number = splitted_fen.next().unwrap_or("1").parse().unwrap();
@@ -133,13 +131,13 @@ impl Board {
         fen
     }
 
-    pub fn get_sub_board(&self) -> ChessBoard {
-        self.board
+    pub fn get_sub_board(&self) -> chess::Board {
+        self.board.clone()
     }
 
     pub fn is_good_fen(fen: &str) -> bool {
         let fen = simplify_fen(fen);
-        if ChessBoard::from_str(fen.as_str()).is_err() {
+        if chess::Board::from_str(fen.as_str()).is_err() {
             return false;
         }
         let mut splitted_fen = fen.split(' ');
@@ -479,16 +477,16 @@ impl Board {
 
     pub fn clean_castling_rights(&self) -> BitBoard {
         let white_castling_righrs = match self.board.castle_rights(White) {
-            CastleRights::Both => BB_A1 | BB_H1,
-            CastleRights::KingSide => BB_H1,
-            CastleRights::QueenSide => BB_A1,
-            CastleRights::NoRights => BB_EMPTY,
+            chess::CastleRights::Both => BB_A1 | BB_H1,
+            chess::CastleRights::KingSide => BB_H1,
+            chess::CastleRights::QueenSide => BB_A1,
+            chess::CastleRights::NoRights => BB_EMPTY,
         };
         let black_castling_righrs = match self.board.castle_rights(Black) {
-            CastleRights::Both => BB_A8 | BB_H8,
-            CastleRights::KingSide => BB_H8,
-            CastleRights::QueenSide => BB_A8,
-            CastleRights::NoRights => BB_EMPTY,
+            chess::CastleRights::Both => BB_A8 | BB_H8,
+            chess::CastleRights::KingSide => BB_H8,
+            chess::CastleRights::QueenSide => BB_A8,
+            chess::CastleRights::NoRights => BB_EMPTY,
         };
         white_castling_righrs | black_castling_righrs
     }
@@ -835,17 +833,17 @@ impl Board {
         self.board.legal(_move)
     }
 
-    pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGen {
-        let mut moves = MoveGen::new_legal(&self.board);
+    pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> chess::MoveGen {
+        let mut moves = chess::MoveGen::new_legal(&self.board);
         moves.set_iterator_mask(to_bitboard);
         moves
     }
 
-    pub fn generate_legal_moves(&self) -> MoveGen {
-        MoveGen::new_legal(&self.board)
+    pub fn generate_legal_moves(&self) -> chess::MoveGen {
+        chess::MoveGen::new_legal(&self.board)
     }
 
-    pub fn generate_legal_captures(&self) -> MoveGen {
+    pub fn generate_legal_captures(&self) -> chess::MoveGen {
         let targets = self.occupied_co(!self.turn());
         self.generate_masked_legal_moves(*targets)
     }
