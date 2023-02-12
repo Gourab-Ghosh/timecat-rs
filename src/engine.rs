@@ -45,7 +45,9 @@ impl MoveSorter {
             None => return 0,
         };
         let capture_piece = board.piece_on(square).unwrap_or(Pawn);
-        board.clone().make_move(Move::new(least_attackers_square, square, None), board);
+        board
+            .clone()
+            .make_move(Move::new(least_attackers_square, square, None), board);
         (evaluator.evaluate_piece(capture_piece) - self.see(square, board, evaluator)).max(0)
     }
 
@@ -55,7 +57,9 @@ impl MoveSorter {
             None => return 0,
         };
         let capture_piece = board.piece_on(square).unwrap_or(Pawn);
-        board.clone().make_move(Move::new(least_attackers_square, square, None), board);
+        board
+            .clone()
+            .make_move(Move::new(least_attackers_square, square, None), board);
         evaluator.evaluate_piece(capture_piece) - self.see(square, board, evaluator)
     }
 
