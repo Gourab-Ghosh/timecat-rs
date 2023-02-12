@@ -26,14 +26,14 @@ impl MoveSorter {
         capture_moves.set_iterator_mask(BB_SQUARES[square.to_index()]);
         let mut least_attackers_square = None;
         let mut least_attacker_type = 6;
-        for _move in capture_moves {
-            let attacker_type = board.piece_on(_move.get_source()).unwrap() as u8;
-            if attacker_type < least_attacker_type {
-                least_attackers_square = Some(_move.get_source());
-                least_attacker_type = attacker_type;
+        for square in capture_moves.into_iter().map(|m| m.get_source()) {
+            let attacker_type = board.piece_on(square).unwrap() as u8;
+            if attacker_type == 0 {
+                return Some(square);
             }
-            if least_attacker_type == 0 {
-                return least_attackers_square;
+            if attacker_type < least_attacker_type {
+                least_attackers_square = Some(square);
+                least_attacker_type = attacker_type;
             }
         }
         least_attackers_square
@@ -65,8 +65,7 @@ impl MoveSorter {
 
     fn capture_value(&self, _move: Move, board: &Board) -> u32 {
         // (self.see_capture(_move.get_dest(), &mut board.get_sub_board(), &board.evaluator) + 900) as u32
-        MVV_LVA[board.piece_at(_move.get_source()).unwrap().to_index()]
-            [board.piece_at(_move.get_dest()).unwrap_or(Pawn).to_index()]
+        MVV_LVA[board.piece_at(_move.get_source()).unwrap().to_index()][board.piece_at(_move.get_dest()).unwrap_or(Pawn).to_index()]
     }
 
     fn move_value(&self, _move: Move, board: &Board, ply: Ply) -> u32 {
