@@ -27,11 +27,11 @@ for file in files:
             f.write(requests.get(full_url).text)
 
 if which("cargo") is None:
-    print(f"Installing Rust...")
     if sys.platform == "win32":
         os.system("Please install Rust manually and add it to PATH and run this script again.")
         sys.exit(1)
     else:
+        print(f"Installing Rust...")
         os.system("curl --proto '=https' -sSf https://sh.rustup.rs | sh")
 
 is_error_free = not os.system("cargo check")

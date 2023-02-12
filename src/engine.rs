@@ -4,23 +4,20 @@ use super::*;
 // use chess::MoveGen;
 
 struct MoveSorter {
-    killer_moves: [[Move; MAX_DEPTH]; NUM_KILLER_MOVES],
+    killer_moves: [[Move; NUM_KILLER_MOVES]; MAX_DEPTH],
     history_moves: [[[u32; 64]; 2]; 7],
 }
 
 impl MoveSorter {
     pub fn update_killer_moves(&mut self, killer_move: Move, ply: Ply) {
-        for i in (1..(NUM_KILLER_MOVES - 1)).rev() {
-            self.killer_moves[i][ply] = self.killer_moves[i - 1][ply];
-        }
-        self.killer_moves[0][ply] = killer_move;
+        self.killer_moves[ply].rotate_right(1);
+        self.killer_moves[ply][0] = killer_move;
     }
 
     pub fn add_history_move(&mut self, history_move: Move, board: &Board, depth: Depth) {
         let depth = depth as u32;
         let src = history_move.get_source();
         let dest = history_move.get_dest();
-        // self.history_moves[board.piece_type_at(src) as usize][board.color_at(src).unwrap() as usize][dest.to_index()] += depth.pow(2);
         self.history_moves[board.piece_type_at(src) as usize]
             [board.color_at(src).unwrap() as usize][dest.to_index()] += depth;
     }
@@ -40,7 +37,7 @@ impl MoveSorter {
             return 4292000000 + self.capture_value(_move, board);
         }
         for i in 0..NUM_KILLER_MOVES {
-            if self.killer_moves[i][ply] == _move {
+            if self.killer_moves[ply][i] == _move {
                 return 4291000000 - i as u32;
             }
         }
@@ -51,7 +48,7 @@ impl MoveSorter {
         let history_moves_score = self.history_moves
             [board.piece_type_at(_move.get_source()) as usize]
             [board.color_at(_move.get_source()).unwrap() as usize][_move.get_dest().to_index()];
-        4289000000 + history_moves_score
+        history_moves_score
     }
 
     pub fn moves_sort<T: IntoIterator<Item = Move>>(
@@ -89,7 +86,7 @@ impl MoveSorter {
 impl Default for MoveSorter {
     fn default() -> Self {
         Self {
-            killer_moves: [[Move::default(); MAX_DEPTH]; NUM_KILLER_MOVES],
+            killer_moves: [[Move::default(); NUM_KILLER_MOVES]; MAX_DEPTH],
             history_moves: [[[0; 64]; 2]; 7],
         }
     }
