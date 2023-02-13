@@ -166,6 +166,10 @@ pub mod command_utils {
 
         DEFAULT_ERROR
     }
+
+    pub fn is_checkmate(score: Score) -> bool {
+        score.abs() > CHECKMATE_THRESHOLD
+    }
 }
 
 pub mod string_utils {
@@ -219,7 +223,7 @@ pub mod string_utils {
         colored_string.to_string()
     }
 
-    pub fn score_to_string(score: i16) -> String {
+    pub fn score_to_string(score: Score) -> String {
         (score as f32 / 100.0).to_string()
     }
 
@@ -240,28 +244,6 @@ pub mod classes {
     use super::*;
     // use std::collections::hash_map::DefaultHasher;
     // use std::hash::{Hash, Hasher};
-
-    pub struct TranspositionTable {
-        table: Arc<Mutex<HashMap<u64, i32>>>,
-    }
-
-    impl TranspositionTable {
-        pub fn new() -> Self {
-            Self {
-                table: Arc::new(Mutex::new(HashMap::default())),
-            }
-        }
-
-        pub fn insert(&self, key: u64, value: i32) {
-            self.table.lock().unwrap().insert(key, value);
-        }
-
-        // pub fn hash<T: Hash>(t: &T) -> u64 {
-        //     let mut s = DefaultHasher::new();
-        //     t.hash(&mut s);
-        //     s.finish()
-        // }
-    }
 
     #[derive(Default, Clone)]
     pub struct RepetitionTable {

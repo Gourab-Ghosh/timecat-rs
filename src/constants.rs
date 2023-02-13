@@ -1,6 +1,7 @@
 pub mod types {
     pub type Ply = usize;
     pub type Depth = u8;
+    pub type Score = i16;
 }
 
 pub mod bitboard {
@@ -225,12 +226,14 @@ pub mod print_style {
 }
 
 pub mod engine_constants {
-    pub const MAX_DEPTH: usize = 255;
-    pub const INFINITY: i16 = 30_000;
-    pub const CHECKMATE_SCORE: i16 = 25_000;
-    pub const CHECKMATE_THRESHOLD: i16 = CHECKMATE_SCORE - (MAX_DEPTH as i16 + 1);
+    use super::types::*;
+    pub const MAX_DEPTH: usize = Depth::MAX as usize;
+    pub const INFINITY: Score = 30_000;
+    pub const CHECKMATE_SCORE: Score = 25_000;
+    pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - (MAX_DEPTH as Score + 1);
     pub const NUM_KILLER_MOVES: usize = 2;
-    pub const PAWN_VALUE: i16 = 100;
+    pub const PAWN_VALUE: Score = 100;
+    pub const DISABLE_T_TABLE: bool = false;
 
     pub const MVV_LVA: [[u32; 6]; 6] = [
         [105, 205, 305, 405, 505, 605],

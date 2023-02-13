@@ -110,10 +110,11 @@ fn _main() {
     let (best_move, score) = engine.get_best_move_and_score(8);
     println!("{}\n", engine.board);
     println!(
-        "{}: {}\nnum nodes searched: {}",
+        "{}: {}\nnum nodes searched: {}\nPV Line: {}",
         best_move,
         score_to_string(score),
-        engine.get_num_nodes_searched()
+        engine.get_num_nodes_searched(),
+        engine.get_pv_string(),
     );
 
     // parse_command(&mut Board::new(), &"go perft 7".to_string());

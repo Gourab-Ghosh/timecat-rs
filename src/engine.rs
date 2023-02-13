@@ -1,135 +1,275 @@
-// use std::io::Write;
-
 use super::*;
+use sort::*;
+use transpositionT_table::*;
+use EntryFlag::*;
 
-struct MoveSorter {
-    killer_moves: [[Move; NUM_KILLER_MOVES]; MAX_DEPTH],
-    history_moves: [[[u32; 64]; 2]; 7],
+mod sort {
+    use super::*;
+    pub struct MoveSorter {
+        killer_moves: [[Move; NUM_KILLER_MOVES]; MAX_DEPTH],
+        history_moves: [[[u32; 64]; 2]; 6],
+    }
+    
+    impl MoveSorter {
+        pub fn update_killer_moves(&mut self, killer_move: Move, ply: Ply) {
+            self.killer_moves[ply].rotate_right(1);
+            self.killer_moves[ply][0] = killer_move;
+        }
+    
+        pub fn add_history_move(&mut self, history_move: Move, board: &Board, depth: Depth) {
+            let depth = depth as u32;
+            let src = history_move.get_source();
+            let dest = history_move.get_dest();
+            self.history_moves[board.piece_at(src).unwrap().to_index()]
+                [board.color_at(src).unwrap() as usize][dest.to_index()] += depth;
+        }
+    
+        fn get_least_attackers_square(&self, square: Square, board: &chess::Board) -> Option<Square> {
+            let mut capture_moves = chess::MoveGen::new_legal(&board);
+            capture_moves.set_iterator_mask(BB_SQUARES[square.to_index()]);
+            let mut least_attackers_square = None;
+            let mut least_attacker_type = 6;
+            for square in capture_moves.into_iter().map(|m| m.get_source()) {
+                let attacker_type = board.piece_on(square).unwrap() as u8;
+                if attacker_type == 0 {
+                    return Some(square);
+                }
+                if attacker_type < least_attacker_type {
+                    least_attackers_square = Some(square);
+                    least_attacker_type = attacker_type;
+                }
+            }
+            least_attackers_square
+        }
+    
+        fn see(&self, square: Square, board: &mut chess::Board, evaluator: &Evaluator) -> Score {
+            let least_attackers_square = match self.get_least_attackers_square(square, &board) {
+                Some(square) => square,
+                None => return 0,
+            };
+            let capture_piece = board.piece_on(square).unwrap_or(Pawn);
+            board
+                .clone()
+                .make_move(Move::new(least_attackers_square, square, None), board);
+            (evaluator.evaluate_piece(capture_piece) - self.see(square, board, evaluator)).max(0)
+        }
+    
+        fn see_capture(&self, square: Square, board: &mut chess::Board, evaluator: &Evaluator) -> Score {
+            let least_attackers_square = match self.get_least_attackers_square(square, &board) {
+                Some(square) => square,
+                None => return 0,
+            };
+            let capture_piece = board.piece_on(square).unwrap_or(Pawn);
+            board
+                .clone()
+                .make_move(Move::new(least_attackers_square, square, None), board);
+            evaluator.evaluate_piece(capture_piece) - self.see(square, board, evaluator)
+        }
+    
+        fn capture_value(&self, _move: Move, board: &Board) -> u32 {
+            // (self.see_capture(_move.get_dest(), &mut board.get_sub_board(), &board.evaluator) + 900) as u32
+            MVV_LVA[board.piece_at(_move.get_source()).unwrap().to_index()]
+                [board.piece_at(_move.get_dest()).unwrap_or(Pawn).to_index()]
+        }
+    
+        fn move_value(&self, _move: Move, board: &Board, ply: Ply, best_move: Option<Move>) -> u32 {
+            match best_move {
+                Some(m) => {
+                    if m == _move {
+                        return 4294000000;
+                    }
+                },
+                None => {},
+            }
+            let mut sub_board = board.get_sub_board();
+            sub_board.clone().make_move(_move, &mut sub_board);
+            let checkers = *sub_board.checkers();
+            if checkers != BB_EMPTY {
+                return 4292000000 + checkers.popcnt();
+            }
+            if board.is_capture(_move) {
+                return 4291000000 + self.capture_value(_move, board);
+            }
+            for (i, killer_move) in self.killer_moves[ply].iter().enumerate() {
+                if killer_move == &_move {
+                    return 4290000000 - i as u32;
+                }
+            }
+            match _move.get_promotion() {
+                Some(piece) => return 4289000000 + piece as u32,
+                None => {}
+            }
+            let history_moves_score = self.history_moves
+                [board.piece_at(_move.get_source()).unwrap().to_index()]
+                [board.color_at(_move.get_source()).unwrap() as usize][_move.get_dest().to_index()];
+            history_moves_score
+        }
+    
+        pub fn sort_moves<T: IntoIterator<Item = Move>>(
+            &self,
+            move_gen: T,
+            board: &Board,
+            ply: Ply,
+            best_move: Option<Move>,
+        ) -> Vec<Move> {
+            let mut moves = Vec::new();
+            let mut moves_score_dict = HashMap::default();
+            for _move in move_gen {
+                moves.push(_move);
+                moves_score_dict.insert(_move, self.move_value(_move, board, ply, best_move));
+            }
+            moves.sort_by(|a, b| moves_score_dict[b].cmp(&moves_score_dict[a]));
+            moves
+        }
+    
+        pub fn sort_captures<T: IntoIterator<Item = Move>>(
+            &self,
+            move_gen: T,
+            board: &Board,
+        ) -> Vec<Move> {
+            let mut moves = Vec::new();
+            let mut moves_score_dict = HashMap::default();
+            for _move in move_gen {
+                moves.push(_move);
+                moves_score_dict.insert(_move, self.capture_value(_move, board));
+            }
+            moves.sort_by(|a, b| moves_score_dict[b].cmp(&moves_score_dict[a]));
+            moves
+        }
+    }
+    
+    impl Default for MoveSorter {
+        fn default() -> Self {
+            Self {
+                killer_moves: [[Move::default(); NUM_KILLER_MOVES]; MAX_DEPTH],
+                history_moves: [[[0; 64]; 2]; 6],
+            }
+        }
+    }
 }
 
-impl MoveSorter {
-    pub fn update_killer_moves(&mut self, killer_move: Move, ply: Ply) {
-        self.killer_moves[ply].rotate_right(1);
-        self.killer_moves[ply][0] = killer_move;
+mod transpositionT_table {
+    use super::*;
+
+    #[derive(Clone)]
+    pub enum EntryFlag {
+        HashExact,
+        HashAlpha,
+        HashBeta,
     }
 
-    pub fn add_history_move(&mut self, history_move: Move, board: &Board, depth: Depth) {
-        let depth = depth as u32;
-        let src = history_move.get_source();
-        let dest = history_move.get_dest();
-        self.history_moves[board.piece_type_at(src) as usize]
-            [board.color_at(src).unwrap() as usize][dest.to_index()] += depth;
-    }
-
-    fn get_least_attackers_square(&self, square: Square, board: &chess::Board) -> Option<Square> {
-        let mut capture_moves = chess::MoveGen::new_legal(&board);
-        capture_moves.set_iterator_mask(BB_SQUARES[square.to_index()]);
-        let mut least_attackers_square = None;
-        let mut least_attacker_type = 6;
-        for square in capture_moves.into_iter().map(|m| m.get_source()) {
-            let attacker_type = board.piece_on(square).unwrap() as u8;
-            if attacker_type == 0 {
-                return Some(square);
-            }
-            if attacker_type < least_attacker_type {
-                least_attackers_square = Some(square);
-                least_attacker_type = attacker_type;
-            }
+    impl Default for EntryFlag {
+        fn default() -> Self {
+            HashExact
         }
-        least_attackers_square
     }
 
-    fn see(&self, square: Square, board: &mut chess::Board, evaluator: &Evaluator) -> i16 {
-        let least_attackers_square = match self.get_least_attackers_square(square, &board) {
-            Some(square) => square,
-            None => return 0,
-        };
-        let capture_piece = board.piece_on(square).unwrap_or(Pawn);
-        board
-            .clone()
-            .make_move(Move::new(least_attackers_square, square, None), board);
-        (evaluator.evaluate_piece(capture_piece) - self.see(square, board, evaluator)).max(0)
+    #[derive(Default)]
+    struct TranspositionTableEntry {
+        depth: Depth,
+        score: Score,
+        flag: EntryFlag,
+        best_move: Option<Move>,
     }
 
-    fn see_capture(&self, square: Square, board: &mut chess::Board, evaluator: &Evaluator) -> i16 {
-        let least_attackers_square = match self.get_least_attackers_square(square, &board) {
-            Some(square) => square,
-            None => return 0,
-        };
-        let capture_piece = board.piece_on(square).unwrap_or(Pawn);
-        board
-            .clone()
-            .make_move(Move::new(least_attackers_square, square, None), board);
-        evaluator.evaluate_piece(capture_piece) - self.see(square, board, evaluator)
+    pub struct TranspositionTable {
+        table: Arc<Mutex<HashMap<u64, TranspositionTableEntry>>>,
     }
 
-    fn capture_value(&self, _move: Move, board: &Board) -> u32 {
-        // (self.see_capture(_move.get_dest(), &mut board.get_sub_board(), &board.evaluator) + 900) as u32
-        MVV_LVA[board.piece_at(_move.get_source()).unwrap().to_index()][board.piece_at(_move.get_dest()).unwrap_or(Pawn).to_index()]
-    }
-
-    fn move_value(&self, _move: Move, board: &Board, ply: Ply) -> u32 {
-        let mut sub_board = board.get_sub_board();
-        sub_board.clone().make_move(_move, &mut sub_board);
-        let checkers = *sub_board.checkers();
-        if checkers != BB_EMPTY {
-            return 4293000000 + checkers.popcnt();
-        }
-        if board.is_capture(_move) {
-            return 4292000000 + self.capture_value(_move, board);
-        }
-        for i in 0..NUM_KILLER_MOVES {
-            if self.killer_moves[ply][i] == _move {
-                return 4291000000 - i as u32;
+    impl TranspositionTable {
+        pub fn new() -> Self {
+            Self {
+                table: Arc::new(Mutex::new(HashMap::default())),
             }
         }
-        let promoted_piece_index = _move.get_promotion().unwrap_or(Pawn) as u32;
-        if promoted_piece_index != 0 {
-            return 4290000000 + promoted_piece_index;
+
+        pub fn read(&self, key: u64, depth: Depth, alpha: Score, beta: Score) -> Option<(Option<Score>, Option<Move>)> {
+            if DISABLE_T_TABLE {
+                return None;
+            }
+            match self.table.lock().unwrap().get(&key) {
+                Some(tt_entry) => {
+                    let best_move = tt_entry.best_move;
+                    if tt_entry.depth >= depth {
+                        match tt_entry.flag {
+                            HashExact => Some((Some(tt_entry.score), best_move)),
+                            HashAlpha => {
+                                if tt_entry.score <= alpha {
+                                    Some((Some(tt_entry.score), best_move))
+                                } else {
+                                    Some((None, best_move))
+                                }
+                            }
+                            HashBeta => {
+                                if tt_entry.score >= beta {
+                                    Some((Some(tt_entry.score), best_move))
+                                } else {
+                                    Some((None, best_move))
+                                }
+                            }
+                        }
+                    } else {
+                        return Some((None, best_move));
+                    }
+                }
+                None => None,
+            }
         }
-        let history_moves_score = self.history_moves
-            [board.piece_type_at(_move.get_source()) as usize]
-            [board.color_at(_move.get_source()).unwrap() as usize][_move.get_dest().to_index()];
-        history_moves_score
+        
+        pub fn write(&self, key: u64, depth: Depth, score: Score, flag: EntryFlag, best_move: Option<Move>) {
+            // let not_to_save_score = DISABLE_T_TABLE || is_checkmate(score) || score.abs() < 5;
+            let not_to_save_score = DISABLE_T_TABLE || is_checkmate(score);
+            if not_to_save_score {
+                return;
+            }
+            let mut table_entry = self.table.lock().unwrap();
+            let mut tt_entry = table_entry.entry(key).or_insert(TranspositionTableEntry{
+                depth,
+                score,
+                flag: flag.clone(),
+                best_move,
+            });
+            if tt_entry.depth >= depth {
+                return;
+            }
+            tt_entry.depth = depth;
+            tt_entry.score = score;
+            tt_entry.flag = flag;
+            tt_entry.best_move = best_move;
+        }
+
+        // pub fn write(&self, key: u64, depth: Depth, score: Score, flag: EntryFlag, best_move: Move) {
+        //     // let not_to_save_score = DISABLE_T_TABLE || is_checkmate(score) || score.abs() < 5;
+        //     let not_to_save_score = DISABLE_T_TABLE || is_checkmate(score);
+        //     if not_to_save_score {
+        //         return;
+        //     }
+        //     match self.table.lock().unwrap().get_mut(&key) {
+        //         Some(tt_entry) => {
+        //             if tt_entry.depth > depth {
+        //                 return;
+        //             }
+        //             tt_entry.depth = depth;
+        //             tt_entry.score = score;
+        //             tt_entry.flag = flag;
+        //             tt_entry.best_move = best_move;
+        //         }
+        //         None => {
+        //             self.table.lock().unwrap().insert(key, TranspositionTableEntry {
+        //                 depth,
+        //                 score,
+        //                 flag,
+        //                 best_move,
+        //             });
+        //         }
+        //     }
+        // }
     }
 
-    pub fn moves_sort<T: IntoIterator<Item = Move>>(
-        &self,
-        move_gen: T,
-        board: &Board,
-        ply: Ply,
-    ) -> Vec<Move> {
-        let mut moves = Vec::new();
-        let mut moves_score_dict = HashMap::default();
-        for _move in move_gen {
-            moves.push(_move);
-            moves_score_dict.insert(_move, self.move_value(_move, board, ply));
-        }
-        moves.sort_by(|a, b| moves_score_dict[b].cmp(&moves_score_dict[a]));
-        moves
-    }
 
-    pub fn capture_sort<T: IntoIterator<Item = Move>>(
-        &self,
-        move_gen: T,
-        board: &Board,
-    ) -> Vec<Move> {
-        let mut moves = Vec::new();
-        let mut moves_score_dict = HashMap::default();
-        for _move in move_gen {
-            moves.push(_move);
-            moves_score_dict.insert(_move, self.capture_value(_move, board));
-        }
-        moves.sort_by(|a, b| moves_score_dict[b].cmp(&moves_score_dict[a]));
-        moves
-    }
-}
-
-impl Default for MoveSorter {
-    fn default() -> Self {
-        Self {
-            killer_moves: [[Move::default(); NUM_KILLER_MOVES]; MAX_DEPTH],
-            history_moves: [[[0; 64]; 2]; 7],
+    impl Default for TranspositionTable {
+        fn default() -> Self {
+            Self::new()
         }
     }
 }
@@ -141,6 +281,7 @@ pub struct Engine {
     pv_length: [usize; MAX_DEPTH],
     pv_table: [[Move; MAX_DEPTH]; MAX_DEPTH],
     move_sorter: MoveSorter,
+    transposition_table: TranspositionTable,
 }
 
 impl Engine {
@@ -152,6 +293,7 @@ impl Engine {
             pv_length: [0; MAX_DEPTH],
             pv_table: [[Move::default(); MAX_DEPTH]; MAX_DEPTH],
             move_sorter: MoveSorter::default(),
+            transposition_table: TranspositionTable::default(),
         }
     }
 
@@ -175,6 +317,7 @@ impl Engine {
             }
         }
         self.move_sorter = MoveSorter::default();
+        self.transposition_table = TranspositionTable::default();
     }
 
     fn update_pv_table(&mut self, _move: Move) {
@@ -185,7 +328,7 @@ impl Engine {
         self.pv_length[self.ply] = self.pv_length[self.ply + 1];
     }
 
-    fn search(&mut self, depth: Depth, alpha: i16, beta: i16) -> (Option<Move>, i16) {
+    fn search(&mut self, depth: Depth, alpha: Score, beta: Score) -> (Option<Move>, Score) {
         self.pv_length[self.ply] = self.ply;
         if self.board.is_game_over() {
             return (
@@ -198,33 +341,43 @@ impl Engine {
             );
         }
         let mut alpha = alpha;
-        let mut best_move = None;
         let moves =
             self.move_sorter
-                .moves_sort(self.board.generate_legal_moves(), &self.board, self.ply);
+                .sort_moves(self.board.generate_legal_moves(), &self.board, self.ply, None);
         for _move in moves {
             self.push(_move);
             let score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
             self.pop();
             if score > alpha {
                 alpha = score;
-                best_move = Some(_move);
                 self.update_pv_table(_move);
                 if score >= beta {
-                    return (best_move, beta);
+                    return (Some(_move), beta);
                 }
             }
         }
-        (best_move, alpha)
+        (Some(self.get_best_move()), alpha)
     }
 
-    fn alpha_beta(&mut self, depth: Depth, alpha: i16, beta: i16, apply_null_move: bool) -> i16 {
+    fn alpha_beta(&mut self, depth: Depth, alpha: Score, beta: Score, apply_null_move: bool) -> Score {
         self.pv_length[self.ply] = self.ply;
         let not_in_check = !self.board.is_check();
         let draw_score = 0;
         if self.board.is_other_draw() {
             return draw_score;
         }
+        let best_move = match self.transposition_table.read(self.board.get_hash(), depth, alpha, beta) {
+            Some((Some(score), best_move)) => {
+                if best_move.is_some() {
+                    self.update_pv_table(best_move.unwrap());
+                }
+                return score;
+            }
+            Some((None, best_move)) => {
+                best_move
+            }
+            None => None,
+        };
         if depth == 0 {
             return self.quiescence(alpha, beta);
         }
@@ -233,19 +386,21 @@ impl Engine {
             if not_in_check {
                 return draw_score;
             }
-            return -CHECKMATE_SCORE + self.ply as i16;
+            return -CHECKMATE_SCORE + self.ply as Score;
         }
         self.num_nodes_searched += 1;
         let mut alpha = alpha;
+        let mut flag = HashAlpha;
         let moves = self
             .move_sorter
-            .moves_sort(moves_gen, &self.board, self.ply);
+            .sort_moves(moves_gen, &self.board, self.ply, best_move);
         for _move in moves {
             let not_capture_move = !self.board.is_capture(_move);
             self.push(_move);
             let score = -self.alpha_beta(depth - 1, -beta, -alpha, apply_null_move);
             self.pop();
             if score > alpha {
+                flag = HashExact;
                 self.update_pv_table(_move);
                 alpha = score;
                 if not_capture_move {
@@ -253,6 +408,13 @@ impl Engine {
                     self.move_sorter.add_history_move(_move, &self.board, depth);
                 }
                 if score >= beta {
+                    self.transposition_table.write(
+                        self.board.get_hash(),
+                        depth,
+                        beta,
+                        HashBeta,
+                        Some(_move),
+                    );
                     if not_capture_move {
                         self.move_sorter.update_killer_moves(_move, self.ply);
                     }
@@ -260,10 +422,17 @@ impl Engine {
                 }
             }
         }
+        self.transposition_table.write(
+            self.board.get_hash(),
+            depth,
+            alpha,
+            flag,
+            Some(self.pv_table[self.ply][self.ply]),
+        );
         alpha
     }
 
-    fn quiescence(&mut self, alpha: i16, beta: i16) -> i16 {
+    fn quiescence(&mut self, alpha: Score, beta: Score) -> Score {
         let mut alpha = alpha;
         self.num_nodes_searched += 1;
         let evaluation = self.board.evaluate_flipped();
@@ -275,7 +444,7 @@ impl Engine {
         }
         for _move in self
             .move_sorter
-            .capture_sort(self.board.generate_legal_captures(), &self.board)
+            .sort_captures(self.board.generate_legal_captures(), &self.board)
         {
             self.push(_move);
             let score = -self.quiescence(-beta, -alpha);
@@ -345,7 +514,11 @@ impl Engine {
         self.num_nodes_searched
     }
 
-    pub fn get_best_move_and_score(&mut self, depth: u8) -> (Move, i16) {
+    pub fn get_best_move(&self) -> Move {
+        return self.pv_table[0][0];
+    }
+
+    pub fn get_best_move_and_score(&mut self, depth: u8) -> (Move, Score) {
         self.reset_constants();
         let (best_move, score) = self.search(depth, -INFINITY, INFINITY);
         (

@@ -856,11 +856,11 @@ impl Board {
         self.board.get_pawn_hash()
     }
 
-    pub fn evaluate(&self) -> i16 {
+    pub fn evaluate(&self) -> Score {
         self.evaluator.evaluate(self)
     }
 
-    pub fn evaluate_flipped(&self) -> i16 {
+    pub fn evaluate_flipped(&self) -> Score {
         let score = self.evaluate();
         if self.turn() == White {
             score
