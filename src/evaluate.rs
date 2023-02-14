@@ -15,17 +15,6 @@ impl Evaluator {
         }
     }
 
-    pub fn evaluate_piece(&self, piece: Piece) -> i16 {
-        match piece {
-            Piece::Pawn => PAWN_VALUE,
-            Piece::Knight => (32 * PAWN_VALUE) / 10,
-            Piece::Bishop => (33 * PAWN_VALUE) / 10,
-            Piece::Rook => 5 * PAWN_VALUE,
-            Piece::Queen => 9 * PAWN_VALUE,
-            Piece::King => 20 * PAWN_VALUE,
-        }
-    }
-
     pub fn default() -> Self {
         Self::new()
     }

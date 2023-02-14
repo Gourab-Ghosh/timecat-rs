@@ -17,7 +17,6 @@ mod engine;
 mod evaluate;
 mod nnue;
 mod nnue_weights;
-mod user_defined_macros;
 mod utils;
 
 use board::perft_test::perft;
@@ -85,11 +84,11 @@ fn main_loop(board: &mut Board) {
     }
 }
 
-fn self_play(depth: u8) {
+fn self_play(depth: u8, print: bool) {
     let mut engine = Engine::default();
     println!("\n{}\n", engine.board);
     while !engine.board.is_game_over() {
-        let (_move, score) = engine.get_best_move_and_score(depth);
+        let (_move, score) = engine.get_best_move_and_score(depth, print);
         let pv = engine.get_pv_string();
         engine.push(_move);
         println!("\n{}\n", engine.board);
@@ -104,10 +103,10 @@ fn self_play(depth: u8) {
 }
 
 fn _main() {
-    // self_play(8);
+    // self_play(9, false);
 
     let mut engine = Engine::default();
-    let (best_move, score) = engine.get_best_move_and_score(8);
+    let (best_move, score) = engine.get_best_move_and_score(10, true);
     println!("{}\n", engine.board);
     println!(
         "{}: {}\nnum nodes searched: {}\nPV Line: {}",

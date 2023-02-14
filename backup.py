@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os
+import os, subprocess
 from python_scripts.utils import install_package
 
 try:
@@ -21,7 +21,8 @@ if confirm("Do you want to continue?", default = True):
     print()
     commit_message = input("Enter commit message: ").strip()
     if commit_message == "":
-        commit_message = "random commit"
+        commit_message = ", ".join(line.strip() for line in subprocess.getoutput("git status -s").splitlines())
+        print(f"\nGenerated commit message: {commit_message}\n")
     commit_command = f"git commit -m {repr(commit_message)}"
     push_command = "git push -u origin master"
     print()

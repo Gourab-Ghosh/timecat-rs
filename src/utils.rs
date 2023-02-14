@@ -170,6 +170,17 @@ pub mod command_utils {
     pub fn is_checkmate(score: Score) -> bool {
         score.abs() > CHECKMATE_THRESHOLD
     }
+
+    pub fn evaluate_piece(piece: Piece) -> i16 {
+        match piece {
+            Pawn => PAWN_VALUE,
+            Knight => (32 * PAWN_VALUE) / 10,
+            Bishop => (33 * PAWN_VALUE) / 10,
+            Rook => 5 * PAWN_VALUE,
+            Queen => 9 * PAWN_VALUE,
+            King => 20 * PAWN_VALUE,
+        }
+    }
 }
 
 pub mod string_utils {

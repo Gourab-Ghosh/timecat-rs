@@ -233,6 +233,7 @@ pub mod engine_constants {
     pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - (MAX_DEPTH as Score + 1);
     pub const NUM_KILLER_MOVES: usize = 2;
     pub const PAWN_VALUE: Score = 100;
+    pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;
     pub const DISABLE_T_TABLE: bool = false;
 
     pub const MVV_LVA: [[u32; 6]; 6] = [
