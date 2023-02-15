@@ -132,7 +132,7 @@ impl Board {
     }
 
     pub fn get_sub_board(&self) -> chess::Board {
-        self.board.clone()
+        self.board
     }
 
     pub fn is_good_fen(fen: &str) -> bool {
@@ -403,7 +403,6 @@ impl Board {
         };
     }
 
-    #[inline(always)]
     fn is_insufficient_material(&self) -> bool {
         match self.occupied().popcnt() {
             2 => true,
@@ -422,12 +421,10 @@ impl Board {
         }
     }
 
-    #[inline(always)]
     pub fn is_other_draw(&self) -> bool {
         self.is_threefold_repetition() || self.is_fifty_moves() || self.is_insufficient_material()
     }
 
-    #[inline(always)]
     pub fn is_game_over(&self) -> bool {
         self.is_other_draw() || self.board.status() != BoardStatus::Ongoing
     }
@@ -454,31 +451,27 @@ impl Board {
         return (self.occupied() & BB_SQUARES[_move.get_dest().to_index()]) == BB_EMPTY;
     }
 
-    #[inline(always)]
     pub fn is_capture(&self, _move: Move) -> bool {
         let touched =
             BB_SQUARES[_move.get_source().to_index()] ^ BB_SQUARES[_move.get_dest().to_index()];
         (touched & self.occupied_co(!self.turn())) != BB_EMPTY || self.is_en_passant(_move)
     }
 
-    #[inline(always)]
     pub fn is_zeroing(&self, _move: Move) -> bool {
         let touched =
             BB_SQUARES[_move.get_source().to_index()] ^ BB_SQUARES[_move.get_dest().to_index()];
-        return touched & self.board.pieces(Pawn) != BB_EMPTY && (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
+        return touched & self.board.pieces(Pawn) != BB_EMPTY
+            && (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
     }
 
-    #[inline(always)]
     pub fn get_enpassant_square(&self) -> Option<Square> {
         self.board.en_passant()
     }
 
-    #[inline(always)]
     pub fn has_legal_en_passant(&self) -> bool {
         self.get_enpassant_square().is_some()
     }
 
-    #[inline(always)]
     pub fn clean_castling_rights(&self) -> BitBoard {
         let white_castling_righrs = match self.board.castle_rights(White) {
             chess::CastleRights::Both => BB_A1 | BB_H1,
@@ -495,7 +488,6 @@ impl Board {
         white_castling_righrs | black_castling_righrs
     }
 
-    #[inline(always)]
     pub fn get_piece_mask(&self, piece: Piece) -> &BitBoard {
         self.board.pieces(piece)
     }
@@ -504,11 +496,11 @@ impl Board {
         let cr = self.clean_castling_rights();
         let touched =
             BB_SQUARES[_move.get_source().to_index()] ^ BB_SQUARES[_move.get_dest().to_index()];
-        return ((touched & cr) != BB_EMPTY)
+        ((touched & cr) != BB_EMPTY)
             || ((cr & BB_RANK_1 & touched & self.get_piece_mask(King) & self.occupied_co(White))
                 != BB_EMPTY)
             || ((cr & BB_RANK_8 & touched & self.get_piece_mask(King) & self.occupied_co(Black))
-                != BB_EMPTY);
+                != BB_EMPTY)
     }
 
     pub fn is_irreversible(&self, _move: Move) -> bool {

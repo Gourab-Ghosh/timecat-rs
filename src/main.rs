@@ -21,7 +21,7 @@ mod utils;
 
 use board::perft_test::perft;
 use board::Board;
-use chess;
+
 use chess::Color::*;
 use chess::Piece::*;
 use chess::{BitBoard, BoardStatus, ChessMove as Move, Color, Error as ChessError, Piece, Square};
