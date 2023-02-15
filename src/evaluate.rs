@@ -1,5 +1,6 @@
 use super::*;
 use nnue::{Network, Piece as P};
+use nnue_rs::stockfish::halfkp::SfHalfKpNetwork;
 
 #[derive(Clone, Default)]
 pub struct Evaluator {
