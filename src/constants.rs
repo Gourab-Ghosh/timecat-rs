@@ -217,12 +217,14 @@ pub mod print_style {
     pub const INFO_STYLE: &str = "bright_cyan bold";
     pub const CHECK_STYLE: &str = "on_bright_red";
     pub const CHECKERS_STYLE: &str = "bright_red bold";
+    pub const CHECKMATE_SCORE_STYLE: &str = "bright_red bold";
     pub const PERFT_MOVE_STYLE: &str = "green bold";
     pub const PERFT_COUNT_STYLE: &str = "";
     pub const INPUT_MESSAGE_STYLE: &str = "blue bold";
     pub const SUCCESS_MESSAGE_STYLE: &str = "green bold";
     pub const ERROR_MESSAGE_STYLE: &str = "red bold";
     pub const LAST_MOVE_HIGHLIGHT_STYLE: &str = "on_bright_black";
+    pub const WARNING_MESSAGE_STYLE: &str = "bright_yellow bold";
 }
 
 pub mod engine_constants {
@@ -233,7 +235,9 @@ pub mod engine_constants {
     pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - (MAX_DEPTH as Score + 1);
     pub const NUM_KILLER_MOVES: usize = 2;
     pub const PAWN_VALUE: Score = 100;
-    pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;
+    pub const NULL_MOVE_REDUCTION_LIMIT: Depth = 2;
+    pub const PVS_CUTOFF: Score = 1;
+    pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 5;
     pub const DISABLE_T_TABLE: bool = false;
 
     pub const MVV_LVA: [[u32; 6]; 6] = [

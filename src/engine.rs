@@ -247,6 +247,16 @@ mod transpositionT_table {
             }
         }
 
+        pub fn read_best_move(&self, key: u64) -> Option<Move> {
+            if DISABLE_T_TABLE {
+                return None;
+            }
+            match self.table.lock().unwrap().get(&key) {
+                Some(tt_entry) => tt_entry.best_move,
+                None => None,
+            }
+        }
+
         pub fn write(
             &self,
             key: u64,
@@ -408,43 +418,116 @@ impl Engine {
         apply_null_move: bool,
     ) -> Score {
         self.pv_length[self.ply] = self.ply;
+        let is_endgame = self.board.is_endgame();
         let not_in_check = !self.board.is_check();
         let draw_score = 0;
         if self.board.is_other_draw() {
             return draw_score;
         }
-        let best_move =
-            match self
-                .transposition_table
-                .read(self.board.get_hash(), depth, alpha, beta)
-            {
-                Some((Some(score), best_move)) => {
-                    if best_move.is_some() {
-                        self.update_pv_table(best_move.unwrap());
-                    }
-                    return score;
-                }
+        let is_pvs_node = (beta as i32 - alpha as i32) > PVS_CUTOFF as i32;
+        let key = self.board.get_hash();
+        let best_move;
+        if is_pvs_node {
+            best_move = self.transposition_table.read_best_move(key);
+        } else {
+            best_move = match self.transposition_table.read(key, depth, alpha, beta) {
+                Some((Some(score), best_move)) => return score,
                 Some((None, best_move)) => best_move,
                 None => None,
             };
+        }
         if depth == 0 {
             return self.quiescence(alpha, beta);
         }
+        let mate_score = CHECKMATE_SCORE - self.ply as i16;
         let moves_gen = self.board.generate_legal_moves();
         if moves_gen.len() == 0 {
             if not_in_check {
                 return draw_score;
             }
-            return -CHECKMATE_SCORE + self.ply as Score;
+            return -mate_score;
+        }
+        let mut alpha = alpha;
+        let mut beta = beta;
+        // mate distance pruning
+        if mate_score < beta {
+            beta = mate_score;
+            if alpha >= mate_score {
+                return mate_score;
+            }
+        }
+        let mut futility_pruning = false;
+        if not_in_check {
+            // static evaluation pruning
+            let static_evaluation = self.board.evaluate_flipped();
+            if depth < 3 && (beta - 1).abs() > -mate_score + PAWN_VALUE {
+                let evaluation_margin = PAWN_VALUE * depth as i16;
+                let evaluation_diff = static_evaluation - evaluation_margin;
+                if evaluation_diff >= beta {
+                    return evaluation_diff;
+                }
+            }
+            // null move reduction
+            if apply_null_move {
+                if depth > NULL_MOVE_REDUCTION_LIMIT {
+                    self.board.push_null_move();
+                    self.ply += 1;
+                    let score = -self.alpha_beta(
+                        depth - 1 - NULL_MOVE_REDUCTION_LIMIT,
+                        -beta,
+                        -beta + PVS_CUTOFF,
+                        false,
+                    );
+                    self.board.pop_null_move();
+                    self.ply -= 1;
+                    if score >= beta {
+                        return beta;
+                    }
+                }
+                // // razoring
+                // let is_pvs_node = false;
+                // if !is_pvs_node {
+                //     let mut evaluation = static_evaluation + PAWN_VALUE;
+                //     if evaluation < beta && depth == 1 {
+                //         let new_evaluation = self.quiescence(alpha, beta);
+                //         return new_evaluation.max(evaluation);
+                //     }
+                //     evaluation += PAWN_VALUE;
+                //     if evaluation < beta && depth < 4 {
+                //         let new_evaluation = self.quiescence(alpha, beta);
+                //         if new_evaluation < beta {
+                //             return new_evaluation.max(evaluation);
+                //         }
+                //     }
+                // }
+            }
+            // futility pruning condition
+            if depth < 4 && alpha < mate_score {
+                let futility_margin = match depth {
+                    0 => 0,
+                    1 => PAWN_VALUE,
+                    2 => evaluate_piece(Knight),
+                    3 => evaluate_piece(Rook),
+                    _ => panic!("Unexpected behaviour in futility pruning condition!"),
+                };
+                futility_pruning = static_evaluation + futility_margin <= alpha;
+            }
         }
         self.num_nodes_searched += 1;
-        let mut alpha = alpha;
         let mut flag = HashAlpha;
         let moves = self
             .move_sorter
             .sort_moves(moves_gen, &self.board, self.ply, best_move);
-        for _move in moves {
+        for (move_index, &_move) in moves.iter().enumerate() {
             let not_capture_move = !self.board.is_capture(_move);
+            if move_index != 0
+                && futility_pruning
+                && not_capture_move
+                && _move.get_promotion().is_none()
+                && not_in_check
+            {
+                continue;
+            }
             self.push(_move);
             let score = -self.alpha_beta(depth - 1, -beta, -alpha, apply_null_move);
             self.pop();
@@ -457,13 +540,8 @@ impl Engine {
                     self.move_sorter.add_history_move(_move, &self.board, depth);
                 }
                 if score >= beta {
-                    self.transposition_table.write(
-                        self.board.get_hash(),
-                        depth,
-                        beta,
-                        HashBeta,
-                        Some(_move),
-                    );
+                    self.transposition_table
+                        .write(key, depth, beta, HashBeta, Some(_move));
                     if not_capture_move {
                         self.move_sorter.update_killer_moves(_move, self.ply);
                     }
@@ -472,7 +550,7 @@ impl Engine {
             }
         }
         self.transposition_table.write(
-            self.board.get_hash(),
+            key,
             depth,
             alpha,
             flag,
@@ -567,20 +645,33 @@ impl Engine {
         return self.pv_table[0][0];
     }
 
-    // pub fn get_best_move_and_score(&mut self, depth: u8) -> (Move, Score) {
-    //     self.reset_variables();
-    //     let (best_move, score) = self.search(depth, -INFINITY, INFINITY);
-    //     (
-    //         best_move.unwrap(),
-    //         if self.board.turn() == White {
-    //             score
-    //         } else {
-    //             -score
-    //         },
-    //     )
-    // }
+    pub fn print_warning_message(&self, current_depth: Depth) {
+        let warning_message = format!(
+            "Resetting alpha to -INFINITY and beta to INFINITY at depth {}",
+            current_depth
+        );
+        println!("{}", colorize(warning_message, WARNING_MESSAGE_STYLE));
+    }
 
-    pub fn get_best_move_and_score(&mut self, depth: Depth, print: bool) -> (Move, Score) {
+    pub fn print_search_info(&self, current_depth: Depth, score: Score, time_passed: Duration) {
+        println!(
+            "{} {} {} {} {} {} {} {} {} {:.3} {} {}",
+            colorize("info depth", INFO_STYLE),
+            current_depth,
+            colorize("score", INFO_STYLE),
+            score_to_string(score),
+            colorize("nodes", INFO_STYLE),
+            self.num_nodes_searched,
+            colorize("nps", INFO_STYLE),
+            (self.num_nodes_searched as f64 / time_passed.as_secs_f64()) as u32,
+            colorize("time", INFO_STYLE),
+            time_passed.as_secs_f32(),
+            colorize("pv", INFO_STYLE),
+            self.get_pv_string(),
+        );
+    }
+
+    pub fn go(&mut self, depth: Depth, print: bool) -> (Move, Score) {
         self.reset_variables();
         self.transposition_table.clear();
         let score: Score;
@@ -595,10 +686,7 @@ impl Engine {
             let time_passed = clock.elapsed();
             if score <= alpha || score >= beta {
                 if print {
-                    println!(
-                        "Resetting alpha to -INFINITY and beta to INFINITY as depth {}",
-                        current_depth
-                    );
+                    self.print_warning_message(current_depth);
                 }
                 alpha = -INFINITY;
                 beta = INFINITY;
@@ -610,15 +698,7 @@ impl Engine {
                 score = -score;
             }
             if print {
-                println!(
-                    "info depth {} score {} nodes {} nps {} time {:.3} pv {}",
-                    current_depth,
-                    score_to_string(score),
-                    self.num_nodes_searched,
-                    (self.num_nodes_searched as f64 / time_passed.as_secs_f64()) as u32,
-                    time_passed.as_secs_f32(),
-                    self.get_pv_string(),
-                );
+                self.print_search_info(current_depth, score, time_passed);
             }
             if current_depth == depth || is_checkmate(score) {
                 break;

@@ -403,9 +403,9 @@ impl Board {
         };
     }
 
-    // #[inline(always)]
+    #[inline(always)]
     fn is_insufficient_material(&self) -> bool {
-        return match self.occupied().popcnt() {
+        match self.occupied().popcnt() {
             2 => true,
             3 => {
                 self.get_piece_mask(Rook) == &BB_EMPTY
@@ -419,13 +419,15 @@ impl Board {
                     && self.white_occupied().popcnt() == 2
             }
             _ => false,
-        };
+        }
     }
 
+    #[inline(always)]
     pub fn is_other_draw(&self) -> bool {
         self.is_threefold_repetition() || self.is_fifty_moves() || self.is_insufficient_material()
     }
 
+    #[inline(always)]
     pub fn is_game_over(&self) -> bool {
         self.is_other_draw() || self.board.status() != BoardStatus::Ongoing
     }
@@ -452,29 +454,31 @@ impl Board {
         return (self.occupied() & BB_SQUARES[_move.get_dest().to_index()]) == BB_EMPTY;
     }
 
+    #[inline(always)]
     pub fn is_capture(&self, _move: Move) -> bool {
         let touched =
             BB_SQUARES[_move.get_source().to_index()] ^ BB_SQUARES[_move.get_dest().to_index()];
-        return (touched & self.occupied_co(!self.turn())) != BB_EMPTY || self.is_en_passant(_move);
+        (touched & self.occupied_co(!self.turn())) != BB_EMPTY || self.is_en_passant(_move)
     }
 
+    #[inline(always)]
     pub fn is_zeroing(&self, _move: Move) -> bool {
         let touched =
             BB_SQUARES[_move.get_source().to_index()] ^ BB_SQUARES[_move.get_dest().to_index()];
-        if (touched & self.board.pieces(Pawn)) != BB_EMPTY {
-            return true;
-        }
-        return (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
+        return touched & self.board.pieces(Pawn) != BB_EMPTY && (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
     }
 
+    #[inline(always)]
     pub fn get_enpassant_square(&self) -> Option<Square> {
         self.board.en_passant()
     }
 
+    #[inline(always)]
     pub fn has_legal_en_passant(&self) -> bool {
         self.get_enpassant_square().is_some()
     }
 
+    #[inline(always)]
     pub fn clean_castling_rights(&self) -> BitBoard {
         let white_castling_righrs = match self.board.castle_rights(White) {
             chess::CastleRights::Both => BB_A1 | BB_H1,
@@ -491,8 +495,9 @@ impl Board {
         white_castling_righrs | black_castling_righrs
     }
 
+    #[inline(always)]
     pub fn get_piece_mask(&self, piece: Piece) -> &BitBoard {
-        return self.board.pieces(piece);
+        self.board.pieces(piece)
     }
 
     fn reduces_castling_rights(&self, _move: Move) -> bool {
@@ -528,6 +533,14 @@ impl Board {
                     != BB_EMPTY;
         }
         false
+    }
+
+    pub fn num_pieces(&self) -> u32 {
+        self.occupied().popcnt()
+    }
+
+    pub fn is_endgame(&self) -> bool {
+        self.num_pieces() <= 12
     }
 
     fn push_nnue(&mut self, _move: Move) {
@@ -592,6 +605,15 @@ impl Board {
         self.stack.push((board_state, _move));
     }
 
+    pub fn push_null_move(&mut self) {
+        let board_state = self.get_board_state();
+        self.board = self
+            .board
+            .null_move()
+            .expect("Trying to push null move while in check!");
+        self.stack.push((board_state, Move::default()));
+    }
+
     fn restore(&mut self, board_state: BoardState) {
         self.board = board_state.board;
         self.halfmove_clock = board_state.halfmove_clock;
@@ -609,6 +631,11 @@ impl Board {
         self.restore(board_state);
         self.pop_nnue();
         _move
+    }
+
+    pub fn pop_null_move(&mut self) {
+        let board_state = self.stack.pop().unwrap().0;
+        self.restore(board_state);
     }
 
     pub fn get_move_from_san(&self, san: &str) -> Result<Move, ChessError> {

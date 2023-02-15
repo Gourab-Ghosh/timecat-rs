@@ -38,7 +38,7 @@ use fxhash::FxHashMap as HashMap;
 use std::fmt;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use utils::classes::*;
 use utils::command_utils::*;
 use utils::string_utils::*;
@@ -88,7 +88,7 @@ fn self_play(depth: u8, print: bool) {
     let mut engine = Engine::default();
     println!("\n{}\n", engine.board);
     while !engine.board.is_game_over() {
-        let (_move, score) = engine.get_best_move_and_score(depth, print);
+        let (_move, score) = engine.go(depth, print);
         let pv = engine.get_pv_string();
         engine.push(_move);
         println!("\n{}\n", engine.board);
@@ -103,20 +103,27 @@ fn self_play(depth: u8, print: bool) {
 }
 
 fn _main() {
-    // self_play(9, false);
+    // self_play(12, false);
 
     let mut engine = Engine::default();
-    let (best_move, score) = engine.get_best_move_and_score(10, true);
+    engine
+        .board
+        .set_fen("2N2rk1/1p1b1pp1/p1np3p/4p1qn/2P1Pb2/4BP1P/PPNQB1P1/2R2RK1 b - - 2 25");
     println!("{}\n", engine.board);
+    let (best_move, score) = engine.go(10, true);
     println!(
-        "{}: {}\nnum nodes searched: {}\nPV Line: {}",
+        "\n{}: {}\n{}: {}\n{}: {}\n{}: {}",
+        colorize("Best Move", INFO_STYLE),
         best_move,
+        colorize("Score", INFO_STYLE),
         score_to_string(score),
+        colorize("Num Nodes Searched", INFO_STYLE),
         engine.get_num_nodes_searched(),
+        colorize("PV Line", INFO_STYLE),
         engine.get_pv_string(),
     );
 
-    // parse_command(&mut Board::new(), &"go perft 7".to_string());
+    // parse_command(&mut Board::new(), "go perft 7");
 
     // let weights = load_stockfish_nnue("/home/gg8576/linux/MyFiles/github_files/rust_tutorial/timecat/stockfish_nnue/nn-bc24c101ada0.nnue");
     // println!("{}", weights[0]);

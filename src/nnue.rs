@@ -171,7 +171,7 @@ impl Network {
             .for_each(|(clipped_activation, weight)| {
                 output += (clipped_activation as i32) * (*weight as i32)
             });
-        output / (Self::SCALE * Self::SCALE) as i32
+        output / (Self::SCALE.pow(2)) as i32
     }
 
     #[inline(always)]

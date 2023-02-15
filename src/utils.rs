@@ -211,6 +211,7 @@ pub mod string_utils {
             "bright_red" => s.bright_red(),
             "on_bright_red" => s.on_bright_red(),
             "on_bright_black" => s.on_bright_black(),
+            "bright_yellow" => s.bright_yellow(),
             "bold" => s.bold(),
             &_ => panic!("Cannot colorize string to {}", color),
         };
@@ -235,7 +236,13 @@ pub mod string_utils {
     }
 
     pub fn score_to_string(score: Score) -> String {
-        (score as f32 / 100.0).to_string()
+        if is_checkmate(score) {
+            let mut mate_string = String::from(if score.is_positive() { "M" } else { "-M" });
+            let mate_distance = (CHECKMATE_SCORE - score.abs() + 1) / 2;
+            mate_string += mate_distance.to_string().as_str();
+            return mate_string;
+        }
+        format!("{:.5}", (score as f32 / PAWN_VALUE as f32).to_string())
     }
 
     pub fn hash_to_string(hash: u64) -> String {
@@ -307,6 +314,59 @@ pub mod classes {
         //     s.finish()
         // }
     }
+
+    // use dashmap::DashMap;
+    // // use std::collections::hash_map::DefaultHasher;
+    // // use std::hash::{Hash, Hasher};
+
+    // #[derive(Default, Clone)]
+    // pub struct RepetitionTable {
+    //     count: DashMap<u64, usize>,
+    // }
+
+    // impl RepetitionTable {
+    //     pub fn new() -> Self {
+    //         Self {
+    //             count: DashMap::default(),
+    //         }
+    //     }
+
+    //     pub fn insert_and_get_repetition(&mut self, key: u64) -> u8 {
+    //         let mut count_entry = self.count.entry(key).or_insert(0);
+    //         *count_entry += 1;
+    //         *count_entry as u8
+    //     }
+
+    //     pub fn insert_and_detect_threefold_repetition(&mut self, key: u64) -> bool {
+    //         let mut count_entry = self.count.entry(key).or_insert(0);
+    //         *count_entry += 1;
+    //         *count_entry > 3
+    //     }
+
+    //     pub fn remove(&mut self, key: u64) {
+    //         if let Some(mut count_entry) = self.count.get_mut(&key) {
+    //             *count_entry -= 1;
+    //             if *count_entry == 0 {
+    //                 self.count.remove(&key);
+    //             }
+    //         } else {
+    //             panic!(
+    //                 "Tried to remove the key {} that doesn't exist!",
+    //                 hash_to_string(key)
+    //             );
+    //         }
+    //     }
+
+    //     pub fn clear(&mut self) {
+    //         self.count.clear();
+    //     }
+
+    //     // fn hash<T: Hash>(t: &T) -> u64 {
+    //     //     let mut s = DefaultHasher::new();
+    //     //     t.hash(&mut s);
+    //     //     s.finish()
+    //     // }
+    // }
 }
 
 pub mod unsafe_utils {
