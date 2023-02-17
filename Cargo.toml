@@ -24,17 +24,9 @@ codegen-units = 1
 lto = true
 panic = "abort"
 
-# [profile.release.chess]
-# opt-level = 3
-# debug = false
-# rpath = false
-# debug-assertions = false
-# codegen-units = 1
-# lto = true
-# panic = "abort"
-
 [dependencies]
+binread = { version = "2.2.0", features = ["const_generics"] }
+bytemuck = { version = "1.13.0", features = ["min_const_generics", "derive", "extern_crate_alloc"] }
 chess = "3.2.0"
 colored = "2.0.0"
 fxhash = "0.2.1"
-nnue-rs = { git = "https://github.com/analog-hors/nnue-rs.git", version = "0.1.0", package = "nnue" }

@@ -903,7 +903,7 @@ impl Clone for Board {
             halfmove_clock: self.halfmove_clock,
             fullmove_number: self.fullmove_number,
             stack: self.stack.clone(),
-            evaluator: self.evaluator.clone(),
+            evaluator: Evaluator::default(),
             repetition_table: RepetitionTable::default(),
             num_repetitions: 1,
         }

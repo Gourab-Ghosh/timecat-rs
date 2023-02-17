@@ -1,5 +1,102 @@
-use super::board::Board;
-use super::nnue_weights::*;
+use super::*;
+use binread::BinRead;
+use board::Board;
+use nnue_rs::stockfish::halfkp::{SfHalfKpFullModel, SfHalfKpModel};
+use nnue_rs::Square as StockfishSquare;
+use nnue_weights::*;
+use std::io::Cursor;
+
+fn square_to_stockfish_square(square: Square) -> StockfishSquare {
+    StockfishSquare::from_index(square.to_index())
+}
+
+// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, BinRead)]
+pub struct StockfishNetwork {
+    model: SfHalfKpModel,
+}
+
+impl StockfishNetwork {
+    pub fn new() -> Self {
+        let bytes = include_bytes!("nnue_files/nn-62ef826d1a6d.nnue");
+        // let bytes = include_bytes!("nnue_files/nn-46832cfbead3.nnue");
+        // let bytes = include_bytes!("nnue_files/nn-7756374aaed3.nnue");
+        // let bytes = include_bytes!("nnue_files/nn-8a08400ed089.nnue");
+        // let bytes = include_bytes!("nnue_files/nn-ad9b42354671.nnue");
+        // let bytes = include_bytes!("nnue_files/nn-e8321e467bf6.nnue");
+        let mut reader = Cursor::new(bytes);
+        let model = SfHalfKpFullModel::read(&mut reader).unwrap();
+        Self { model: model.model }
+    }
+
+    // pub fn activate(&mut self, piece: Piece, square: usize) {
+    //     // self.network.model.
+    //     // self.network.activate(piece, square);
+    // }
+
+    // pub fn deactivate(&mut self, piece: Piece, square: usize) {
+    //     todo!();
+    //     // self.network.deactivate(piece, square);
+    // }
+
+    fn probe_piece(piece: chess::Piece) -> nnue_rs::Piece {
+        match piece {
+            Pawn => nnue_rs::Piece::Pawn,
+            Knight => nnue_rs::Piece::Knight,
+            Bishop => nnue_rs::Piece::Bishop,
+            Rook => nnue_rs::Piece::Rook,
+            Queen => nnue_rs::Piece::Queen,
+            King => panic!("King should not be in non king occupied squares"),
+        }
+    }
+
+    fn probe_color(color: chess::Color) -> nnue_rs::Color {
+        match color {
+            White => nnue_rs::Color::White,
+            Black => nnue_rs::Color::Black,
+        }
+    }
+
+    pub fn get_state(&self, board: &Board) -> nnue_rs::stockfish::halfkp::SfHalfKpState {
+        let kings_bitboatrd = board.get_piece_mask(King);
+        let mut state = self.model.new_state(
+            square_to_stockfish_square((kings_bitboatrd & board.occupied_co(White)).to_square()),
+            square_to_stockfish_square((kings_bitboatrd & board.occupied_co(Black)).to_square()),
+        );
+        for square in board.occupied() & !kings_bitboatrd {
+            let piece = Self::probe_piece(board.piece_at(square).unwrap());
+            let piece_color = Self::probe_color(board.color_at(square).unwrap());
+            for &color in &nnue_rs::Color::ALL {
+                state.add(
+                    color,
+                    piece,
+                    piece_color,
+                    square_to_stockfish_square(square),
+                );
+            }
+        }
+        state
+    }
+
+    pub fn eval(&self, board: &Board) -> i32 {
+        let mut state = self.get_state(board);
+        let color = match board.turn() {
+            White => nnue_rs::Color::White,
+            Black => nnue_rs::Color::Black,
+        };
+        let score = state.activate(color)[0] / 16;
+        if color == nnue_rs::Color::White {
+            score
+        } else {
+            -score
+        }
+    }
+}
+
+impl Default for StockfishNetwork {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Color {

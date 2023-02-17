@@ -6,9 +6,8 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 #![allow(unused_variables)]
-#![allow(unused_macros)]
 #![allow(non_snake_case)]
-#![allow(clippy::only_used_in_recursion)]
+// #![allow(unused_macros)]
 // #![allow(private_in_public)]
 // #[allow(improper_ctypes)]
 
@@ -17,6 +16,7 @@ mod constants;
 mod engine;
 mod evaluate;
 mod nnue;
+mod nnue_rs;
 mod nnue_weights;
 mod utils;
 
@@ -89,27 +89,33 @@ fn self_play(depth: u8, print: bool) {
     let mut engine = Engine::default();
     println!("\n{}\n", engine.board);
     while !engine.board.is_game_over() {
-        let (_move, score) = engine.go(depth, print);
+        let (best_move, score) = engine.go(depth, print);
+        let best_move_san = engine.board.san(best_move);
         let pv = engine.get_pv_string();
-        engine.push(_move);
+        engine.push(best_move);
         println!("\n{}\n", engine.board);
         println!(
-            "{_move}: {}, searched {} nodes\nPV line: {}",
-            colorize(score_to_string(score), INFO_STYLE),
-            colorize(engine.get_num_nodes_searched(), INFO_STYLE),
-            colorize(pv, INFO_STYLE),
+            "{}: {}\n{}: {}\n{}: {}\n{}: {}",
+            colorize("Best Move", INFO_STYLE),
+            best_move_san,
+            colorize("Score", INFO_STYLE),
+            score_to_string(score),
+            colorize("Num Nodes Searched", INFO_STYLE),
+            engine.get_num_nodes_searched(),
+            colorize("PV Line", INFO_STYLE),
+            pv,
         );
     }
     println!("Game PGN:\n\n{}", engine.board.get_pgn());
 }
 
 fn _main() {
-    // self_play(12, false);
+    // self_play(10, false);
 
     let mut engine = Engine::default();
-    engine
-        .board
-        .set_fen("2N2rk1/1p1b1pp1/p1np3p/4p1qn/2P1Pb2/4BP1P/PPNQB1P1/2R2RK1 b - - 2 25");
+    // engine
+    //     .board
+    //     .set_fen("2N2rk1/1p1b1pp1/p1np3p/4p1qn/2P1Pb2/4BP1P/PPNQB1P1/2R2RK1 b - - 2 25");
     println!("{}\n", engine.board);
     let (best_move, score) = engine.go(10, true);
     println!(

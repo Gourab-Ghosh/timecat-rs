@@ -208,8 +208,6 @@ pub mod fen {
 }
 
 pub mod print_style {
-    use colored::Colorize;
-
     pub const WHITE_PIECES_STYLE: &str = "white bold";
     pub const BLACK_PIECES_STYLE: &str = "purple bold";
     pub const BOARD_SKELETON_STYLE: &str = "green";
@@ -231,13 +229,14 @@ pub mod engine_constants {
     use super::types::*;
     pub const MAX_DEPTH: usize = Depth::MAX as usize;
     pub const INFINITY: Score = 30_000;
+    pub const DRAW_SCORE: Score = -PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;
     pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - (MAX_DEPTH as Score + 1);
     pub const NUM_KILLER_MOVES: usize = 2;
     pub const PAWN_VALUE: Score = 100;
     pub const NULL_MOVE_REDUCTION_LIMIT: Depth = 2;
     pub const PVS_CUTOFF: Score = 1;
-    pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 5;
+    pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;
     pub const DISABLE_T_TABLE: bool = false;
 
     pub const MVV_LVA: [[u32; 6]; 6] = [

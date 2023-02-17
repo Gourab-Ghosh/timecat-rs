@@ -186,7 +186,6 @@ pub mod command_utils {
 pub mod string_utils {
     use super::*;
     use colored::{ColoredString, Colorize};
-    use std::fmt::Display;
 
     pub fn remove_double_spaces(s: &str) -> String {
         let mut s = s.to_owned();

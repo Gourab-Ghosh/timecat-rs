@@ -1,6 +1,6 @@
 use super::*;
 use sort::*;
-use transpositionT_table::*;
+use transposition_table::*;
 use EntryFlag::*;
 
 mod sort {
@@ -71,7 +71,7 @@ mod sort {
         }
 
         fn capture_value(&self, _move: Move, board: &Board) -> u32 {
-            // (self.see_capture(_move.get_dest(), &mut board.get_sub_board(), &board.evaluator) + 900) as u32
+            // (self.see_capture(_move.get_dest(), &mut board.get_sub_board()) + 9 * PAWN_VALUE) as u32
             MVV_LVA[board.piece_at(_move.get_source()).unwrap().to_index()]
                 [board.piece_at(_move.get_dest()).unwrap_or(Pawn).to_index()]
         }
@@ -168,7 +168,7 @@ mod sort {
     }
 }
 
-mod transpositionT_table {
+mod transposition_table {
     use super::*;
 
     #[derive(Clone)]
@@ -415,7 +415,7 @@ impl Engine {
         self.pv_length[self.ply] = self.ply;
         let is_endgame = self.board.is_endgame();
         let not_in_check = !self.board.is_check();
-        let draw_score = 0;
+        let draw_score = if is_endgame { 0 } else { DRAW_SCORE };
         if self.board.is_other_draw() {
             return draw_score;
         }
@@ -425,7 +425,7 @@ impl Engine {
             self.transposition_table.read_best_move(key)
         } else {
             match self.transposition_table.read(key, depth, alpha, beta) {
-                Some((Some(score), best_move)) => return score,
+                Some((Some(score), _)) => return score,
                 Some((None, best_move)) => best_move,
                 None => None,
             }
@@ -512,7 +512,6 @@ impl Engine {
                 self.update_pv_table(_move);
                 alpha = score;
                 if not_capture_move {
-                    let depth_u32 = depth as u32;
                     self.move_sorter.add_history_move(_move, &self.board, depth);
                 }
                 if score >= beta {
@@ -650,7 +649,6 @@ impl Engine {
     pub fn go(&mut self, depth: Depth, print: bool) -> (Move, Score) {
         self.reset_variables();
         self.transposition_table.clear();
-        let score: Score;
         let mut current_depth = 1;
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
