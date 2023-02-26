@@ -3,3 +3,4 @@ rich
 inquirer
 flask
 tqdm
+pip
