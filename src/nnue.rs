@@ -10,6 +10,17 @@ fn square_to_stockfish_square(square: Square) -> StockfishSquare {
     StockfishSquare::from_index(square.to_index())
 }
 
+fn construct_model() -> SfHalfKpFullModel {
+    let bytes = include_bytes!("nnue_files/nn-62ef826d1a6d.nnue");
+    // let bytes = include_bytes!("nnue_files/nn-46832cfbead3.nnue");
+    // let bytes = include_bytes!("nnue_files/nn-7756374aaed3.nnue");
+    // let bytes = include_bytes!("nnue_files/nn-8a08400ed089.nnue");
+    // let bytes = include_bytes!("nnue_files/nn-ad9b42354671.nnue");
+    // let bytes = include_bytes!("nnue_files/nn-e8321e467bf6.nnue");
+    let mut reader = Cursor::new(bytes);
+    SfHalfKpFullModel::read(&mut reader).expect("Bad NNUE file!")
+}
+
 // #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, BinRead)]
 pub struct StockfishNetwork {
     model: SfHalfKpModel,
@@ -17,15 +28,9 @@ pub struct StockfishNetwork {
 
 impl StockfishNetwork {
     pub fn new() -> Self {
-        let bytes = include_bytes!("nnue_files/nn-62ef826d1a6d.nnue");
-        // let bytes = include_bytes!("nnue_files/nn-46832cfbead3.nnue");
-        // let bytes = include_bytes!("nnue_files/nn-7756374aaed3.nnue");
-        // let bytes = include_bytes!("nnue_files/nn-8a08400ed089.nnue");
-        // let bytes = include_bytes!("nnue_files/nn-ad9b42354671.nnue");
-        // let bytes = include_bytes!("nnue_files/nn-e8321e467bf6.nnue");
-        let mut reader = Cursor::new(bytes);
-        let model = SfHalfKpFullModel::read(&mut reader).unwrap();
-        Self { model: model.model }
+        Self {
+            model: construct_model().model,
+        }
     }
 
     // pub fn activate(&mut self, piece: Piece, square: usize) {

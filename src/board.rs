@@ -413,9 +413,11 @@ impl Board {
             }
             4 => {
                 self.get_piece_mask(Rook) == &BB_EMPTY
+                    && self.get_piece_mask(Knight) == &BB_EMPTY
                     && self.get_piece_mask(Queen) == &BB_EMPTY
                     && self.get_piece_mask(Pawn) == &BB_EMPTY
-                    && self.white_occupied().popcnt() == 2
+                    && [0, 2]
+                        .contains(&(self.white_occupied() | self.get_piece_mask(Bishop)).popcnt())
             }
             _ => false,
         }
@@ -460,8 +462,8 @@ impl Board {
     pub fn is_zeroing(&self, _move: Move) -> bool {
         let touched =
             BB_SQUARES[_move.get_source().to_index()] ^ BB_SQUARES[_move.get_dest().to_index()];
-        return touched & self.board.pieces(Pawn) != BB_EMPTY
-            && (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
+        return touched & self.get_piece_mask(Pawn) != BB_EMPTY
+            || (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
     }
 
     pub fn get_enpassant_square(&self) -> Option<Square> {
@@ -589,7 +591,7 @@ impl Board {
         if self.turn() == Black {
             self.fullmove_number += 1;
         }
-        self.push_nnue(_move);
+        // self.push_nnue(_move);
         self.board.clone().make_move(_move, &mut self.board);
         self.num_repetitions = self
             .repetition_table
@@ -621,7 +623,7 @@ impl Board {
         let (board_state, _move) = self.stack.pop().unwrap();
         self.repetition_table.remove(self.get_hash());
         self.restore(board_state);
-        self.pop_nnue();
+        // self.pop_nnue();
         _move
     }
 
@@ -630,13 +632,14 @@ impl Board {
         self.restore(board_state);
     }
 
-    pub fn get_move_from_san(&self, san: &str) -> Result<Move, ChessError> {
+    pub fn parse_san(&self, san: &str) -> Result<Move, ChessError> {
         return Move::from_san(&self.board, san.replace('0', "O").as_str());
     }
 
-    pub fn push_san(&mut self, san: &str) {
-        let _move = self.get_move_from_san(san).unwrap();
+    pub fn push_san(&mut self, san: &str) -> Move {
+        let _move = self.parse_san(san).expect("Bad san: {san}");
         self.push(_move);
+        return _move;
     }
 
     pub fn push_sans(&mut self, sans: Vec<&str>) {
@@ -645,13 +648,14 @@ impl Board {
         }
     }
 
-    pub fn get_move_from_uci(&self, uci: &str) -> Result<Move, ChessError> {
+    pub fn parse_uci(&self, uci: &str) -> Result<Move, ChessError> {
         Move::from_str(uci)
     }
 
-    pub fn push_uci(&mut self, uci: &str) {
-        let _move = self.get_move_from_uci(uci).unwrap();
+    pub fn push_uci(&mut self, uci: &str) -> Move {
+        let _move = self.parse_uci(uci).expect("Bad uci: {uci}");
         self.push(_move);
+        return _move;
     }
 
     pub fn push_str(&mut self, s: &str) {

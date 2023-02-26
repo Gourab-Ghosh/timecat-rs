@@ -130,6 +130,16 @@ fn _main() {
         engine.get_pv_string(),
     );
 
+    // let mut board = Board::new();
+    // println!("\n{board}");
+    // for san in ["e4", "Nf6", "Be2", "Nxe4"] {
+    //     let _move = board.parse_san(san).unwrap();
+    //     let move_str = board.san(_move);
+    //     println!("\nPushing move {move_str}");
+    //     board.push(_move);
+    //     println!("\n{board}");
+    // }
+
     // parse_command(&mut Board::new(), "go perft 7");
 
     // let weights = load_stockfish_nnue("/home/gg8576/linux/MyFiles/github_files/rust_tutorial/timecat/stockfish_nnue/nn-bc24c101ada0.nnue");

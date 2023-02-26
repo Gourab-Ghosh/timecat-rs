@@ -578,7 +578,7 @@ impl Engine {
         return pv_string.trim().to_string();
     }
 
-    fn get_pv_as_san(&self, depth: u8) -> String {
+    fn get_pv_as_algebraic(&self, depth: u8, long: bool) -> String {
         let mut board = self.board.clone();
         let mut pv_string = String::new();
         for _move in self.get_pv(depth) {
@@ -593,19 +593,12 @@ impl Engine {
         return pv_string.trim().to_string();
     }
 
+    fn get_pv_as_san(&self, depth: u8) -> String {
+        return self.get_pv_as_algebraic(depth, false);
+    }
+
     fn get_pv_as_lan(&self, depth: u8) -> String {
-        let mut board = self.board.clone();
-        let mut pv_string = String::new();
-        for _move in self.get_pv(depth) {
-            pv_string += (if board.is_legal(_move) {
-                board.lan_and_push(_move)
-            } else {
-                colorize(_move, ERROR_MESSAGE_STYLE)
-            })
-            .as_str();
-            pv_string += " ";
-        }
-        return pv_string.trim().to_string();
+        return self.get_pv_as_algebraic(depth, true);
     }
 
     pub fn get_pv_string(&self) -> String {

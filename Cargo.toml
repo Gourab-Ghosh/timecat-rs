@@ -15,6 +15,10 @@ edition = "2021"
 # debug = true
 # # rustflags = ["-C target-cpu=native -C link-args=-Ofast -C link-args=-s -C inline-threshold=1000"]
 
+[profile.dev]
+opt-level = 3
+lto = true
+
 [profile.release]
 opt-level = 3
 debug = false
@@ -22,6 +26,7 @@ rpath = false
 debug-assertions = false
 codegen-units = 1
 lto = true
+# strip = true
 panic = "abort"
 
 [dependencies]
@@ -30,3 +35,4 @@ bytemuck = { version = "1.13.0", features = ["min_const_generics", "derive", "ex
 chess = "3.2.0"
 colored = "2.0.0"
 fxhash = "0.2.1"
+inquire = "0.5.3"

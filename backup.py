@@ -2,13 +2,7 @@
 
 import os, subprocess
 from python_scripts.utils import install_package
-
-try:
-    from inquirer.shortcuts import confirm
-except ImportError:
-    print("\ninquirer not found, installing...\n")
-    install_package("inquirer")
-    from inquirer.shortcuts import confirm
+from inquirer.shortcuts import confirm
 
 add_command = "git add ."
 status_command = "git status"

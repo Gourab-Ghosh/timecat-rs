@@ -141,9 +141,9 @@ pub mod command_utils {
             for move_text in commands {
                 let possible_move: Result<Move, ChessError>;
                 if second_command == "san" {
-                    possible_move = board.get_move_from_san(move_text);
+                    possible_move = board.parse_san(move_text);
                 } else if second_command == "uci" {
-                    possible_move = board.get_move_from_uci(move_text);
+                    possible_move = board.parse_uci(move_text);
                 } else {
                     return DEFAULT_ERROR;
                 }
