@@ -46,7 +46,7 @@ pub struct Board {
     halfmove_clock: u8,
     fullmove_number: u8,
     num_repetitions: u8,
-    pub evaluator: Evaluator,
+    pub evaluator: Option<Evaluator>,
     repetition_table: RepetitionTable,
 }
 
@@ -58,29 +58,32 @@ impl Board {
             halfmove_clock: 0,
             fullmove_number: 1,
             num_repetitions: 0,
-            evaluator: Evaluator::new(),
+            evaluator: Some(Evaluator::new()),
             repetition_table: RepetitionTable::new(),
         };
         board.num_repetitions = board
             .repetition_table
             .insert_and_get_repetition(board.get_hash());
         for square in *board.occupied() {
-            board.evaluator.activate_nnue(
-                board.piece_at(square).unwrap(),
-                board.color_at(square).unwrap(),
-                square,
-            );
+            let piece = board.piece_at(square).unwrap();
+            let color = board.color_at(square).unwrap();
+            board
+                .evaluator
+                .as_mut()
+                .expect("No Evaluator found!")
+                .activate_nnue(piece, color, square);
         }
         board
     }
 
     pub fn set_fen(&mut self, fen: &str) {
         for square in *self.occupied() {
-            self.evaluator.deactivate_nnue(
-                self.piece_at(square).unwrap(),
-                self.color_at(square).unwrap(),
-                square,
-            );
+            let piece = self.piece_at(square).unwrap();
+            let color = self.color_at(square).unwrap();
+            self.evaluator
+                .as_mut()
+                .expect("No Evaluator found!")
+                .deactivate_nnue(piece, color, square);
         }
         let fen = simplify_fen(fen);
         self.board = chess::Board::from_str(fen.as_str()).expect("Valid Position");
@@ -92,11 +95,12 @@ impl Board {
             .repetition_table
             .insert_and_get_repetition(self.get_hash());
         for square in *self.occupied() {
-            self.evaluator.activate_nnue(
-                self.piece_at(square).unwrap(),
-                self.color_at(square).unwrap(),
-                square,
-            );
+            let piece = self.piece_at(square).unwrap();
+            let color = self.color_at(square).unwrap();
+            self.evaluator
+                .as_mut()
+                .expect("No Evaluator found!")
+                .activate_nnue(piece, color, square);
         }
     }
 
@@ -423,8 +427,16 @@ impl Board {
         }
     }
 
+    pub fn is_stalemate(&self) -> bool {
+        self.board.status() == BoardStatus::Stalemate
+    }
+
     pub fn is_other_draw(&self) -> bool {
         self.is_threefold_repetition() || self.is_fifty_moves() || self.is_insufficient_material()
+    }
+
+    pub fn is_draw(&self) -> bool {
+        self.is_other_draw() || self.is_stalemate()
     }
 
     pub fn is_game_over(&self) -> bool {
@@ -438,7 +450,7 @@ impl Board {
         if self.ep_square().unwrap() != _move.get_dest() {
             return false;
         }
-        if (self.get_piece_mask(Pawn) & BB_SQUARES[_move.get_source().to_index()]) == BB_EMPTY {
+        if (self.get_piece_mask(Pawn) & get_square_bb(_move.get_source())) == BB_EMPTY {
             return false;
         }
         if 8u8.abs_diff(
@@ -450,18 +462,16 @@ impl Board {
         {
             return false;
         }
-        return (self.occupied() & BB_SQUARES[_move.get_dest().to_index()]) == BB_EMPTY;
+        return (self.occupied() & get_square_bb(_move.get_dest())) == BB_EMPTY;
     }
 
     pub fn is_capture(&self, _move: Move) -> bool {
-        let touched =
-            BB_SQUARES[_move.get_source().to_index()] ^ BB_SQUARES[_move.get_dest().to_index()];
+        let touched = get_square_bb(_move.get_source()) ^ get_square_bb(_move.get_dest());
         (touched & self.occupied_co(!self.turn())) != BB_EMPTY || self.is_en_passant(_move)
     }
 
     pub fn is_zeroing(&self, _move: Move) -> bool {
-        let touched =
-            BB_SQUARES[_move.get_source().to_index()] ^ BB_SQUARES[_move.get_dest().to_index()];
+        let touched = get_square_bb(_move.get_source()) ^ get_square_bb(_move.get_dest());
         return touched & self.get_piece_mask(Pawn) != BB_EMPTY
             || (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
     }
@@ -496,8 +506,7 @@ impl Board {
 
     fn reduces_castling_rights(&self, _move: Move) -> bool {
         let cr = self.clean_castling_rights();
-        let touched =
-            BB_SQUARES[_move.get_source().to_index()] ^ BB_SQUARES[_move.get_dest().to_index()];
+        let touched = get_square_bb(_move.get_source()) ^ get_square_bb(_move.get_dest());
         ((touched & cr) != BB_EMPTY)
             || ((cr & BB_RANK_1 & touched & self.get_piece_mask(King) & self.occupied_co(White))
                 != BB_EMPTY)
@@ -514,7 +523,7 @@ impl Board {
     }
 
     pub fn is_castling(&self, _move: Move) -> bool {
-        if (self.get_piece_mask(King) & BB_SQUARES[_move.get_source().to_index()]) != BB_EMPTY {
+        if (self.get_piece_mask(King) & get_square_bb(_move.get_source())) != BB_EMPTY {
             let rank_diff = _move
                 .get_source()
                 .get_file()
@@ -523,7 +532,7 @@ impl Board {
             return rank_diff > 1
                 || (self.get_piece_mask(Rook)
                     & self.occupied_co(self.turn())
-                    & BB_SQUARES[_move.get_dest().to_index()])
+                    & get_square_bb(_move.get_dest()))
                     != BB_EMPTY;
         }
         false
@@ -538,12 +547,17 @@ impl Board {
     }
 
     fn push_nnue(&mut self, _move: Move) {
-        self.evaluator.backup();
+        self.evaluator
+            .as_mut()
+            .expect("No Evaluator found!")
+            .backup();
         let self_color = self.turn();
         let source = _move.get_source();
         let dest = _move.get_dest();
         let self_piece = self.piece_at(source).unwrap();
         self.evaluator
+            .as_mut()
+            .expect("No Evaluator found!")
             .deactivate_nnue(self_piece, self_color, source);
         if self.is_capture(_move) {
             let remove_piece_square = if self.is_en_passant(_move) {
@@ -551,11 +565,11 @@ impl Board {
             } else {
                 dest
             };
-            self.evaluator.deactivate_nnue(
-                self.piece_at(remove_piece_square).unwrap(),
-                !self_color,
-                remove_piece_square,
-            );
+            let piece = self.piece_at(remove_piece_square).unwrap();
+            self.evaluator
+                .as_mut()
+                .expect("No Evaluator found!")
+                .deactivate_nnue(piece, !self_color, remove_piece_square);
         } else if self.is_castling(_move) {
             let (rook_source, rook_dest) = if _move.get_dest().get_file().to_index()
                 > _move.get_source().get_file().to_index()
@@ -571,14 +585,22 @@ impl Board {
                 }
             };
             self.evaluator
+                .as_mut()
+                .expect("No Evaluator found!")
                 .deactivate_nnue(Rook, self_color, rook_source);
-            self.evaluator.activate_nnue(Rook, self_color, rook_dest);
+            self.evaluator
+                .as_mut()
+                .expect("No Evaluator found!")
+                .activate_nnue(Rook, self_color, rook_dest);
         }
-        self.evaluator.activate_nnue(
-            _move.get_promotion().unwrap_or(self_piece),
-            self_color,
-            dest,
-        );
+        self.evaluator
+            .as_mut()
+            .expect("No Evaluator found!")
+            .activate_nnue(
+                _move.get_promotion().unwrap_or(self_piece),
+                self_color,
+                dest,
+            );
     }
 
     pub fn push(&mut self, _move: Move) {
@@ -616,7 +638,10 @@ impl Board {
     }
 
     fn pop_nnue(&mut self) {
-        self.evaluator.restore();
+        self.evaluator
+            .as_mut()
+            .expect("No Evaluator found!")
+            .restore();
     }
 
     pub fn pop(&mut self) -> Move {
@@ -707,22 +732,22 @@ impl Board {
             let mut others = BB_EMPTY;
             let from_mask = self.get_piece_mask(piece)
                 & self.occupied_co(self.turn())
-                & !BB_SQUARES[_move.get_source().to_index()];
-            let to_mask = BB_SQUARES[_move.get_dest().to_index()];
+                & !get_square_bb(_move.get_source());
+            let to_mask = get_square_bb(_move.get_dest());
             for candidate in self
                 .generate_masked_legal_moves(to_mask)
-                .filter(|m| BB_SQUARES[m.get_source().to_index()] & from_mask != BB_EMPTY)
+                .filter(|m| get_square_bb(m.get_source()) & from_mask != BB_EMPTY)
             {
-                others |= BB_SQUARES[candidate.get_source().to_index()];
+                others |= get_square_bb(candidate.get_source());
             }
 
             // Disambiguate.
             if others != BB_EMPTY {
                 let (mut row, mut column) = (false, false);
-                if others & BB_RANKS[_move.get_source().get_rank().to_index()] != BB_EMPTY {
+                if others & get_rank_bb(_move.get_source().get_rank()) != BB_EMPTY {
                     column = true;
                 }
-                if others & BB_FILES[_move.get_source().get_file().to_index()] != BB_EMPTY {
+                if others & get_file_bb(_move.get_source().get_file()) != BB_EMPTY {
                     row = true;
                 } else {
                     column = true;
@@ -880,7 +905,10 @@ impl Board {
     }
 
     pub fn evaluate(&self) -> Score {
-        self.evaluator.evaluate(self)
+        self.evaluator
+            .as_ref()
+            .expect("No Evaluator found!")
+            .evaluate(self)
     }
 
     pub fn evaluate_flipped(&self) -> Score {
@@ -907,7 +935,7 @@ impl Clone for Board {
             halfmove_clock: self.halfmove_clock,
             fullmove_number: self.fullmove_number,
             stack: self.stack.clone(),
-            evaluator: Evaluator::default(),
+            evaluator: None,
             repetition_table: RepetitionTable::default(),
             num_repetitions: 1,
         }

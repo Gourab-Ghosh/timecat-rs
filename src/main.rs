@@ -25,6 +25,10 @@ use board::Board;
 
 use chess::Color::*;
 use chess::Piece::*;
+use chess::{
+    get_bishop_moves, get_file as get_file_bb, get_king_moves, get_knight_moves, get_pawn_attacks,
+    get_rank as get_rank_bb, get_rook_moves,
+};
 use chess::{BitBoard, BoardStatus, ChessMove as Move, Color, Error as ChessError, Piece, Square};
 use constants::bitboard::*;
 use constants::engine_constants::*;
@@ -42,6 +46,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use utils::classes::*;
 use utils::command_utils::*;
+use utils::square_utils::*;
 use utils::string_utils::*;
 use utils::unsafe_utils::*;
 
@@ -129,6 +134,16 @@ fn _main() {
         colorize("PV Line", INFO_STYLE),
         engine.get_pv_string(),
     );
+
+    // fn push_e4(board: &mut Board) {
+    //     let e4 = board.parse_san("e4").unwrap();
+    //     board.push(e4);
+    //     println!("{}\n", board);
+    // }
+
+    // let mut board = Board::new();
+    // push_e4(&mut board);
+    // println!("{}\n", board);
 
     // let mut board = Board::new();
     // println!("\n{board}");

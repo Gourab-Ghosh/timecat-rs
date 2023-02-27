@@ -75,12 +75,16 @@ pub mod bitboard {
     pub const BB_G8: BitBoard = BitBoard(1 << 62);
     pub const BB_H8: BitBoard = BitBoard(1 << 63);
 
+    #[rustfmt::skip]
     pub const BB_SQUARES: [BitBoard; 64] = [
-        BB_A1, BB_B1, BB_C1, BB_D1, BB_E1, BB_F1, BB_G1, BB_H1, BB_A2, BB_B2, BB_C2, BB_D2, BB_E2,
-        BB_F2, BB_G2, BB_H2, BB_A3, BB_B3, BB_C3, BB_D3, BB_E3, BB_F3, BB_G3, BB_H3, BB_A4, BB_B4,
-        BB_C4, BB_D4, BB_E4, BB_F4, BB_G4, BB_H4, BB_A5, BB_B5, BB_C5, BB_D5, BB_E5, BB_F5, BB_G5,
-        BB_H5, BB_A6, BB_B6, BB_C6, BB_D6, BB_E6, BB_F6, BB_G6, BB_H6, BB_A7, BB_B7, BB_C7, BB_D7,
-        BB_E7, BB_F7, BB_G7, BB_H7, BB_A8, BB_B8, BB_C8, BB_D8, BB_E8, BB_F8, BB_G8, BB_H8,
+        BB_A1, BB_B1, BB_C1, BB_D1, BB_E1, BB_F1, BB_G1, BB_H1,
+        BB_A2, BB_B2, BB_C2, BB_D2, BB_E2, BB_F2, BB_G2, BB_H2,
+        BB_A3, BB_B3, BB_C3, BB_D3, BB_E3, BB_F3, BB_G3, BB_H3,
+        BB_A4, BB_B4, BB_C4, BB_D4, BB_E4, BB_F4, BB_G4, BB_H4,
+        BB_A5, BB_B5, BB_C5, BB_D5, BB_E5, BB_F5, BB_G5, BB_H5,
+        BB_A6, BB_B6, BB_C6, BB_D6, BB_E6, BB_F6, BB_G6, BB_H6,
+        BB_A7, BB_B7, BB_C7, BB_D7, BB_E7, BB_F7, BB_G7, BB_H7,
+        BB_A8, BB_B8, BB_C8, BB_D8, BB_E8, BB_F8, BB_G8, BB_H8,
     ];
 
     pub const BB_CORNERS: BitBoard = BitBoard(BB_A1.0 | BB_H1.0 | BB_A8.0 | BB_H8.0);
@@ -89,7 +93,7 @@ pub mod bitboard {
     pub const BB_LIGHT_SQUARES: BitBoard = BitBoard(0x55aa_55aa_55aa_55aa);
     pub const BB_DARK_SQUARES: BitBoard = BitBoard(0xaa55_aa55_aa55_aa55);
 
-    pub const BB_FILE_A: BitBoard = BitBoard(0x0101_0101_0101_0101);
+    pub const BB_FILE_A: BitBoard = BitBoard(0x0101_0101_0101_0101 << 0);
     pub const BB_FILE_B: BitBoard = BitBoard(0x0101_0101_0101_0101 << 1);
     pub const BB_FILE_C: BitBoard = BitBoard(0x0101_0101_0101_0101 << 2);
     pub const BB_FILE_D: BitBoard = BitBoard(0x0101_0101_0101_0101 << 3);
@@ -98,22 +102,14 @@ pub mod bitboard {
     pub const BB_FILE_G: BitBoard = BitBoard(0x0101_0101_0101_0101 << 6);
     pub const BB_FILE_H: BitBoard = BitBoard(0x0101_0101_0101_0101 << 7);
 
-    pub const BB_FILES: [BitBoard; 8] = [
-        BB_FILE_A, BB_FILE_B, BB_FILE_C, BB_FILE_D, BB_FILE_E, BB_FILE_F, BB_FILE_G, BB_FILE_H,
-    ];
-
-    pub const BB_RANK_1: BitBoard = BitBoard(0xff);
-    pub const BB_RANK_2: BitBoard = BitBoard(0xff << 8);
-    pub const BB_RANK_3: BitBoard = BitBoard(0xff << (8 * 2));
-    pub const BB_RANK_4: BitBoard = BitBoard(0xff << (8 * 3));
-    pub const BB_RANK_5: BitBoard = BitBoard(0xff << (8 * 4));
-    pub const BB_RANK_6: BitBoard = BitBoard(0xff << (8 * 5));
-    pub const BB_RANK_7: BitBoard = BitBoard(0xff << (8 * 6));
-    pub const BB_RANK_8: BitBoard = BitBoard(0xff << (8 * 7));
-
-    pub const BB_RANKS: [BitBoard; 8] = [
-        BB_RANK_1, BB_RANK_2, BB_RANK_3, BB_RANK_4, BB_RANK_5, BB_RANK_6, BB_RANK_7, BB_RANK_8,
-    ];
+    pub const BB_RANK_1: BitBoard = BitBoard(0xff << (0 << 3));
+    pub const BB_RANK_2: BitBoard = BitBoard(0xff << (1 << 3));
+    pub const BB_RANK_3: BitBoard = BitBoard(0xff << (2 << 3));
+    pub const BB_RANK_4: BitBoard = BitBoard(0xff << (3 << 3));
+    pub const BB_RANK_5: BitBoard = BitBoard(0xff << (4 << 3));
+    pub const BB_RANK_6: BitBoard = BitBoard(0xff << (5 << 3));
+    pub const BB_RANK_7: BitBoard = BitBoard(0xff << (6 << 3));
+    pub const BB_RANK_8: BitBoard = BitBoard(0xff << (7 << 3));
 
     pub const BB_BACKRANKS: BitBoard = BitBoard(BB_RANK_1.0 | BB_RANK_8.0);
 
@@ -128,71 +124,16 @@ pub mod bitboard {
 
 pub mod square {
     use chess::Square;
+    #[rustfmt::skip]
     pub const SQUARES_180: [Square; 64] = [
-        Square::A8,
-        Square::B8,
-        Square::C8,
-        Square::D8,
-        Square::E8,
-        Square::F8,
-        Square::G8,
-        Square::H8,
-        Square::A7,
-        Square::B7,
-        Square::C7,
-        Square::D7,
-        Square::E7,
-        Square::F7,
-        Square::G7,
-        Square::H7,
-        Square::A6,
-        Square::B6,
-        Square::C6,
-        Square::D6,
-        Square::E6,
-        Square::F6,
-        Square::G6,
-        Square::H6,
-        Square::A5,
-        Square::B5,
-        Square::C5,
-        Square::D5,
-        Square::E5,
-        Square::F5,
-        Square::G5,
-        Square::H5,
-        Square::A4,
-        Square::B4,
-        Square::C4,
-        Square::D4,
-        Square::E4,
-        Square::F4,
-        Square::G4,
-        Square::H4,
-        Square::A3,
-        Square::B3,
-        Square::C3,
-        Square::D3,
-        Square::E3,
-        Square::F3,
-        Square::G3,
-        Square::H3,
-        Square::A2,
-        Square::B2,
-        Square::C2,
-        Square::D2,
-        Square::E2,
-        Square::F2,
-        Square::G2,
-        Square::H2,
-        Square::A1,
-        Square::B1,
-        Square::C1,
-        Square::D1,
-        Square::E1,
-        Square::F1,
-        Square::G1,
-        Square::H1,
+        Square::A8, Square::B8, Square::C8, Square::D8, Square::E8, Square::F8, Square::G8, Square::H8,
+        Square::A7, Square::B7, Square::C7, Square::D7, Square::E7, Square::F7, Square::G7, Square::H7,
+        Square::A6, Square::B6, Square::C6, Square::D6, Square::E6, Square::F6, Square::G6, Square::H6,
+        Square::A5, Square::B5, Square::C5, Square::D5, Square::E5, Square::F5, Square::G5, Square::H5,
+        Square::A4, Square::B4, Square::C4, Square::D4, Square::E4, Square::F4, Square::G4, Square::H4,
+        Square::A3, Square::B3, Square::C3, Square::D3, Square::E3, Square::F3, Square::G3, Square::H3,
+        Square::A2, Square::B2, Square::C2, Square::D2, Square::E2, Square::F2, Square::G2, Square::H2,
+        Square::A1, Square::B1, Square::C1, Square::D1, Square::E1, Square::F1, Square::G1, Square::H1,
     ];
 }
 
@@ -235,10 +176,10 @@ pub mod engine_constants {
     pub const NUM_KILLER_MOVES: usize = 2;
     pub const PAWN_VALUE: Score = 100;
     pub const NULL_MOVE_REDUCTION_LIMIT: Depth = 2;
-    pub const PVS_CUTOFF: Score = 1;
     pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;
     pub const DISABLE_T_TABLE: bool = false;
 
+    #[rustfmt::skip]
     pub const MVV_LVA: [[u32; 6]; 6] = [
         [105, 205, 305, 405, 505, 605],
         [104, 204, 304, 404, 504, 604],

@@ -252,8 +252,14 @@ pub mod string_utils {
 pub mod square_utils {
     use super::*;
 
+    #[inline(always)]
     pub fn square_mirror(square: Square) -> Square {
-        SQUARES_180[square.to_index()]
+        unsafe { *SQUARES_180.get_unchecked(square.to_index()) }
+    }
+
+    #[inline(always)]
+    pub fn get_square_bb(square: Square) -> BitBoard {
+        unsafe { *BB_SQUARES.get_unchecked(square.to_index()) }
     }
 }
 

@@ -30,7 +30,7 @@ mod sort {
             board: &chess::Board,
         ) -> Option<Square> {
             let mut capture_moves = chess::MoveGen::new_legal(board);
-            capture_moves.set_iterator_mask(BB_SQUARES[square.to_index()]);
+            capture_moves.set_iterator_mask(get_square_bb(square));
             let mut least_attackers_square = None;
             let mut least_attacker_type = 6;
             for square in capture_moves.into_iter().map(|m| m.get_source()) {
@@ -51,11 +51,15 @@ mod sort {
                 Some(square) => square,
                 None => return 0,
             };
-            let capture_piece = board.piece_on(square).unwrap_or(Pawn);
+            let capture_piece = match board.piece_on(square) {
+                Some(piece) => piece,
+                None => return 0,
+            };
+            let capture_piece_score = evaluate_piece(capture_piece);
             board
                 .clone()
                 .make_move(Move::new(least_attackers_square, square, None), board);
-            (evaluate_piece(capture_piece) - self.see(square, board)).max(0)
+            (capture_piece_score - self.see(square, board)).max(0)
         }
 
         fn see_capture(&self, square: Square, board: &mut chess::Board) -> Score {
@@ -70,10 +74,16 @@ mod sort {
             evaluate_piece(capture_piece) - self.see(square, board)
         }
 
+        fn mvv_lva(&self, _move: Move, board: &Board) -> u32 {
+            MVV_LVA[board
+                .piece_at(_move.get_source())
+                .unwrap_or(Pawn)
+                .to_index()][board.piece_at(_move.get_dest()).unwrap().to_index()]
+        }
+
+        #[inline(always)]
         fn capture_value(&self, _move: Move, board: &Board) -> u32 {
-            // (self.see_capture(_move.get_dest(), &mut board.get_sub_board()) + 9 * PAWN_VALUE) as u32
-            MVV_LVA[board.piece_at(_move.get_source()).unwrap().to_index()]
-                [board.piece_at(_move.get_dest()).unwrap_or(Pawn).to_index()]
+            (self.see_capture(_move.get_dest(), &mut board.get_sub_board()) + 9 * PAWN_VALUE) as u32
         }
 
         fn threat_value(&self, _move: Move, sub_board: &chess::Board) -> u32 {
@@ -82,7 +92,7 @@ mod sort {
                 evaluate_piece(sub_board.piece_on(_move.get_source()).unwrap());
             let attacked_piece_score = evaluate_piece(sub_board.piece_on(dest).unwrap_or(Pawn));
             let mut threat_score = attacker_piece_score - attacked_piece_score;
-            if sub_board.pinned() == &BB_SQUARES[dest.to_index()] {
+            if sub_board.pinned() == &get_square_bb(dest) {
                 threat_score *= 2;
             }
             (threat_score + 16 * PAWN_VALUE) as u32
@@ -101,7 +111,8 @@ mod sort {
                 return 4292000000 + checkers.popcnt();
             }
             if board.is_capture(_move) {
-                return 4291000000 + self.capture_value(_move, board);
+                let capture_value = self.capture_value(_move, board);
+                return 4291000000 + capture_value;
             }
             for (i, killer_move) in self.killer_moves[ply].iter().enumerate() {
                 if killer_move == &_move {
@@ -374,7 +385,7 @@ impl Engine {
         self.pv_length[self.ply] = self.pv_length[self.ply + 1];
     }
 
-    fn search(&mut self, depth: Depth, alpha: Score, beta: Score) -> Score {
+    fn search(&mut self, depth: Depth, mut alpha: Score, beta: Score) -> Score {
         self.pv_length[self.ply] = self.ply;
         if self.board.is_game_over() {
             return if self.board.is_checkmate() {
@@ -383,33 +394,47 @@ impl Engine {
                 0
             };
         }
-        let mut alpha = alpha;
+        let key = self.board.get_hash();
+        let mut score = -CHECKMATE_SCORE;
+        let mut flag = AlphaHash;
         let moves = self.move_sorter.sort_moves(
             self.board.generate_legal_moves(),
             &self.board,
             self.ply,
-            None,
+            self.transposition_table.read_best_move(key),
         );
-        for _move in moves {
+        for (i, &_move) in moves.iter().enumerate() {
             self.push(_move);
-            let score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
+            if i == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true) > alpha {
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
+            }
             self.pop();
             if score > alpha {
+                flag = ExactHAsh;
                 alpha = score;
                 self.update_pv_table(_move);
                 if score >= beta {
+                    self.transposition_table
+                        .write(key, depth, beta, BetaHash, Some(_move));
                     return beta;
                 }
             }
         }
+        self.transposition_table.write(
+            key,
+            depth,
+            alpha,
+            flag,
+            Some(self.pv_table[self.ply][self.ply]),
+        );
         alpha
     }
 
     fn alpha_beta(
         &mut self,
         depth: Depth,
-        alpha: Score,
-        beta: Score,
+        mut alpha: Score,
+        mut beta: Score,
         apply_null_move: bool,
     ) -> Score {
         self.pv_length[self.ply] = self.ply;
@@ -419,7 +444,8 @@ impl Engine {
         if self.board.is_other_draw() {
             return draw_score;
         }
-        let is_pvs_node = (beta as i32 - alpha as i32) > PVS_CUTOFF as i32;
+        // let is_pvs_node = (beta as i32 - alpha as i32) > 1;
+        let is_pvs_node = alpha != beta - 1;
         let key = self.board.get_hash();
         let best_move = if is_pvs_node {
             self.transposition_table.read_best_move(key)
@@ -441,15 +467,19 @@ impl Engine {
             }
             return -mate_score;
         }
-        let mut alpha = alpha;
-        let mut beta = beta;
         // mate distance pruning
-        if mate_score < beta {
-            beta = mate_score;
-            if alpha >= mate_score {
-                return mate_score;
-            }
+        alpha = alpha.max(-mate_score);
+        beta = beta.min(mate_score - 1);
+        if alpha >= beta {
+            return alpha;
         }
+        // // mate distance pruning
+        // if mate_score < beta {
+        //     beta = mate_score;
+        //     if alpha >= mate_score {
+        //         return mate_score;
+        //     }
+        // }
         let mut futility_pruning = false;
         if not_in_check {
             // static evaluation pruning
@@ -468,7 +498,7 @@ impl Engine {
                 let score = -self.alpha_beta(
                     depth - 1 - NULL_MOVE_REDUCTION_LIMIT,
                     -beta,
-                    -beta + PVS_CUTOFF,
+                    -beta + 1,
                     false,
                 );
                 self.board.pop_null_move();
@@ -484,7 +514,7 @@ impl Engine {
                     1 => PAWN_VALUE,
                     2 => evaluate_piece(Knight),
                     3 => evaluate_piece(Rook),
-                    _ => panic!("Unexpected behaviour in futility pruning condition!"),
+                    _ => unreachable!(),
                 };
                 futility_pruning = static_evaluation + futility_margin <= alpha;
             }
@@ -534,8 +564,10 @@ impl Engine {
         alpha
     }
 
-    fn quiescence(&mut self, alpha: Score, beta: Score) -> Score {
-        let mut alpha = alpha;
+    fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {
+        if self.board.is_draw() {
+            return DRAW_SCORE;
+        }
         self.num_nodes_searched += 1;
         let evaluation = self.board.evaluate_flipped();
         if evaluation >= beta {
