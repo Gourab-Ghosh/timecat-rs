@@ -93,7 +93,7 @@ pub mod bitboard {
     pub const BB_LIGHT_SQUARES: BitBoard = BitBoard(0x55aa_55aa_55aa_55aa);
     pub const BB_DARK_SQUARES: BitBoard = BitBoard(0xaa55_aa55_aa55_aa55);
 
-    pub const BB_FILE_A: BitBoard = BitBoard(0x0101_0101_0101_0101 << 0);
+    pub const BB_FILE_A: BitBoard = BitBoard(0x0101_0101_0101_0101);
     pub const BB_FILE_B: BitBoard = BitBoard(0x0101_0101_0101_0101 << 1);
     pub const BB_FILE_C: BitBoard = BitBoard(0x0101_0101_0101_0101 << 2);
     pub const BB_FILE_D: BitBoard = BitBoard(0x0101_0101_0101_0101 << 3);
@@ -102,7 +102,7 @@ pub mod bitboard {
     pub const BB_FILE_G: BitBoard = BitBoard(0x0101_0101_0101_0101 << 6);
     pub const BB_FILE_H: BitBoard = BitBoard(0x0101_0101_0101_0101 << 7);
 
-    pub const BB_RANK_1: BitBoard = BitBoard(0xff << (0 << 3));
+    pub const BB_RANK_1: BitBoard = BitBoard(0xff);
     pub const BB_RANK_2: BitBoard = BitBoard(0xff << (1 << 3));
     pub const BB_RANK_3: BitBoard = BitBoard(0xff << (2 << 3));
     pub const BB_RANK_4: BitBoard = BitBoard(0xff << (3 << 3));

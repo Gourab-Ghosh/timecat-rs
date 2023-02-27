@@ -626,11 +626,11 @@ impl Engine {
     }
 
     fn get_pv_as_san(&self, depth: u8) -> String {
-        return self.get_pv_as_algebraic(depth, false);
+        self.get_pv_as_algebraic(depth, false)
     }
 
     fn get_pv_as_lan(&self, depth: u8) -> String {
-        return self.get_pv_as_algebraic(depth, true);
+        self.get_pv_as_algebraic(depth, true)
     }
 
     pub fn get_pv_string(&self) -> String {

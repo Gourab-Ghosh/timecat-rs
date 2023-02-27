@@ -664,7 +664,7 @@ impl Board {
     pub fn push_san(&mut self, san: &str) -> Move {
         let _move = self.parse_san(san).expect("Bad san: {san}");
         self.push(_move);
-        return _move;
+        _move
     }
 
     pub fn push_sans(&mut self, sans: Vec<&str>) {
@@ -680,7 +680,7 @@ impl Board {
     pub fn push_uci(&mut self, uci: &str) -> Move {
         let _move = self.parse_uci(uci).expect("Bad uci: {uci}");
         self.push(_move);
-        return _move;
+        _move
     }
 
     pub fn push_str(&mut self, s: &str) {
