@@ -227,8 +227,8 @@ impl Board {
         }
         match self.color_at(square) {
             Some(color) => match color {
-                White => white_pieces[piece_type as usize],
-                Black => black_pieces[piece_type as usize],
+                White => get_item_unchecked!(white_pieces, piece_type as usize),
+                Black => get_item_unchecked!(black_pieces, piece_type as usize),
             },
             None => " ",
         }
@@ -922,7 +922,6 @@ impl Board {
 }
 
 impl fmt::Display for Board {
-    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_board_string(false))
     }

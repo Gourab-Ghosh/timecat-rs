@@ -254,12 +254,12 @@ pub mod square_utils {
 
     #[inline(always)]
     pub fn square_mirror(square: Square) -> Square {
-        unsafe { *SQUARES_180.get_unchecked(square.to_index()) }
+        get_item_unchecked!(SQUARES_180, square.to_index())
     }
 
     #[inline(always)]
     pub fn get_square_bb(square: Square) -> BitBoard {
-        unsafe { *BB_SQUARES.get_unchecked(square.to_index()) }
+        get_item_unchecked!(BB_SQUARES, square.to_index())
     }
 }
 
@@ -319,59 +319,6 @@ pub mod classes {
         //     s.finish()
         // }
     }
-
-    // use dashmap::DashMap;
-    // // use std::collections::hash_map::DefaultHasher;
-    // // use std::hash::{Hash, Hasher};
-
-    // #[derive(Default, Clone)]
-    // pub struct RepetitionTable {
-    //     count: DashMap<u64, usize>,
-    // }
-
-    // impl RepetitionTable {
-    //     pub fn new() -> Self {
-    //         Self {
-    //             count: DashMap::default(),
-    //         }
-    //     }
-
-    //     pub fn insert_and_get_repetition(&mut self, key: u64) -> u8 {
-    //         let mut count_entry = self.count.entry(key).or_insert(0);
-    //         *count_entry += 1;
-    //         *count_entry as u8
-    //     }
-
-    //     pub fn insert_and_detect_threefold_repetition(&mut self, key: u64) -> bool {
-    //         let mut count_entry = self.count.entry(key).or_insert(0);
-    //         *count_entry += 1;
-    //         *count_entry > 3
-    //     }
-
-    //     pub fn remove(&mut self, key: u64) {
-    //         if let Some(mut count_entry) = self.count.get_mut(&key) {
-    //             *count_entry -= 1;
-    //             if *count_entry == 0 {
-    //                 self.count.remove(&key);
-    //             }
-    //         } else {
-    //             panic!(
-    //                 "Tried to remove the key {} that doesn't exist!",
-    //                 hash_to_string(key)
-    //             );
-    //         }
-    //     }
-
-    //     pub fn clear(&mut self) {
-    //         self.count.clear();
-    //     }
-
-    //     // fn hash<T: Hash>(t: &T) -> u64 {
-    //     //     let mut s = DefaultHasher::new();
-    //     //     t.hash(&mut s);
-    //     //     s.finish()
-    //     // }
-    // }
 }
 
 pub mod unsafe_utils {

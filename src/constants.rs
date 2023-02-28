@@ -173,7 +173,7 @@ pub mod engine_constants {
     pub const DRAW_SCORE: Score = -PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;
     pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - (MAX_DEPTH as Score + 1);
-    pub const NUM_KILLER_MOVES: usize = 2;
+    pub const NUM_KILLER_MOVES: usize = 3;
     pub const PAWN_VALUE: Score = 100;
     pub const NULL_MOVE_REDUCTION_LIMIT: Depth = 2;
     pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;

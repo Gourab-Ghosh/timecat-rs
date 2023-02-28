@@ -12,8 +12,9 @@ mod sort {
 
     impl MoveSorter {
         pub fn update_killer_moves(&mut self, killer_move: Move, ply: Ply) {
-            self.killer_moves[ply].rotate_right(1);
-            self.killer_moves[ply][0] = killer_move;
+            let arr = &mut self.killer_moves[ply];
+            arr.rotate_right(1);
+            arr[0] = killer_move;
         }
 
         pub fn add_history_move(&mut self, history_move: Move, board: &Board, depth: Depth) {
@@ -24,53 +25,29 @@ mod sort {
                 [board.color_at(src).unwrap() as usize][dest.to_index()] += depth;
         }
 
-        fn get_least_attackers_square(
-            &self,
-            square: Square,
-            board: &chess::Board,
-        ) -> Option<Square> {
-            let mut capture_moves = chess::MoveGen::new_legal(board);
-            capture_moves.set_iterator_mask(get_square_bb(square));
-            let mut least_attackers_square = None;
-            let mut least_attacker_type = 6;
-            for square in capture_moves.into_iter().map(|m| m.get_source()) {
-                let attacker_type = board.piece_on(square).unwrap() as u8;
-                if attacker_type == 0 {
-                    return Some(square);
-                }
-                if attacker_type < least_attacker_type {
-                    least_attackers_square = Some(square);
-                    least_attacker_type = attacker_type;
-                }
-            }
-            least_attackers_square
+        fn get_least_attackers_move(&self, square: Square, board: &chess::Board) -> Option<Move> {
+            let mut captute_moves = chess::MoveGen::new_legal(board);
+            captute_moves.set_iterator_mask(get_square_bb(square));
+            captute_moves.next()
         }
 
         fn see(&self, square: Square, board: &mut chess::Board) -> Score {
-            let least_attackers_square = match self.get_least_attackers_square(square, board) {
-                Some(square) => square,
-                None => return 0,
-            };
-            let capture_piece = match board.piece_on(square) {
-                Some(piece) => piece,
-                None => return 0,
-            };
-            let capture_piece_score = evaluate_piece(capture_piece);
-            board
-                .clone()
-                .make_move(Move::new(least_attackers_square, square, None), board);
-            (capture_piece_score - self.see(square, board)).max(0)
-        }
-
-        fn see_capture(&self, square: Square, board: &mut chess::Board) -> Score {
-            let least_attackers_square = match self.get_least_attackers_square(square, board) {
-                Some(square) => square,
+            let least_attackers_move = match self.get_least_attackers_move(square, board) {
+                Some(_move) => _move,
                 None => return 0,
             };
             let capture_piece = board.piece_on(square).unwrap_or(Pawn);
-            board
-                .clone()
-                .make_move(Move::new(least_attackers_square, square, None), board);
+            board.clone().make_move(least_attackers_move, board);
+            (evaluate_piece(capture_piece) - self.see(square, board)).max(0)
+        }
+
+        fn see_capture(&self, square: Square, board: &mut chess::Board) -> Score {
+            let least_attackers_move = match self.get_least_attackers_move(square, board) {
+                Some(_move) => _move,
+                None => return 0,
+            };
+            let capture_piece = board.piece_on(square).unwrap_or(Pawn);
+            board.clone().make_move(least_attackers_move, board);
             evaluate_piece(capture_piece) - self.see(square, board)
         }
 
@@ -467,6 +444,7 @@ impl Engine {
             }
             return -mate_score;
         }
+        // TODO: check if this is correct
         // mate distance pruning
         alpha = alpha.max(-mate_score);
         beta = beta.min(mate_score - 1);

@@ -7,7 +7,7 @@
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
-// #![allow(unused_macros)]
+#![allow(unused_macros)]
 // #![allow(private_in_public)]
 // #[allow(improper_ctypes)]
 
@@ -18,6 +18,7 @@ mod evaluate;
 mod nnue;
 mod nnue_rs;
 mod nnue_weights;
+mod useful_macros;
 mod utils;
 
 use board::perft_test::perft;
@@ -26,10 +27,10 @@ use board::Board;
 use chess::Color::*;
 use chess::Piece::*;
 use chess::{
-    get_bishop_moves, get_file as get_file_bb, get_king_moves, get_knight_moves, get_pawn_attacks,
-    get_rank as get_rank_bb, get_rook_moves,
+    get_adjacent_files, get_bishop_moves, get_file as get_file_bb, get_king_moves,
+    get_knight_moves, get_pawn_attacks, get_rank as get_rank_bb, get_rook_moves, BitBoard,
+    BoardStatus, ChessMove as Move, Color, Error as ChessError, File, Piece, Rank, Square,
 };
-use chess::{BitBoard, BoardStatus, ChessMove as Move, Color, Error as ChessError, Piece, Square};
 use constants::bitboard::*;
 use constants::engine_constants::*;
 use constants::fen::*;
@@ -44,6 +45,7 @@ use std::fmt;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+use useful_macros::*;
 use utils::classes::*;
 use utils::command_utils::*;
 use utils::square_utils::*;

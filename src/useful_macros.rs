@@ -1,5 +1,4 @@
-#![macro_use]
-
+#[macro_export]
 macro_rules! generator {
     ($id1:ident | $id2:ident in $it:expr) => {{
         let mut vec = Vec::new();
@@ -20,15 +19,16 @@ macro_rules! generator {
     }};
 }
 
-// macro_rules! input {
-//     ($q:expr) => {
-//         {
-//             println!("{}", $q);
-//             let mut user_input = String::new();
-//             std::io::stdin()
-//                 .read_line(&mut user_input)
-//                 .expect("Failed to read line!");
-//             user_input;
-//         }
-//     };
-// }
+#[macro_export]
+macro_rules! get_item_unchecked {
+    ($vec:expr, $index:expr) => {
+        unsafe { *$vec.get_unchecked($index) }
+    };
+}
+
+#[macro_export]
+macro_rules! get_item_unchecked_mut {
+    ($vec:expr, $index:expr) => {
+        unsafe { &mut *$vec.get_unchecked_mut($index) }
+    };
+}
