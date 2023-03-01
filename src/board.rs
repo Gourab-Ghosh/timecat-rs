@@ -283,7 +283,9 @@ impl Board {
                 format_info("Transposition Key", hash_to_string(self.get_hash())),
                 format_info("Checkers", colorize(checkers_string.trim(), CHECKERS_STYLE)),
                 format_info("Current Evaluation", score_to_string(self.evaluate())),
-            ].join("\n").as_str()
+            ]
+            .join("\n")
+            .as_str(),
         );
         skeleton
     }

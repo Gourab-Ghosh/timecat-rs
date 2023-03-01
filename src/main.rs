@@ -18,9 +18,9 @@ mod evaluate;
 mod nnue;
 mod nnue_rs;
 mod nnue_weights;
+mod parse;
 mod useful_macros;
 mod utils;
-mod parse;
 
 use board::Board;
 use chess::Color::*;
@@ -40,6 +40,7 @@ use constants::types::*;
 use engine::Engine;
 use evaluate::*;
 use fxhash::FxHashMap as HashMap;
+use parse::*;
 use std::fmt;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -50,7 +51,6 @@ use utils::command_utils::*;
 use utils::square_utils::*;
 use utils::string_utils::*;
 use utils::unsafe_utils::*;
-use parse::*;
 
 fn main_loop() {
     let mut engine = Engine::default();

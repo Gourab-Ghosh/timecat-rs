@@ -13,13 +13,15 @@ fn simplify_command(user_input: &str) -> String {
 struct Go;
 
 impl Go {
-
     pub fn perft(board: &mut Board, depth: u8) -> usize {
         println!("{}\n", board);
         let clock = Instant::now();
         let position_count = board.perft(depth);
         let elapsed_time = clock.elapsed();
-        let nps = format!("{} Nodes/sec", (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos());
+        let nps = format!(
+            "{} Nodes/sec",
+            (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
+        );
         println!();
         println_info("Position Count", position_count);
         println_info("Time", format!("{} s", elapsed_time.as_secs_f32()));
@@ -33,7 +35,10 @@ impl Go {
         let (best_move, score) = engine.go(depth, true);
         let elapsed_time = clock.elapsed();
         let position_count = engine.get_num_nodes_searched();
-        let nps = format!("{} Nodes/sec", (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos());
+        let nps = format!(
+            "{} Nodes/sec",
+            (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
+        );
         println!();
         println_info("Best Move", engine.board.san(best_move));
         println_info("Score", score_to_string(score));

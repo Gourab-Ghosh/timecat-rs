@@ -30,11 +30,7 @@ pub mod command_utils {
     }
 
     pub fn format_info<T: ToString>(desc: &str, info: T) -> String {
-        format!(
-            "{}: {}",
-            colorize(desc, INFO_STYLE),
-            info.to_string(),
-        )
+        format!("{}: {}", colorize(desc, INFO_STYLE), info.to_string())
     }
 
     pub fn println_info<T: ToString>(desc: &str, info: T) {
