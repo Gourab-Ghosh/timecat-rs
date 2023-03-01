@@ -20,10 +20,9 @@ mod nnue_rs;
 mod nnue_weights;
 mod useful_macros;
 mod utils;
+mod parse;
 
-use board::perft_test::perft;
 use board::Board;
-
 use chess::Color::*;
 use chess::Piece::*;
 use chess::{
@@ -51,9 +50,10 @@ use utils::command_utils::*;
 use utils::square_utils::*;
 use utils::string_utils::*;
 use utils::unsafe_utils::*;
+use parse::*;
 
-fn main_loop(board: &mut Board) {
-    let mut board = Board::from(board);
+fn main_loop() {
+    let mut engine = Engine::default();
     let exit_codes = [
         "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
     ];
@@ -78,7 +78,7 @@ fn main_loop(board: &mut Board) {
             println!("{error_message}");
             continue;
         }
-        match parse_command(&mut board, &user_input) {
+        match parse_command(&mut engine, &user_input) {
             Some(e) => {
                 let error_message = if e.is_empty() {
                     format!("Unknown command: {}\nPlease try again!", user_input.trim())
@@ -101,41 +101,21 @@ fn self_play(depth: u8, print: bool) {
         let pv = engine.get_pv_string();
         engine.push(best_move);
         println!("\n{}\n", engine.board);
-        println!(
-            "{}: {}\n{}: {}\n{}: {}\n{}: {}",
-            colorize("Best Move", INFO_STYLE),
-            best_move_san,
-            colorize("Score", INFO_STYLE),
-            score_to_string(score),
-            colorize("Num Nodes Searched", INFO_STYLE),
-            engine.get_num_nodes_searched(),
-            colorize("PV Line", INFO_STYLE),
-            pv,
-        );
+        println_info("Best Move", best_move_san);
+        println_info("Score", score_to_string(score));
+        println_info("Num Nodes Searched", engine.get_num_nodes_searched());
+        println_info("PV Line", pv);
     }
     println!("Game PGN:\n\n{}", engine.board.get_pgn());
 }
 
 fn _main() {
+    println!();
+    // main_loop();
+
     // self_play(10, false);
 
-    let mut engine = Engine::default();
-    // engine
-    //     .board
-    //     .set_fen("2N2rk1/1p1b1pp1/p1np3p/4p1qn/2P1Pb2/4BP1P/PPNQB1P1/2R2RK1 b - - 2 25");
-    println!("{}\n", engine.board);
-    let (best_move, score) = engine.go(10, true);
-    println!(
-        "\n{}: {}\n{}: {}\n{}: {}\n{}: {}",
-        colorize("Best Move", INFO_STYLE),
-        best_move,
-        colorize("Score", INFO_STYLE),
-        score_to_string(score),
-        colorize("Num Nodes Searched", INFO_STYLE),
-        engine.get_num_nodes_searched(),
-        colorize("PV Line", INFO_STYLE),
-        engine.get_pv_string(),
-    );
+    parse_command(&mut Engine::default(), "go depth 10");
 
     // fn push_e4(board: &mut Board) {
     //     let e4 = board.parse_san("e4").unwrap();
@@ -158,53 +138,12 @@ fn _main() {
     // }
 
     // parse_command(&mut Board::new(), "go perft 7");
-
-    // let weights = load_stockfish_nnue("/home/gg8576/linux/MyFiles/github_files/rust_tutorial/timecat/stockfish_nnue/nn-bc24c101ada0.nnue");
-    // println!("{}", weights[0]);
-
-    // println!("{board}");
-    // main_loop(&mut board);
-
-    // board.push_sans(vec!("e4", "e5", "Ba6", "bxa6"));
-
-    // let board = Board::new();
-    // let eval1 = board.evaluate();
-    // let eval2 = evaluate_nnue_from_fen(&board.get_fen());
-    // println!("{eval1} {eval2}");
-
-    // let res = unsafe{add_numbers(2.0, 3.0)};
-    // print!("{}", res);
-
-    // let cmd = "go perft 6";
-    // parse_command(&mut board, &cmd.to_string());
-
-    // board.push_sans(vec!("e4", "e5", "d4", "Bb4"));
-
-    // println!("{}", board);
-    // println!("{}", board.to_unicode_string());
-
-    // go_perft(7);
-
-    // for square in BB_RANK_2 {
-    //     println!("{}", square.to_index());
-    // }
-    // println!("{}", BB_RANK_2);
-
-    // let v = generator!(x | x in 1..10, x%2 == 0);
-    // for i in v.iter(){
-    //     println!("{}", i);
-    // }
-
-    // for i in BB_RANK_1 {
-    //     println!("{}", i)
-    // }
 }
 
 fn main() {
-    println!();
     let clock = Instant::now();
     _main();
     let elapsed_time = clock.elapsed().as_secs_f32();
     let precision = 3;
-    println!("\nTime Taken: {:.1$} s", elapsed_time, precision);
+    println_info("Run Time", format!("{:.1$} s", elapsed_time, precision));
 }

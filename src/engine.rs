@@ -310,7 +310,7 @@ mod transposition_table {
 
 pub struct Engine {
     pub board: Board,
-    num_nodes_searched: u32,
+    num_nodes_searched: usize,
     ply: Ply,
     pv_length: [usize; MAX_DEPTH],
     pv_table: [[Move; MAX_DEPTH]; MAX_DEPTH],
@@ -615,7 +615,7 @@ impl Engine {
         self.get_pv_as_san(0)
     }
 
-    pub fn get_num_nodes_searched(&self) -> u32 {
+    pub fn get_num_nodes_searched(&self) -> usize {
         self.num_nodes_searched
     }
 
@@ -632,19 +632,20 @@ impl Engine {
     }
 
     pub fn print_search_info(&self, current_depth: Depth, score: Score, time_passed: Duration) {
+        let style = SUCCESS_MESSAGE_STYLE;
         println!(
             "{} {} {} {} {} {} {} {} {} {:.3} {} {}",
-            colorize("info depth", INFO_STYLE),
+            colorize("info depth", style),
             current_depth,
-            colorize("score", INFO_STYLE),
+            colorize("score", style),
             score_to_string(score),
-            colorize("nodes", INFO_STYLE),
+            colorize("nodes", style),
             self.num_nodes_searched,
-            colorize("nps", INFO_STYLE),
+            colorize("nps", style),
             (self.num_nodes_searched as f64 / time_passed.as_secs_f64()) as u32,
-            colorize("time", INFO_STYLE),
+            colorize("time", style),
             time_passed.as_secs_f32(),
-            colorize("pv", INFO_STYLE),
+            colorize("pv", style),
             self.get_pv_string(),
         );
     }

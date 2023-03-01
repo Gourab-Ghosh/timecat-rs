@@ -9,37 +9,6 @@ struct BoardState {
     num_repetitions: u8,
 }
 
-pub mod perft_test {
-    use super::*;
-
-    fn mini_perft(board: &mut Board, depth: u8, print_move: bool) -> usize {
-        let _moves = board.generate_legal_moves();
-        // if depth == 0 {return 1;}
-        if depth == 1 {
-            return _moves.len();
-        }
-        let mut count: usize = 0;
-        for _move in _moves {
-            board.push(_move);
-            let c_count = mini_perft(board, depth - 1, false);
-            board.pop();
-            if print_move {
-                println!(
-                    "{}: {}",
-                    colorize(_move, PERFT_MOVE_STYLE),
-                    colorize(c_count, PERFT_COUNT_STYLE),
-                );
-            }
-            count += c_count;
-        }
-        count
-    }
-
-    pub fn perft(board: &mut Board, depth: u8) -> usize {
-        mini_perft(board, depth, true)
-    }
-}
-
 pub struct Board {
     board: chess::Board,
     stack: Vec<(BoardState, Move)>,
@@ -308,18 +277,13 @@ impl Board {
             checkers_string += " ";
         }
         skeleton.push_str(
-            format!(
-                "\n{}: {}\n{}: {}\n{}: {}\n{}: {}",
-                colorize("Fen", INFO_STYLE),
-                self.get_fen(),
-                colorize("Transposition Key", INFO_STYLE),
-                hash_to_string(self.get_hash()),
-                colorize("Checkers", INFO_STYLE),
-                colorize(checkers_string.trim(), CHECKERS_STYLE),
-                colorize("Current Evaluation", INFO_STYLE),
-                score_to_string(self.evaluate()),
-            )
-            .as_str(),
+            [
+                String::from("\n"),
+                format_info("Fen", self.get_fen()),
+                format_info("Transposition Key", hash_to_string(self.get_hash())),
+                format_info("Checkers", colorize(checkers_string.trim(), CHECKERS_STYLE)),
+                format_info("Current Evaluation", score_to_string(self.evaluate())),
+            ].join("\n").as_str()
         );
         skeleton
     }
@@ -918,6 +882,33 @@ impl Board {
         } else {
             -score
         }
+    }
+
+    fn mini_perft(&mut self, depth: u8, print_move: bool) -> usize {
+        let _moves = self.generate_legal_moves();
+        // if depth == 0 {return 1;}
+        if depth == 1 {
+            return _moves.len();
+        }
+        let mut count: usize = 0;
+        for _move in _moves {
+            self.push(_move);
+            let c_count = self.mini_perft(depth - 1, false);
+            self.pop();
+            if print_move {
+                println!(
+                    "{}: {}",
+                    colorize(_move, PERFT_MOVE_STYLE),
+                    colorize(c_count, PERFT_COUNT_STYLE),
+                );
+            }
+            count += c_count;
+        }
+        count
+    }
+
+    pub fn perft(&mut self, depth: u8) -> usize {
+        self.mini_perft(depth, true)
     }
 }
 

@@ -14,159 +14,6 @@ pub mod command_utils {
         user_input
     }
 
-    fn simplify_command(user_input: &str) -> String {
-        let user_input = user_input.trim();
-        let mut user_input = user_input.to_string();
-        for _char in [",", ":"] {
-            user_input = user_input.replace(_char, " ")
-        }
-        user_input = remove_double_spaces(&user_input);
-        user_input
-    }
-
-    pub fn parse_command(board: &mut Board, user_input: &str) -> Option<String> {
-        let DEFAULT_ERROR = Some(String::new());
-        let NOT_IMPLEMENTED_ERROR = Some(String::from(
-            "Sorry, this command is not implemented yet :(",
-        ));
-        let BAD_FEN_ERROR = Some(String::from("The given fen is wrong fen! Try again!"));
-        let BAD_BOOL_ERROR = Some(String::from(
-            "The given boolean value is wrong fen! Try again!",
-        ));
-        let ILLEGAL_MOVE_ERROR = Some(String::from(
-            "The move you are trying to make is illegal! Try again!",
-        ));
-
-        let user_input = simplify_command(user_input);
-        let user_input = user_input.as_str();
-        let mut commands = user_input.split(' ');
-        let first_command = match commands.next() {
-            Some(second_command) => second_command,
-            None => return DEFAULT_ERROR,
-        }
-        .to_lowercase();
-
-        if user_input.to_lowercase() == "d" {
-            println!("{}", board);
-            return None;
-        }
-
-        if ["go", "do"].contains(&first_command.as_str()) {
-            let second_command = match commands.next() {
-                Some(second_command) => second_command,
-                None => return DEFAULT_ERROR,
-            }
-            .to_lowercase();
-            let depth: u8 = commands.next().unwrap_or_default().parse().unwrap_or(0);
-            if commands.next().is_some() {
-                return DEFAULT_ERROR;
-            }
-            if depth == 0 {
-                return Some("Invalid depth in perft! Try again!".to_string());
-            }
-            let mut board = Board::from(board);
-            println!("{}\n", board);
-            let position_count: usize;
-            let now = Instant::now();
-
-            if second_command == "perft" {
-                position_count = perft(&mut board, depth);
-            } else if second_command == "depth" {
-                return NOT_IMPLEMENTED_ERROR;
-            } else {
-                return DEFAULT_ERROR;
-            }
-
-            let elapsed_time = now.elapsed().as_secs_f64();
-            println!("\nPosition Count: {}", position_count);
-            println!("Time: {} s", elapsed_time as f32);
-            println!(
-                "Speed: {} Nodes/s",
-                ((position_count as f64) / elapsed_time) as usize
-            );
-            return None;
-        }
-
-        if first_command == "set" {
-            let second_command = match commands.next() {
-                Some(command) => command,
-                None => return DEFAULT_ERROR,
-            }
-            .to_lowercase();
-            if second_command == "board" {
-                let third_command = match commands.next() {
-                    Some(command) => command,
-                    None => return DEFAULT_ERROR,
-                }
-                .to_lowercase();
-                if third_command == "fen" {
-                    let mut fen = String::new();
-                    for fen_part in commands {
-                        fen.push_str(fen_part);
-                        fen.push(' ');
-                    }
-                    if !Board::is_good_fen(&fen) {
-                        return BAD_FEN_ERROR;
-                    }
-                    board.set_fen(&fen);
-                    println!("{board}");
-                    return None;
-                }
-            } else if second_command == "color" {
-                let third_command = match commands.next() {
-                    Some(command) => command,
-                    None => return DEFAULT_ERROR,
-                }
-                .to_lowercase();
-                if commands.next().is_some() {
-                    return DEFAULT_ERROR;
-                }
-                if third_command == "true" {
-                    set_colored_output(true);
-                } else if third_command == "false" {
-                    set_colored_output(false);
-                } else {
-                    return BAD_BOOL_ERROR;
-                }
-                return None;
-            }
-        }
-
-        if first_command == "push" {
-            let second_command = match commands.next() {
-                Some(command) => command,
-                None => return DEFAULT_ERROR,
-            }
-            .to_lowercase();
-            for move_text in commands {
-                let possible_move: Result<Move, ChessError>;
-                if second_command == "san" {
-                    possible_move = board.parse_san(move_text);
-                } else if second_command == "uci" {
-                    possible_move = board.parse_uci(move_text);
-                } else {
-                    return DEFAULT_ERROR;
-                }
-                let _move = match possible_move {
-                    Ok(_move) => _move,
-                    Err(e) => return Some(e.to_string() + "! Try again!"),
-                };
-                if !board.is_legal(_move) {
-                    return ILLEGAL_MOVE_ERROR;
-                }
-                board.push(_move);
-                println!(
-                    "{} {}",
-                    colorize("Made move:", SUCCESS_MESSAGE_STYLE),
-                    colorize(move_text, INFO_STYLE),
-                );
-            }
-            return None;
-        }
-
-        DEFAULT_ERROR
-    }
-
     pub fn is_checkmate(score: Score) -> bool {
         score.abs() > CHECKMATE_THRESHOLD
     }
@@ -180,6 +27,18 @@ pub mod command_utils {
             Queen => 9 * PAWN_VALUE,
             King => 20 * PAWN_VALUE,
         }
+    }
+
+    pub fn format_info<T: ToString>(desc: &str, info: T) -> String {
+        format!(
+            "{}: {}",
+            colorize(desc, INFO_STYLE),
+            info.to_string(),
+        )
+    }
+
+    pub fn println_info<T: ToString>(desc: &str, info: T) {
+        println!("{}", format_info(desc, info));
     }
 }
 

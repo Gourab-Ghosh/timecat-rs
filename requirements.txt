@@ -1,6 +1,0 @@
-chess
-rich
-inquirer
-flask
-tqdm
-pip
