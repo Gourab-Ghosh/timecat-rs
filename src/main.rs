@@ -104,5 +104,5 @@ fn main() {
     _main();
     let elapsed_time = clock.elapsed().as_secs_f32();
     let precision = 3;
-    println_info("Run Time", format!("{:.1$} s", elapsed_time, precision));
+    println_info("\nRun Time", format!("{:.1$} s", elapsed_time, precision));
 }
