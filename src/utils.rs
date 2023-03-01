@@ -51,7 +51,7 @@ pub mod string_utils {
     }
 
     pub fn simplify_fen(fen: &str) -> String {
-        remove_double_spaces(fen)
+        remove_double_spaces(fen).trim().to_string()
     }
 
     fn colorize_string(s: ColoredString, color: &str) -> ColoredString {
@@ -190,7 +190,7 @@ pub mod unsafe_utils {
             COLORED_OUTPUT = b;
         }
         println!(
-            "\n{} {}\n",
+            "{} {}",
             colorize("Set colored output to", SUCCESS_MESSAGE_STYLE),
             colorize(b, INFO_STYLE),
         );

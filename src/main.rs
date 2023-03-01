@@ -52,46 +52,6 @@ use utils::square_utils::*;
 use utils::string_utils::*;
 use utils::unsafe_utils::*;
 
-fn main_loop() {
-    let mut engine = Engine::default();
-    let exit_codes = [
-        "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
-    ];
-    loop {
-        let user_input: String;
-        if is_colored_output() {
-            println!();
-            user_input = input(colorize("Enter Command: ", INPUT_MESSAGE_STYLE));
-            println!();
-        } else {
-            user_input = input("");
-        }
-        if user_input.is_empty() || exit_codes.contains(&user_input.to_lowercase().trim()) {
-            println!(
-                "{}",
-                colorize("Program ended successfully!", SUCCESS_MESSAGE_STYLE)
-            );
-            break;
-        }
-        if user_input.trim().is_empty() {
-            let error_message = colorize("No input! Please try again!", ERROR_MESSAGE_STYLE);
-            println!("{error_message}");
-            continue;
-        }
-        match parse_command(&mut engine, &user_input) {
-            Some(e) => {
-                let error_message = if e.is_empty() {
-                    format!("Unknown command: {}\nPlease try again!", user_input.trim())
-                } else {
-                    e
-                };
-                println!("{}", colorize(error_message, ERROR_MESSAGE_STYLE));
-            }
-            None => continue,
-        }
-    }
-}
-
 fn self_play(depth: u8, print: bool) {
     let mut engine = Engine::default();
     println!("\n{}\n", engine.board);
@@ -110,12 +70,11 @@ fn self_play(depth: u8, print: bool) {
 }
 
 fn _main() {
-    println!();
-    // main_loop();
+    Parser::main_loop();
 
     // self_play(10, false);
 
-    parse_command(&mut Engine::default(), "go depth 10");
+    // parse_command(&mut Engine::default(), "go depth 10");
 
     // fn push_e4(board: &mut Board) {
     //     let e4 = board.parse_san("e4").unwrap();

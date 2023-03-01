@@ -46,6 +46,9 @@ impl Board {
     }
 
     pub fn set_fen(&mut self, fen: &str) {
+        if !Self::is_good_fen(fen) {
+            panic!("Invalid FEN");
+        }
         for square in *self.occupied() {
             let piece = self.piece_at(square).unwrap();
             let color = self.color_at(square).unwrap();
@@ -55,7 +58,7 @@ impl Board {
                 .deactivate_nnue(piece, color, square);
         }
         let fen = simplify_fen(fen);
-        self.board = chess::Board::from_str(fen.as_str()).expect("Valid Position");
+        self.board = chess::Board::from_str(fen.as_str()).expect("FEN not parsed properly!");
         let mut splitted_fen = fen.split(' ');
         self.halfmove_clock = splitted_fen.nth(4).unwrap_or("0").parse().unwrap();
         self.fullmove_number = splitted_fen.next().unwrap_or("1").parse().unwrap();
@@ -278,7 +281,7 @@ impl Board {
         }
         skeleton.push_str(
             [
-                String::from("\n"),
+                String::new(),
                 format_info("Fen", self.get_fen()),
                 format_info("Transposition Key", hash_to_string(self.get_hash())),
                 format_info("Checkers", colorize(checkers_string.trim(), CHECKERS_STYLE)),
@@ -623,8 +626,24 @@ impl Board {
         self.restore(board_state);
     }
 
+    pub fn has_empty_stack(&self) -> bool {
+        return self.stack.is_empty();
+    }
+
     pub fn parse_san(&self, san: &str) -> Result<Move, ChessError> {
         return Move::from_san(&self.board, san.replace('0', "O").as_str());
+    }
+
+    pub fn parse_uci(&self, uci: &str) -> Result<Move, ChessError> {
+        Move::from_str(uci)
+    }
+
+    pub fn parse_move(&self, move_text: &str) -> Result<Move, ChessError> {
+        let possible_move = self.parse_san(move_text);
+        if possible_move.is_err() {
+            return self.parse_uci(move_text);
+        }
+        possible_move
     }
 
     pub fn push_san(&mut self, san: &str) -> Move {
@@ -637,10 +656,6 @@ impl Board {
         for san in sans {
             self.push_san(san);
         }
-    }
-
-    pub fn parse_uci(&self, uci: &str) -> Result<Move, ChessError> {
-        Move::from_str(uci)
     }
 
     pub fn push_uci(&mut self, uci: &str) -> Move {
