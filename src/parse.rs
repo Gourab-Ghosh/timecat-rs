@@ -302,7 +302,7 @@ fn parse_input(raw_input: &str) -> Vec<String> {
     return input_vec;
 }
 
-fn parse_command(engine: &mut Engine, raw_input: &str) -> Option<String> {
+pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Option<String> {
     let user_inputs = parse_input(raw_input);
     let mut first_loop = true;
     for user_input in user_inputs {

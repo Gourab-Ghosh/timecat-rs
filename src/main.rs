@@ -70,11 +70,11 @@ fn self_play(depth: u8, print: bool) {
 }
 
 fn _main() {
-    Parser::main_loop();
+    // Parser::main_loop();
 
     // self_play(10, false);
 
-    // parse_command(&mut Engine::default(), "go depth 10");
+    parse_command(&mut Engine::default(), "go depth 10");
 
     // fn push_e4(board: &mut Board) {
     //     let e4 = board.parse_san("e4").unwrap();
