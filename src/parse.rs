@@ -214,7 +214,7 @@ impl Push {
         };
         for i in 2..commands.len() {
             let move_text = commands[i];
-            let possible_move: Result<Move, ChessError>;
+            let possible_move: Result<Move, chess::Error>;
             if second_command == "san" {
                 possible_move = engine.board.parse_san(move_text);
             } else if second_command == "uci" {

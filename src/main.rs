@@ -28,7 +28,7 @@ use chess::Piece::*;
 use chess::{
     get_adjacent_files, get_bishop_moves, get_file as get_file_bb, get_king_moves,
     get_knight_moves, get_pawn_attacks, get_rank as get_rank_bb, get_rook_moves, BitBoard,
-    BoardStatus, ChessMove as Move, Color, Error as ChessError, File, Piece, Rank, Square,
+    BoardStatus, ChessMove as Move, Color, File, Piece, Rank, Square,
 };
 use constants::bitboard::*;
 use constants::engine_constants::*;
@@ -71,12 +71,15 @@ fn self_play(depth: u8, print: bool) {
 
 fn _main() {
     // self_play(10, false);
-    Parser::parse_command(&mut Engine::default(), "go depth 10");
+    // Parser::parse_command(&mut Engine::default(), "go depth 10");
     // Parser::parse_command(&mut Engine::default(), "go perft 7");
 
-    // let mut engine = Engine::default();
-    // engine.board.set_fen("8/7P/2p5/p1n2k2/6R1/p4P2/7K/2r5 b - - 0 53");
-    // Parser::parse_command(&mut engine, "go depth 20");
+    let mut engine = Engine::default();
+    engine.board.set_fen("8/7P/2p5/p1n2k2/6R1/p4P2/7K/2r5 b - - 0 53");
+    engine.board.push_san("a2");
+    engine.board.push_san("h8=Q");
+    // Parser::parse_command(&mut engine, "push san a2 h8=Q");
+    Parser::parse_command(&mut engine, "go depth 20");
 
     // let mut board = Board::new();
     // println!("\n{board}");

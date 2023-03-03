@@ -638,15 +638,21 @@ impl Board {
         return self.stack.is_empty();
     }
 
-    pub fn parse_san(&self, san: &str) -> Result<Move, ChessError> {
-        return Move::from_san(&self.board, san.replace('0', "O").as_str());
+    pub fn parse_san(&self, san: &str) -> Result<Move, chess::Error> {
+        for move_ in self.generate_legal_moves() {
+            if self.san(move_) == san {
+                return Ok(move_);
+            }
+        }
+        return Err(chess::Error::InvalidSanMove);
+        // return Move::from_san(&self.board, san.replace('0', "O").as_str());
     }
 
-    pub fn parse_uci(&self, uci: &str) -> Result<Move, ChessError> {
+    pub fn parse_uci(&self, uci: &str) -> Result<Move, chess::Error> {
         Move::from_str(uci)
     }
 
-    pub fn parse_move(&self, move_text: &str) -> Result<Move, ChessError> {
+    pub fn parse_move(&self, move_text: &str) -> Result<Move, chess::Error> {
         let possible_move = self.parse_san(move_text);
         if possible_move.is_err() {
             return self.parse_uci(move_text);
@@ -655,7 +661,7 @@ impl Board {
     }
 
     pub fn push_san(&mut self, san: &str) -> Move {
-        let move_ = self.parse_san(san).expect("Bad san: {san}");
+        let move_ = self.parse_san(san).expect(format!("Bad san: {san}").as_str());
         self.push(move_);
         move_
     }
@@ -667,7 +673,7 @@ impl Board {
     }
 
     pub fn push_uci(&mut self, uci: &str) -> Move {
-        let move_ = self.parse_uci(uci).expect("Bad uci: {uci}");
+        let move_ = self.parse_uci(uci).expect(format!("Bad uci: {uci}").as_str());
         self.push(move_);
         move_
     }
