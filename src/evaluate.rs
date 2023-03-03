@@ -43,33 +43,34 @@ impl Evaluator {
     }
 
     pub fn activate_nnue(&mut self, piece: Piece, color: Color, square: Square) {
-        // self.network.activate(
-        //     self.convert_piece_to_p_piece(piece, color),
-        //     square.to_index(),
-        // );
+        self.network.activate(
+            self.convert_piece_to_p_piece(piece, color),
+            square.to_index(),
+        );
     }
 
     pub fn deactivate_nnue(&mut self, piece: Piece, color: Color, square: Square) {
-        // self.network.deactivate(
-        //     self.convert_piece_to_p_piece(piece, color),
-        //     square.to_index(),
-        // );
+        self.network.deactivate(
+            self.convert_piece_to_p_piece(piece, color),
+            square.to_index(),
+        );
     }
 
     pub fn backup(&mut self) {
-        // self.network_backup.push(self.network.clone());
+        self.network_backup.push(self.network.clone());
     }
 
     pub fn restore(&mut self) {
-        // self.network = self.network_backup.pop().expect("No network backup found!");
+        self.network = self.network_backup.pop().expect("No network backup found!");
     }
 
-    pub fn evaluate(&self, board: &Board) -> i16 {
+    pub fn evaluate(&self, board: &Board) -> Score {
         // let mut score = self.stockfish_network.eval(board);
         // if board.is_endgame() {
         //     score += self.network.eval(board);
         // }
         // return score as i16;
         self.stockfish_network.eval(board) as i16
+        // self.network.eval(board)
     }
 }

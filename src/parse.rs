@@ -1,4 +1,5 @@
 use super::*;
+use std::io::Write;
 
 const UNKNOWN_COMMAND_ERROR: &str = "";
 const NOT_IMPLEMENTED_ERROR: &str = "Sorry, this command is not implemented yet :(";
@@ -7,66 +8,75 @@ const BAD_BOOL_ERROR: &str = "The given boolean value is wrong fen! Try again!";
 const BAD_INETGER_ERROR: &str = "The given integer value is wrong fen! Try again!";
 const ILLEGAL_MOVE_ERROR: &str = "The move you are trying to make is illegal! Try again!";
 const EMPTY_STACK_ERROR: &str = "Move Stack is enpty, pop not possible! Try again!";
+const EXIT_CODES: [&str; 7] = [
+    "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
+];
+
+// enum Command {
+//     Go,
+//     Perft,
+//     Depth,
+//     SetFen,
+//     SetPrint,
+//     SetHashSize,
+//     SetThreads,
+//     SetTime,
+//     SetDepth,
+//     SetInfinite,
+//     SetPonder,
+//     SetMoveTime,
+//     SetNodes,
+//     SetMate,
+//     SetMovestogo,
+//     SetMultiPV,
+//     SetUCI,
+//     SetUciAnalyseMode,
+//     SetUCIChess960,
+//     SetUCIEngineAbout,
+//     SetUCIEngineName,
+//     SetUCIEngineAuthor,
+//     SetUCILimitStrength,
+//     SetUCIOpponent,
+//     SetUCIShowCurrLine,
+//     SetUCIShowRefutations
+// }
+
+// impl Command {
+//     fn from_str(command: &str) -> Option<Command> {
+//         match command {
+//             "go" => Some(Command::Go),
+//             "perft" => Some(Command::Perft),
+//             "depth" => Some(Command::Depth),
+//             "set_fen" => Some(Command::SetFen),
+//             "set_print" => Some(Command::SetPrint),
+//             "set_hash_size" => Some(Command::SetHashSize),
+//             "set_threads" => Some(Command::SetThreads),
+//             "set_time" => Some(Command::SetTime),
+//             "set_depth" => Some(Command::SetDepth),
+//             "set_infinite" => Some(Command::SetInfinite),
+//             "set_ponder" => Some(Command::SetPonder),
+//             "set_move_time" => Some(Command::SetMoveTime),
+//             "set_nodes" => Some(Command::SetNodes),
+//             "set_mate" => Some(Command::SetMate),
+//             "set_movestogo" => Some(Command::SetMovestogo),
+//             "set_multi_pv" => Some(Command::SetMultiPV),
+//             "set_uci" => Some(Command::SetUCI),
+//             "set_uci_analyse_mode" => Some(Command::SetUciAnalyseMode),
+//             "set_uci_chess960" => Some(Command::SetUCIChess960),
+//             "set_uci_engine_about" => Some(Command::SetUCIEngineAbout),
+//             "set_uci_engine_name" => Some(Command::SetUCIEngineName),
+//             "set_uci_engine_author" => Some(Command::SetUCIEngineAuthor),
+//             "set_uci_limit_strength" => Some(Command::SetUCILimitStrength),
+//             "set_uci_opponent" => Some(Command::SetUCIOpponent),
+//             "set_uci_show_curr_line" => Some(Command::SetUCIShowCurrLine),
+//             "set_uci_show_refutations" => Some(Command::SetUCIShowRefutations),
+//             _ => None
+//         }
+//     }
+// }
 
 fn generate_error<T: ToString>(error_message: T) -> Option<String> {
     return Some(error_message.to_string());
-}
-
-fn parse_raw_input(user_input: &str) -> String {
-    let user_input = user_input.trim();
-    let mut user_input = user_input.to_string();
-    for _char in [",", ":"] {
-        user_input = user_input.replace(_char, " ")
-    }
-    user_input = remove_double_spaces(&user_input);
-    user_input
-}
-
-pub struct Parser;
-
-impl Parser {
-    pub fn main_loop() {
-        let mut engine = Engine::default();
-        let exit_codes = [
-            "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
-        ];
-        loop {
-            let user_input: String;
-            if is_colored_output() {
-                println!();
-                user_input = input(colorize("Enter Command: ", INPUT_MESSAGE_STYLE));
-                println!();
-            } else {
-                user_input = input("");
-            }
-            if user_input.is_empty() || exit_codes.contains(&user_input.to_lowercase().trim()) {
-                if user_input.is_empty() && is_colored_output() {
-                    println!();
-                }
-                println!(
-                    "{}",
-                    colorize("Program ended successfully!", SUCCESS_MESSAGE_STYLE)
-                );
-                break;
-            }
-            if user_input.trim().is_empty() {
-                let error_message = colorize("No input! Please try again!", ERROR_MESSAGE_STYLE);
-                println!("{error_message}");
-                continue;
-            }
-            match parse_command(&mut engine, &user_input) {
-                Some(e) => {
-                    let error_message = if e.is_empty() {
-                        format!("Unknown command: {}\nPlease try again!", user_input.trim())
-                    } else {
-                        e
-                    };
-                    println!("{}", colorize(error_message, ERROR_MESSAGE_STYLE));
-                }
-                None => continue,
-            }
-        }
-    }
 }
 
 struct Go;
@@ -214,14 +224,14 @@ impl Push {
             } else {
                 return generate_error(UNKNOWN_COMMAND_ERROR);
             }
-            let _move = match possible_move {
-                Ok(_move) => _move,
+            let move_ = match possible_move {
+                Ok(move_) => move_,
                 Err(e) => return Some(e.to_string() + "! Try again!"),
             };
-            if !engine.board.is_legal(_move) {
+            if !engine.board.is_legal(move_) {
                 return generate_error(ILLEGAL_MOVE_ERROR);
             }
-            engine.board.push(_move);
+            engine.board.push(move_);
             println!(
                 "{} {}",
                 colorize("Pushed move:", SUCCESS_MESSAGE_STYLE),
@@ -267,53 +277,132 @@ impl Pop {
     }
 }
 
-fn parse_user_input(engine: &mut Engine, user_input: &str) -> Option<String> {
-    let commands = Vec::from_iter(user_input.split(' '));
-    let first_command = match commands.get(0) {
-        Some(command) => command.to_lowercase(),
-        None => return generate_error(UNKNOWN_COMMAND_ERROR),
-    };
-    if user_input.to_lowercase() == "d" {
-        println!("{}", engine.board);
-        return None;
-    }
-    if ["go", "do"].contains(&first_command.as_str()) {
-        return Go::parse_sub_command(engine, &commands);
-    }
-    if first_command == "set" {
-        return Set::parse_sub_command(engine, &commands);
-    }
-    if first_command == "push" {
-        return Push::parse_sub_command(engine, &commands);
-    }
-    if first_command == "pop" {
-        return Pop::parse_sub_command(engine, &commands);
-    }
-    generate_error(UNKNOWN_COMMAND_ERROR)
+enum ParserLoopState {
+    Continue,
+    Break,
 }
 
-fn parse_input(raw_input: &str) -> Vec<String> {
-    let modified_raw_str = parse_raw_input(raw_input);
-    let inputs = modified_raw_str.split("&&");
-    let mut input_vec = Vec::new();
-    for input in inputs {
-        input_vec.push(input.trim().to_string());
-    }
-    return input_vec;
-}
+pub struct Parser;
 
-pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Option<String> {
-    let user_inputs = parse_input(raw_input);
-    let mut first_loop = true;
-    for user_input in user_inputs {
-        if !first_loop {
-            println!();
+impl Parser {
+    fn get_input<T: std::fmt::Display>(q: T) -> String {
+        if !q.to_string().is_empty() {
+            print!("{q}");
+            std::io::stdout().flush().unwrap();
         }
-        first_loop = false;
-        let response = parse_user_input(engine, &user_input);
-        if response.is_some() {
-            return response;
+        let mut user_input = String::new();
+        std::io::stdin()
+            .read_line(&mut user_input)
+            .expect("Failed to read line!");
+        user_input
+    }
+
+    fn parse_raw_input(user_input: &str) -> String {
+        let user_input = user_input.trim();
+        let mut user_input = user_input.to_string();
+        for _char in [",", ":"] {
+            user_input = user_input.replace(_char, " ")
+        }
+        user_input = remove_double_spaces(&user_input);
+        user_input
+    }
+
+    fn split_inputs(input: &str) -> Vec<String> {
+        let inputs = input.split("&&");
+        let mut input_vec = Vec::new();
+        for input in inputs {
+            input_vec.push(input.trim().to_string());
+        }
+        return input_vec;
+    }
+
+    fn run_command(engine: &mut Engine, user_input: &str) -> Option<String> {
+        let commands = Vec::from_iter(user_input.split(' '));
+        let first_command = match commands.get(0) {
+            Some(command) => command.to_lowercase(),
+            None => return generate_error(UNKNOWN_COMMAND_ERROR),
+        };
+        if user_input.to_lowercase() == "d" {
+            println!("{}", engine.board);
+            return None;
+        }
+        if ["go", "do"].contains(&first_command.as_str()) {
+            return Go::parse_sub_command(engine, &commands);
+        }
+        if first_command == "set" {
+            return Set::parse_sub_command(engine, &commands);
+        }
+        if first_command == "push" {
+            return Push::parse_sub_command(engine, &commands);
+        }
+        if first_command == "pop" {
+            return Pop::parse_sub_command(engine, &commands);
+        }
+        generate_error(UNKNOWN_COMMAND_ERROR)
+    }
+
+    pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Option<String> {
+        let modified_raw_str = Self::parse_raw_input(raw_input);
+        let user_inputs = Self::split_inputs(&modified_raw_str);
+        let mut first_loop = true;
+        for user_input in user_inputs {
+            if !first_loop {
+                println!();
+            }
+            first_loop = false;
+            let response = Parser::run_command(engine, &user_input);
+            if response.is_some() {
+                return response;
+            }
+        }
+        None
+    }
+
+    fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) -> ParserLoopState {
+        if raw_input.is_empty() || EXIT_CODES.contains(&raw_input.to_lowercase().trim()) {
+            if raw_input.is_empty() && is_colored_output() {
+                println!();
+            }
+            println!(
+                "{}",
+                colorize("Program ended successfully!", SUCCESS_MESSAGE_STYLE)
+            );
+            return ParserLoopState::Break;
+        }
+        if raw_input.trim().is_empty() {
+            let error_message = colorize("No input! Please try again!", ERROR_MESSAGE_STYLE);
+            println!("{error_message}");
+            return ParserLoopState::Continue;
+        }
+        match Self::parse_command(engine, &raw_input) {
+            Some(e) => {
+                let error_message = if e.is_empty() {
+                    format!("Unknown command: {}\nPlease try again!", raw_input.trim())
+                } else {
+                    e
+                };
+                println!("{}", colorize(error_message, ERROR_MESSAGE_STYLE));
+            }
+            None => return ParserLoopState::Continue,
+        }
+        ParserLoopState::Continue
+    }
+
+    pub fn main_loop() {
+        let mut engine = Engine::default();
+        loop {
+            let raw_input: String;
+            if is_colored_output() {
+                println!();
+                raw_input = Self::get_input(colorize("Enter Command: ", INPUT_MESSAGE_STYLE));
+                println!();
+            } else {
+                raw_input = Self::get_input("");
+            }
+            match Self::run_raw_input_checked(&mut engine, &raw_input) {
+                ParserLoopState::Break => break,
+                ParserLoopState::Continue => continue,
+            }
         }
     }
-    None
 }

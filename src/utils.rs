@@ -2,19 +2,6 @@ use super::*;
 
 pub mod command_utils {
     use super::*;
-    use std::io::Write;
-
-    pub fn input<T: std::fmt::Display>(q: T) -> String {
-        if !q.to_string().is_empty() {
-            print!("{q}");
-            std::io::stdout().flush().unwrap();
-        }
-        let mut user_input = String::new();
-        std::io::stdin()
-            .read_line(&mut user_input)
-            .expect("Failed to read line!");
-        user_input
-    }
 
     pub fn is_checkmate(score: Score) -> bool {
         score.abs() > CHECKMATE_THRESHOLD

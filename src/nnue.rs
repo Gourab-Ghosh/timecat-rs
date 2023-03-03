@@ -256,7 +256,7 @@ impl Network {
             .for_each(|(activation, weight)| *activation -= weight);
     }
 
-    pub fn eval(&self, board: &Board) -> i32 {
+    pub fn eval(&self, board: &Board) -> Score {
         let bucket = (board.occupied().popcnt() as usize - 1) / 4;
         let bucket_idx = bucket * self.input_layer.activations.len();
         let mut output = self.hidden_layer.biases[bucket] as i32;
@@ -273,7 +273,7 @@ impl Network {
             .for_each(|(clipped_activation, weight)| {
                 output += (clipped_activation as i32) * (*weight as i32)
             });
-        output / (Self::SCALE.pow(2)) as i32
+        (output / (Self::SCALE.pow(2)) as i32) as Score
     }
 
     #[inline(always)]

@@ -70,37 +70,28 @@ fn self_play(depth: u8, print: bool) {
 }
 
 fn _main() {
-    // Parser::main_loop();
-
     // self_play(10, false);
+    Parser::parse_command(&mut Engine::default(), "go depth 10");
+    // Parser::parse_command(&mut Engine::default(), "go perft 7");
 
-    parse_command(&mut Engine::default(), "go depth 10");
-
-    // fn push_e4(board: &mut Board) {
-    //     let e4 = board.parse_san("e4").unwrap();
-    //     board.push(e4);
-    //     println!("{}\n", board);
-    // }
-
-    // let mut board = Board::new();
-    // push_e4(&mut board);
-    // println!("{}\n", board);
+    // let mut engine = Engine::default();
+    // engine.board.set_fen("8/7P/2p5/p1n2k2/6R1/p4P2/7K/2r5 b - - 0 53");
+    // Parser::parse_command(&mut engine, "go depth 20");
 
     // let mut board = Board::new();
     // println!("\n{board}");
     // for san in ["e4", "Nf6", "Be2", "Nxe4"] {
-    //     let _move = board.parse_san(san).unwrap();
-    //     let move_str = board.san(_move);
+    //     let move_ = board.parse_san(san).unwrap();
+    //     let move_str = board.san(move_);
     //     println!("\nPushing move {move_str}");
-    //     board.push(_move);
+    //     board.push(move_);
     //     println!("\n{board}");
     // }
-
-    // parse_command(&mut Board::new(), "go perft 7");
 }
 
 fn main() {
     let clock = Instant::now();
+    // Parser::main_loop();
     _main();
     let elapsed_time = clock.elapsed().as_secs_f32();
     let precision = 3;

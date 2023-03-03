@@ -180,7 +180,7 @@ pub mod engine_constants {
     pub const DISABLE_T_TABLE: bool = false;
 
     #[rustfmt::skip]
-    pub const MVV_LVA: [[u32; 6]; 6] = [
+    pub const MVV_LVA: [[i32; 6]; 6] = [
         [105, 205, 305, 405, 505, 605],
         [104, 204, 304, 404, 504, 604],
         [103, 203, 303, 403, 503, 603],
