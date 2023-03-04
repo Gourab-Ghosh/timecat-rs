@@ -177,7 +177,6 @@ pub mod engine_constants {
     pub const NUM_KILLER_MOVES: usize = 3;
     pub const PAWN_VALUE: Score = 100;
 
-    pub const NULL_MOVE_REDUCTION_LIMIT: Depth = 2;
     pub const NULL_MOVE_MIN_REDUCTION: Depth = 2;
     pub const NULL_MOVE_MIN_DEPTH: Depth = 2;
     pub const NULL_MOVE_DEPTH_DIVIDER: Depth = 4;

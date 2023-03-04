@@ -71,8 +71,8 @@ fn self_play(depth: u8, print: bool) {
 }
 
 fn _main() {
-    self_play(10, false);
-    // Parser::parse_command(&mut Engine::default(), "go depth 12");
+    // self_play(10, false);
+    Parser::parse_command(&mut Engine::default(), "go depth 12");
     // Parser::parse_command(&mut Engine::default(), "go perft 7");
 
     // let mut engine = Engine::default();

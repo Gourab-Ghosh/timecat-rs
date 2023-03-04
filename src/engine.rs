@@ -567,7 +567,7 @@ impl Engine {
             // null move reduction
             if apply_null_move && static_evaluation > beta {
                 // let r = NULL_MOVE_MIN_REDUCTION + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
-                let r = 2;
+                let r = NULL_MOVE_MIN_REDUCTION;
                 if depth > r {
                     self.board.push_null_move();
                     self.ply += 1;
@@ -619,19 +619,20 @@ impl Engine {
         while let Some(weighted_move) = weighted_moves.next_best() {
             let _move = weighted_move._move;
             let not_capture_move = !self.board.is_capture(_move);
+            if move_index != 0
+                && futility_pruning
+                && not_capture_move
+                && _move.get_promotion().is_none()
+                && not_in_check
+            {
+                continue;
+            }
             let safe_to_apply_lmr = self.can_apply_lmr(&_move) && !is_pvs_node && not_capture_move && not_in_check;
             self.push(_move);
             let mut score: Score;
             if move_index == 0 {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
             } else {
-                    if futility_pruning
-                    && not_capture_move
-                    && _move.get_promotion().is_none()
-                    && not_in_check
-                {
-                    continue;
-                }
                 if move_index >= FULL_DEPTH_SEARCH_LMR && depth >= REDUCTION_LIMIT_LMR && safe_to_apply_lmr && !DISABLE_LMR {
                     let lmr_reduction = 1 + ((move_index - 1) as f32).sqrt() as Depth;
                     if depth > lmr_reduction {
