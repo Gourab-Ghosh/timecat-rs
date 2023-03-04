@@ -57,22 +57,28 @@ fn self_play(depth: u8, print: bool) {
     let mut engine = Engine::default();
     println!("\n{}\n", engine.board);
     while !engine.board.is_game_over() {
+        let clock = Instant::now();
         let (best_move, score) = engine.go(depth, print);
+        let time_elapsed = clock.elapsed();
         let best_move_san = engine.board.san(best_move);
         let pv = engine.get_pv_string();
         engine.push(best_move);
+        let nps =
+            (engine.get_num_nodes_searched() as u128 * 10u128.pow(9)) / time_elapsed.as_nanos();
         println!("\n{}\n", engine.board);
         println_info("Best Move", best_move_san);
         println_info("Score", score_to_string(score));
         println_info("Num Nodes Searched", engine.get_num_nodes_searched());
         println_info("PV Line", pv);
+        println_info("Time Taken", format!("{:.3} s", time_elapsed.as_secs_f32()));
+        println_info("Nodes per second", format!("{} nodes/s", nps));
     }
     println!("Game PGN:\n\n{}", engine.board.get_pgn());
 }
 
 fn _main() {
-    // self_play(10, false);
-    Parser::parse_command(&mut Engine::default(), "go depth 12");
+    self_play(12, false);
+    // Parser::parse_command(&mut Engine::default(), "go depth 12");
     // Parser::parse_command(&mut Engine::default(), "go perft 7");
 
     // let mut engine = Engine::default();
@@ -90,6 +96,18 @@ fn _main() {
     //     board.push(_move);
     //     println!("\n{board}");
     // }
+
+    // let mut engine = Engine::default();
+    // engine.board.set_fen("rnbqkbnr/ppp1p1pp/3p4/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
+    // let _move = engine.board.parse_uci("e5f6").unwrap();
+    // println!("{}", engine.board.is_en_passant(_move));
+    // println!("{}", engine.board.san(_move));
+
+    // let mut engine = Engine::default();
+    // engine.board.set_fen("rnbqkbnr/ppp1pppp/8/4P3/2Pp4/8/PP1P1PPP/RNBQKBNR b KQkq c3 0 3");
+    // let _move = engine.board.parse_uci("d4c3").unwrap();
+    // println!("{}", engine.board.is_en_passant(_move));
+    // println!("{}", engine.board.san(_move));
 }
 
 fn main() {

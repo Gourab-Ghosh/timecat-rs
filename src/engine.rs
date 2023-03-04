@@ -153,7 +153,9 @@ mod sort {
             let checkers = *sub_board.checkers();
             let moving_piece = board.piece_at(_move.get_source()).unwrap();
             if checkers != BB_EMPTY {
-                return 1292000000 + 100 * checkers.popcnt() as MoveWeight + moving_piece as MoveWeight;
+                return 1292000000
+                    + 100 * checkers.popcnt() as MoveWeight
+                    + moving_piece as MoveWeight;
             }
             if board.is_capture(_move) {
                 let capture_value = self.capture_value(_move, board);
@@ -331,7 +333,11 @@ mod transposition_table {
             }
         }
 
-        fn update_tt_entry(tt_entry: &mut TranspositionTableEntry, option_data: Option<TranspositionTableData>, best_move: Option<Move>) {
+        fn update_tt_entry(
+            tt_entry: &mut TranspositionTableEntry,
+            option_data: Option<TranspositionTableData>,
+            best_move: Option<Move>,
+        ) {
             tt_entry.best_move = best_move;
 
             if let Some(data) = tt_entry.option_data {
@@ -571,12 +577,7 @@ impl Engine {
                 if depth > r {
                     self.board.push_null_move();
                     self.ply += 1;
-                    let score = -self.alpha_beta(
-                        depth - 1 - r,
-                        -beta,
-                        -beta + 1,
-                        false,
-                    );
+                    let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1, false);
                     self.board.pop_null_move();
                     self.ply -= 1;
                     if score >= beta {
@@ -627,20 +628,25 @@ impl Engine {
             {
                 continue;
             }
-            let safe_to_apply_lmr = self.can_apply_lmr(&_move) && !is_pvs_node && not_capture_move && not_in_check;
+            let safe_to_apply_lmr =
+                self.can_apply_lmr(&_move) && !is_pvs_node && not_capture_move && not_in_check;
             self.push(_move);
             let mut score: Score;
             if move_index == 0 {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
             } else {
-                if move_index >= FULL_DEPTH_SEARCH_LMR && depth >= REDUCTION_LIMIT_LMR && safe_to_apply_lmr && !DISABLE_LMR {
+                if move_index >= FULL_DEPTH_SEARCH_LMR
+                    && depth >= REDUCTION_LIMIT_LMR
+                    && safe_to_apply_lmr
+                    && !DISABLE_LMR
+                {
                     let lmr_reduction = 1 + ((move_index - 1) as f32).sqrt() as Depth;
                     if depth > lmr_reduction {
                         score = -self.alpha_beta(depth - lmr_reduction, -alpha - 1, -alpha, true);
                     } else {
                         score = alpha + 1;
                     }
-                } else{
+                } else {
                     score = alpha + 1;
                 }
                 if score > alpha {

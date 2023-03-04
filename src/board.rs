@@ -4,6 +4,7 @@ use super::*;
 #[derive(Clone)]
 struct BoardState {
     board: chess::Board,
+    ep_square: Option<Square>,
     halfmove_clock: u8,
     fullmove_number: u8,
     num_repetitions: u8,
@@ -12,6 +13,7 @@ struct BoardState {
 pub struct Board {
     board: chess::Board,
     stack: Vec<(BoardState, Move)>,
+    ep_square: Option<Square>,
     halfmove_clock: u8,
     fullmove_number: u8,
     num_repetitions: u8,
@@ -24,6 +26,7 @@ impl Board {
         let mut board = Self {
             board: chess::Board::from_str(STARTING_BOARD_FEN).unwrap(),
             stack: Vec::new(),
+            ep_square: None,
             halfmove_clock: 0,
             fullmove_number: 1,
             num_repetitions: 0,
@@ -60,7 +63,11 @@ impl Board {
         let fen = simplify_fen(fen);
         self.board = chess::Board::from_str(fen.as_str()).expect("FEN not parsed properly!");
         let mut splitted_fen = fen.split(' ');
-        self.halfmove_clock = splitted_fen.nth(4).unwrap_or("0").parse().unwrap();
+        self.ep_square = match splitted_fen.nth(3).unwrap_or("-") {
+            "-" => None,
+            square => Some(Square::from_str(square).expect("Invalid enpassant square!")),
+        };
+        self.halfmove_clock = splitted_fen.next().unwrap_or("0").parse().unwrap();
         self.fullmove_number = splitted_fen.next().unwrap_or("1").parse().unwrap();
         self.repetition_table.clear();
         self.num_repetitions = self
@@ -300,6 +307,7 @@ impl Board {
     fn get_board_state(&self) -> BoardState {
         BoardState {
             board: self.board,
+            ep_square: self.ep_square,
             halfmove_clock: self.halfmove_clock,
             fullmove_number: self.fullmove_number,
             num_repetitions: self.num_repetitions,
@@ -414,34 +422,21 @@ impl Board {
         self.is_other_draw() || self.status() != BoardStatus::Ongoing
     }
 
+    // pub fn is_double_pawn_push(&self, _move: Move) -> bool {
+    //     let source = _move.get_source();
+    //     let dest = _move.get_dest();
+    //     let pawn_mask = self.get_piece_mask(Pawn);
+    // }
+
     pub fn is_en_passant(&self, _move: Move) -> bool {
-        // if self.ep_square().is_none() {
-        //     return false;
-        // }
-        // if self.ep_square().unwrap() != _move.get_dest() {
-        //     return false;
-        // }
-        // if (self.get_piece_mask(Pawn) & get_square_bb(_move.get_source())) == BB_EMPTY {
-        //     return false;
-        // }
-        // if 8u8.abs_diff(
-        //     _move
-        //         .get_dest()
-        //         .to_int()
-        //         .abs_diff(_move.get_source().to_int()),
-        // ) != 1
-        // {
-        //     return false;
-        // }
-        // return (self.occupied() & get_square_bb(_move.get_dest())) == BB_EMPTY;
         match self.ep_square() {
             Some(ep_square) => {
                 let source = _move.get_source();
                 let dest = _move.get_dest();
-                ep_square == source &&
-                    self.get_piece_mask(Pawn) & get_square_bb(dest) != BB_EMPTY &&
-                    [7, 9].contains(&source.to_int().abs_diff(dest.to_int())) &&
-                    !self.occupied() & get_square_bb(source) != BB_EMPTY
+                ep_square == dest
+                    && self.get_piece_mask(Pawn) & get_square_bb(source) != BB_EMPTY
+                    && [7, 9].contains(&dest.to_int().abs_diff(source.to_int()))
+                    && self.occupied() & get_square_bb(dest) == BB_EMPTY
             }
             None => false,
         }
@@ -453,7 +448,8 @@ impl Board {
         if pawn_mask & self.occupied_co(self_color) & get_square_bb(square) == BB_EMPTY {
             return false;
         }
-        pawn_mask & self.occupied_co(!self_color) & get_adjacent_files(square.get_file()) == BB_EMPTY
+        pawn_mask & self.occupied_co(!self_color) & get_adjacent_files(square.get_file())
+            == BB_EMPTY
     }
 
     pub fn is_capture(&self, _move: Move) -> bool {
@@ -509,8 +505,9 @@ impl Board {
         self.is_zeroing(_move) || self.reduces_castling_rights(_move) || self.has_legal_en_passant()
     }
 
+    #[inline(always)]
     pub fn ep_square(&self) -> Option<Square> {
-        self.board.en_passant()
+        self.ep_square
     }
 
     pub fn is_castling(&self, _move: Move) -> bool {
@@ -596,6 +593,10 @@ impl Board {
 
     pub fn push_without_nnue(&mut self, _move: Move) {
         let board_state = self.get_board_state();
+        self.ep_square = match self.board.en_passant() {
+            Some(ep_square) => Some(ep_square.forward(self.turn()).unwrap()),
+            None => None,
+        };
         if self.is_zeroing(_move) {
             self.halfmove_clock = 0;
         } else {
@@ -980,6 +981,7 @@ impl Clone for Board {
     fn clone(&self) -> Self {
         Self {
             board: self.board,
+            ep_square: self.ep_square,
             halfmove_clock: self.halfmove_clock,
             fullmove_number: self.fullmove_number,
             stack: self.stack.clone(),
