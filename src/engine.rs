@@ -186,10 +186,10 @@ mod sort {
             //     None => 0,
             // };
 
-            let history_moves_score = self.history_moves[moving_piece.to_index()]
-                [board.color_at(_move.get_source()).unwrap() as usize][_move.get_dest().to_index()];
+            
             // 100 * history_moves_score + threat_score
-            history_moves_score
+            self.history_moves[moving_piece.to_index()]
+                [board.color_at(_move.get_source()).unwrap() as usize][_move.get_dest().to_index()]
         }
 
         pub fn get_weighted_sort_moves<T: IntoIterator<Item = Move>>(
@@ -457,7 +457,7 @@ impl Engine {
         if self.move_sorter.is_killer_move(_move, self.ply) {
             return false;
         }
-        return true;
+        true
     }
 
     fn search(&mut self, depth: Depth, mut alpha: Score, beta: Score) -> Score {

@@ -8,8 +8,7 @@
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
 #![allow(unused_macros)]
-// #![allow(private_in_public)]
-// #[allow(improper_ctypes)]
+#![allow(clippy::enum_variant_names)]
 
 mod board;
 mod constants;
@@ -77,8 +76,8 @@ fn self_play(depth: u8, print: bool) {
 }
 
 fn _main() {
-    self_play(12, false);
-    // Parser::parse_command(&mut Engine::default(), "go depth 12");
+    // self_play(12, false);
+    Parser::parse_command(&mut Engine::default(), "go depth 12");
     // Parser::parse_command(&mut Engine::default(), "go perft 7");
 
     // let mut engine = Engine::default();

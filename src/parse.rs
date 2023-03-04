@@ -76,7 +76,7 @@ const EXIT_CODES: [&str; 7] = [
 // }
 
 fn generate_error<T: ToString>(error_message: T) -> Option<String> {
-    return Some(error_message.to_string());
+    Some(error_message.to_string())
 }
 
 struct Go;
@@ -118,7 +118,7 @@ impl Go {
         position_count
     }
 
-    pub fn parse_sub_command(engine: &mut Engine, commands: &Vec<&str>) -> Option<String> {
+    pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Option<String> {
         let second_command = match commands.get(1) {
             Some(second_command) => second_command.to_lowercase(),
             None => return generate_error(UNKNOWN_COMMAND_ERROR),
@@ -148,17 +148,17 @@ impl Go {
 struct Set;
 
 impl Set {
-    fn board_fen(engine: &mut Engine, commands: &Vec<&str>) -> Option<String> {
+    fn board_fen(engine: &mut Engine, commands: &[&str]) -> Option<String> {
         let fen = commands[3..commands.len()].join(" ");
         if !Board::is_good_fen(&fen) {
             return generate_error(BAD_FEN_ERROR);
         };
         engine.board.set_fen(&fen);
         println!("{}", engine.board);
-        return None;
+        None
     }
 
-    fn color(engine: &mut Engine, commands: &Vec<&str>) -> Option<String> {
+    fn color(engine: &mut Engine, commands: &[&str]) -> Option<String> {
         let third_command = match commands.get(2) {
             Some(command) => command.to_lowercase(),
             None => return generate_error(UNKNOWN_COMMAND_ERROR),
@@ -173,15 +173,15 @@ impl Set {
         if b {
             println!();
             set_colored_output(b);
-            return None;
+            None
         } else {
             set_colored_output(b);
             println!();
-            return None;
+            None
         }
     }
 
-    pub fn parse_sub_command(engine: &mut Engine, commands: &Vec<&str>) -> Option<String> {
+    pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Option<String> {
         let second_command = match commands.get(1) {
             Some(command) => command.to_lowercase(),
             None => return generate_error(UNKNOWN_COMMAND_ERROR),
@@ -207,13 +207,12 @@ impl Set {
 struct Push;
 
 impl Push {
-    fn moves(engine: &mut Engine, commands: &Vec<&str>) -> Option<String> {
+    fn moves(engine: &mut Engine, commands: &[&str]) -> Option<String> {
         let second_command = match commands.get(1) {
             Some(command) => command.to_lowercase(),
             None => return generate_error(UNKNOWN_COMMAND_ERROR),
         };
-        for i in 2..commands.len() {
-            let move_text = commands[i];
+        for move_text in commands.iter().skip(2) {
             let possible_move: Result<Move, chess::Error>;
             if second_command == "san" {
                 possible_move = engine.board.parse_san(move_text);
@@ -241,7 +240,7 @@ impl Push {
         None
     }
 
-    pub fn parse_sub_command(engine: &mut Engine, commands: &Vec<&str>) -> Option<String> {
+    pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Option<String> {
         Self::moves(engine, commands)
     }
 }
@@ -249,7 +248,7 @@ impl Push {
 struct Pop;
 
 impl Pop {
-    fn n_times(engine: &mut Engine, commands: &Vec<&str>) -> Option<String> {
+    fn n_times(engine: &mut Engine, commands: &[&str]) -> Option<String> {
         let second_command = commands.get(1).unwrap_or(&"1");
         if commands.get(2).is_some() {
             return generate_error(UNKNOWN_COMMAND_ERROR);
@@ -272,7 +271,7 @@ impl Pop {
         None
     }
 
-    pub fn parse_sub_command(engine: &mut Engine, commands: &Vec<&str>) -> Option<String> {
+    pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Option<String> {
         Self::n_times(engine, commands)
     }
 }
@@ -313,12 +312,12 @@ impl Parser {
         for input in inputs {
             input_vec.push(input.trim().to_string());
         }
-        return input_vec;
+        input_vec
     }
 
     fn run_command(engine: &mut Engine, user_input: &str) -> Option<String> {
         let commands = Vec::from_iter(user_input.split(' '));
-        let first_command = match commands.get(0) {
+        let first_command = match commands.first() {
             Some(command) => command.to_lowercase(),
             None => return generate_error(UNKNOWN_COMMAND_ERROR),
         };
@@ -374,7 +373,7 @@ impl Parser {
             println!("{error_message}");
             return ParserLoopState::Continue;
         }
-        match Self::parse_command(engine, &raw_input) {
+        match Self::parse_command(engine, raw_input) {
             Some(e) => {
                 let error_message = if e.is_empty() {
                     format!("Unknown command: {}\nPlease try again!", raw_input.trim())

@@ -593,10 +593,7 @@ impl Board {
 
     pub fn push_without_nnue(&mut self, _move: Move) {
         let board_state = self.get_board_state();
-        self.ep_square = match self.board.en_passant() {
-            Some(ep_square) => Some(ep_square.forward(self.turn()).unwrap()),
-            None => None,
-        };
+        self.ep_square = self.board.en_passant().map(|ep_square| ep_square.forward(self.turn()).unwrap());
         if self.is_zeroing(_move) {
             self.halfmove_clock = 0;
         } else {
@@ -658,7 +655,7 @@ impl Board {
     }
 
     pub fn has_empty_stack(&self) -> bool {
-        return self.stack.is_empty();
+        self.stack.is_empty()
     }
 
     pub fn parse_san(&self, san: &str) -> Result<Move, chess::Error> {
@@ -668,7 +665,7 @@ impl Board {
                 return Ok(_move);
             }
         }
-        return Err(chess::Error::InvalidSanMove);
+        Err(chess::Error::InvalidSanMove)
         // return Move::from_san(&self.board, san.replace('0', "O").as_str());
     }
 
@@ -687,7 +684,7 @@ impl Board {
     pub fn push_san(&mut self, san: &str) -> Move {
         let _move = self
             .parse_san(san)
-            .expect(format!("Bad san: {san}").as_str());
+            .unwrap_or_else(|_| panic!("Bad san: {san}"));
         self.push(_move);
         _move
     }
@@ -701,7 +698,7 @@ impl Board {
     pub fn push_uci(&mut self, uci: &str) -> Move {
         let _move = self
             .parse_uci(uci)
-            .expect(format!("Bad uci: {uci}").as_str());
+            .unwrap_or_else(|_| panic!("Bad uci: {uci}"));
         self.push(_move);
         _move
     }
