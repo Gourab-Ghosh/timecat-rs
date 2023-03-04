@@ -6,21 +6,64 @@ use EntryFlag::*;
 mod sort {
     use super::*;
 
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Default)]
     pub struct WeightedMove {
-        pub move_: Move,
+        pub _move: Move,
         pub weight: i32,
     }
 
     impl WeightedMove {
-        pub fn new(move_: Move, weight: i32) -> Self {
-            Self { move_, weight }
+        pub fn new(_move: Move, weight: i32) -> Self {
+            Self { _move, weight }
+        }
+    }
+
+    pub struct WeightedMoveList {
+        weighted_moves: [WeightedMove; MAX_MOVES_PER_POSITION],
+        len: usize,
+        idx: usize,
+    }
+
+    impl WeightedMoveList {
+        pub fn next_best(&mut self) -> Option<WeightedMove> {
+            if self.idx == self.len {
+                return None;
+            }
+            let mut max_weight = MoveWeight::MIN;
+            let mut max_idx = self.idx;
+            for idx in self.idx..self.len {
+                let weighted_move = self.weighted_moves[idx];
+                if weighted_move.weight > max_weight {
+                    max_idx = idx;
+                    max_weight = weighted_move.weight;
+                }
+            }
+            self.weighted_moves.swap(self.idx, max_idx);
+            let best_move = self.weighted_moves[self.idx];
+            self.idx += 1;
+            Some(best_move)
+        }
+    }
+
+    impl FromIterator<WeightedMove> for WeightedMoveList {
+        fn from_iter<T: IntoIterator<Item = WeightedMove>>(iter: T) -> Self {
+            let mut weighted_moves = [WeightedMove::default(); MAX_MOVES_PER_POSITION];
+            let mut len = 0;
+            for _move in iter {
+                weighted_moves[len] = _move;
+                len += 1;
+            }
+            Self {
+                weighted_moves,
+                len,
+                idx: 0,
+            }
         }
     }
 
     pub struct MoveSorter {
         killer_moves: [[Move; NUM_KILLER_MOVES]; MAX_DEPTH],
-        history_moves: [[[i32; 64]; 2]; 6],
+        history_moves: [[[MoveWeight; 64]; 2]; 6],
     }
 
     impl MoveSorter {
@@ -30,8 +73,12 @@ mod sort {
             arr[0] = killer_move;
         }
 
+        pub fn is_killer_move(&self, _move: &Move, ply: Ply) -> bool {
+            self.killer_moves[ply].contains(_move)
+        }
+
         pub fn add_history_move(&mut self, history_move: Move, board: &Board, depth: Depth) {
-            let depth = depth as i32;
+            let depth = depth as MoveWeight;
             let src = history_move.get_source();
             let dest = history_move.get_dest();
             self.history_moves[board.piece_at(src).unwrap().to_index()]
@@ -46,7 +93,7 @@ mod sort {
 
         fn see(&self, square: Square, board: &mut chess::Board) -> Score {
             let least_attackers_move = match self.get_least_attackers_move(square, board) {
-                Some(move_) => move_,
+                Some(_move) => _move,
                 None => return 0,
             };
             let capture_piece = board.piece_on(square).unwrap_or(Pawn);
@@ -56,7 +103,7 @@ mod sort {
 
         fn see_capture(&self, square: Square, board: &mut chess::Board) -> Score {
             let least_attackers_move = match self.get_least_attackers_move(square, board) {
-                Some(move_) => move_,
+                Some(_move) => _move,
                 None => return 0,
             };
             let capture_piece = board.piece_on(square).unwrap_or(Pawn);
@@ -64,98 +111,110 @@ mod sort {
             evaluate_piece(capture_piece) - self.see(square, board)
         }
 
-        fn mvv_lva(&self, move_: Move, board: &Board) -> i32 {
+        fn mvv_lva(&self, _move: Move, board: &Board) -> MoveWeight {
             MVV_LVA[board
-                .piece_at(move_.get_source())
+                .piece_at(_move.get_source())
                 .unwrap_or(Pawn)
-                .to_index()][board.piece_at(move_.get_dest()).unwrap().to_index()]
+                .to_index()][board.piece_at(_move.get_dest()).unwrap().to_index()]
         }
 
         #[inline(always)]
-        fn capture_value(&self, move_: Move, board: &Board) -> i32 {
-            self.see_capture(move_.get_dest(), &mut board.get_sub_board()) as i32
-            // self.mvv_lva(move_, board)
+        fn capture_value(&self, _move: Move, board: &Board) -> MoveWeight {
+            self.see_capture(_move.get_dest(), &mut board.get_sub_board()) as MoveWeight
+            // self.mvv_lva(_move, board)
         }
 
-        fn threat_value(&self, move_: Move, sub_board: &chess::Board) -> i32 {
-            let dest = move_.get_dest();
+        fn threat_value(&self, _move: Move, sub_board: &chess::Board) -> MoveWeight {
+            let dest = _move.get_dest();
             let attacker_piece_score =
-                evaluate_piece(sub_board.piece_on(move_.get_source()).unwrap());
+                evaluate_piece(sub_board.piece_on(_move.get_source()).unwrap());
             let attacked_piece_score = evaluate_piece(sub_board.piece_on(dest).unwrap_or(Pawn));
             let mut threat_score = attacker_piece_score - attacked_piece_score;
             if sub_board.pinned() == &get_square_bb(dest) {
                 threat_score *= 2;
             }
-            (threat_score + 16 * PAWN_VALUE) as i32
+            (threat_score + 16 * PAWN_VALUE) as MoveWeight
         }
 
-        fn move_value(&self, move_: Move, board: &Board, ply: Ply, best_move: Option<Move>) -> i32 {
+        fn move_value(
+            &self,
+            _move: Move,
+            board: &Board,
+            ply: Ply,
+            best_move: Option<Move>,
+        ) -> MoveWeight {
             if let Some(m) = best_move {
-                if m == move_ {
+                if m == _move {
                     return 1294000000;
                 }
             }
             let mut sub_board = board.get_sub_board();
-            sub_board.clone().make_move(move_, &mut sub_board);
+            sub_board.clone().make_move(_move, &mut sub_board);
             let checkers = *sub_board.checkers();
+            let moving_piece = board.piece_at(_move.get_source()).unwrap();
             if checkers != BB_EMPTY {
-                return 1292000000 + checkers.popcnt() as i32;
+                return 1292000000 + 100 * checkers.popcnt() as MoveWeight + moving_piece as MoveWeight;
             }
-            if board.is_capture(move_) {
-                let capture_value = self.capture_value(move_, board);
+            if board.is_capture(_move) {
+                let capture_value = self.capture_value(_move, board);
                 return 1291000000 + capture_value;
             }
             for (i, killer_move) in self.killer_moves[ply].iter().enumerate() {
-                if killer_move == &move_ {
-                    return 1290000000 - i as i32;
+                if killer_move == &_move {
+                    return 1290000000 - i as MoveWeight;
                 }
             }
-            if let Some(piece) = move_.get_promotion() {
-                return 1289000000 + piece as i32;
+            if let Some(piece) = _move.get_promotion() {
+                return 1289000000 + piece as MoveWeight;
+            }
+            if board.is_passed_pawn(_move.get_source()) {
+                let promotion_distance = if board.turn() == White {
+                    7 - _move.get_dest().get_rank() as MoveWeight
+                } else {
+                    _move.get_dest().get_rank() as MoveWeight
+                };
+                return 1288000000 + promotion_distance;
             }
             // let threat_score = match sub_board.null_move() {
             //     Some(board) => {
             //         let mut moves = chess::MoveGen::new_legal(&board);
             //         moves.set_iterator_mask(*board.color_combined(!board.side_to_move()));
-            //         moves.into_iter().map(|m| self.threat_value(m, &board)).sum::<i32>()
+            //         moves.into_iter().map(|m| self.threat_value(m, &board)).sum::<MoveWeight>()
             //     },
             //     None => 0,
             // };
 
-            // 10 * history_moves_score + threat_score
-            self.history_moves[board.piece_at(move_.get_source()).unwrap().to_index()]
-                [board.color_at(move_.get_source()).unwrap() as usize][move_.get_dest().to_index()]
+            let history_moves_score = self.history_moves[moving_piece.to_index()]
+                [board.color_at(_move.get_source()).unwrap() as usize][_move.get_dest().to_index()];
+            // 100 * history_moves_score + threat_score
+            history_moves_score
         }
 
-        pub fn sort_moves<T: IntoIterator<Item = Move>>(
+        pub fn get_weighted_sort_moves<T: IntoIterator<Item = Move>>(
             &self,
             move_gen: T,
             board: &Board,
             ply: Ply,
             best_move: Option<Move>,
-        ) -> Vec<WeightedMove> {
-            let mut weighted_moves = Vec::from_iter(
+        ) -> WeightedMoveList {
+            WeightedMoveList::from_iter(
                 move_gen
                     .into_iter()
                     .map(|m| WeightedMove::new(m, self.move_value(m, board, ply, best_move))),
-            );
-            weighted_moves.sort_by(|a, b| b.weight.cmp(&a.weight));
-            weighted_moves
+            )
         }
 
-        pub fn sort_captures<T: IntoIterator<Item = Move>>(
+        pub fn get_weighted_capture_moves<T: IntoIterator<Item = Move>>(
             &self,
             move_gen: T,
             board: &Board,
-        ) -> Vec<WeightedMove> {
-            let mut weighted_moves = Vec::from_iter(move_gen.into_iter().map(|m| {
+        ) -> WeightedMoveList {
+            WeightedMoveList::from_iter(move_gen.into_iter().map(|m| {
                 WeightedMove::new(
                     m,
-                    self.see_capture(m.get_dest(), &mut board.get_sub_board()) as i32,
+                    self.see_capture(m.get_dest(), &mut board.get_sub_board()) as MoveWeight,
                 )
-            }));
-            weighted_moves.sort_by(|a, b| b.weight.cmp(&a.weight));
-            weighted_moves
+            }))
         }
     }
 
@@ -170,26 +229,47 @@ mod sort {
 }
 
 mod transposition_table {
+    use std::collections::hash_map::Entry;
+
     use super::*;
 
     #[derive(Clone, Copy)]
     pub enum EntryFlag {
-        ExactHAsh,
-        AlphaHash,
-        BetaHash,
+        HashExact,
+        HashAlpha,
+        HashBeta,
     }
 
     impl Default for EntryFlag {
         fn default() -> Self {
-            ExactHAsh
+            HashExact
         }
     }
 
-    #[derive(Default)]
-    struct TranspositionTableEntry {
+    #[derive(Clone, Copy)]
+    struct TranspositionTableData {
         depth: Depth,
         score: Score,
-        flag: Option<EntryFlag>,
+        flag: EntryFlag,
+    }
+
+    impl TranspositionTableData {
+        pub fn depth(&self) -> Depth {
+            self.depth
+        }
+
+        pub fn score(&self) -> Score {
+            self.score
+        }
+
+        pub fn flag(&self) -> EntryFlag {
+            self.flag
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    struct TranspositionTableEntry {
+        option_data: Option<TranspositionTableData>,
         best_move: Option<Move>,
     }
 
@@ -217,41 +297,54 @@ mod transposition_table {
             match self.table.lock().unwrap().get(&key) {
                 Some(tt_entry) => {
                     let best_move = tt_entry.best_move;
-                    if tt_entry.depth >= depth {
-                        match tt_entry.flag {
-                            Some(ExactHAsh) => Some((Some(tt_entry.score), best_move)),
-                            Some(AlphaHash) => {
-                                if tt_entry.score <= alpha {
-                                    Some((Some(tt_entry.score), best_move))
-                                } else {
-                                    Some((None, best_move))
+                    if let Some(data) = tt_entry.option_data {
+                        if data.depth >= depth {
+                            return match data.flag {
+                                HashExact => Some((Some(data.score), best_move)),
+                                HashAlpha => {
+                                    if data.score <= alpha {
+                                        Some((Some(data.score), best_move))
+                                    } else {
+                                        Some((None, best_move))
+                                    }
                                 }
-                            }
-                            Some(BetaHash) => {
-                                if tt_entry.score >= beta {
-                                    Some((Some(tt_entry.score), best_move))
-                                } else {
-                                    Some((None, best_move))
+                                HashBeta => {
+                                    if data.score >= beta {
+                                        Some((Some(data.score), best_move))
+                                    } else {
+                                        Some((None, best_move))
+                                    }
                                 }
-                            }
-                            None => return Some((None, best_move)),
+                            };
                         }
-                    } else {
-                        Some((None, best_move))
                     }
+                    Some((None, best_move))
                 }
                 None => None,
             }
         }
 
         pub fn read_best_move(&self, key: u64) -> Option<Move> {
-            if DISABLE_T_TABLE {
-                return None;
-            }
             match self.table.lock().unwrap().get(&key) {
                 Some(tt_entry) => tt_entry.best_move,
                 None => None,
             }
+        }
+
+        fn update_tt_entry(tt_entry: &mut TranspositionTableEntry, option_data: Option<TranspositionTableData>, best_move: Option<Move>) {
+            tt_entry.best_move = best_move;
+
+            if let Some(data) = tt_entry.option_data {
+                if let Some(curr_data) = option_data {
+                    if data.depth < curr_data.depth {
+                        tt_entry.option_data = option_data;
+                    }
+                }
+            } else {
+                tt_entry.option_data = option_data;
+            }
+
+            // tt_entry.option_data = option_data;
         }
 
         pub fn write(
@@ -264,48 +357,25 @@ mod transposition_table {
         ) {
             // let not_to_save_score = DISABLE_T_TABLE || is_checkmate(score) || score.abs() < PAWN_VALUE / 10;
             let not_to_save_score = DISABLE_T_TABLE || is_checkmate(score);
-            let option_flag = if not_to_save_score {None} else {Some(flag)};
+            let option_data = if not_to_save_score {
+                None
+            } else {
+                Some(TranspositionTableData { depth, score, flag })
+            };
             let mut table_entry = self.table.lock().unwrap();
-            let mut tt_entry = table_entry.entry(key).or_insert(TranspositionTableEntry {
-                depth,
-                score,
-                flag: option_flag,
-                best_move,
-            });
-            if tt_entry.depth < depth {
-                tt_entry.depth = depth;
-                tt_entry.best_move = best_move;
-                tt_entry.score = score;
-                tt_entry.flag = option_flag;
+            match table_entry.entry(key) {
+                Entry::Occupied(tt_entry) => {
+                    let tt_entry = tt_entry.into_mut();
+                    Self::update_tt_entry(tt_entry, option_data, best_move);
+                }
+                Entry::Vacant(tt_entry) => {
+                    tt_entry.insert(TranspositionTableEntry {
+                        option_data,
+                        best_move,
+                    });
+                }
             }
         }
-
-        // pub fn write(&self, key: u64, depth: Depth, score: Score, flag: EntryFlag, best_move: Move) {
-        //     // let not_to_save_score = DISABLE_T_TABLE || is_checkmate(score) || score.abs() < 5;
-        //     let not_to_save_score = DISABLE_T_TABLE || is_checkmate(score);
-        //     if not_to_save_score {
-        //         return;
-        //     }
-        //     match self.table.lock().unwrap().get_mut(&key) {
-        //         Some(tt_entry) => {
-        //             if tt_entry.depth > depth {
-        //                 return;
-        //             }
-        //             tt_entry.depth = depth;
-        //             tt_entry.score = score;
-        //             tt_entry.flag = flag;
-        //             tt_entry.best_move = best_move;
-        //         }
-        //         None => {
-        //             self.table.lock().unwrap().insert(key, TranspositionTableEntry {
-        //                 depth,
-        //                 score,
-        //                 flag,
-        //                 best_move,
-        //             });
-        //         }
-        //     }
-        // }
 
         pub fn clear(&self) {
             self.table.lock().unwrap().clear();
@@ -342,8 +412,8 @@ impl Engine {
         }
     }
 
-    pub fn push(&mut self, move_: Move) {
-        self.board.push(move_);
+    pub fn push(&mut self, _move: Move) {
+        self.board.push(_move);
         self.ply += 1;
     }
 
@@ -365,12 +435,23 @@ impl Engine {
         self.transposition_table = TranspositionTable::default();
     }
 
-    fn update_pv_table(&mut self, move_: Move) {
-        self.pv_table[self.ply][self.ply] = move_;
+    fn update_pv_table(&mut self, _move: Move) {
+        self.pv_table[self.ply][self.ply] = _move;
         for next_ply in (self.ply + 1)..self.pv_length[self.ply + 1] {
             self.pv_table[self.ply][next_ply] = self.pv_table[self.ply + 1][next_ply];
         }
         self.pv_length[self.ply] = self.pv_length[self.ply + 1];
+    }
+
+    pub fn can_apply_lmr(&self, _move: &Move) -> bool {
+        // return false;
+        if _move.get_promotion().is_some() {
+            return false;
+        }
+        if self.move_sorter.is_killer_move(_move, self.ply) {
+            return false;
+        }
+        return true;
     }
 
     fn search(&mut self, depth: Depth, mut alpha: Score, beta: Score) -> Score {
@@ -384,30 +465,32 @@ impl Engine {
         }
         let key = self.board.get_hash();
         let mut score = -CHECKMATE_SCORE;
-        let mut flag = AlphaHash;
-        let moves = self.move_sorter.sort_moves(
+        let mut flag = HashAlpha;
+        let mut weighted_moves = self.move_sorter.get_weighted_sort_moves(
             self.board.generate_legal_moves(),
             &self.board,
             self.ply,
             self.transposition_table.read_best_move(key),
         );
-        for (i, &weighted_move) in moves.iter().enumerate() {
-            let move_ = weighted_move.move_;
-            self.push(move_);
-            if i == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true) > alpha {
+        let mut move_index = 0;
+        while let Some(weighted_move) = weighted_moves.next_best() {
+            let _move = weighted_move._move;
+            self.push(_move);
+            if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true) > alpha {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
             }
             self.pop();
             if score > alpha {
-                flag = ExactHAsh;
+                flag = HashExact;
                 alpha = score;
-                self.update_pv_table(move_);
+                self.update_pv_table(_move);
                 if score >= beta {
                     self.transposition_table
-                        .write(key, depth, beta, BetaHash, Some(move_));
+                        .write(key, depth, beta, HashBeta, Some(_move));
                     return beta;
                 }
             }
+            move_index += 1;
         }
         self.transposition_table.write(
             key,
@@ -426,14 +509,23 @@ impl Engine {
         mut beta: Score,
         apply_null_move: bool,
     ) -> Score {
+        self.num_nodes_searched += 1;
         self.pv_length[self.ply] = self.ply;
         let is_endgame = self.board.is_endgame();
         let not_in_check = !self.board.is_check();
         let draw_score = if is_endgame { 0 } else { DRAW_SCORE };
-        if self.board.is_other_draw() {
+        let is_pvs_node = alpha != beta - 1;
+        let is_draw = if is_pvs_node {
+            self.board.is_insufficient_material()
+        } else {
+            self.board.is_other_draw()
+        };
+        if is_draw {
             return draw_score;
         }
-        let is_pvs_node = alpha != beta - 1;
+        // if !not_in_check {
+        //     depth += 1
+        // }
         let key = self.board.get_hash();
         let best_move = if is_pvs_node {
             self.transposition_table.read_best_move(key)
@@ -444,9 +536,6 @@ impl Engine {
                 None => None,
             }
         };
-        if depth == 0 {
-            return self.quiescence(alpha, beta);
-        }
         let mate_score = CHECKMATE_SCORE - self.ply as i16;
         let moves_gen = self.board.generate_legal_moves();
         if moves_gen.len() == 0 {
@@ -454,6 +543,9 @@ impl Engine {
                 return draw_score;
             }
             return -mate_score;
+        }
+        if depth == 0 {
+            return self.quiescence(alpha, beta);
         }
         // mate distance pruning
         alpha = alpha.max(-mate_score);
@@ -473,19 +565,38 @@ impl Engine {
                 }
             }
             // null move reduction
-            if apply_null_move && depth > NULL_MOVE_REDUCTION_LIMIT {
-                self.board.push_null_move();
-                self.ply += 1;
-                let score = -self.alpha_beta(
-                    depth - 1 - NULL_MOVE_REDUCTION_LIMIT,
-                    -beta,
-                    -beta + 1,
-                    false,
-                );
-                self.board.pop_null_move();
-                self.ply -= 1;
-                if score >= beta {
-                    return beta;
+            if apply_null_move && static_evaluation > beta {
+                // let r = NULL_MOVE_MIN_REDUCTION + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
+                let r = 2;
+                if depth > r {
+                    self.board.push_null_move();
+                    self.ply += 1;
+                    let score = -self.alpha_beta(
+                        depth - 1 - r,
+                        -beta,
+                        -beta + 1,
+                        false,
+                    );
+                    self.board.pop_null_move();
+                    self.ply -= 1;
+                    if score >= beta {
+                        return beta;
+                    }
+                }
+                // razoring
+                if !is_pvs_node && !is_endgame && self.board.has_non_pawn_material() {
+                    let mut evaluation = static_evaluation + PAWN_VALUE;
+                    if evaluation < beta && depth == 1 {
+                        let new_evaluation = self.quiescence(alpha, beta);
+                        return new_evaluation.max(evaluation);
+                    }
+                    evaluation += PAWN_VALUE;
+                    if evaluation < beta && depth < 4 {
+                        let new_evaluation = self.quiescence(alpha, beta);
+                        if new_evaluation < beta {
+                            return new_evaluation.max(evaluation);
+                        }
+                    }
                 }
             }
             // futility pruning
@@ -500,41 +611,62 @@ impl Engine {
                 futility_pruning = static_evaluation + futility_margin <= alpha;
             }
         }
-        self.num_nodes_searched += 1;
-        let mut flag = AlphaHash;
-        let moves = self
-            .move_sorter
-            .sort_moves(moves_gen, &self.board, self.ply, best_move);
-        for (move_index, &weighted_move) in moves.iter().enumerate() {
-            let move_ = weighted_move.move_;
-            let not_capture_move = !self.board.is_capture(move_);
-            if move_index != 0
-                && futility_pruning
-                && not_capture_move
-                && move_.get_promotion().is_none()
-                && not_in_check
-            {
-                continue;
+        let mut flag = HashAlpha;
+        let mut weighted_moves =
+            self.move_sorter
+                .get_weighted_sort_moves(moves_gen, &self.board, self.ply, best_move);
+        let mut move_index = 0;
+        while let Some(weighted_move) = weighted_moves.next_best() {
+            let _move = weighted_move._move;
+            let not_capture_move = !self.board.is_capture(_move);
+            let safe_to_apply_lmr = self.can_apply_lmr(&_move) && !is_pvs_node && not_capture_move && not_in_check;
+            self.push(_move);
+            let mut score: Score;
+            if move_index == 0 {
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
+            } else {
+                    if futility_pruning
+                    && not_capture_move
+                    && _move.get_promotion().is_none()
+                    && not_in_check
+                {
+                    continue;
+                }
+                if move_index >= FULL_DEPTH_SEARCH_LMR && depth >= REDUCTION_LIMIT_LMR && safe_to_apply_lmr && !DISABLE_LMR {
+                    let lmr_reduction = 1 + ((move_index - 1) as f32).sqrt() as Depth;
+                    if depth > lmr_reduction {
+                        score = -self.alpha_beta(depth - lmr_reduction, -alpha - 1, -alpha, true);
+                    } else {
+                        score = alpha + 1;
+                    }
+                } else{
+                    score = alpha + 1;
+                }
+                if score > alpha {
+                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true);
+                    if score > alpha && score < beta {
+                        score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
+                    }
+                }
             }
-            self.push(move_);
-            let score = -self.alpha_beta(depth - 1, -beta, -alpha, apply_null_move);
             self.pop();
             if score > alpha {
-                flag = ExactHAsh;
-                self.update_pv_table(move_);
+                flag = HashExact;
+                self.update_pv_table(_move);
                 alpha = score;
                 if not_capture_move {
-                    self.move_sorter.add_history_move(move_, &self.board, depth);
+                    self.move_sorter.add_history_move(_move, &self.board, depth);
                 }
                 if score >= beta {
                     self.transposition_table
-                        .write(key, depth, beta, BetaHash, Some(move_));
+                        .write(key, depth, beta, HashBeta, Some(_move));
                     if not_capture_move {
-                        self.move_sorter.update_killer_moves(move_, self.ply);
+                        self.move_sorter.update_killer_moves(_move, self.ply);
                     }
                     return beta;
                 }
             }
+            move_index += 1;
         }
         self.transposition_table.write(
             key,
@@ -547,10 +679,10 @@ impl Engine {
     }
 
     fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {
-        if self.board.is_draw() {
-            return DRAW_SCORE;
-        }
         self.num_nodes_searched += 1;
+        if self.board.is_draw() {
+            return 0;
+        }
         let evaluation = self.board.evaluate_flipped();
         if evaluation >= beta {
             return beta;
@@ -558,14 +690,14 @@ impl Engine {
         if evaluation > alpha {
             alpha = evaluation;
         }
-        for weighted_move in self
+        let mut weighted_moves = self
             .move_sorter
-            .sort_captures(self.board.generate_legal_captures(), &self.board)
-        {
+            .get_weighted_capture_moves(self.board.generate_legal_captures(), &self.board);
+        while let Some(weighted_move) = weighted_moves.next_best() {
             if weighted_move.weight < 0 {
                 break;
             }
-            self.push(weighted_move.move_);
+            self.push(weighted_move._move);
             let score = -self.quiescence(-beta, -alpha);
             self.pop();
             if score > alpha {
@@ -588,8 +720,8 @@ impl Engine {
 
     fn get_pv_as_uci(&self, depth: u8) -> String {
         let mut pv_string = String::new();
-        for move_ in self.get_pv(depth) {
-            pv_string.push_str(&move_.to_string());
+        for _move in self.get_pv(depth) {
+            pv_string.push_str(&_move.to_string());
             pv_string.push(' ');
         }
         return pv_string.trim().to_string();
@@ -598,11 +730,11 @@ impl Engine {
     fn get_pv_as_algebraic(&self, depth: u8, long: bool) -> String {
         let mut board = self.board.clone();
         let mut pv_string = String::new();
-        for move_ in self.get_pv(depth) {
-            pv_string += (if board.is_legal(move_) {
-                board.san_and_push(move_)
+        for _move in self.get_pv(depth) {
+            pv_string += (if board.is_legal(_move) {
+                board.san_and_push(_move)
             } else {
-                colorize(move_, ERROR_MESSAGE_STYLE)
+                colorize(_move, ERROR_MESSAGE_STYLE)
             })
             .as_str();
             pv_string += " ";

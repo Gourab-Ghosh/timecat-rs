@@ -41,6 +41,7 @@ use engine::Engine;
 use evaluate::*;
 use fxhash::FxHashMap as HashMap;
 use parse::*;
+use std::cmp::Ordering;
 use std::fmt;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -70,24 +71,23 @@ fn self_play(depth: u8, print: bool) {
 }
 
 fn _main() {
-    // self_play(10, false);
-    // Parser::parse_command(&mut Engine::default(), "go depth 10");
+    self_play(10, false);
+    // Parser::parse_command(&mut Engine::default(), "go depth 12");
     // Parser::parse_command(&mut Engine::default(), "go perft 7");
 
-    let mut engine = Engine::default();
-    engine.board.set_fen("8/7P/2p5/p1n2k2/6R1/p4P2/7K/2r5 b - - 0 53");
-    engine.board.push_san("a2");
-    engine.board.push_san("h8=Q");
-    // Parser::parse_command(&mut engine, "push san a2 h8=Q");
-    Parser::parse_command(&mut engine, "go depth 20");
+    // let mut engine = Engine::default();
+    // engine.board.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88");
+    // // engine.board.set_fen("8/7P/2p5/p1n2k2/6R1/p4P2/7K/2r5 b - - 0 53");
+    // // Parser::parse_command(&mut engine, "push san Qc1");
+    // Parser::parse_command(&mut engine, "go depth 20");
 
     // let mut board = Board::new();
     // println!("\n{board}");
     // for san in ["e4", "Nf6", "Be2", "Nxe4"] {
-    //     let move_ = board.parse_san(san).unwrap();
-    //     let move_str = board.san(move_);
+    //     let _move = board.parse_san(san).unwrap();
+    //     let move_str = board.san(_move);
     //     println!("\nPushing move {move_str}");
-    //     board.push(move_);
+    //     board.push(_move);
     //     println!("\n{board}");
     // }
 }

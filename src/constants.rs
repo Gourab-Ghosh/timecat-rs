@@ -2,6 +2,7 @@ pub mod types {
     pub type Ply = usize;
     pub type Depth = u8;
     pub type Score = i16;
+    pub type MoveWeight = i32;
 }
 
 pub mod bitboard {
@@ -175,9 +176,19 @@ pub mod engine_constants {
     pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - (MAX_DEPTH as Score + 1);
     pub const NUM_KILLER_MOVES: usize = 3;
     pub const PAWN_VALUE: Score = 100;
+
     pub const NULL_MOVE_REDUCTION_LIMIT: Depth = 2;
+    pub const NULL_MOVE_MIN_REDUCTION: Depth = 2;
+    pub const NULL_MOVE_MIN_DEPTH: Depth = 2;
+    pub const NULL_MOVE_DEPTH_DIVIDER: Depth = 4;
+
+    pub const FULL_DEPTH_SEARCH_LMR: usize = 4;
+    pub const REDUCTION_LIMIT_LMR: Depth = 3;
+    pub const DISABLE_LMR: bool = false;
+
     pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;
     pub const DISABLE_T_TABLE: bool = false;
+    pub const MAX_MOVES_PER_POSITION: usize = 218;
 
     #[rustfmt::skip]
     pub const MVV_LVA: [[i32; 6]; 6] = [

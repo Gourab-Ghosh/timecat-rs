@@ -224,14 +224,14 @@ impl Push {
             } else {
                 return generate_error(UNKNOWN_COMMAND_ERROR);
             }
-            let move_ = match possible_move {
-                Ok(move_) => move_,
+            let _move = match possible_move {
+                Ok(_move) => _move,
                 Err(e) => return Some(e.to_string() + "! Try again!"),
             };
-            if !engine.board.is_legal(move_) {
+            if !engine.board.is_legal(_move) {
                 return generate_error(ILLEGAL_MOVE_ERROR);
             }
-            engine.board.push(move_);
+            engine.board.push(_move);
             println!(
                 "{} {}",
                 colorize("Pushed move:", SUCCESS_MESSAGE_STYLE),
