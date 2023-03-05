@@ -63,7 +63,7 @@ mod sort {
 
     pub struct MoveSorter {
         killer_moves: [[Move; NUM_KILLER_MOVES]; MAX_DEPTH],
-        history_moves: [[[MoveWeight; 64]; 2]; 6],
+        history_move_scores: [[[MoveWeight; 64]; 2]; 6],
     }
 
     impl MoveSorter {
@@ -78,10 +78,10 @@ mod sort {
         }
 
         pub fn add_history_move(&mut self, history_move: Move, board: &Board, depth: Depth) {
-            let depth = depth as MoveWeight;
+            let depth = depth.pow(2) as MoveWeight;
             let src = history_move.get_source();
             let dest = history_move.get_dest();
-            self.history_moves[board.piece_at(src).unwrap().to_index()]
+            self.history_move_scores[board.piece_at(src).unwrap().to_index()]
                 [board.color_at(src).unwrap() as usize][dest.to_index()] += depth;
         }
 
@@ -148,10 +148,12 @@ mod sort {
                     return 1294000000;
                 }
             }
+            let source = _move.get_source();
+            let dest = _move.get_dest();
             let mut sub_board = board.get_sub_board();
             sub_board.clone().make_move(_move, &mut sub_board);
             let checkers = *sub_board.checkers();
-            let moving_piece = board.piece_at(_move.get_source()).unwrap();
+            let moving_piece = board.piece_at(source).unwrap();
             if checkers != BB_EMPTY {
                 return 1292000000
                     + 100 * checkers.popcnt() as MoveWeight
@@ -169,13 +171,15 @@ mod sort {
             if let Some(piece) = _move.get_promotion() {
                 return 1289000000 + piece as MoveWeight;
             }
-            if board.is_passed_pawn(_move.get_source()) {
-                let promotion_distance = if board.turn() == White {
-                    7 - _move.get_dest().get_rank() as MoveWeight
-                } else {
-                    _move.get_dest().get_rank() as MoveWeight
-                };
-                return 1288000000 + promotion_distance;
+            if board.is_endgame() {
+                if board.is_passed_pawn(source) {
+                    let promotion_distance = if board.turn() == White {
+                        7 - dest.get_rank() as MoveWeight
+                    } else {
+                        dest.get_rank() as MoveWeight
+                    };
+                    return 1288000000 - promotion_distance;
+                }
             }
             // let threat_score = match sub_board.null_move() {
             //     Some(board) => {
@@ -186,10 +190,9 @@ mod sort {
             //     None => 0,
             // };
 
-            
             // 100 * history_moves_score + threat_score
-            self.history_moves[moving_piece.to_index()]
-                [board.color_at(_move.get_source()).unwrap() as usize][_move.get_dest().to_index()]
+            self.history_move_scores[moving_piece.to_index()]
+                [board.color_at(source).unwrap() as usize][dest.to_index()]
         }
 
         pub fn get_weighted_sort_moves<T: IntoIterator<Item = Move>>(
@@ -224,7 +227,7 @@ mod sort {
         fn default() -> Self {
             Self {
                 killer_moves: [[Move::default(); NUM_KILLER_MOVES]; MAX_DEPTH],
-                history_moves: [[[0; 64]; 2]; 6],
+                history_move_scores: [[[0; 64]; 2]; 6],
             }
         }
     }
@@ -572,7 +575,8 @@ impl Engine {
             }
             // null move reduction
             if apply_null_move && static_evaluation > beta {
-                let r = NULL_MOVE_MIN_REDUCTION + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
+                let r = NULL_MOVE_MIN_REDUCTION
+                    + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
                 // let r = NULL_MOVE_MIN_REDUCTION;
                 if depth > r {
                     self.board.push_null_move();
@@ -645,7 +649,9 @@ impl Engine {
                     // } else {
                     //     (LMR_BASE_REDUCTION + ((depth as usize * move_index) as f32).sqrt() / LMR_MOVE_DIVIDER) as Depth
                     // };
-                    let lmr_reduction = (LMR_BASE_REDUCTION + ((depth as usize * move_index) as f32).sqrt() / LMR_MOVE_DIVIDER) as Depth;
+                    let lmr_reduction = (LMR_BASE_REDUCTION
+                        + ((depth as usize * move_index) as f32).sqrt() / LMR_MOVE_DIVIDER)
+                        as Depth;
                     score = -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha, true);
                 } else {
                     score = alpha + 1;

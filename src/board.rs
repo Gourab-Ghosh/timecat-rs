@@ -602,7 +602,10 @@ impl Board {
             self.fullmove_number += 1;
         }
         self.board.clone().make_move(_move, &mut self.board);
-        self.ep_square = self.board.en_passant().map(|ep_square| ep_square.forward(self.turn()).unwrap());
+        self.ep_square = self
+            .board
+            .en_passant()
+            .map(|ep_square| ep_square.forward(self.turn()).unwrap());
         self.num_repetitions = self
             .repetition_table
             .insert_and_get_repetition(self.get_hash());

@@ -76,12 +76,13 @@ fn self_play(depth: Depth, print: bool) {
 }
 
 fn _main() {
-    self_play(14, false);
-    // Parser::parse_command(&mut Engine::default(), "go depth 14");
+    // self_play(14, false);
+    Parser::parse_command(&mut Engine::default(), "go depth 14");
     // Parser::parse_command(&mut Engine::default(), "go perft 7");
 
     // let mut engine = Engine::default();
-    // engine.board.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88");
+    // // engine.board.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88");
+    // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59");
     // // engine.board.set_fen("8/7P/2p5/p1n2k2/6R1/p4P2/7K/2r5 b - - 0 53");
     // // Parser::parse_command(&mut engine, "push san Qc1");
     // Parser::parse_command(&mut engine, "go depth 20");
