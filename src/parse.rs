@@ -82,7 +82,7 @@ fn generate_error<T: ToString>(error_message: T) -> Option<String> {
 struct Go;
 
 impl Go {
-    fn perft(engine: &mut Engine, depth: u8) -> usize {
+    fn perft(engine: &mut Engine, depth: Depth) -> usize {
         println!("{}\n", engine.board);
         let clock = Instant::now();
         let position_count = engine.board.perft(depth);
@@ -98,7 +98,7 @@ impl Go {
         position_count
     }
 
-    fn depth(engine: &mut Engine, depth: u8) -> usize {
+    fn depth(engine: &mut Engine, depth: Depth) -> usize {
         println!("{}\n", engine.board);
         let clock = Instant::now();
         let (best_move, score) = engine.go(depth, true);
@@ -127,7 +127,7 @@ impl Go {
             Some(depth_str) => depth_str,
             None => return generate_error(UNKNOWN_COMMAND_ERROR),
         };
-        let depth: u8 = depth_str.parse().unwrap_or(0);
+        let depth = depth_str.parse().unwrap_or(0);
         if commands.get(3).is_some() {
             return generate_error(UNKNOWN_COMMAND_ERROR);
         }
@@ -324,6 +324,9 @@ impl Parser {
         if user_input.to_lowercase() == "d" {
             println!("{}", engine.board);
             return None;
+        }
+        if first_command == "help" {
+            return generate_error(NOT_IMPLEMENTED_ERROR);
         }
         if ["go", "do"].contains(&first_command.as_str()) {
             return Go::parse_sub_command(engine, &commands);

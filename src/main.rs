@@ -52,7 +52,7 @@ use utils::square_utils::*;
 use utils::string_utils::*;
 use utils::unsafe_utils::*;
 
-fn self_play(depth: u8, print: bool) {
+fn self_play(depth: Depth, print: bool) {
     let mut engine = Engine::default();
     println!("\n{}\n", engine.board);
     while !engine.board.is_game_over() {
@@ -76,8 +76,8 @@ fn self_play(depth: u8, print: bool) {
 }
 
 fn _main() {
-    // self_play(12, false);
-    Parser::parse_command(&mut Engine::default(), "go depth 12");
+    self_play(14, false);
+    // Parser::parse_command(&mut Engine::default(), "go depth 14");
     // Parser::parse_command(&mut Engine::default(), "go perft 7");
 
     // let mut engine = Engine::default();

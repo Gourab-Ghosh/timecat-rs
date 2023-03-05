@@ -1,6 +1,6 @@
 pub mod types {
     pub type Ply = usize;
-    pub type Depth = u8;
+    pub type Depth = i8;
     pub type Score = i16;
     pub type MoveWeight = i32;
 }
@@ -166,14 +166,13 @@ pub mod print_style {
     pub const LAST_MOVE_HIGHLIGHT_STYLE: &str = "on_bright_black";
     pub const WARNING_MESSAGE_STYLE: &str = "bright_yellow bold";
 }
-
 pub mod engine_constants {
     use super::types::*;
     pub const MAX_DEPTH: usize = Depth::MAX as usize;
     pub const INFINITY: Score = 30_000;
     pub const DRAW_SCORE: Score = -PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;
-    pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - (MAX_DEPTH as Score + 1);
+    pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - MAX_DEPTH as Score - 1;
     pub const NUM_KILLER_MOVES: usize = 3;
     pub const PAWN_VALUE: Score = 100;
 
@@ -183,6 +182,8 @@ pub mod engine_constants {
 
     pub const FULL_DEPTH_SEARCH_LMR: usize = 4;
     pub const REDUCTION_LIMIT_LMR: Depth = 3;
+    pub const LMR_BASE_REDUCTION: f32 = 0.75;
+    pub const LMR_MOVE_DIVIDER: f32 = 2.25;
     pub const DISABLE_LMR: bool = false;
 
     pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;

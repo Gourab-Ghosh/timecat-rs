@@ -550,7 +550,7 @@ impl Engine {
             }
             return -mate_score;
         }
-        if depth == 0 {
+        if depth <= 0 {
             return self.quiescence(alpha, beta);
         }
         // mate distance pruning
@@ -560,7 +560,7 @@ impl Engine {
             return alpha;
         }
         let mut futility_pruning = false;
-        if not_in_check {
+        if not_in_check && !is_pvs_node && !is_endgame {
             // static evaluation pruning
             let static_evaluation = self.board.evaluate_flipped();
             if depth < 3 && (beta - 1).abs() > -mate_score + PAWN_VALUE {
@@ -572,8 +572,8 @@ impl Engine {
             }
             // null move reduction
             if apply_null_move && static_evaluation > beta {
-                // let r = NULL_MOVE_MIN_REDUCTION + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
-                let r = NULL_MOVE_MIN_REDUCTION;
+                let r = NULL_MOVE_MIN_REDUCTION + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
+                // let r = NULL_MOVE_MIN_REDUCTION;
                 if depth > r {
                     self.board.push_null_move();
                     self.ply += 1;
@@ -585,7 +585,7 @@ impl Engine {
                     }
                 }
                 // razoring
-                if !is_pvs_node && !is_endgame && self.board.has_non_pawn_material() {
+                if !is_pvs_node && self.board.has_non_pawn_material() {
                     let mut evaluation = static_evaluation + PAWN_VALUE;
                     if evaluation < beta && depth == 1 {
                         let new_evaluation = self.quiescence(alpha, beta);
@@ -640,12 +640,13 @@ impl Engine {
                     && safe_to_apply_lmr
                     && !DISABLE_LMR
                 {
-                    let lmr_reduction = 1 + ((move_index - 1) as f32).sqrt() as Depth;
-                    if depth > lmr_reduction {
-                        score = -self.alpha_beta(depth - lmr_reduction, -alpha - 1, -alpha, true);
-                    } else {
-                        score = alpha + 1;
-                    }
+                    // let lmr_reduction = if is_endgame {
+                    //     1 + ((move_index - 1) as f32).sqrt() as Depth
+                    // } else {
+                    //     (LMR_BASE_REDUCTION + ((depth as usize * move_index) as f32).sqrt() / LMR_MOVE_DIVIDER) as Depth
+                    // };
+                    let lmr_reduction = (LMR_BASE_REDUCTION + ((depth as usize * move_index) as f32).sqrt() / LMR_MOVE_DIVIDER) as Depth;
+                    score = -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha, true);
                 } else {
                     score = alpha + 1;
                 }

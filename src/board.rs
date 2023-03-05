@@ -593,7 +593,6 @@ impl Board {
 
     pub fn push_without_nnue(&mut self, _move: Move) {
         let board_state = self.get_board_state();
-        self.ep_square = self.board.en_passant().map(|ep_square| ep_square.forward(self.turn()).unwrap());
         if self.is_zeroing(_move) {
             self.halfmove_clock = 0;
         } else {
@@ -603,6 +602,7 @@ impl Board {
             self.fullmove_number += 1;
         }
         self.board.clone().make_move(_move, &mut self.board);
+        self.ep_square = self.board.en_passant().map(|ep_square| ep_square.forward(self.turn()).unwrap());
         self.num_repetitions = self
             .repetition_table
             .insert_and_get_repetition(self.get_hash());
@@ -940,7 +940,7 @@ impl Board {
         }
     }
 
-    fn mini_perft(&mut self, depth: u8, print_move: bool) -> usize {
+    fn mini_perft(&mut self, depth: Depth, print_move: bool) -> usize {
         let _moves = self.generate_legal_moves();
         // if depth == 0 {return 1;}
         if depth == 1 {
@@ -963,7 +963,7 @@ impl Board {
         count
     }
 
-    pub fn perft(&mut self, depth: u8) -> usize {
+    pub fn perft(&mut self, depth: Depth) -> usize {
         self.mini_perft(depth, true)
     }
 }
