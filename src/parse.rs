@@ -1,7 +1,7 @@
 use super::*;
 use failure::Fail;
-use std::io::Write;
 use std::convert::From;
+use std::io::Write;
 use ParserError::*;
 
 #[derive(Clone, Debug, Fail)]
@@ -11,7 +11,7 @@ pub enum ParserError {
 
     #[fail(display = "Sorry, this command is not implemented yet :(")]
     NotImplemented,
-    
+
     #[fail(display = "Bad FEN string: {}! Try Again!", fen)]
     BadFen { fen: String },
 
@@ -24,12 +24,18 @@ pub enum ParserError {
     #[fail(display = "Invalid depth {}! Try again!", depth)]
     InvalidDepth { depth: String },
 
-    #[fail(display = "Illegal move {} in position {}! Try again!", move_text, board_fen)]
-    IllegalMove { move_text: String, board_fen: String },
+    #[fail(
+        display = "Illegal move {} in position {}! Try again!",
+        move_text, board_fen
+    )]
+    IllegalMove {
+        move_text: String,
+        board_fen: String,
+    },
 
     #[fail(display = "Colored output already set to {}! Try again!", _bool)]
     ColoredOutputUnchanged { _bool: String },
-    
+
     #[fail(display = "Move Stack is enpty, pop not possible! Try again!")]
     EmptyStack,
 
@@ -41,9 +47,11 @@ impl ParserError {
     pub fn generate_error(&self, raw_input_option: Option<&str>) -> String {
         match self {
             Self::UnknownCommand => match raw_input_option {
-                Some(raw_input) => format!("Unknown command: {}\nPlease try again!", raw_input.trim()),
+                Some(raw_input) => {
+                    format!("Unknown command: {}\nPlease try again!", raw_input.trim())
+                }
                 None => String::from("Unknown command!\nPlease try again!"),
-            }
+            },
             _ => format!("{}", self),
         }
     }
@@ -176,10 +184,16 @@ impl Set {
         };
         let _bool = match third_command.parse() {
             Ok(_bool) => _bool,
-            Err(_) => return Err(BadBool { _bool: third_command }),
+            Err(_) => {
+                return Err(BadBool {
+                    _bool: third_command,
+                })
+            }
         };
         if is_colored_output() == _bool {
-            return Err(ColoredOutputUnchanged { _bool: third_command });
+            return Err(ColoredOutputUnchanged {
+                _bool: third_command,
+            });
         }
         if _bool {
             println!();
@@ -236,10 +250,17 @@ impl Push {
             }
             let _move = match possible_move {
                 Ok(_move) => _move,
-                Err(e) => return Err(CustomError { err_msg: e.to_string() + "! Try again!" }),
+                Err(e) => {
+                    return Err(CustomError {
+                        err_msg: e.to_string() + "! Try again!",
+                    })
+                }
             };
             if !engine.board.is_legal(_move) {
-                return Err(IllegalMove { move_text: move_text.to_string(), board_fen: engine.board.get_fen() });
+                return Err(IllegalMove {
+                    move_text: move_text.to_string(),
+                    board_fen: engine.board.get_fen(),
+                });
             }
             engine.board.push(_move);
             println!(
@@ -267,7 +288,11 @@ impl Pop {
         }
         let num_pop = match second_command.parse() {
             Ok(p) => p,
-            Err(_) => return Err(BadInteger { int: second_command.to_string() }),
+            Err(_) => {
+                return Err(BadInteger {
+                    int: second_command.to_string(),
+                })
+            }
         };
         for _ in 0..num_pop {
             if engine.board.has_empty_stack() {
@@ -367,9 +392,7 @@ impl Parser {
             }
             first_loop = false;
             let response = Parser::run_command(engine, &user_input);
-            if response.is_err() {
-                return response;
-            }
+            response.as_ref()?;
         }
         Ok(())
     }
@@ -391,7 +414,7 @@ impl Parser {
             return ParserLoopState::Continue;
         }
         match Self::parse_command(engine, raw_input) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(parser_error) => {
                 let error_message = parser_error.generate_error(Some(raw_input));
                 println!("{}", colorize(error_message, ERROR_MESSAGE_STYLE));

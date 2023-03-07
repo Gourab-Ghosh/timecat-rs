@@ -95,7 +95,7 @@ fn _main() {
     // // engine.board.set_fen("8/7P/2p5/p1n2k2/6R1/p4P2/7K/2r5 b - - 0 53");
     // // Parser::parse_command(&mut engine, "push san Qc1");
     // Parser::parse_command(&mut engine, "go depth 20");
-    
+
     // let mut engine = Engine::default();
     // engine.board.set_fen("rnbqkbnr/pP4pp/8/2pppp2/8/8/1PPPPPPP/RNBQKBNR w KQkq - 0 5");
     // for _move in engine.board.generate_legal_moves() {
