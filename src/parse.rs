@@ -1,6 +1,7 @@
 use super::*;
 use failure::Fail;
 use std::io::Write;
+use std::convert::From;
 use ParserError::*;
 
 #[derive(Clone, Debug, Fail)]
@@ -41,10 +42,16 @@ impl ParserError {
         match self {
             Self::UnknownCommand => match raw_input_option {
                 Some(raw_input) => format!("Unknown command: {}\nPlease try again!", raw_input.trim()),
-                None => format!("Unknown command!\nPlease try again!"),
+                None => String::from("Unknown command!\nPlease try again!"),
             }
             _ => format!("{}", self),
         }
+    }
+}
+
+impl From<&parse::ParserError> for parse::ParserError {
+    fn from(error: &parse::ParserError) -> parse::ParserError {
+        error.clone()
     }
 }
 

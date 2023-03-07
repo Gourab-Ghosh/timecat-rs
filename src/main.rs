@@ -80,7 +80,7 @@ fn self_play(depth: Depth, print: bool) {
 pub fn parse_command(engine: &mut Engine, raw_input: &str) {
     match Parser::parse_command(engine, raw_input) {
         Ok(_) => (),
-        Err(err) => panic!("{}", err.generate_error(Some(&raw_input))),
+        Err(err) => panic!("{}", err.generate_error(Some(raw_input))),
     }
 }
 

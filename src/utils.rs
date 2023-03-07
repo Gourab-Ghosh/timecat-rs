@@ -68,7 +68,7 @@ pub mod string_utils {
         let styles = remove_double_spaces(styles);
         let styles = styles.trim();
         if styles.is_empty() {
-            return s.to_string();
+            return s;
         }
         let mut colored_string = ColoredString::from(s.as_str());
         for style in remove_double_spaces(styles).split(' ') {

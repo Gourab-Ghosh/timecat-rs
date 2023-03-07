@@ -184,15 +184,13 @@ mod sort {
             if let Some(piece) = _move.get_promotion() {
                 return 1289000000;
             }
-            if board.is_endgame() {
-                if board.is_passed_pawn(source) {
-                    let promotion_distance = if board.turn() == White {
-                        7 - dest.get_rank() as MoveWeight
-                    } else {
-                        dest.get_rank() as MoveWeight
-                    };
-                    return 1288000000 - promotion_distance;
-                }
+            if board.is_endgame() && board.is_passed_pawn(source) {
+                let promotion_distance = if board.turn() == White {
+                    7 - dest.get_rank() as MoveWeight
+                } else {
+                    dest.get_rank() as MoveWeight
+                };
+                return 1288000000 - promotion_distance;
             }
             // let threat_score = match sub_board.null_move() {
             //     Some(board) => {
