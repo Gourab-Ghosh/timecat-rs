@@ -62,16 +62,15 @@ pub mod string_utils {
 
     pub fn colorize<T: ToString>(obj: T, styles: &str) -> String {
         let s = obj.to_string();
-        let s = s.as_str();
         if !is_colored_output() {
-            return s.to_string();
+            return s;
         }
         let styles = remove_double_spaces(styles);
         let styles = styles.trim();
         if styles.is_empty() {
             return s.to_string();
         }
-        let mut colored_string = s.clear();
+        let mut colored_string = ColoredString::from(s.as_str());
         for style in remove_double_spaces(styles).split(' ') {
             colored_string = colorize_string(colored_string, style);
         }
@@ -82,7 +81,7 @@ pub mod string_utils {
         if is_checkmate(score) {
             let mut mate_string = String::from(if score.is_positive() { "M" } else { "-M" });
             let mate_distance = (CHECKMATE_SCORE - score.abs() + 1) / 2;
-            mate_string += mate_distance.to_string().as_str();
+            mate_string += &mate_distance.to_string();
             return mate_string;
         }
         format!("{:.5}", (score as f32 / PAWN_VALUE as f32).to_string())
@@ -112,7 +111,7 @@ pub mod classes {
     // use std::collections::hash_map::DefaultHasher;
     // use std::hash::{Hash, Hasher};
 
-    #[derive(Default, Clone)]
+    #[derive(Default, Clone, Debug)]
     pub struct RepetitionTable {
         count: Arc<Mutex<HashMap<u64, usize>>>,
     }

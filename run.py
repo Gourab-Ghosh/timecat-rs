@@ -9,12 +9,11 @@ from shutil import which
 def update_environment_variables(*flags):
     rustflags_command = "-Ctarget-cpu=native {}".format(" ".join("-Clink-args=" + flag.strip() for flag in flags)).strip()
     os.environ["RUSTFLAGS"] = rustflags_command
-    os.environ["RUST_BACKTRACE"] = "1"
 
 def timed_run(func):
     start = time.time()
     res = func()
-    if res and time.time() - start < 0.1:
+    if res and time.time() - start < 0.5:
         return res
     print(f"Run time: {round(time.time() - start, 3)} seconds")
     return 0
@@ -31,9 +30,14 @@ for file in files:
         with open(file_path, "w") as f:
             f.write(requests.get(full_url).text)
 
+if sys.platform == "linux":
+    home_dir = os.path.expanduser("~")
+    possible_cargo_path = os.path.join(home_dir, ".cargo", "bin")
+    sys.path.append(possible_cargo_path)
+
 if which("cargo") is None:
     if sys.platform == "win32":
-        os.system("Please install Rust manually and add it to PATH and run this script again.")
+        print("Please install Rust manually and add it to PATH and run this script again.")
         sys.exit(1)
     else:
         print(f"Installing Rust...")
@@ -46,6 +50,7 @@ if is_error_free:
     # update_environment_variables("-Ofast", "-mavx2", "-funroll-loops")
     # update_environment_variables("-mavx2", "-funroll-loops")
     if not os.system("cargo build --release"):
-        if timed_run(lambda: os.system("perf record -g ./target/release/timecat")):
+        release_file = os.path.abspath("./target/release/timecat")
+        if timed_run(lambda: os.system(f"perf record -g {release_file}")):
             print("Running without using perf")
-            timed_run(lambda: os.system("./target/release/timecat"))
+            timed_run(lambda: os.system(release_file))

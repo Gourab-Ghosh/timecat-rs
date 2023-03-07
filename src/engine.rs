@@ -6,7 +6,7 @@ use EntryFlag::*;
 mod sort {
     use super::*;
 
-    #[derive(Clone, Copy, Default)]
+    #[derive(Clone, Copy, Default, Debug)]
     pub struct WeightedMove {
         pub _move: Move,
         pub weight: i32,
@@ -18,6 +18,7 @@ mod sort {
         }
     }
 
+    #[derive(Debug)]
     pub struct WeightedMoveList {
         weighted_moves: [WeightedMove; MAX_MOVES_PER_POSITION],
         len: usize,
@@ -61,6 +62,7 @@ mod sort {
         }
     }
 
+    #[derive(Debug)]
     pub struct MoveSorter {
         killer_moves: [[Move; NUM_KILLER_MOVES]; MAX_DEPTH],
         history_move_scores: [[[MoveWeight; 64]; 2]; 6],
@@ -88,6 +90,17 @@ mod sort {
         fn get_least_attackers_move(&self, square: Square, board: &chess::Board) -> Option<Move> {
             let mut captute_moves = chess::MoveGen::new_legal(board);
             captute_moves.set_iterator_mask(get_square_bb(square));
+            // match captute_moves.next() {
+            //     Some(_move) => match _move.get_promotion() {
+            //         Some(promotion) => Some(Move::new(
+            //             _move.get_source(),
+            //             _move.get_dest(),
+            //             Some(Queen),
+            //         )),
+            //         None => Some(_move),
+            //     },
+            //     None => None,
+            // }
             captute_moves.next()
         }
 
@@ -169,7 +182,7 @@ mod sort {
                 }
             }
             if let Some(piece) = _move.get_promotion() {
-                return 1289000000 + piece as MoveWeight;
+                return 1289000000;
             }
             if board.is_endgame() {
                 if board.is_passed_pawn(source) {
@@ -238,7 +251,7 @@ mod transposition_table {
 
     use super::*;
 
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug)]
     pub enum EntryFlag {
         HashExact,
         HashAlpha,
@@ -251,7 +264,7 @@ mod transposition_table {
         }
     }
 
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug)]
     struct TranspositionTableData {
         depth: Depth,
         score: Score,
@@ -272,12 +285,13 @@ mod transposition_table {
         }
     }
 
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug)]
     struct TranspositionTableEntry {
         option_data: Option<TranspositionTableData>,
         best_move: Option<Move>,
     }
 
+    #[derive(Debug)]
     pub struct TranspositionTable {
         table: Arc<Mutex<HashMap<u64, TranspositionTableEntry>>>,
     }
@@ -398,6 +412,7 @@ mod transposition_table {
     }
 }
 
+#[derive(Debug)]
 pub struct Engine {
     pub board: Board,
     num_nodes_searched: usize,
@@ -429,6 +444,16 @@ impl Engine {
     pub fn pop(&mut self) -> Move {
         self.ply -= 1;
         self.board.pop()
+    }
+
+    pub fn push_null_move(&mut self) {
+        self.board.push_null_move();
+        self.ply += 1;
+    }
+
+    pub fn pop_null_move(&mut self) {
+        self.ply -= 1;
+        self.board.pop_null_move()
     }
 
     fn reset_variables(&mut self) {
@@ -520,7 +545,8 @@ impl Engine {
     ) -> Score {
         self.num_nodes_searched += 1;
         self.pv_length[self.ply] = self.ply;
-        let is_endgame = self.board.is_endgame();
+        let num_pieces = self.board.get_num_pieces();
+        let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
         let not_in_check = !self.board.is_check();
         let draw_score = if is_endgame { 0 } else { DRAW_SCORE };
         let is_pvs_node = alpha != beta - 1;
@@ -579,11 +605,9 @@ impl Engine {
                     + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
                 // let r = NULL_MOVE_MIN_REDUCTION;
                 if depth > r {
-                    self.board.push_null_move();
-                    self.ply += 1;
+                    self.push_null_move();
                     let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1, false);
-                    self.board.pop_null_move();
-                    self.ply -= 1;
+                    self.pop_null_move();
                     if score >= beta {
                         return beta;
                     }
@@ -745,13 +769,11 @@ impl Engine {
         let mut board = self.board.clone();
         let mut pv_string = String::new();
         for _move in self.get_pv(depth) {
-            pv_string += (if board.is_legal(_move) {
+            pv_string += &(if board.is_legal(_move) {
                 board.san_and_push(_move)
             } else {
                 colorize(_move, ERROR_MESSAGE_STYLE)
-            })
-            .as_str();
-            pv_string += " ";
+            } + " ");
         }
         return pv_string.trim().to_string();
     }

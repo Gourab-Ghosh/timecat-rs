@@ -1,7 +1,7 @@
 use super::*;
 use nnue::{Network, Piece as P, StockfishNetwork};
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Evaluator {
     network: Network,
     stockfish_network: StockfishNetwork,

@@ -41,6 +41,7 @@ use evaluate::*;
 use fxhash::FxHashMap as HashMap;
 use parse::*;
 use std::cmp::Ordering;
+use std::env;
 use std::fmt;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -54,6 +55,7 @@ use utils::unsafe_utils::*;
 
 fn self_play(depth: Depth, print: bool) {
     let mut engine = Engine::default();
+    engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
     println!("\n{}\n", engine.board);
     while !engine.board.is_game_over() {
         let clock = Instant::now();
@@ -75,9 +77,16 @@ fn self_play(depth: Depth, print: bool) {
     println!("Game PGN:\n\n{}", engine.board.get_pgn());
 }
 
+pub fn parse_command(engine: &mut Engine, raw_input: &str) {
+    match Parser::parse_command(engine, raw_input) {
+        Ok(_) => (),
+        Err(err) => panic!("{}", err.generate_error(Some(&raw_input))),
+    }
+}
+
 fn _main() {
-    // self_play(14, false);
-    Parser::parse_command(&mut Engine::default(), "go depth 14");
+    // self_play(12, false);
+    parse_command(&mut Engine::default(), "go depth 14");
     // Parser::parse_command(&mut Engine::default(), "go perft 7");
 
     // let mut engine = Engine::default();
@@ -86,6 +95,12 @@ fn _main() {
     // // engine.board.set_fen("8/7P/2p5/p1n2k2/6R1/p4P2/7K/2r5 b - - 0 53");
     // // Parser::parse_command(&mut engine, "push san Qc1");
     // Parser::parse_command(&mut engine, "go depth 20");
+    
+    // let mut engine = Engine::default();
+    // engine.board.set_fen("rnbqkbnr/pP4pp/8/2pppp2/8/8/1PPPPPPP/RNBQKBNR w KQkq - 0 5");
+    // for _move in engine.board.generate_legal_moves() {
+    //     println!("{}", engine.board.san(_move));
+    // }
 
     // let mut board = Board::new();
     // println!("\n{board}");
@@ -111,6 +126,7 @@ fn _main() {
 }
 
 fn main() {
+    env::set_var("RUST_BACKTRACE", "1");
     let clock = Instant::now();
     // Parser::main_loop();
     _main();

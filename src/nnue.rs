@@ -22,6 +22,7 @@ fn construct_model() -> SfHalfKpFullModel {
 }
 
 // #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, BinRead)]
+#[derive(Debug)]
 pub struct StockfishNetwork {
     model: SfHalfKpModel,
 }
@@ -197,7 +198,7 @@ impl Piece {
     const PIECE_STR: &'static str = "PNBRQK  pnbrqk ";
 }
 
-#[derive(Clone, Default, PartialEq, Eq)]
+#[derive(Clone, Default, PartialEq, Eq, Debug)]
 struct Layer {
     weights: &'static [i16],
     biases: &'static [i16],
@@ -214,7 +215,7 @@ impl Layer {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Network {
     input_layer: Layer,
     hidden_layer: Layer,

@@ -1,7 +1,7 @@
 use super::*;
 
 // #[derive(Clone, PartialEq, Debug, Eq)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct BoardState {
     board: chess::Board,
     ep_square: Option<Square>,
@@ -10,6 +10,7 @@ struct BoardState {
     num_repetitions: u8,
 }
 
+#[derive(Debug)]
 pub struct Board {
     board: chess::Board,
     stack: Vec<(BoardState, Move)>,
@@ -17,6 +18,7 @@ pub struct Board {
     halfmove_clock: u8,
     fullmove_number: u8,
     num_repetitions: u8,
+    starting_fen: String,
     pub evaluator: Option<Evaluator>,
     repetition_table: RepetitionTable,
 }
@@ -30,6 +32,7 @@ impl Board {
             halfmove_clock: 0,
             fullmove_number: 1,
             num_repetitions: 0,
+            starting_fen: STARTING_BOARD_FEN.to_string(),
             evaluator: Some(Evaluator::new()),
             repetition_table: RepetitionTable::new(),
         };
@@ -61,7 +64,7 @@ impl Board {
                 .deactivate_nnue(piece, color, square);
         }
         let fen = simplify_fen(fen);
-        self.board = chess::Board::from_str(fen.as_str()).expect("FEN not parsed properly!");
+        self.board = chess::Board::from_str(&fen).expect("FEN not parsed properly!");
         let mut splitted_fen = fen.split(' ');
         self.ep_square = match splitted_fen.nth(3).unwrap_or("-") {
             "-" => None,
@@ -73,6 +76,7 @@ impl Board {
         self.num_repetitions = self
             .repetition_table
             .insert_and_get_repetition(self.get_hash());
+        self.starting_fen = self.get_fen();
         for square in *self.occupied() {
             let piece = self.piece_at(square).unwrap();
             let color = self.color_at(square).unwrap();
@@ -110,7 +114,7 @@ impl Board {
                 break;
             }
         }
-        fen.push_str(format!("{} {}", self.halfmove_clock, self.fullmove_number).as_str());
+        fen.push_str(&format!("{} {}", self.halfmove_clock, self.fullmove_number));
         fen
     }
 
@@ -120,7 +124,7 @@ impl Board {
 
     pub fn is_good_fen(fen: &str) -> bool {
         let fen = simplify_fen(fen);
-        if chess::Board::from_str(fen.as_str()).is_err() {
+        if chess::Board::from_str(&fen).is_err() {
             return false;
         }
         let mut splitted_fen = fen.split(' ');
@@ -233,7 +237,7 @@ impl Board {
             colorize(_char, style)
         }
         for c in skeleton.chars() {
-            colored_skeleton.push_str(get_colored_char(c).as_str());
+            colored_skeleton.push_str(&get_colored_char(c));
         }
         colored_skeleton
     }
@@ -278,24 +282,23 @@ impl Board {
                 style += " ";
                 style += LAST_MOVE_HIGHLIGHT_STYLE;
             }
-            skeleton = skeleton.replacen("{}", colorize(symbol, style.as_str()).as_str(), 1);
+            skeleton = skeleton.replacen("{}", &colorize(symbol, &style), 1);
         }
         skeleton.push('\n');
         let mut checkers_string = String::new();
         for square in checkers {
-            checkers_string += square.to_string().as_str();
+            checkers_string += &square.to_string();
             checkers_string += " ";
         }
         skeleton.push_str(
-            [
+            &[
                 String::new(),
                 format_info("Fen", self.get_fen()),
                 format_info("Transposition Key", hash_to_string(self.get_hash())),
                 format_info("Checkers", colorize(checkers_string.trim(), CHECKERS_STYLE)),
                 format_info("Current Evaluation", score_to_string(self.evaluate())),
             ]
-            .join("\n")
-            .as_str(),
+            .join("\n"),
         );
         skeleton
     }
@@ -526,12 +529,12 @@ impl Board {
         false
     }
 
-    pub fn num_pieces(&self) -> u32 {
+    pub fn get_num_pieces(&self) -> u32 {
         self.occupied().popcnt()
     }
 
     pub fn is_endgame(&self) -> bool {
-        self.num_pieces() <= 12
+        self.get_num_pieces() <= ENDGAME_PIECE_THRESHOLD
     }
 
     fn push_nnue(&mut self, _move: Move) {
@@ -669,7 +672,7 @@ impl Board {
             }
         }
         Err(chess::Error::InvalidSanMove)
-        // return Move::from_san(&self.board, san.replace('0', "O").as_str());
+        // return Move::from_san(&self.board, &san.replace('0', "O"));
     }
 
     pub fn parse_uci(&self, uci: &str) -> Result<Move, chess::Error> {
@@ -747,7 +750,7 @@ impl Board {
         };
 
         if long {
-            san += _move.get_source().to_string().as_str();
+            san += &_move.get_source().to_string();
         } else if piece != Pawn {
             // Get ambiguous move candidates.
             // Relevant candidates: not exactly the current move,
@@ -784,9 +787,7 @@ impl Board {
                     );
                 }
                 if row {
-                    san += (_move.get_source().get_rank().to_index() + 1)
-                        .to_string()
-                        .as_str();
+                    san += &(_move.get_source().get_rank().to_index() + 1).to_string();
                 }
             }
         } else if capture {
@@ -806,11 +807,11 @@ impl Board {
         }
 
         // Destination square.
-        san += _move.get_dest().to_string().as_str();
+        san += &_move.get_dest().to_string();
 
         // Promotion.
         if let Some(promotion) = _move.get_promotion() {
-            san += format!("={}", promotion.to_string(White)).as_str()
+            san += &format!("={}", promotion.to_string(White))
         }
 
         san
@@ -885,8 +886,7 @@ impl Board {
         }
         let mut san_string = String::new();
         for s in san {
-            san_string += s.as_str();
-            san_string += " ";
+            san_string += &(s + " ");
         }
         return san_string.trim().to_string();
     }
@@ -895,7 +895,7 @@ impl Board {
         // Returns a string representing the game in Portable Game Notation (PGN).
         // The result of the game is included in the tags.
         self.variation_san(
-            &Self::new(),
+            &Self::from_fen(&self.starting_fen),
             Vec::from_iter(self.stack.clone().into_iter().map(|(_, m)| m)),
         )
     }
@@ -988,6 +988,7 @@ impl Clone for Board {
             evaluator: None,
             repetition_table: RepetitionTable::default(),
             num_repetitions: 1,
+            starting_fen: self.starting_fen.clone(),
         }
     }
 }

@@ -189,6 +189,7 @@ pub mod engine_constants {
     pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;
     pub const DISABLE_T_TABLE: bool = false;
     pub const MAX_MOVES_PER_POSITION: usize = 218;
+    pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
 
     #[rustfmt::skip]
     pub const MVV_LVA: [[i32; 6]; 6] = [
