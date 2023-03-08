@@ -2,6 +2,8 @@ use super::*;
 use failure::Fail;
 use std::convert::From;
 use std::io::Write;
+use std::num::ParseIntError;
+use std::str::ParseBoolError;
 use ParserError::*;
 
 #[derive(Clone, Debug, Fail)]
@@ -14,12 +16,6 @@ pub enum ParserError {
 
     #[fail(display = "Bad FEN string: {}! Try Again!", fen)]
     BadFen { fen: String },
-
-    #[fail(display = "Bad boolean value: {}! Try Again!", _bool)]
-    BadBool { _bool: String },
-
-    #[fail(display = "Bad integer value: {}! Try Again!", int)]
-    BadInteger { int: String },
 
     #[fail(display = "Invalid depth {}! Try again!", depth)]
     InvalidDepth { depth: String },
@@ -52,14 +48,38 @@ impl ParserError {
                 }
                 None => String::from("Unknown command!\nPlease try again!"),
             },
-            _ => format!("{}", self),
+            other_err => format!("{}", other_err),
         }
     }
 }
 
-impl From<&parse::ParserError> for parse::ParserError {
-    fn from(error: &parse::ParserError) -> parse::ParserError {
+impl From<&Self> for ParserError {
+    fn from(error: &Self) -> Self {
         error.clone()
+    }
+}
+
+impl From<ParseBoolError> for ParserError {
+    fn from(error: ParseBoolError) -> Self {
+        CustomError {
+            err_msg: format!("Failed to parse bool, {}! Try again!", error),
+        }
+    }
+}
+
+impl From<ParseIntError> for ParserError {
+    fn from(error: ParseIntError) -> Self {
+        CustomError {
+            err_msg: format!("Failed to parse integer, {}! Try again!", error),
+        }
+    }
+}
+
+impl From<chess::Error> for ParserError {
+    fn from(error: chess::Error) -> Self {
+        CustomError {
+            err_msg: format!("{}! Try again!", error),
+        }
     }
 }
 
@@ -182,14 +202,7 @@ impl Set {
             Some(command) => command.to_lowercase(),
             None => return Err(UnknownCommand),
         };
-        let _bool = match third_command.parse() {
-            Ok(_bool) => _bool,
-            Err(_) => {
-                return Err(BadBool {
-                    _bool: third_command,
-                })
-            }
-        };
+        let _bool = third_command.parse()?;
         if is_colored_output() == _bool {
             return Err(ColoredOutputUnchanged {
                 _bool: third_command,
@@ -238,24 +251,16 @@ impl Push {
             None => return Err(UnknownCommand),
         };
         for move_text in commands.iter().skip(2) {
-            let possible_move: Result<Move, chess::Error>;
+            let _move: Move;
             if second_command == "san" {
-                possible_move = engine.board.parse_san(move_text);
+                _move = engine.board.parse_san(move_text)?;
             } else if second_command == "uci" {
-                possible_move = engine.board.parse_uci(move_text);
+                _move = engine.board.parse_uci(move_text)?;
             } else if second_command == "move" {
-                possible_move = engine.board.parse_move(move_text);
+                _move = engine.board.parse_move(move_text)?;
             } else {
                 return Err(UnknownCommand);
             }
-            let _move = match possible_move {
-                Ok(_move) => _move,
-                Err(e) => {
-                    return Err(CustomError {
-                        err_msg: e.to_string() + "! Try again!",
-                    })
-                }
-            };
             if !engine.board.is_legal(_move) {
                 return Err(IllegalMove {
                     move_text: move_text.to_string(),
@@ -286,14 +291,7 @@ impl Pop {
         if commands.get(2).is_some() {
             return Err(UnknownCommand);
         }
-        let num_pop = match second_command.parse() {
-            Ok(p) => p,
-            Err(_) => {
-                return Err(BadInteger {
-                    int: second_command.to_string(),
-                })
-            }
-        };
+        let num_pop = second_command.parse()?;
         for _ in 0..num_pop {
             if engine.board.has_empty_stack() {
                 return Err(EmptyStack);
@@ -323,7 +321,7 @@ enum ParserLoopState {
 pub struct Parser;
 
 impl Parser {
-    fn get_input<T: std::fmt::Display>(q: T) -> String {
+    fn get_input<T: Display>(q: T) -> String {
         if !q.to_string().is_empty() {
             print!("{q}");
             std::io::stdout().flush().unwrap();
@@ -392,7 +390,7 @@ impl Parser {
             }
             first_loop = false;
             let response = Parser::run_command(engine, &user_input);
-            response.as_ref()?;
+            response?;
         }
         Ok(())
     }
@@ -413,12 +411,9 @@ impl Parser {
             println!("{error_message}");
             return ParserLoopState::Continue;
         }
-        match Self::parse_command(engine, raw_input) {
-            Ok(_) => {}
-            Err(parser_error) => {
-                let error_message = parser_error.generate_error(Some(raw_input));
-                println!("{}", colorize(error_message, ERROR_MESSAGE_STYLE));
-            }
+        if let Err(parser_error) = Self::parse_command(engine, raw_input) {
+            let error_message = parser_error.generate_error(Some(raw_input));
+            println!("{}", colorize(error_message, ERROR_MESSAGE_STYLE));
         }
         ParserLoopState::Continue
     }

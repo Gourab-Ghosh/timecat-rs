@@ -10,7 +10,6 @@ struct BoardState {
     num_repetitions: u8,
 }
 
-#[derive(Debug)]
 pub struct Board {
     board: chess::Board,
     stack: Vec<(BoardState, Move)>,
@@ -616,7 +615,7 @@ impl Board {
     }
 
     pub fn push(&mut self, _move: Move) {
-        // self.push_nnue(_move);
+        self.push_nnue(_move);
         self.push_without_nnue(_move);
     }
 
@@ -651,7 +650,7 @@ impl Board {
     }
 
     pub fn pop(&mut self) -> Move {
-        // self.pop_nnue();
+        self.pop_nnue();
         self.pop_without_nnue()
     }
 
@@ -672,7 +671,7 @@ impl Board {
             }
         }
         Err(chess::Error::InvalidSanMove)
-        // return Move::from_san(&self.board, &san.replace('0', "O"));
+        // Move::from_san(&self.board, &san.replace('0', "O"))
     }
 
     pub fn parse_uci(&self, uci: &str) -> Result<Move, chess::Error> {
@@ -688,15 +687,13 @@ impl Board {
     }
 
     pub fn push_san(&mut self, san: &str) -> Move {
-        let _move = self
-            .parse_san(san)
-            .unwrap_or_else(|_| panic!("Bad san: {san}"));
+        let _move = self.parse_san(san).unwrap_or_else(|err| panic!("{}", err));
         self.push(_move);
         _move
     }
 
-    pub fn push_sans(&mut self, sans: Vec<&str>) {
-        for san in sans {
+    pub fn push_sans(&mut self, sans: &str) {
+        for san in remove_double_spaces(sans).split(' ') {
             self.push_san(san);
         }
     }
@@ -713,8 +710,8 @@ impl Board {
         self.push_uci(s);
     }
 
-    pub fn push_ucis(&mut self, ucis: Vec<&str>) {
-        for uci in ucis {
+    pub fn push_ucis(&mut self, ucis: &str) {
+        for uci in remove_double_spaces(ucis).split(' ') {
             self.push_uci(uci);
         }
     }
@@ -971,7 +968,7 @@ impl Board {
     }
 }
 
-impl fmt::Display for Board {
+impl Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_board_string(false))
     }

@@ -27,7 +27,7 @@ use chess::Piece::*;
 use chess::{
     get_adjacent_files, get_bishop_moves, get_file as get_file_bb, get_king_moves,
     get_knight_moves, get_pawn_attacks, get_rank as get_rank_bb, get_rook_moves, BitBoard,
-    BoardStatus, ChessMove as Move, Color, File, Piece, Rank, Square,
+    BoardStatus, CacheTable, ChessMove as Move, Color, File, Piece, Rank, Square,
 };
 use constants::bitboard::*;
 use constants::engine_constants::*;
@@ -42,7 +42,8 @@ use fxhash::FxHashMap as HashMap;
 use parse::*;
 use std::cmp::Ordering;
 use std::env;
-use std::fmt;
+use std::fmt::{self, Display};
+use std::mem;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -53,9 +54,7 @@ use utils::square_utils::*;
 use utils::string_utils::*;
 use utils::unsafe_utils::*;
 
-fn self_play(depth: Depth, print: bool) {
-    let mut engine = Engine::default();
-    engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
+fn self_play(engine: &mut Engine, depth: Depth, print: bool) {
     println!("\n{}\n", engine.board);
     while !engine.board.is_game_over() {
         let clock = Instant::now();
@@ -85,16 +84,25 @@ pub fn parse_command(engine: &mut Engine, raw_input: &str) {
 }
 
 fn _main() {
-    // self_play(12, false);
-    parse_command(&mut Engine::default(), "go depth 14");
-    // Parser::parse_command(&mut Engine::default(), "go perft 7");
+    let time_consuming_fens = [
+        "r2qrbk1/2p2ppp/b1p2n2/p2p4/4PB2/P1NB4/1PP2PPP/R2QR1K1 w - - 3 13",
+        "2qr2k1/2p2pp1/2p4p/p3b3/8/P6P/1PPBQPP1/4R1K1 w - - 9 23",
+    ];
 
     // let mut engine = Engine::default();
-    // // engine.board.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88");
-    // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59");
-    // // engine.board.set_fen("8/7P/2p5/p1n2k2/6R1/p4P2/7K/2r5 b - - 0 53");
-    // // Parser::parse_command(&mut engine, "push san Qc1");
-    // Parser::parse_command(&mut engine, "go depth 20");
+    // // engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
+    // engine.board.push_sans("e4 e6 d4 d5");
+    // self_play(&mut engine, 12, false);
+
+    parse_command(&mut Engine::default(), "go depth 14");
+    // parse_command(&mut Engine::default(), "go perft 7");
+
+    // let mut engine = Engine::default();
+    // // engine.board.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88"); // test if engine can find mate in 3
+    // // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59"); // endgame improvement
+    // // engine.board.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111"); // test t_table -> nodes initially: 3203606
+    // engine.board.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105"); // gives incomplete pv line
+    // parse_command(&mut engine, "go depth 20");
 
     // let mut engine = Engine::default();
     // engine.board.set_fen("rnbqkbnr/pP4pp/8/2pppp2/8/8/1PPPPPPP/RNBQKBNR w KQkq - 0 5");
@@ -127,6 +135,9 @@ fn _main() {
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
+    if ["windows"].contains(&env::consts::OS) {
+        set_colored_output(false);
+    }
     let clock = Instant::now();
     // Parser::main_loop();
     _main();

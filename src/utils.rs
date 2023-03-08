@@ -56,7 +56,7 @@ pub mod string_utils {
             "on_bright_black" => s.on_bright_black(),
             "bright_yellow" => s.bright_yellow(),
             "bold" => s.bold(),
-            &_ => panic!("Cannot colorize string to {}", color),
+            unknown_color => panic!("Cannot colorize string to {}", unknown_color),
         };
     }
 
@@ -173,14 +173,14 @@ pub mod unsafe_utils {
         unsafe { COLORED_OUTPUT }
     }
 
-    pub fn set_colored_output(b: bool) {
+    pub fn set_colored_output(_bool: bool) {
         unsafe {
-            COLORED_OUTPUT = b;
+            COLORED_OUTPUT = _bool;
         }
         println!(
             "{} {}",
             colorize("Set colored output to", SUCCESS_MESSAGE_STYLE),
-            colorize(b, INFO_STYLE),
+            colorize(_bool, INFO_STYLE),
         );
     }
 }

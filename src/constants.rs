@@ -166,9 +166,10 @@ pub mod print_style {
     pub const LAST_MOVE_HIGHLIGHT_STYLE: &str = "on_bright_black";
     pub const WARNING_MESSAGE_STYLE: &str = "bright_yellow bold";
 }
+
 pub mod engine_constants {
     use super::types::*;
-    pub const MAX_DEPTH: usize = Depth::MAX as usize;
+    pub const MAX_DEPTH: usize = 255;
     pub const INFINITY: Score = 30_000;
     pub const DRAW_SCORE: Score = -PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;
@@ -187,6 +188,7 @@ pub mod engine_constants {
     pub const DISABLE_LMR: bool = false;
 
     pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;
+    pub const T_TABLE_SIZE: usize = 50; // in MB
     pub const DISABLE_T_TABLE: bool = false;
     pub const MAX_MOVES_PER_POSITION: usize = 218;
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
