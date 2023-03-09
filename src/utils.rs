@@ -1,6 +1,6 @@
 use super::*;
 
-pub mod command_utils {
+pub mod common_utils {
     use super::*;
 
     pub fn is_checkmate(score: Score) -> bool {
@@ -24,6 +24,14 @@ pub mod command_utils {
 
     pub fn println_info<T: ToString>(desc: &str, info: T) {
         println!("{}", format_info(desc, info));
+    }
+
+    pub fn get_upper_board_mask(rank: Rank, color: Color) -> BitBoard {
+        get_item_unchecked!(UPPER_BOARD_MASK, color.to_index(), rank.to_index())
+    }
+
+    pub fn get_lower_board_mask(rank: Rank, color: Color) -> BitBoard {
+        get_item_unchecked!(UPPER_BOARD_MASK, 1 - color.to_index(), rank.to_index())
     }
 }
 

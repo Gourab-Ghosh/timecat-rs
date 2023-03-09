@@ -450,7 +450,10 @@ impl Board {
         if pawn_mask & self.occupied_co(self_color) & get_square_bb(square) == BB_EMPTY {
             return false;
         }
-        pawn_mask & self.occupied_co(!self_color) & get_adjacent_files(square.get_file())
+        pawn_mask
+            & self.occupied_co(!self_color)
+            & get_adjacent_files(square.get_file())
+            & get_upper_board_mask(square.get_rank(), self_color)
             == BB_EMPTY
     }
 
@@ -615,7 +618,7 @@ impl Board {
     }
 
     pub fn push(&mut self, _move: Move) {
-        self.push_nnue(_move);
+        // self.push_nnue(_move);
         self.push_without_nnue(_move);
     }
 
@@ -650,7 +653,7 @@ impl Board {
     }
 
     pub fn pop(&mut self) -> Move {
-        self.pop_nnue();
+        // self.pop_nnue();
         self.pop_without_nnue()
     }
 

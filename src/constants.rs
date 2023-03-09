@@ -1,3 +1,21 @@
+macro_rules! make_array_recursively {
+    ($($x:expr),*) => ([$(make_array_recursively!($x)),*]);
+    ($x:expr) => ($x);
+}
+
+macro_rules! generate_lmr_table {
+    () => {
+        let mut lmr_table = [[0; 64]; 64];
+        for depth in 1..MAX_PLY {
+            for move_number in 1..MAX_PLY {
+                let reduction = (depth as f64).ln() * (move_number as f64).ln() / 3.0;
+                lmr_table[depth][move_number] = reduction as usize;
+            }
+        }
+        lmr_table
+    };
+}
+
 pub mod types {
     pub type Ply = usize;
     pub type Depth = i8;
@@ -121,6 +139,29 @@ pub mod bitboard {
 
     pub const CENTER_SQUARES_BB: BitBoard = BitBoard(0x0000001818000000);
     pub const PSEUDO_CENTER_SQUARES_BB: BitBoard = BitBoard(0x00003C24243C0000);
+
+    pub const UPPER_BOARD_MASK: [[BitBoard; 8]; 2] = [
+        [
+            BitBoard(0xffff_ffff_ffff_ff00),
+            BitBoard(0xffff_ffff_ffff_0000),
+            BitBoard(0xffff_ffff_ff00_0000),
+            BitBoard(0xffff_ffff_0000_0000),
+            BitBoard(0xffff_ff00_0000_0000),
+            BitBoard(0xffff_0000_0000_0000),
+            BitBoard(0xff00_0000_0000_0000),
+            BitBoard(0x0000_0000_0000_0000),
+        ],
+        [
+            BitBoard(0x00ff_ffff_ffff_ffff),
+            BitBoard(0x0000_ffff_ffff_ffff),
+            BitBoard(0x0000_00ff_ffff_ffff),
+            BitBoard(0x0000_0000_ffff_ffff),
+            BitBoard(0x0000_0000_00ff_ffff),
+            BitBoard(0x0000_0000_0000_ffff),
+            BitBoard(0x0000_0000_0000_00ff),
+            BitBoard(0x0000_0000_0000_0000),
+        ],
+    ];
 }
 
 pub mod square {
@@ -169,11 +210,11 @@ pub mod print_style {
 
 pub mod engine_constants {
     use super::types::*;
-    pub const MAX_DEPTH: usize = 255;
+    pub const MAX_PLY: usize = 255;
     pub const INFINITY: Score = 30_000;
-    pub const DRAW_SCORE: Score = -PAWN_VALUE / 2;
+    pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;
-    pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - MAX_DEPTH as Score - 1;
+    pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - MAX_PLY as Score - 1;
     pub const NUM_KILLER_MOVES: usize = 3;
     pub const PAWN_VALUE: Score = 100;
 
@@ -181,7 +222,7 @@ pub mod engine_constants {
     pub const NULL_MOVE_MIN_DEPTH: Depth = 2;
     pub const NULL_MOVE_DEPTH_DIVIDER: Depth = 4;
 
-    pub const FULL_DEPTH_SEARCH_LMR: usize = 4;
+    pub const FULL_DEPTH_SEARCH_LMR: usize = 5;
     pub const REDUCTION_LIMIT_LMR: Depth = 3;
     pub const LMR_BASE_REDUCTION: f32 = 0.75;
     pub const LMR_MOVE_DIVIDER: f32 = 2.25;
@@ -202,4 +243,6 @@ pub mod engine_constants {
         [101, 201, 301, 401, 501, 601],
         [100, 200, 300, 400, 500, 600],
     ];
+
+    pub const LMR_TABLE: [[Depth; 64]; 64] = [[0; 64]; 64];
 }

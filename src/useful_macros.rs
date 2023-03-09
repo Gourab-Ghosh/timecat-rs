@@ -24,6 +24,9 @@ macro_rules! get_item_unchecked {
     ($vec:expr, $index:expr) => {
         unsafe { *$vec.get_unchecked($index) }
     };
+    ($vec:expr, $index1:expr, $index2:expr) => {
+        unsafe { *$vec.get_unchecked($index1).get_unchecked($index2) }
+    };
 }
 
 #[macro_export]
