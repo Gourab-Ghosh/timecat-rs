@@ -664,10 +664,11 @@ impl Engine {
             .enumerate()
         {
             let _move = weighted_move._move;
+            // println!("{move_index}: {}", self.board.san(_move));
             self.push(_move);
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true).0 > alpha {
                 (score, write_tt) = self.alpha_beta(depth - 1, -beta, -alpha, true);
-                score = -(if score == 0 { draw_score } else { score });
+                score = -(if score == 0 { draw_score / 2 } else { score });
                 if self.board.get_current_position_repetition() > 1 {
                     score -= draw_score / 2;
                 }
@@ -722,6 +723,14 @@ impl Engine {
         if is_draw {
             return (0, false);
         }
+        let mate_score = CHECKMATE_SCORE - self.ply as i16;
+        let moves_gen = self.board.generate_legal_moves();
+        if moves_gen.len() == 0 {
+            if not_in_check {
+                return (0, false);
+            }
+            return (-mate_score, false);
+        }
         // if !not_in_check {
         //     depth += 1
         // }
@@ -736,22 +745,16 @@ impl Engine {
                 None => None,
             }
         };
-        let mate_score = CHECKMATE_SCORE - self.ply as i16;
-        let moves_gen = self.board.generate_legal_moves();
-        if moves_gen.len() == 0 {
-            if not_in_check {
-                return (0, false);
-            }
-            return (-mate_score, false);
-        }
+        let score_reduction = 0;
+        // let score_reduction = if is_endgame {0} else {(DRAW_SCORE * (self.board.get_current_position_repetition() as Score - 1)) / 2};
         if depth == 0 {
-            return (self.quiescence(alpha, beta), true);
+            return (self.quiescence(alpha, beta) - score_reduction, true);
         }
         // mate distance pruning
         alpha = alpha.max(-mate_score);
         beta = beta.min(mate_score - 1);
         if alpha >= beta {
-            return (alpha, false);
+            return (alpha - score_reduction, false);
         }
         let mut futility_pruning = false;
         if not_in_check && !is_pvs_node {
@@ -761,7 +764,7 @@ impl Engine {
                 let evaluation_margin = PAWN_VALUE * depth as i16;
                 let evaluation_diff = static_evaluation - evaluation_margin;
                 if evaluation_diff >= beta {
-                    return (evaluation_diff, true);
+                    return (evaluation_diff - score_reduction, true);
                 }
             }
             // null move reduction
@@ -775,7 +778,7 @@ impl Engine {
                     let score = -score;
                     self.pop_null_move();
                     if score >= beta {
-                        return (beta, write_tt);
+                        return (beta - score_reduction, write_tt);
                     }
                 }
                 // razoring
@@ -783,13 +786,13 @@ impl Engine {
                     let mut evaluation = static_evaluation + PAWN_VALUE;
                     if evaluation < beta && depth == 1 {
                         let new_evaluation = self.quiescence(alpha, beta);
-                        return (new_evaluation.max(evaluation), true);
+                        return (new_evaluation.max(evaluation) - score_reduction, true);
                     }
                     evaluation += PAWN_VALUE;
                     if evaluation < beta && depth < 4 {
                         let new_evaluation = self.quiescence(alpha, beta);
                         if new_evaluation < beta {
-                            return (new_evaluation.max(evaluation), true);
+                            return (new_evaluation.max(evaluation) - score_reduction, true);
                         }
                     }
                 }
@@ -879,7 +882,7 @@ impl Engine {
                     if not_capture_move {
                         self.move_sorter.update_killer_moves(_move, self.ply);
                     }
-                    return (beta, write_tt);
+                    return (beta - score_reduction, write_tt);
                 }
             }
         }
@@ -891,7 +894,7 @@ impl Engine {
             Some(self.pv_table[self.ply][self.ply]),
             write_tt,
         );
-        (alpha, write_tt)
+        (alpha - score_reduction, write_tt)
     }
 
     fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {

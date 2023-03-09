@@ -53,4 +53,4 @@ if is_error_free:
         release_file = os.path.abspath("./target/release/timecat")
         if timed_run(lambda: os.system(f"perf record -g {release_file}")):
             print("Running without using perf")
-            timed_run(lambda: os.system(release_file))
+            timed_run(lambda: os.system(repr(release_file)))
