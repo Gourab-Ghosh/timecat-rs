@@ -229,10 +229,11 @@ pub mod engine_constants {
     pub const DISABLE_LMR: bool = false;
 
     pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;
-    pub const T_TABLE_SIZE: usize = 50; // in MB
     pub const DISABLE_T_TABLE: bool = false;
     pub const MAX_MOVES_PER_POSITION: usize = 218;
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
+
+    pub const FOLLOW_PV: bool = true;
 
     #[rustfmt::skip]
     pub const MVV_LVA: [[i32; 6]; 6] = [

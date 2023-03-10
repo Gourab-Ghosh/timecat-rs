@@ -1,572 +1,12 @@
 use super::*;
-use sort::*;
-use transposition_table::*;
 use EntryFlag::*;
-
-mod sort {
-    use super::*;
-
-    #[derive(Clone, Copy, Default, Debug)]
-    pub struct WeightedMove {
-        pub _move: Move,
-        pub weight: i32,
-    }
-
-    impl WeightedMove {
-        pub fn new(_move: Move, weight: i32) -> Self {
-            Self { _move, weight }
-        }
-    }
-
-    #[derive(Debug)]
-    pub struct WeightedMoveListSorter {
-        weighted_moves: [WeightedMove; MAX_MOVES_PER_POSITION],
-        len: usize,
-        idx: usize,
-        sorted: bool,
-    }
-
-    impl Iterator for WeightedMoveListSorter {
-        type Item = WeightedMove;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            if self.idx == self.len {
-                self.idx = 0;
-                self.sorted = true;
-                return None;
-            }
-            if self.sorted {
-                let best_move = get_item_unchecked!(self.weighted_moves, self.idx);
-                self.idx += 1;
-                return Some(best_move);
-            }
-            let mut max_weight = MoveWeight::MIN;
-            let mut max_idx = self.idx;
-            for idx in self.idx..self.len {
-                let weighted_move = self.weighted_moves[idx];
-                if weighted_move.weight > max_weight {
-                    max_idx = idx;
-                    max_weight = weighted_move.weight;
-                }
-            }
-            // unsafe { self.weighted_moves.swap_unchecked(self.idx, max_idx) };
-            self.weighted_moves.swap(self.idx, max_idx);
-            let best_move = self.weighted_moves[self.idx];
-            self.idx += 1;
-            Some(best_move)
-        }
-    }
-
-    impl FromIterator<WeightedMove> for WeightedMoveListSorter {
-        fn from_iter<T: IntoIterator<Item = WeightedMove>>(iter: T) -> Self {
-            let mut weighted_moves = [WeightedMove::default(); MAX_MOVES_PER_POSITION];
-            let mut len = 0;
-            let mut sorted = true;
-            let mut last_weight = MoveWeight::MAX;
-            for weighted_move in iter {
-                weighted_moves[len] = weighted_move;
-                if sorted {
-                    sorted = last_weight > weighted_move.weight;
-                    last_weight = weighted_move.weight;
-                }
-                len += 1;
-            }
-            Self {
-                weighted_moves,
-                len,
-                idx: 0,
-                sorted,
-            }
-        }
-    }
-
-    #[derive(Debug)]
-    pub struct MoveSorter {
-        killer_moves: [[Move; NUM_KILLER_MOVES]; MAX_PLY],
-        history_move_scores: [[[MoveWeight; 64]; 2]; 6],
-    }
-
-    impl MoveSorter {
-        pub fn update_killer_moves(&mut self, killer_move: Move, ply: Ply) {
-            let arr = &mut self.killer_moves[ply];
-            arr.rotate_right(1);
-            arr[0] = killer_move;
-        }
-
-        pub fn is_killer_move(&self, _move: &Move, ply: Ply) -> bool {
-            self.killer_moves[ply].contains(_move)
-        }
-
-        pub fn add_history_move(&mut self, history_move: Move, board: &Board, depth: Depth) {
-            let depth = depth.pow(2) as MoveWeight;
-            let src = history_move.get_source();
-            let dest = history_move.get_dest();
-            self.history_move_scores[board.piece_at(src).unwrap().to_index()]
-                [board.color_at(src).unwrap() as usize][dest.to_index()] += depth;
-        }
-
-        fn get_least_attackers_move(&self, square: Square, board: &chess::Board) -> Option<Move> {
-            let mut captute_moves = chess::MoveGen::new_legal(board);
-            captute_moves.set_iterator_mask(get_square_bb(square));
-            // match captute_moves.next() {
-            //     Some(_move) => match _move.get_promotion() {
-            //         Some(promotion) => Some(Move::new(
-            //             _move.get_source(),
-            //             _move.get_dest(),
-            //             Some(Queen),
-            //         )),
-            //         None => Some(_move),
-            //     },
-            //     None => None,
-            // }
-            captute_moves.next()
-        }
-
-        fn see(&self, square: Square, board: &mut chess::Board) -> Score {
-            let least_attackers_move = match self.get_least_attackers_move(square, board) {
-                Some(_move) => _move,
-                None => return 0,
-            };
-            let capture_piece = board.piece_on(square).unwrap_or(Pawn);
-            board.clone().make_move(least_attackers_move, board);
-            (evaluate_piece(capture_piece) - self.see(square, board)).max(0)
-        }
-
-        fn see_capture(&self, square: Square, board: &mut chess::Board) -> Score {
-            let least_attackers_move = match self.get_least_attackers_move(square, board) {
-                Some(_move) => _move,
-                None => return 0,
-            };
-            let capture_piece = board.piece_on(square).unwrap_or(Pawn);
-            board.clone().make_move(least_attackers_move, board);
-            evaluate_piece(capture_piece) - self.see(square, board)
-        }
-
-        fn mvv_lva(&self, _move: Move, board: &Board) -> MoveWeight {
-            MVV_LVA[board
-                .piece_at(_move.get_source())
-                .unwrap_or(Pawn)
-                .to_index()][board.piece_at(_move.get_dest()).unwrap().to_index()]
-        }
-
-        #[inline(always)]
-        fn capture_value(&self, _move: Move, board: &Board) -> MoveWeight {
-            self.see_capture(_move.get_dest(), &mut board.get_sub_board()) as MoveWeight
-            // self.mvv_lva(_move, board)
-        }
-
-        fn threat_value(&self, _move: Move, sub_board: &chess::Board) -> MoveWeight {
-            let dest = _move.get_dest();
-            let attacker_piece_score =
-                evaluate_piece(sub_board.piece_on(_move.get_source()).unwrap());
-            let attacked_piece_score = evaluate_piece(sub_board.piece_on(dest).unwrap_or(Pawn));
-            let mut threat_score = attacker_piece_score - attacked_piece_score;
-            if sub_board.pinned() == &get_square_bb(dest) {
-                threat_score *= 2;
-            }
-            (threat_score + 16 * PAWN_VALUE) as MoveWeight
-        }
-
-        fn move_value(
-            &self,
-            _move: Move,
-            board: &Board,
-            ply: Ply,
-            best_move: Option<Move>,
-        ) -> MoveWeight {
-            if let Some(m) = best_move {
-                if m == _move {
-                    return 1294000000;
-                }
-            }
-            let source = _move.get_source();
-            let dest = _move.get_dest();
-            let mut sub_board = board.get_sub_board();
-            sub_board.clone().make_move(_move, &mut sub_board);
-            let checkers = *sub_board.checkers();
-            let moving_piece = board.piece_at(source).unwrap();
-            if checkers != BB_EMPTY {
-                return 1292000000
-                    + 100 * checkers.popcnt() as MoveWeight
-                    + moving_piece as MoveWeight;
-            }
-            if board.is_capture(_move) {
-                let capture_value = self.capture_value(_move, board);
-                return 1291000000 + capture_value;
-            }
-            for (i, killer_move) in self.killer_moves[ply].iter().enumerate() {
-                if killer_move == &_move {
-                    return 1290000000 - i as MoveWeight;
-                }
-            }
-            if let Some(piece) = _move.get_promotion() {
-                return 1289000000;
-            }
-            // if board.is_endgame() && board.is_passed_pawn(source) {
-            if board.is_passed_pawn(source) {
-                let promotion_distance = (board.turn().to_seventh_rank() as MoveWeight)
-                    .abs_diff(source.get_rank() as MoveWeight);
-                return 1288000000 - promotion_distance as MoveWeight;
-            }
-            // let threat_score = match sub_board.null_move() {
-            //     Some(board) => {
-            //         let mut moves = chess::MoveGen::new_legal(&board);
-            //         moves.set_iterator_mask(*board.color_combined(!board.side_to_move()));
-            //         moves.into_iter().map(|m| self.threat_value(m, &board)).sum::<MoveWeight>()
-            //     },
-            //     None => 0,
-            // };
-
-            // 100 * history_moves_score + threat_score
-            self.history_move_scores[moving_piece.to_index()]
-                [board.color_at(source).unwrap() as usize][dest.to_index()]
-        }
-
-        pub fn get_weighted_sort_moves<T: IntoIterator<Item = Move>>(
-            &self,
-            move_gen: T,
-            board: &Board,
-            ply: Ply,
-            best_move: Option<Move>,
-        ) -> WeightedMoveListSorter {
-            WeightedMoveListSorter::from_iter(
-                move_gen
-                    .into_iter()
-                    .map(|m| WeightedMove::new(m, self.move_value(m, board, ply, best_move))),
-            )
-        }
-
-        pub fn get_weighted_capture_moves<T: IntoIterator<Item = Move>>(
-            &self,
-            move_gen: T,
-            board: &Board,
-        ) -> WeightedMoveListSorter {
-            WeightedMoveListSorter::from_iter(move_gen.into_iter().map(|m| {
-                WeightedMove::new(
-                    m,
-                    self.see_capture(m.get_dest(), &mut board.get_sub_board()) as MoveWeight,
-                )
-            }))
-        }
-    }
-
-    impl Default for MoveSorter {
-        fn default() -> Self {
-            Self {
-                killer_moves: [[Move::default(); NUM_KILLER_MOVES]; MAX_PLY],
-                history_move_scores: [[[0; 64]; 2]; 6],
-            }
-        }
-    }
-}
-
-mod transposition_table {
-    use std::collections::hash_map::Entry;
-
-    use super::*;
-
-    #[derive(Clone, Copy, Debug, PartialOrd, PartialEq)]
-    pub enum EntryFlag {
-        HashExact,
-        HashAlpha,
-        HashBeta,
-    }
-
-    impl Default for EntryFlag {
-        fn default() -> Self {
-            HashExact
-        }
-    }
-
-    #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
-    struct TranspositionTableData {
-        depth: Depth,
-        score: Score,
-        flag: EntryFlag,
-    }
-
-    impl TranspositionTableData {
-        pub fn depth(&self) -> Depth {
-            self.depth
-        }
-
-        pub fn score(&self) -> Score {
-            self.score
-        }
-
-        pub fn flag(&self) -> EntryFlag {
-            self.flag
-        }
-    }
-
-    #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
-    struct TranspositionTableEntry {
-        option_data: Option<TranspositionTableData>,
-        best_move: Option<Move>,
-    }
-
-    // pub struct TranspositionTable {
-    //     table: CacheTable<TranspositionTableEntry>,
-    // }
-
-    // impl TranspositionTable {
-    //     fn generate_cache_key(key: u64) -> u64 {
-    //         let mut cache_key = key;
-    //         cache_key ^= cache_key >> 32;
-    //         cache_key ^= cache_key >> 16;
-    //         cache_key ^= cache_key >> 8;
-    //         cache_key ^= cache_key >> 4;
-    //         cache_key ^= cache_key >> 2;
-    //         cache_key ^= cache_key >> 1;
-    //         cache_key
-    //     }
-
-    //     pub fn new() -> Self {
-    //         let size = mem::size_of::<TranspositionTableEntry>();
-    //         let dynamic_size = 2 << (18 + (T_TABLE_SIZE as f64 / size as f64).log(2.0).round() as i32);
-    //         println!("size: {}, dynamic_size: {}", size, dynamic_size);
-    //         Self {
-    //             table: CacheTable::new(dynamic_size, Default::default()),
-    //         }
-    //     }
-
-    //     // pub fn read(
-    //     //     &self,
-    //     //     key: u64,
-    //     //     depth: Depth,
-    //     //     alpha: Score,
-    //     //     beta: Score,
-    //     // ) -> Option<(Option<Score>, Option<Move>)> {
-    //     //     if DISABLE_T_TABLE {
-    //     //         return None;
-    //     //     }
-    //     //     match self.table.get(key) {
-    //     //         Some(tt_entry) => {
-    //     //             let best_move = tt_entry.best_move;
-    //     //             if let Some(data) = tt_entry.option_data {
-    //     //                 if data.depth >= depth {
-    //     //                     match data.flag {
-    //     //                         HashExact => Some((Some(data.score), best_move)),
-    //     //                         HashAlpha => {
-    //     //                             if data.score <= alpha {
-    //     //                                 Some((Some(data.score), best_move))
-    //     //                             } else {
-    //     //                                 Some((None, best_move))
-    //     //                             }
-    //     //                         }
-    //     //                         HashBeta => {
-    //     //                             if data.score >= beta {
-    //     //                                 Some((Some(data.score), best_move))
-    //     //                             } else {
-    //     //                                 Some((None, best_move))
-    //     //                             }
-    //     //                         }
-    //     //                     }
-    //     //                 } else {
-    //     //                     Some((None, best_move))
-    //     //                 }
-    //     //             } else {
-    //     //                 Some((None, best_move))
-    //     //             }
-    //     //         }
-    //     //         None => None,
-    //     //     }
-    //     // }
-
-    //     pub fn read(
-    //         &self,
-    //         key: u64,
-    //         depth: Depth,
-    //         alpha: Score,
-    //         beta: Score,
-    //     ) -> Option<(Option<Score>, Option<Move>)> {
-    //         if DISABLE_T_TABLE {
-    //             return None;
-    //         }
-    //         let hash = Self::generate_cache_key(key);
-    //         match self.table.get(hash) {
-    //             Some(tt_entry) => {
-    //                 let best_move = tt_entry.best_move;
-    //                 if let Some(data) = tt_entry.option_data {
-    //                     if data.depth >= depth {
-    //                         return match data.flag {
-    //                             HashExact => Some((Some(data.score), best_move)),
-    //                             HashAlpha => {
-    //                                 if data.score <= alpha {
-    //                                     Some((Some(data.score), best_move))
-    //                                 } else {
-    //                                     Some((None, best_move))
-    //                                 }
-    //                             }
-    //                             HashBeta => {
-    //                                 if data.score >= beta {
-    //                                     Some((Some(data.score), best_move))
-    //                                 } else {
-    //                                     Some((None, best_move))
-    //                                 }
-    //                             }
-    //                         };
-    //                     }
-    //                 }
-    //                 Some((None, best_move))
-    //             }
-    //             None => None,
-    //         }
-    //     }
-
-    //     #[inline(always)]
-    //     pub fn read_best_move(&self, key: u64) -> Option<Move> {
-    //         self.table.get(key).map(|d| d.best_move).flatten()
-    //     }
-
-    //     pub fn write(
-    //         &mut self,
-    //         key: u64,
-    //         depth: Depth,
-    //         score: Score,
-    //         flag: EntryFlag,
-    //         best_move: Option<Move>,
-    //         write_tt: bool,
-    //     ) {
-    //         let hash = Self::generate_cache_key(key);
-    //         let save_score = !DISABLE_T_TABLE && write_tt && self.table.get(hash).map(|e| e.option_data.map(|d| d.depth)).flatten().unwrap_or(0) <= depth;
-    //         let option_data = if save_score {
-    //             Some(TranspositionTableData { depth, score, flag })
-    //         } else {
-    //             None
-    //         };
-    //         self.table.add(hash, TranspositionTableEntry { option_data, best_move });
-    //     }
-    // }
-
-    pub struct TranspositionTable {
-        table: Arc<Mutex<HashMap<u64, TranspositionTableEntry>>>,
-    }
-
-    impl TranspositionTable {
-        pub fn new() -> Self {
-            Self {
-                table: Arc::new(Mutex::new(HashMap::default())),
-            }
-        }
-
-        pub fn read(
-            &self,
-            key: u64,
-            depth: Depth,
-            alpha: Score,
-            beta: Score,
-        ) -> Option<(Option<Score>, Option<Move>)> {
-            if DISABLE_T_TABLE {
-                return None;
-            }
-            match self.table.lock().unwrap().get(&key) {
-                Some(tt_entry) => {
-                    let best_move = tt_entry.best_move;
-                    if let Some(data) = tt_entry.option_data {
-                        if data.depth >= depth {
-                            return match data.flag {
-                                HashExact => Some((Some(data.score), best_move)),
-                                HashAlpha => {
-                                    if data.score <= alpha {
-                                        Some((Some(data.score), best_move))
-                                    } else {
-                                        Some((None, best_move))
-                                    }
-                                }
-                                HashBeta => {
-                                    if data.score >= beta {
-                                        Some((Some(data.score), best_move))
-                                    } else {
-                                        Some((None, best_move))
-                                    }
-                                }
-                            };
-                        }
-                    }
-                    Some((None, best_move))
-                }
-                None => None,
-            }
-        }
-
-        pub fn read_best_move(&self, key: u64) -> Option<Move> {
-            match self.table.lock().unwrap().get(&key) {
-                Some(tt_entry) => tt_entry.best_move,
-                None => None,
-            }
-        }
-
-        fn update_tt_entry(
-            tt_entry: &mut TranspositionTableEntry,
-            option_data: Option<TranspositionTableData>,
-            best_move: Option<Move>,
-        ) {
-            tt_entry.best_move = best_move;
-
-            if let Some(data) = tt_entry.option_data {
-                if let Some(curr_data) = option_data {
-                    if data.depth < curr_data.depth {
-                        tt_entry.option_data = option_data;
-                    }
-                }
-            } else {
-                tt_entry.option_data = option_data;
-            }
-
-            // tt_entry.option_data = option_data;
-        }
-
-        pub fn write(
-            &self,
-            key: u64,
-            depth: Depth,
-            score: Score,
-            flag: EntryFlag,
-            best_move: Option<Move>,
-            write_tt: bool,
-        ) {
-            let save_score = write_tt && !DISABLE_T_TABLE;
-            // let save_score = !is_checkmate(score) && !DISABLE_T_TABLE;
-            let option_data = if save_score {
-                Some(TranspositionTableData { depth, score, flag })
-            } else {
-                None
-            };
-            let mut table_entry = self.table.lock().unwrap();
-            match table_entry.entry(key) {
-                Entry::Occupied(tt_entry) => {
-                    let tt_entry = tt_entry.into_mut();
-                    Self::update_tt_entry(tt_entry, option_data, best_move);
-                }
-                Entry::Vacant(tt_entry) => {
-                    tt_entry.insert(TranspositionTableEntry {
-                        option_data,
-                        best_move,
-                    });
-                }
-            }
-        }
-
-        pub fn clear(&mut self) {
-            self.table.lock().unwrap().clear();
-            // self.table = Arc::new(Mutex::new(HashMap::default()));
-        }
-    }
-
-    impl Default for TranspositionTable {
-        fn default() -> Self {
-            Self::new()
-        }
-    }
-}
 
 pub struct Engine {
     pub board: Board,
     num_nodes_searched: usize,
     ply: Ply,
     pv_length: [usize; MAX_PLY],
-    pv_table: [[Move; MAX_PLY]; MAX_PLY],
+    pv_table: [[Option<Move>; MAX_PLY]; MAX_PLY],
     move_sorter: MoveSorter,
     transposition_table: TranspositionTable,
 }
@@ -578,7 +18,7 @@ impl Engine {
             num_nodes_searched: 0,
             ply: 0,
             pv_length: [0; MAX_PLY],
-            pv_table: [[Move::default(); MAX_PLY]; MAX_PLY],
+            pv_table: [[None; MAX_PLY]; MAX_PLY],
             move_sorter: MoveSorter::default(),
             transposition_table: TranspositionTable::default(),
         }
@@ -610,15 +50,15 @@ impl Engine {
         for i in 0..MAX_PLY {
             self.pv_length[i] = 0;
             for j in 0..MAX_PLY {
-                self.pv_table[i][j] = Move::default();
+                self.pv_table[i][j] = None;
             }
         }
-        self.move_sorter = MoveSorter::default();
+        self.move_sorter.reset_variables();
         self.transposition_table.clear();
     }
 
     fn update_pv_table(&mut self, _move: Move) {
-        self.pv_table[self.ply][self.ply] = _move;
+        self.pv_table[self.ply][self.ply] = Some(_move);
         for next_ply in (self.ply + 1)..self.pv_length[self.ply + 1] {
             self.pv_table[self.ply][next_ply] = self.pv_table[self.ply + 1][next_ply];
         }
@@ -660,6 +100,7 @@ impl Engine {
                 &self.board,
                 self.ply,
                 self.transposition_table.read_best_move(key),
+                self.pv_table[0][self.ply],
             )
             .enumerate()
         {
@@ -696,7 +137,7 @@ impl Engine {
             depth,
             alpha,
             flag,
-            Some(self.pv_table[self.ply][self.ply]),
+            self.pv_table[self.ply][self.ply],
             write_tt,
         );
         alpha
@@ -810,7 +251,7 @@ impl Engine {
         let mut flag = HashAlpha;
         let weighted_moves =
             self.move_sorter
-                .get_weighted_sort_moves(moves_gen, &self.board, self.ply, best_move);
+                .get_weighted_sort_moves(moves_gen, &self.board, self.ply, best_move, self.pv_table[0][self.ply]);
         let mut write_tt = true;
         for (move_index, weighted_move) in weighted_moves.enumerate() {
             let _move = weighted_move._move;
@@ -889,7 +330,7 @@ impl Engine {
             depth,
             alpha,
             flag,
-            Some(self.pv_table[self.ply][self.ply]),
+            self.pv_table[self.ply][self.ply],
             write_tt,
         );
         (alpha, write_tt)
@@ -930,7 +371,7 @@ impl Engine {
     fn get_pv(&self, depth: u8) -> Vec<Move> {
         let mut pv = Vec::new();
         for i in 0..self.pv_length[depth as usize] {
-            pv.push(self.pv_table[depth as usize][i]);
+            pv.push(self.pv_table[depth as usize][i].unwrap_or_default());
         }
         pv
     }
@@ -973,7 +414,7 @@ impl Engine {
         self.num_nodes_searched
     }
 
-    pub fn get_best_move(&self) -> Move {
+    pub fn get_best_move(&self) -> Option<Move> {
         self.pv_table[0][0]
     }
 
@@ -1012,7 +453,9 @@ impl Engine {
         let mut score;
         let clock = Instant::now();
         loop {
-            // self.follow_pv = true;
+            if FOLLOW_PV {
+                self.move_sorter.follow_pv();
+            }
             score = self.search(current_depth, alpha, beta);
             let time_passed = clock.elapsed();
             if score <= alpha || score >= beta {
@@ -1036,7 +479,7 @@ impl Engine {
             }
             current_depth += 1;
         }
-        (self.get_best_move(), score)
+        (self.get_best_move().unwrap(), score)
     }
 }
 
