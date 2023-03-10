@@ -99,7 +99,7 @@ fn _main() {
         "r2qk2r/p4pp1/2p4p/2b5/2n3n1/2NP4/PP2NPP1/R1BQK2R w KQkq - 2 15",
         "8/7R/8/8/8/8/2k3K1/8 w - - 4 3",
         "r3r3/3q1pk1/2pn2pp/pp1pR3/3P1P2/P6P/1P2QPP1/3NR1K1 b - - 10 33",
-        "4b3/8/8/2K5/8/8/1k6/q7 w - - 0 115", // Taking really long to find mate
+        "4b3/8/8/2K5/8/8/1k6/q7 w - - 0 115", // Taking really long to bestv move at depth 12
     ];
 
     let mut engine = Engine::default();
