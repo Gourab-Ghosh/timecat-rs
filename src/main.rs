@@ -32,24 +32,29 @@ use chess::{
     BoardStatus, CacheTable, ChessMove as Move, Color, File, Piece, Rank, Square,
 };
 use constants::bitboard::*;
+use constants::board_representation::*;
 use constants::engine_constants::*;
 use constants::fen::*;
-use constants::piece::*;
 use constants::print_style::*;
 use constants::square::*;
 use constants::types::*;
 use engine::Engine;
 use evaluate::*;
+use failure::Fail;
 use fxhash::FxHashMap as HashMap;
 use parse::*;
+use sort::*;
 use std::cmp::Ordering;
+use std::convert::From;
 use std::env;
 use std::fmt::{self, Display};
+use std::io::Write;
 use std::mem;
+use std::num::ParseIntError;
 use std::str::FromStr;
+use std::str::ParseBoolError;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use sort::*;
 use tt::*;
 use useful_macros::*;
 use utils::classes::*;
@@ -58,13 +63,14 @@ use utils::square_utils::*;
 use utils::string_utils::*;
 use utils::unsafe_utils::*;
 
-fn self_play(engine: &mut Engine, depth: Depth, print: bool) {
+fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<u8>) {
+    let mut time_taken_list = Vec::new();
     println!("\n{}\n", engine.board);
-    while !engine.board.is_game_over() {
+    while !engine.board.is_game_over() && engine.board.get_fullmove_number() < move_limit.unwrap_or(u8::MAX) {
         let clock = Instant::now();
         let (best_move, score) = engine.go(depth, print);
         let time_elapsed = clock.elapsed();
-        let best_move_san = engine.board.san(best_move);
+        let best_move_san = engine.board.san(best_move).unwrap();
         let pv = engine.get_pv_string();
         engine.push(best_move);
         let nps =
@@ -76,21 +82,34 @@ fn self_play(engine: &mut Engine, depth: Depth, print: bool) {
         println_info("PV Line", pv);
         println_info("Time Taken", format!("{:.3} s", time_elapsed.as_secs_f32()));
         println_info("Nodes per second", format!("{} nodes/s", nps));
+        time_taken_list.push(time_elapsed.as_secs_f32());
     }
-    println!("Game PGN:\n\n{}", engine.board.get_pgn());
+    let mean = time_taken_list.iter().sum::<f32>() / time_taken_list.len() as f32;
+    let std_err = (time_taken_list
+        .iter()
+        .map(|x| (x - mean).powi(2))
+        .sum::<f32>()
+        / (time_taken_list.len() - 1) as f32)
+        .sqrt();
+    println!("\nGame PGN:\n\n{}", engine.board.get_pgn());
+    println!("\nTime taken for all moves:\n\n{:?}", time_taken_list.iter().map(|x| (x * 1000.0).round() / 1000.0).collect::<Vec<f32>>());
+    println!(
+        "\nDepth Searched: {}\nTime taken per move: {:.3} \u{00B1} {:.3} s\nCoefficient of Variation: {:.3}",
+        depth,
+        mean,
+        std_err,
+        mean / std_err,
+    );
 }
 
 pub fn parse_command(engine: &mut Engine, raw_input: &str) {
-    match Parser::parse_command(engine, raw_input) {
-        Ok(_) => (),
-        Err(err) => panic!("{}", err.generate_error(Some(raw_input))),
-    }
+    Parser::parse_command(engine, raw_input)
+        .unwrap_or_else(|err| panic!("{}", err.generate_error(Some(raw_input))))
 }
 
 fn _main() {
-    let could_have_played_better_move = [ // ig
-        "5rk1/6pp/p1p5/1p1pqn2/1P6/2NP3P/2PQ1PP1/R5K1 w - - 0 26",
-    ];
+    let could_have_probably_played_better_move =
+        ["5rk1/6pp/p1p5/1p1pqn2/1P6/2NP3P/2PQ1PP1/R5K1 w - - 0 26"];
 
     let time_consuming_fens = [
         "r2qrbk1/2p2ppp/b1p2n2/p2p4/4PB2/P1NB4/1PP2PPP/R2QR1K1 w - - 3 13",
@@ -100,21 +119,26 @@ fn _main() {
         "8/7R/8/8/8/8/2k3K1/8 w - - 4 3",
         "r3r3/3q1pk1/2pn2pp/pp1pR3/3P1P2/P6P/1P2QPP1/3NR1K1 b - - 10 33",
         "4b3/8/8/2K5/8/8/1k6/q7 w - - 0 115", // Taking really long to bestv move at depth 12
+        "6k1/8/8/8/2q5/8/8/1K6 b - - 89 164", // Taking really long to bestv move at depth 12
+        "8/8/8/8/1K6/5k2/8/5q2 b - - 1 75",   // Taking really long to bestv move at depth 12
+        "8/8/q7/2K5/8/5k2/8/8 b - - 3 76",    // Taking really long to bestv move at depth 12
     ];
 
-    let mut engine = Engine::default();
-    // engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
-    // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
-    // engine.board.push_sans("d4 d5 c4"); // queens gambit
-    // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
+    // let mut engine = Engine::default();
+    // // engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
+    // // engine.board.push_sans("e4 e5 Nf3 Nc6"); // e4 opwning
+    // // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
+    // // engine.board.push_sans("d4 d5 c4"); // queens gambit
+    // // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
     // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
-    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
-    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7"); // traxer counter attack with Nxf7
-    // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59"); // endgame improvement 1
-    // engine.board.set_fen("8/7R/8/8/8/7K/k7/8 w - - 0 1"); // endgame improvement 2
-    self_play(&mut engine, 12, false);
+    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
+    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7"); // traxer counter attack with Nxf7
+    // // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59"); // endgame improvement 1
+    // // engine.board.set_fen("8/7R/8/8/8/7K/k7/8 w - - 0 1"); // endgame improvement 2
+    // // self_play(&mut engine, 16, false, Some(100));
+    // self_play(&mut engine, 12, false, None);
 
-    // parse_command(&mut Engine::default(), "go depth 14");
+    parse_command(&mut Engine::default(), "go depth 14");
     // parse_command(&mut Engine::default(), "go perft 7");
 
     // let mut engine = Engine::default();
@@ -122,7 +146,7 @@ fn _main() {
     // // engine.board.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111"); // test t_table -> nodes initially: 3203606
     // // engine.board.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105"); // gives incomplete pv line
     // engine.board.set_fen("4b3/8/8/2K5/8/8/1k6/q7 w - - 0 115");
-    // parse_command(&mut engine, "go depth 12");
+    // parse_command(&mut engine, "go depth 14");
 
     // let mut engine = Engine::default();
     // engine.board.set_fen("rnbqkbnr/pP4pp/8/2pppp2/8/8/1PPPPPPP/RNBQKBNR w KQkq - 0 5");

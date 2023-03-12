@@ -99,7 +99,7 @@ impl MoveSorter {
         self.follow_pv = false;
         self.score_pv = false;
     }
-    
+
     pub fn update_killer_moves(&mut self, killer_move: Move, ply: Ply) {
         let arr = &mut self.killer_moves[ply];
         arr.rotate_right(1);
@@ -111,7 +111,7 @@ impl MoveSorter {
     }
 
     pub fn add_history_move(&mut self, history_move: Move, board: &Board, depth: Depth) {
-        let depth = depth.pow(2) as MoveWeight;
+        let depth = (depth as MoveWeight).pow(2);
         let src = history_move.get_source();
         let dest = history_move.get_dest();
         self.history_move_scores[board.piece_at(src).unwrap().to_index()]
@@ -159,8 +159,7 @@ impl MoveSorter {
 
     fn score_threat(&self, _move: Move, sub_board: &chess::Board) -> MoveWeight {
         let dest = _move.get_dest();
-        let attacker_piece_score =
-            evaluate_piece(sub_board.piece_on(_move.get_source()).unwrap());
+        let attacker_piece_score = evaluate_piece(sub_board.piece_on(_move.get_source()).unwrap());
         let attacked_piece_score = evaluate_piece(sub_board.piece_on(dest).unwrap_or(Pawn));
         let mut threat_score = attacker_piece_score - attacked_piece_score;
         if sub_board.pinned() == &get_square_bb(dest) {
@@ -197,9 +196,7 @@ impl MoveSorter {
         let checkers = *sub_board.checkers();
         let moving_piece = board.piece_at(source).unwrap();
         if checkers != BB_EMPTY {
-            return 1292000000
-                + 100 * checkers.popcnt() as MoveWeight
-                + moving_piece as MoveWeight;
+            return 1292000000 + 100 * checkers.popcnt() as MoveWeight + moving_piece as MoveWeight;
         }
         if board.is_capture(_move) {
             let capture_value = self.score_capture(_move, board);
@@ -215,8 +212,7 @@ impl MoveSorter {
         if let Some(piece) = _move.get_promotion() {
             return 1289000000;
         }
-        // if board.is_endgame() && board.is_passed_pawn(source) {
-        if board.is_passed_pawn(source) {
+        if board.is_endgame() && board.is_passed_pawn(source) {
             let promotion_distance = (board.turn().to_seventh_rank() as MoveWeight)
                 .abs_diff(source.get_rank() as MoveWeight);
             return 1288000000 - promotion_distance as MoveWeight;
@@ -231,19 +227,19 @@ impl MoveSorter {
         // };
 
         // 100 * history_moves_score + threat_score
-        self.history_move_scores[moving_piece.to_index()]
-            [board.color_at(source).unwrap() as usize][dest.to_index()]
+        self.history_move_scores[moving_piece.to_index()][board.color_at(source).unwrap() as usize]
+            [dest.to_index()]
     }
 
     pub fn get_weighted_sort_moves<T: IntoIterator<Item = Move>>(
         &mut self,
-        move_gen: T,
+        moves_gen: T,
         board: &Board,
         ply: Ply,
         best_move: Option<Move>,
         optional_pv_move: Option<Move>,
     ) -> WeightedMoveListSorter {
-        let moves_vec = Vec::from_iter(move_gen.into_iter());
+        let moves_vec = Vec::from_iter(moves_gen.into_iter());
         if self.follow_pv {
             self.follow_pv = false;
             if let Some(pv_move) = optional_pv_move {
@@ -253,24 +249,24 @@ impl MoveSorter {
                 }
             }
         }
-        WeightedMoveListSorter::from_iter(
-            moves_vec
-                .into_iter()
-                .map(|m| WeightedMove::new(m, self.score_move(m, board, ply, best_move, optional_pv_move))),
-        )
+        WeightedMoveListSorter::from_iter(moves_vec.into_iter().map(|m| {
+            WeightedMove::new(
+                m,
+                self.score_move(m, board, ply, best_move, optional_pv_move),
+            )
+        }))
     }
 
     pub fn get_weighted_capture_moves<T: IntoIterator<Item = Move>>(
         &self,
-        move_gen: T,
+        moves_gen: T,
         board: &Board,
     ) -> WeightedMoveListSorter {
-        WeightedMoveListSorter::from_iter(move_gen.into_iter().map(|m| {
-            WeightedMove::new(
-                m,
-                self.score_capture(m, &board) as MoveWeight,
-            )
-        }))
+        WeightedMoveListSorter::from_iter(
+            moves_gen
+                .into_iter()
+                .map(|m| WeightedMove::new(m, self.score_capture(m, board) as MoveWeight)),
+        )
     }
 
     pub fn follow_pv(&mut self) {

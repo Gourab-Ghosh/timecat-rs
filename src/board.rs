@@ -1,5 +1,16 @@
 use super::*;
 
+#[derive(Clone, Debug, Fail)]
+pub enum BoardError {
+    #[fail(
+        display = "san() and lan() expect move to be legal or null, but got {} in {}",
+        _move, fen
+    )]
+    InvalidSanMove { _move: Move, fen: String },
+
+    #[fail(display = "{}", err_msg)]
+    CustomError { err_msg: String },
+}
 // #[derive(Clone, PartialEq, Debug, Eq)]
 #[derive(Clone, Debug)]
 struct BoardState {
@@ -102,7 +113,7 @@ impl Board {
     }
 
     pub fn get_fen(&self) -> String {
-        // check later
+        // TODO: check later
         let parent_class_fen = self.board.to_string();
         let splitted_parent_class_fen = parent_class_fen.split(' ');
         let mut fen = String::new();
@@ -127,13 +138,10 @@ impl Board {
             return false;
         }
         let mut splitted_fen = fen.split(' ');
-        if splitted_fen.nth(4).unwrap_or("0").parse().unwrap_or(-1) < 0 {
-            return false;
-        };
-        if splitted_fen.next().unwrap_or("1").parse().unwrap_or(-1) < 0 {
-            return false;
-        };
-        if splitted_fen.next().is_some() {
+        if splitted_fen.nth(4).unwrap_or("0").parse().unwrap_or(-1) < 0
+            || splitted_fen.next().unwrap_or("1").parse().unwrap_or(-1) < 0
+            || splitted_fen.next().is_some()
+        {
             return false;
         };
         true
@@ -151,17 +159,10 @@ impl Board {
         self.set_fen(EMPTY_BOARD_FEN);
     }
 
-    pub fn piece_type_at(&self, square: Square) -> u8 {
+    pub fn piece_type_at(&self, square: Square) -> usize {
         match self.board.piece_on(square) {
             None => 0,
-            Some(p) => match p {
-                Pawn => 1,
-                Knight => 2,
-                Bishop => 3,
-                Rook => 4,
-                Queen => 5,
-                King => 6,
-            },
+            Some(p) => p.to_index() + 1,
         }
     }
 
@@ -174,47 +175,30 @@ impl Board {
     }
 
     pub fn piece_symbol_at(&self, square: Square) -> String {
-        let mut symbol = match self.piece_at(square) {
-            Some(p) => match p {
-                Pawn => "p",
-                Knight => "n",
-                Bishop => "b",
-                Rook => "r",
-                Queen => "q",
-                King => "k",
-            },
-            None => " ",
-        }
-        .to_string();
-        symbol = match self.color_at(square) {
-            Some(c) => match c {
+        let symbol = get_item_unchecked!(PIECE_SYMBOLS, self.piece_type_at(square)).to_string();
+        if let Some(color) = self.color_at(square) {
+            return match color {
                 White => symbol.to_uppercase(),
                 Black => symbol.to_lowercase(),
-            },
-            None => symbol,
-        };
+            };
+        }
         symbol
     }
 
     pub fn piece_unicode_symbol_at(&self, square: Square, flip_color: bool) -> String {
-        let piece_type = self.piece_type_at(square);
-        let white_pieces: [&str; 7];
-        let black_pieces: [&str; 7];
-        if flip_color {
-            white_pieces = BLACK_PIECE_UNICODE_SYMBOLS;
-            black_pieces = WHITE_PIECE_UNICODE_SYMBOLS;
-        } else {
-            white_pieces = WHITE_PIECE_UNICODE_SYMBOLS;
-            black_pieces = BLACK_PIECE_UNICODE_SYMBOLS;
+        if let Some(color) = self.color_at(square) {
+            let piece_index = self.piece_at(square).unwrap().to_index();
+            let (white_pieces, black_pieces) = match flip_color {
+                true => (BLACK_PIECE_UNICODE_SYMBOLS, WHITE_PIECE_UNICODE_SYMBOLS),
+                false => (WHITE_PIECE_UNICODE_SYMBOLS, BLACK_PIECE_UNICODE_SYMBOLS),
+            };
+            return match color {
+                White => get_item_unchecked!(white_pieces, piece_index),
+                Black => get_item_unchecked!(black_pieces, piece_index),
+            }
+            .to_string();
         }
-        match self.color_at(square) {
-            Some(color) => match color {
-                White => get_item_unchecked!(white_pieces, piece_type as usize),
-                Black => get_item_unchecked!(black_pieces, piece_type as usize),
-            },
-            None => " ",
-        }
-        .to_string()
+        EMPTY_SPACE_UNICODE_SYMBOL.to_string()
     }
 
     pub fn repr(&self) -> String {
@@ -222,7 +206,7 @@ impl Board {
     }
 
     fn get_skeleton(&self) -> String {
-        let skeleton = String::from(" +---+---+---+---+---+---+---+---+\n | {} | {} | {} | {} | {} | {} | {} | {} | 8\n +---+---+---+---+---+---+---+---+\n | {} | {} | {} | {} | {} | {} | {} | {} | 7\n +---+---+---+---+---+---+---+---+\n | {} | {} | {} | {} | {} | {} | {} | {} | 6\n +---+---+---+---+---+---+---+---+\n | {} | {} | {} | {} | {} | {} | {} | {} | 5\n +---+---+---+---+---+---+---+---+\n | {} | {} | {} | {} | {} | {} | {} | {} | 4\n +---+---+---+---+---+---+---+---+\n | {} | {} | {} | {} | {} | {} | {} | {} | 3\n +---+---+---+---+---+---+---+---+\n | {} | {} | {} | {} | {} | {} | {} | {} | 2\n +---+---+---+---+---+---+---+---+\n | {} | {} | {} | {} | {} | {} | {} | {} | 1\n +---+---+---+---+---+---+---+---+\n   a   b   c   d   e   f   g   h");
+        let skeleton = String::from(BOARD_SKELETON.trim_matches('\n'));
         let mut colored_skeleton = String::new();
         fn get_colored_char(c: char) -> String {
             let mut _char = c.to_string();
@@ -281,7 +265,7 @@ impl Board {
                 style += " ";
                 style += LAST_MOVE_HIGHLIGHT_STYLE;
             }
-            skeleton = skeleton.replacen("{}", &colorize(symbol, &style), 1);
+            skeleton = skeleton.replacen('O', &colorize(symbol, &style), 1);
         }
         skeleton.push('\n');
         let mut checkers_string = String::new();
@@ -355,12 +339,23 @@ impl Board {
         self.board.status()
     }
 
-    pub fn get_current_position_repetition(&self) -> u8 {
+    #[inline(always)]
+    pub fn get_fullmove_number(&self) -> u8 {
+        self.fullmove_number
+    }
+
+    #[inline(always)]
+    pub fn get_halfmove_clock(&self) -> u8 {
+        self.halfmove_clock
+    }
+
+    #[inline(always)]
+    pub fn get_num_repetitions(&self) -> u8 {
         self.num_repetitions
     }
 
     pub fn is_threefold_repetition(&self) -> bool {
-        self.num_repetitions >= 3
+        self.get_num_repetitions() >= 3
     }
 
     fn is_halfmoves(&self, n: u8) -> bool {
@@ -402,7 +397,7 @@ impl Board {
                     && self.get_piece_mask(Queen) == &BB_EMPTY
                     && self.get_piece_mask(Pawn) == &BB_EMPTY
                     && [0, 2]
-                        .contains(&(self.white_occupied() | self.get_piece_mask(Bishop)).popcnt())
+                        .contains(&(self.white_occupied() & self.get_piece_mask(Bishop)).popcnt())
             }
             _ => false,
         }
@@ -669,7 +664,7 @@ impl Board {
     pub fn parse_san(&self, san: &str) -> Result<Move, chess::Error> {
         let san = san.replace('0', "O");
         for _move in self.generate_legal_moves() {
-            if self.san(_move) == san {
+            if self.san(_move).unwrap() == san {
                 return Ok(_move);
             }
         }
@@ -719,29 +714,27 @@ impl Board {
         }
     }
 
-    fn algebraic_without_suffix(&self, _move: Move, long: bool) -> String {
+    fn algebraic_without_suffix(&self, _move: Move, long: bool) -> Result<String, BoardError> {
         // Null move.
         if _move.get_source() == _move.get_dest() {
-            return "--".to_string();
+            return Ok("--".to_string());
         }
 
         // Castling.
         if self.is_castling(_move) {
-            return (if _move.get_dest().get_file() < _move.get_source().get_file() {
-                "O-O-O"
+            return if _move.get_dest().get_file() < _move.get_source().get_file() {
+                Ok("O-O-O".to_string())
             } else {
-                "O-O"
-            })
-            .to_string();
+                Ok("O-O".to_string())
+            };
         }
 
-        let piece = match self.piece_at(_move.get_source()) {
-            Some(piece) => piece,
-            None => panic!(
-                "san() and lan() expect move to be legal or null, but got {_move} in {}",
-                self.get_fen()
-            ),
-        };
+        let piece = self
+            .piece_at(_move.get_source())
+            .ok_or(BoardError::InvalidSanMove {
+                _move,
+                fen: self.get_fen(),
+            })?;
         let capture = self.is_capture(_move);
         let mut san = if piece == Pawn {
             String::new()
@@ -814,11 +807,11 @@ impl Board {
             san += &format!("={}", promotion.to_string(White))
         }
 
-        san
+        Ok(san)
     }
 
-    fn algebraic_and_push(&mut self, _move: Move, long: bool) -> String {
-        let san = self.algebraic_without_suffix(_move, long);
+    fn algebraic_and_push(&mut self, _move: Move, long: bool) -> Result<String, BoardError> {
+        let san = self.algebraic_without_suffix(_move, long)?;
 
         // Look ahead for check or checkmate.
         self.push_without_nnue(_move);
@@ -827,35 +820,35 @@ impl Board {
 
         // Add check or checkmate suffix.
         if is_checkmate && _move.get_source() != _move.get_dest() {
-            san + "#"
+            Ok(san + "#")
         } else if is_check && _move.get_source() != _move.get_dest() {
-            return san + "+";
+            Ok(san + "+")
         } else {
-            return san;
+            Ok(san)
         }
     }
 
-    fn algebraic(&self, _move: Move, long: bool) -> String {
+    fn algebraic(&self, _move: Move, long: bool) -> Result<String, BoardError> {
         self.clone().algebraic_and_push(_move, long)
     }
 
-    pub fn san(&self, _move: Move) -> String {
+    pub fn san(&self, _move: Move) -> Result<String, BoardError> {
         // Gets the standard algebraic notation of the given move in the context
         // of the current position.
         self.algebraic(_move, false)
     }
 
-    pub fn san_and_push(&mut self, _move: Move) -> String {
+    pub fn san_and_push(&mut self, _move: Move) -> Result<String, BoardError> {
         self.algebraic_and_push(_move, false)
     }
 
-    pub fn lan(&self, _move: Move) -> String {
+    pub fn lan(&self, _move: Move) -> Result<String, BoardError> {
         // Gets the long algebraic notation of the given move in the context of
         // the current position.
         self.algebraic(_move, true)
     }
 
-    pub fn lan_and_push(&mut self, _move: Move) -> String {
+    pub fn lan_and_push(&mut self, _move: Move) -> Result<String, BoardError> {
         self.algebraic_and_push(_move, true)
     }
 
@@ -876,12 +869,12 @@ impl Board {
 
             if board.turn() == White {
                 let san_str = board.san_and_push(_move);
-                san.push(format!("{}. {san_str}", board.fullmove_number));
+                san.push(format!("{}. {}", board.fullmove_number, san_str.unwrap()));
             } else if san.is_empty() {
                 let san_str = board.san_and_push(_move);
-                san.push(format!("{}...{san_str}", board.fullmove_number));
+                san.push(format!("{}...{}", board.fullmove_number, san_str.unwrap()));
             } else {
-                san.push(board.san_and_push(_move).to_string());
+                san.push(board.san_and_push(_move).unwrap().to_string());
             }
         }
         let mut san_string = String::new();

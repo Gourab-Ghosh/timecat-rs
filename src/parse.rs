@@ -1,9 +1,4 @@
 use super::*;
-use failure::Fail;
-use std::convert::From;
-use std::io::Write;
-use std::num::ParseIntError;
-use std::str::ParseBoolError;
 use ParserError::*;
 
 #[derive(Clone, Debug, Fail)]
@@ -152,19 +147,13 @@ impl Go {
         println_info("Position Count", position_count);
         println_info("Time", format!("{} s", elapsed_time.as_secs_f32()));
         println_info("Speed", nps);
-        println_info("Best Move", engine.board.san(best_move));
+        println_info("Best Move", engine.board.san(best_move).unwrap());
         position_count
     }
 
     pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
-        let second_command = match commands.get(1) {
-            Some(second_command) => second_command.to_lowercase(),
-            None => return Err(UnknownCommand),
-        };
-        let depth_str = match commands.get(2) {
-            Some(depth_str) => depth_str.to_string(),
-            None => return Err(UnknownCommand),
-        };
+        let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
+        let depth_str = commands.get(2).ok_or(UnknownCommand)?.to_string();
         let depth = depth_str.parse().unwrap_or(0);
         if commands.get(3).is_some() {
             return Err(UnknownCommand);
@@ -198,10 +187,7 @@ impl Set {
     }
 
     fn color(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
-        let third_command = match commands.get(2) {
-            Some(command) => command.to_lowercase(),
-            None => return Err(UnknownCommand),
-        };
+        let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
         let _bool = third_command.parse()?;
         if is_colored_output() == _bool {
             return Err(ColoredOutputUnchanged {
@@ -219,15 +205,9 @@ impl Set {
     }
 
     pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
-        let second_command = match commands.get(1) {
-            Some(command) => command.to_lowercase(),
-            None => return Err(UnknownCommand),
-        };
+        let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if second_command == "board" {
-            let third_command = match commands.get(2) {
-                Some(command) => command.to_lowercase(),
-                None => return Err(UnknownCommand),
-            };
+            let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
             if third_command == "fen" {
                 return Self::board_fen(engine, commands);
             }
@@ -246,10 +226,7 @@ struct Push;
 
 impl Push {
     fn moves(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
-        let second_command = match commands.get(1) {
-            Some(command) => command.to_lowercase(),
-            None => return Err(UnknownCommand),
-        };
+        let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         for move_text in commands.iter().skip(2) {
             let _move: Move;
             if second_command == "san" {
@@ -300,7 +277,7 @@ impl Pop {
             println!(
                 "{} {}",
                 colorize("Popped move:", SUCCESS_MESSAGE_STYLE),
-                colorize(engine.board.san(last_move), INFO_STYLE),
+                colorize(engine.board.san(last_move).unwrap(), INFO_STYLE),
             );
         }
         Ok(())
@@ -354,10 +331,7 @@ impl Parser {
 
     fn run_command(engine: &mut Engine, user_input: &str) -> Result<(), ParserError> {
         let commands = Vec::from_iter(user_input.split(' '));
-        let first_command = match commands.first() {
-            Some(command) => command.to_lowercase(),
-            None => return Err(UnknownCommand),
-        };
+        let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
         if user_input.to_lowercase() == "d" {
             println!("{}", engine.board);
             return Ok(());

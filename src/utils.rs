@@ -3,6 +3,7 @@ use super::*;
 pub mod common_utils {
     use super::*;
 
+    #[inline(always)]
     pub fn is_checkmate(score: Score) -> bool {
         score.abs() > CHECKMATE_THRESHOLD
     }
@@ -138,25 +139,17 @@ pub mod classes {
             *count_entry as u8
         }
 
-        pub fn insert_and_detect_threefold_repetition(&self, key: u64) -> bool {
-            let mut count_map = self.count.lock().unwrap();
-            let count_entry = count_map.entry(key).or_insert(0);
-            *count_entry += 1;
-            *count_entry > 3
-        }
-
         pub fn remove(&self, key: u64) {
             let mut count_map = self.count.lock().unwrap();
-            if let Some(count_entry) = count_map.get_mut(&key) {
-                *count_entry -= 1;
-                if *count_entry == 0 {
-                    count_map.remove(&key);
-                }
-            } else {
+            let count_entry = count_map.get_mut(&key).unwrap_or_else(|| {
                 panic!(
                     "Tried to remove the key {} that doesn't exist!",
                     hash_to_string(key)
-                );
+                )
+            });
+            *count_entry -= 1;
+            if *count_entry == 0 {
+                count_map.remove(&key);
             }
         }
 

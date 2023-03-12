@@ -43,140 +43,6 @@ struct TranspositionTableEntry {
     best_move: Option<Move>,
 }
 
-// pub struct TranspositionTable {
-//     table: CacheTable<TranspositionTableEntry>,
-// }
-
-// impl TranspositionTable {
-//     fn generate_cache_key(key: u64) -> u64 {
-//         let mut cache_key = key;
-//         cache_key ^= cache_key >> 32;
-//         cache_key ^= cache_key >> 16;
-//         cache_key ^= cache_key >> 8;
-//         cache_key ^= cache_key >> 4;
-//         cache_key ^= cache_key >> 2;
-//         cache_key ^= cache_key >> 1;
-//         cache_key
-//     }
-
-//     pub fn new() -> Self {
-//         let size = mem::size_of::<TranspositionTableEntry>();
-//         let dynamic_size = 2 << (18 + (T_TABLE_SIZE as f64 / size as f64).log(2.0).round() as i32);
-//         println!("size: {}, dynamic_size: {}", size, dynamic_size);
-//         Self {
-//             table: CacheTable::new(dynamic_size, Default::default()),
-//         }
-//     }
-
-//     // pub fn read(
-//     //     &self,
-//     //     key: u64,
-//     //     depth: Depth,
-//     //     alpha: Score,
-//     //     beta: Score,
-//     // ) -> Option<(Option<Score>, Option<Move>)> {
-//     //     if DISABLE_T_TABLE {
-//     //         return None;
-//     //     }
-//     //     match self.table.get(key) {
-//     //         Some(tt_entry) => {
-//     //             let best_move = tt_entry.best_move;
-//     //             if let Some(data) = tt_entry.option_data {
-//     //                 if data.depth >= depth {
-//     //                     match data.flag {
-//     //                         HashExact => Some((Some(data.score), best_move)),
-//     //                         HashAlpha => {
-//     //                             if data.score <= alpha {
-//     //                                 Some((Some(data.score), best_move))
-//     //                             } else {
-//     //                                 Some((None, best_move))
-//     //                             }
-//     //                         }
-//     //                         HashBeta => {
-//     //                             if data.score >= beta {
-//     //                                 Some((Some(data.score), best_move))
-//     //                             } else {
-//     //                                 Some((None, best_move))
-//     //                             }
-//     //                         }
-//     //                     }
-//     //                 } else {
-//     //                     Some((None, best_move))
-//     //                 }
-//     //             } else {
-//     //                 Some((None, best_move))
-//     //             }
-//     //         }
-//     //         None => None,
-//     //     }
-//     // }
-
-//     pub fn read(
-//         &self,
-//         key: u64,
-//         depth: Depth,
-//         alpha: Score,
-//         beta: Score,
-//     ) -> Option<(Option<Score>, Option<Move>)> {
-//         if DISABLE_T_TABLE {
-//             return None;
-//         }
-//         let hash = Self::generate_cache_key(key);
-//         match self.table.get(hash) {
-//             Some(tt_entry) => {
-//                 let best_move = tt_entry.best_move;
-//                 if let Some(data) = tt_entry.option_data {
-//                     if data.depth >= depth {
-//                         return match data.flag {
-//                             HashExact => Some((Some(data.score), best_move)),
-//                             HashAlpha => {
-//                                 if data.score <= alpha {
-//                                     Some((Some(data.score), best_move))
-//                                 } else {
-//                                     Some((None, best_move))
-//                                 }
-//                             }
-//                             HashBeta => {
-//                                 if data.score >= beta {
-//                                     Some((Some(data.score), best_move))
-//                                 } else {
-//                                     Some((None, best_move))
-//                                 }
-//                             }
-//                         };
-//                     }
-//                 }
-//                 Some((None, best_move))
-//             }
-//             None => None,
-//         }
-//     }
-
-//     #[inline(always)]
-//     pub fn read_best_move(&self, key: u64) -> Option<Move> {
-//         self.table.get(key).map(|d| d.best_move).flatten()
-//     }
-
-//     pub fn write(
-//         &mut self,
-//         key: u64,
-//         depth: Depth,
-//         score: Score,
-//         flag: EntryFlag,
-//         best_move: Option<Move>,
-//         write_tt: bool,
-//     ) {
-//         let hash = Self::generate_cache_key(key);
-//         let save_score = !DISABLE_T_TABLE && write_tt && self.table.get(hash).map(|e| e.option_data.map(|d| d.depth)).flatten().unwrap_or(0) <= depth;
-//         let option_data = if save_score {
-//             Some(TranspositionTableData { depth, score, flag })
-//         } else {
-//             None
-//         };
-//         self.table.add(hash, TranspositionTableEntry { option_data, best_move });
-//     }
-// }
-
 pub struct TranspositionTable {
     table: Arc<Mutex<HashMap<u64, TranspositionTableEntry>>>,
 }
@@ -194,45 +60,41 @@ impl TranspositionTable {
         depth: Depth,
         alpha: Score,
         beta: Score,
-    ) -> Option<(Option<Score>, Option<Move>)> {
-        if DISABLE_T_TABLE {
-            return None;
+    ) -> (Option<Score>, Option<Move>) {
+        let tt_entry = match self.table.lock().unwrap().get(&key) {
+            Some(entry) => *entry,
+            None => return (None, None),
+        };
+        let best_move = tt_entry.best_move;
+        if DISABLE_T_TABLE || tt_entry.option_data.is_none() {
+            return (None, best_move);
         }
-        match self.table.lock().unwrap().get(&key) {
-            Some(tt_entry) => {
-                let best_move = tt_entry.best_move;
-                if let Some(data) = tt_entry.option_data {
-                    if data.depth >= depth {
-                        return match data.flag {
-                            HashExact => Some((Some(data.score), best_move)),
-                            HashAlpha => {
-                                if data.score <= alpha {
-                                    Some((Some(data.score), best_move))
-                                } else {
-                                    Some((None, best_move))
-                                }
-                            }
-                            HashBeta => {
-                                if data.score >= beta {
-                                    Some((Some(data.score), best_move))
-                                } else {
-                                    Some((None, best_move))
-                                }
-                            }
-                        };
-                    }
+        let data = tt_entry.option_data.unwrap();
+        if data.depth < depth {
+            return (None, best_move);
+        }
+        let score = data.score;
+        match data.flag {
+            HashExact => (Some(score), best_move),
+            HashAlpha => {
+                if score <= alpha {
+                    (Some(score), best_move)
+                } else {
+                    (None, best_move)
                 }
-                Some((None, best_move))
             }
-            None => None,
+            HashBeta => {
+                if score >= beta {
+                    (Some(score), best_move)
+                } else {
+                    (None, best_move)
+                }
+            }
         }
     }
 
     pub fn read_best_move(&self, key: u64) -> Option<Move> {
-        match self.table.lock().unwrap().get(&key) {
-            Some(tt_entry) => tt_entry.best_move,
-            None => None,
-        }
+        self.table.lock().unwrap().get(&key)?.best_move
     }
 
     fn update_tt_entry(
@@ -259,13 +121,16 @@ impl TranspositionTable {
         &self,
         key: u64,
         depth: Depth,
-        score: Score,
+        ply: Ply,
+        mut score: Score,
         flag: EntryFlag,
         best_move: Option<Move>,
         write_tt: bool,
     ) {
+        if is_checkmate(score) {
+            score += score.signum() * ply as Score;
+        }
         let save_score = write_tt && !DISABLE_T_TABLE;
-        // let save_score = !is_checkmate(score) && !DISABLE_T_TABLE;
         let option_data = if save_score {
             Some(TranspositionTableData { depth, score, flag })
         } else {

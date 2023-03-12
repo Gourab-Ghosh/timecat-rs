@@ -76,6 +76,26 @@ impl Engine {
         true
     }
 
+    fn get_lmr_reduction(&self, depth: Depth, move_index: usize) -> Depth {
+        // if depth < 3 || move_index < 3 {
+        //     return 0;
+        // }
+        // let reduction = (depth / 2).min(3);
+        // reduction
+        (LMR_BASE_REDUCTION + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER).round() as Depth
+        // (LMR_BASE_REDUCTION + ((depth as usize * move_index) as f32).sqrt() / LMR_MOVE_DIVIDER).ceil() as Depth
+    }
+
+    fn get_modified_score(&self, score: Score, draw_score: Score) -> Score {
+        let mut modified_score = -if score == 0 && !self.board.is_threefold_repetition() {
+            draw_score
+        } else {
+            score
+        };
+        modified_score -= draw_score * (self.board.get_num_repetitions() as Score - 1) as Score / 2;
+        modified_score
+    }
+
     fn search(&mut self, depth: Depth, mut alpha: Score, beta: Score) -> Score {
         self.pv_length[self.ply] = self.ply;
         if self.board.is_game_over() {
@@ -105,14 +125,10 @@ impl Engine {
             .enumerate()
         {
             let _move = weighted_move._move;
-            // println!("{move_index}: {}", self.board.san(_move));
             self.push(_move);
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true).0 > alpha {
                 (score, write_tt) = self.alpha_beta(depth - 1, -beta, -alpha, true);
-                score = -(if score == 0 { draw_score / 2 } else { score });
-                if self.board.get_current_position_repetition() > 1 {
-                    score -= draw_score / 2;
-                }
+                score = self.get_modified_score(score, draw_score);
             }
             self.pop();
             if score > alpha {
@@ -123,6 +139,7 @@ impl Engine {
                     self.transposition_table.write(
                         key,
                         depth,
+                        self.ply,
                         beta,
                         HashBeta,
                         Some(_move),
@@ -135,6 +152,7 @@ impl Engine {
         self.transposition_table.write(
             key,
             depth,
+            self.ply,
             alpha,
             flag,
             self.pv_table[self.ply][self.ply],
@@ -156,23 +174,18 @@ impl Engine {
         let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
         let not_in_check = !self.board.is_check();
         let is_pvs_node = alpha != beta - 1;
-        let is_draw = if is_pvs_node && self.ply != 1 {
-            self.board.is_insufficient_material()
-        } else {
-            self.board.is_other_draw()
-        };
-        if is_draw {
+        if !is_pvs_node && (self.board.is_threefold_repetition() || self.board.is_fifty_moves()) {
             return (0, false);
         }
-        let mate_score = CHECKMATE_SCORE - self.ply as i16;
+        if self.board.is_insufficient_material() {
+            return (0, true);
+        }
+        let mate_score = CHECKMATE_SCORE - self.ply as Score;
         let moves_gen = self.board.generate_legal_moves();
         if moves_gen.len() == 0 {
-            if not_in_check {
-                return (0, false);
-            }
-            return (-mate_score, false);
+            return (if not_in_check { 0 } else { -mate_score }, true)
         }
-        // if !not_in_check {
+        // if !not_in_check && depth < 4 {
         //     depth += 1
         // }
         depth = depth.max(0);
@@ -181,9 +194,8 @@ impl Engine {
             self.transposition_table.read_best_move(key)
         } else {
             match self.transposition_table.read(key, depth, alpha, beta) {
-                Some((Some(score), _)) => return (score, true),
-                Some((None, best_move)) => best_move,
-                None => None,
+                (Some(score), _) => return (score, true),
+                (None, best_move) => best_move,
             }
         };
         if depth == 0 {
@@ -193,7 +205,7 @@ impl Engine {
         alpha = alpha.max(-mate_score);
         beta = beta.min(mate_score - 1);
         if alpha >= beta {
-            return (alpha, false);
+            return (alpha, true);
         }
         let mut futility_pruning = false;
         if not_in_check && !is_pvs_node {
@@ -206,11 +218,40 @@ impl Engine {
                     return (evaluation_diff, true);
                 }
             }
-            // null move reduction
+            // // null move reduction
+            // if apply_null_move && depth > 2 {
+            //     let r = NULL_MOVE_MIN_REDUCTION
+            //         + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
+            //     if depth > r {
+            //         self.push_null_move();
+            //         let (score, write_tt) = self.alpha_beta(depth - 1 - r, -beta, -beta + 1, false);
+            //         let score = -score;
+            //         self.pop_null_move();
+            //         if score >= beta {
+            //             return (beta, write_tt);
+            //         }
+            //     }
+            //     // razoring
+            //     if depth < 4 {
+            //         let mut evaluation = static_evaluation + PAWN_VALUE;
+            //         if evaluation < beta {
+            //             if depth == 1 {
+            //                 let new_evaluation = self.quiescence(alpha, beta);
+            //                 return (new_evaluation.max(evaluation), true);
+            //             }
+            //             evaluation += PAWN_VALUE;
+            //             if evaluation < beta && depth < 4 {
+            //                 let new_evaluation = self.quiescence(alpha, beta);
+            //                 if new_evaluation < beta {
+            //                     return (new_evaluation.max(evaluation), true);
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
             if apply_null_move && static_evaluation > beta {
                 let r = NULL_MOVE_MIN_REDUCTION
                     + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
-                // let r = NULL_MOVE_MIN_REDUCTION;
                 if depth > r {
                     self.push_null_move();
                     let (score, write_tt) = self.alpha_beta(depth - 1 - r, -beta, -beta + 1, false);
@@ -221,23 +262,25 @@ impl Engine {
                     }
                 }
                 // razoring
-                if !is_pvs_node && self.board.has_non_pawn_material() {
+                if !is_pvs_node && self.board.has_non_pawn_material() && depth < 4 {
                     let mut evaluation = static_evaluation + PAWN_VALUE;
-                    if evaluation < beta && depth == 1 {
-                        let new_evaluation = self.quiescence(alpha, beta);
-                        return (new_evaluation.max(evaluation), true);
-                    }
-                    evaluation += PAWN_VALUE;
-                    if evaluation < beta && depth < 4 {
-                        let new_evaluation = self.quiescence(alpha, beta);
-                        if new_evaluation < beta {
+                    if evaluation < beta {
+                        if depth == 1 {
+                            let new_evaluation = self.quiescence(alpha, beta);
                             return (new_evaluation.max(evaluation), true);
+                        }
+                        evaluation += PAWN_VALUE;
+                        if evaluation < beta && depth < 4 {
+                            let new_evaluation = self.quiescence(alpha, beta);
+                            if new_evaluation < beta {
+                                return (new_evaluation.max(evaluation), true);
+                            }
                         }
                     }
                 }
             }
             // futility pruning
-            if depth < 4 && alpha < mate_score {
+            if depth < 4 && alpha < mate_score && !is_endgame {
                 let futility_margin = match depth {
                     0 => 0,
                     1 => PAWN_VALUE,
@@ -249,9 +292,13 @@ impl Engine {
             }
         }
         let mut flag = HashAlpha;
-        let weighted_moves =
-            self.move_sorter
-                .get_weighted_sort_moves(moves_gen, &self.board, self.ply, best_move, self.pv_table[0][self.ply]);
+        let weighted_moves = self.move_sorter.get_weighted_sort_moves(
+            moves_gen,
+            &self.board,
+            self.ply,
+            best_move,
+            self.pv_table[0][self.ply],
+        );
         let mut write_tt = true;
         for (move_index, weighted_move) in weighted_moves.enumerate() {
             let _move = weighted_move._move;
@@ -277,15 +324,7 @@ impl Engine {
                     && safe_to_apply_lmr
                     && !DISABLE_LMR
                 {
-                    // let lmr_reduction = if is_endgame {
-                    //     1 + ((move_index - 1) as f32).sqrt() as Depth
-                    // } else {
-                    //     (LMR_BASE_REDUCTION + ((depth as usize * move_index) as f32).sqrt() / LMR_MOVE_DIVIDER) as Depth
-                    // };
-                    // let lmr_reduction = (LMR_BASE_REDUCTION + ((depth as usize * move_index) as f32).sqrt() / LMR_MOVE_DIVIDER) as Depth;
-                    let lmr_reduction = (LMR_BASE_REDUCTION
-                        + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER)
-                        as Depth;
+                    let lmr_reduction = self.get_lmr_reduction(depth, move_index);
                     (score, write_tt) =
                         self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha, true);
                     score = -score;
@@ -313,6 +352,7 @@ impl Engine {
                     self.transposition_table.write(
                         key,
                         depth,
+                        self.ply,
                         beta,
                         HashBeta,
                         Some(_move),
@@ -328,6 +368,7 @@ impl Engine {
         self.transposition_table.write(
             key,
             depth,
+            self.ply,
             alpha,
             flag,
             self.pv_table[self.ply][self.ply],
@@ -390,7 +431,7 @@ impl Engine {
         let mut pv_string = String::new();
         for _move in self.get_pv(depth) {
             pv_string += &(if board.is_legal(_move) {
-                board.san_and_push(_move)
+                board.san_and_push(_move).unwrap()
             } else {
                 colorize(_move, ERROR_MESSAGE_STYLE)
             } + " ");

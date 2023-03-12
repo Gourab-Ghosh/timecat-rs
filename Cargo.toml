@@ -8,13 +8,6 @@ edition = "2021"
 # [build]
 # RUSTFLAGS = "-C target-cpu=native"
 
-# [profile.release]
-# opt-level = 3
-# lto = true
-# codegen-units = 1
-# debug = true
-# # rustflags = ["-C target-cpu=native -C link-args=-Ofast -C link-args=-s -C inline-threshold=1000"]
-
 [profile.dev]
 opt-level = 2
 
@@ -26,7 +19,6 @@ debug-assertions = false
 codegen-units = 1
 lto = true
 # strip = true
-panic = "abort"
 
 [dependencies]
 binread = { version = "2.2.0", features = ["const_generics"] }

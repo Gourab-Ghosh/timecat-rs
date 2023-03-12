@@ -179,10 +179,34 @@ pub mod square {
     ];
 }
 
-pub mod piece {
+pub mod board_representation {
+    pub const BOARD_SKELETON: &str = r"
+
+ +---+---+---+---+---+---+---+---+
+ | O | O | O | O | O | O | O | O | 8
+ +---+---+---+---+---+---+---+---+
+ | O | O | O | O | O | O | O | O | 7
+ +---+---+---+---+---+---+---+---+
+ | O | O | O | O | O | O | O | O | 6
+ +---+---+---+---+---+---+---+---+
+ | O | O | O | O | O | O | O | O | 5
+ +---+---+---+---+---+---+---+---+
+ | O | O | O | O | O | O | O | O | 4
+ +---+---+---+---+---+---+---+---+
+ | O | O | O | O | O | O | O | O | 3
+ +---+---+---+---+---+---+---+---+
+ | O | O | O | O | O | O | O | O | 2
+ +---+---+---+---+---+---+---+---+
+ | O | O | O | O | O | O | O | O | 1
+ +---+---+---+---+---+---+---+---+
+   a   b   c   d   e   f   g   h
+
+";
+
     pub const PIECE_SYMBOLS: [&str; 7] = [" ", "p", "n", "b", "r", "q", "k"];
-    pub const WHITE_PIECE_UNICODE_SYMBOLS: [&str; 7] = [" ", "♙", "♘", "♗", "♖", "♕", "♔"];
-    pub const BLACK_PIECE_UNICODE_SYMBOLS: [&str; 7] = [" ", "♟", "♞", "♝", "♜", "♛", "♚"];
+    pub const WHITE_PIECE_UNICODE_SYMBOLS: [&str; 6] = ["♙", "♘", "♗", "♖", "♕", "♔"];
+    pub const BLACK_PIECE_UNICODE_SYMBOLS: [&str; 6] = ["♟", "♞", "♝", "♜", "♛", "♚"];
+    pub const EMPTY_SPACE_UNICODE_SYMBOL: &str = " ";
 }
 
 pub mod fen {

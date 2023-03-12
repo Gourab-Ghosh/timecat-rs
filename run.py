@@ -43,7 +43,7 @@ if which("cargo") is None:
         print(f"Installing Rust...")
         os.system("curl --proto '=https' -sSf https://sh.rustup.rs | sh")
 
-is_error_free = not os.system("cargo check")
+is_error_free = True if "--disable-ckeck" in sys.argv else not os.system("cargo check")
 
 if is_error_free:
     update_environment_variables()
@@ -51,6 +51,6 @@ if is_error_free:
     # update_environment_variables("-mavx2", "-funroll-loops")
     if not os.system("cargo build --release"):
         release_file = os.path.abspath("./target/release/timecat")
-        if timed_run(lambda: os.system(f"perf record -g {release_file}")):
+        if timed_run(lambda: os.system(f"perf record {release_file}")):
             print("Running without using perf")
             timed_run(lambda: os.system(repr(release_file)))
