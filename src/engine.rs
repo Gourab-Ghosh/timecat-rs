@@ -82,7 +82,8 @@ impl Engine {
         // }
         // let reduction = (depth / 2).min(3);
         // reduction
-        (LMR_BASE_REDUCTION + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER).round() as Depth
+        (LMR_BASE_REDUCTION + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER)
+            .round() as Depth
         // (LMR_BASE_REDUCTION + ((depth as usize * move_index) as f32).sqrt() / LMR_MOVE_DIVIDER).ceil() as Depth
     }
 
@@ -183,7 +184,7 @@ impl Engine {
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
         let moves_gen = self.board.generate_legal_moves();
         if moves_gen.len() == 0 {
-            return (if not_in_check { 0 } else { -mate_score }, true)
+            return (if not_in_check { 0 } else { -mate_score }, true);
         }
         // if !not_in_check && depth < 4 {
         //     depth += 1

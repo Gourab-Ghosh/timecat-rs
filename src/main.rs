@@ -66,7 +66,9 @@ use utils::unsafe_utils::*;
 fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<u8>) {
     let mut time_taken_list = Vec::new();
     println!("\n{}\n", engine.board);
-    while !engine.board.is_game_over() && engine.board.get_fullmove_number() < move_limit.unwrap_or(u8::MAX) {
+    while !engine.board.is_game_over()
+        && engine.board.get_fullmove_number() < move_limit.unwrap_or(u8::MAX)
+    {
         let clock = Instant::now();
         let (best_move, score) = engine.go(depth, print);
         let time_elapsed = clock.elapsed();
@@ -91,15 +93,35 @@ fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<
         .sum::<f32>()
         / (time_taken_list.len() - 1) as f32)
         .sqrt();
-    println!("\nGame PGN:\n\n{}", engine.board.get_pgn());
-    println!("\nTime taken for all moves:\n\n{:?}", time_taken_list.iter().map(|x| (x * 1000.0).round() / 1000.0).collect::<Vec<f32>>());
+    let max_time_taken = time_taken_list
+        .iter()
+        .max_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap();
+    let min_time_taken = time_taken_list
+        .iter()
+        .min_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap();
     println!(
-        "\nDepth Searched: {}\nTime taken per move: {:.3} \u{00B1} {:.3} s\nCoefficient of Variation: {:.3}",
-        depth,
-        mean,
-        std_err,
-        mean / std_err,
+        "\n{}:\n\n{}",
+        colorize("Game PGN", INFO_STYLE),
+        engine.board.get_pgn(),
     );
+    println!(
+        "\n{}:\n\n{:?}\n",
+        colorize("Time taken for all moves", INFO_STYLE),
+        time_taken_list
+            .iter()
+            .map(|x| (x * 1000.0).round() / 1000.0)
+            .collect::<Vec<f32>>(),
+    );
+    println_info("Depth Searched", format!("{:.3}", depth));
+    println_info(
+        "Time taken per move",
+        format!("{:.3} \u{00B1} {:.3} s", mean, std_err),
+    );
+    println_info("Coefficient of Variation", format!("{:.3}", mean / std_err));
+    println_info("Max time taken", format!("{:.3} s", max_time_taken));
+    println_info("Min time taken", format!("{:.3} s", min_time_taken));
 }
 
 pub fn parse_command(engine: &mut Engine, raw_input: &str) {
@@ -124,21 +146,21 @@ fn _main() {
         "8/8/q7/2K5/8/5k2/8/8 b - - 3 76",    // Taking really long to bestv move at depth 12
     ];
 
-    // let mut engine = Engine::default();
-    // // engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
-    // // engine.board.push_sans("e4 e5 Nf3 Nc6"); // e4 opwning
-    // // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
-    // // engine.board.push_sans("d4 d5 c4"); // queens gambit
-    // // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
+    let mut engine = Engine::default();
+    // engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
+    // engine.board.push_sans("e4 e5 Nf3 Nc6"); // e4 opwning
+    // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
+    // engine.board.push_sans("d4 d5 c4"); // queens gambit
+    // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
     // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
-    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
-    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7"); // traxer counter attack with Nxf7
-    // // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59"); // endgame improvement 1
-    // // engine.board.set_fen("8/7R/8/8/8/7K/k7/8 w - - 0 1"); // endgame improvement 2
-    // // self_play(&mut engine, 16, false, Some(100));
-    // self_play(&mut engine, 12, false, None);
+    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
+    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7"); // traxer counter attack with Nxf7
+    // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59"); // endgame improvement 1
+    // engine.board.set_fen("8/7R/8/8/8/7K/k7/8 w - - 0 1"); // endgame improvement 2
+    // self_play(&mut engine, 16, false, Some(100));
+    self_play(&mut engine, 12, false, None);
 
-    parse_command(&mut Engine::default(), "go depth 14");
+    // parse_command(&mut Engine::default(), "go depth 14");
     // parse_command(&mut Engine::default(), "go perft 7");
 
     // let mut engine = Engine::default();
