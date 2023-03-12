@@ -63,11 +63,11 @@ use utils::square_utils::*;
 use utils::string_utils::*;
 use utils::unsafe_utils::*;
 
-fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<u8>) {
+fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<u16>) {
     let mut time_taken_list = Vec::new();
     println!("\n{}\n", engine.board);
     while !engine.board.is_game_over()
-        && engine.board.get_fullmove_number() < move_limit.unwrap_or(u8::MAX)
+        && engine.board.get_fullmove_number() < move_limit.unwrap_or(u16::MAX)
     {
         let clock = Instant::now();
         let (best_move, score) = engine.go(depth, print);

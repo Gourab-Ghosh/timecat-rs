@@ -17,7 +17,7 @@ struct BoardState {
     board: chess::Board,
     ep_square: Option<Square>,
     halfmove_clock: u8,
-    fullmove_number: u8,
+    fullmove_number: u16,
     num_repetitions: u8,
 }
 
@@ -26,7 +26,7 @@ pub struct Board {
     stack: Vec<(BoardState, Move)>,
     ep_square: Option<Square>,
     halfmove_clock: u8,
-    fullmove_number: u8,
+    fullmove_number: u16,
     num_repetitions: u8,
     starting_fen: String,
     pub evaluator: Option<Evaluator>,
@@ -340,7 +340,7 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn get_fullmove_number(&self) -> u8 {
+    pub fn get_fullmove_number(&self) -> u16 {
         self.fullmove_number
     }
 
