@@ -832,9 +832,9 @@ impl Board {
         self.clone().algebraic_and_push(_move, long)
     }
 
+    /// Gets the standard algebraic notation of the given move in the context
+    /// of the current position.
     pub fn san(&self, _move: Move) -> Result<String, BoardError> {
-        // Gets the standard algebraic notation of the given move in the context
-        // of the current position.
         self.algebraic(_move, false)
     }
 
@@ -842,9 +842,9 @@ impl Board {
         self.algebraic_and_push(_move, false)
     }
 
+    /// Gets the long algebraic notation of the given move in the context of
+    /// the current position.
     pub fn lan(&self, _move: Move) -> Result<String, BoardError> {
-        // Gets the long algebraic notation of the given move in the context of
-        // the current position.
         self.algebraic(_move, true)
     }
 
@@ -852,14 +852,14 @@ impl Board {
         self.algebraic_and_push(_move, true)
     }
 
+    /// Given a sequence of moves, returns a string representing the sequence
+    /// in standard algebraic notation (e.g., ``1. e4 e5 2. Nf3 Nc6`` or
+    /// ``37...Bg6 38. fxg6``).
+
+    /// The board will not be modified as a result of calling this.
+
+    /// panics if any moves in the sequence are illegal.
     fn variation_san(&self, board: &Board, variation: Vec<Move>) -> String {
-        // Given a sequence of moves, returns a string representing the sequence
-        // in standard algebraic notation (e.g., ``1. e4 e5 2. Nf3 Nc6`` or
-        // ``37...Bg6 38. fxg6``).
-
-        // The board will not be modified as a result of calling this.
-
-        // panics if any moves in the sequence are illegal.
         let mut board = board.clone();
         let mut san = Vec::new();
         for _move in variation {
@@ -884,9 +884,9 @@ impl Board {
         return san_string.trim().to_string();
     }
 
+    /// Returns a string representing the game in Portable Game Notation (PGN).
+    /// The result of the game is included in the tags.
     pub fn get_pgn(&self) -> String {
-        // Returns a string representing the game in Portable Game Notation (PGN).
-        // The result of the game is included in the tags.
         self.variation_san(
             &Self::from_fen(&self.starting_fen),
             Vec::from_iter(self.stack.clone().into_iter().map(|(_, m)| m)),

@@ -18,6 +18,7 @@ rpath = false
 debug-assertions = false
 codegen-units = 1
 lto = true
+panic = "abort"
 # strip = true
 
 [dependencies]
@@ -28,3 +29,6 @@ colored = "2.0.0"
 failure = "0.1.8"
 fxhash = "0.2.1"
 inquire = "0.6.0"
+
+[package.metadata.docs.rs]
+all-features = true
