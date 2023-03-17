@@ -3,17 +3,12 @@ use EntryFlag::*;
 
 use super::*;
 
-#[derive(Clone, Copy, Debug, PartialOrd, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
 pub enum EntryFlag {
+    #[default]
     HashExact,
     HashAlpha,
     HashBeta,
-}
-
-impl Default for EntryFlag {
-    fn default() -> Self {
-        Self::HashExact
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
