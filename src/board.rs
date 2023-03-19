@@ -631,6 +631,7 @@ impl Board {
         self.halfmove_clock = board_state.halfmove_clock;
         self.fullmove_number = board_state.fullmove_number;
         self.num_repetitions = board_state.num_repetitions;
+        self.ep_square = board_state.ep_square;
     }
 
     fn pop_nnue(&mut self) {
