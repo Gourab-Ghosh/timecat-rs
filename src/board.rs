@@ -920,6 +920,28 @@ impl Board {
         self.board.get_pawn_hash()
     }
 
+    pub fn get_material_score(&self) -> Score {
+        let mut score = 0;
+        let black_occupied = self.black_occupied();
+        for piece in [Pawn, Knight, Bishop, Rook, Queen, King] {
+            let piece_mask = self.get_piece_mask(piece);
+            if piece_mask == &BB_EMPTY {
+                continue;
+            }
+            score += (piece_mask.popcnt() as Score - 2 * (piece_mask & black_occupied).popcnt() as Score) * evaluate_piece(piece);
+        }
+        score
+    }
+
+    pub fn get_material_score_flipped(&self) -> Score {
+        let score = self.get_material_score();
+        if self.turn() == White {
+            score
+        } else {
+            -score
+        }
+    }
+
     pub fn evaluate(&self) -> Score {
         self.evaluator
             .as_ref()

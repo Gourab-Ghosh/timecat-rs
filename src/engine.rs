@@ -54,7 +54,6 @@ impl Engine {
             }
         }
         self.move_sorter.reset_variables();
-        self.transposition_table.clear();
     }
 
     fn update_pv_table(&mut self, _move: Move) {
@@ -186,9 +185,9 @@ impl Engine {
         if moves_gen.len() == 0 {
             return (if not_in_check { 0 } else { -mate_score }, true);
         }
-        // if !not_in_check && depth < 4 {
-        //     depth += 1
-        // }
+        if !not_in_check && self.board.get_material_score_flipped().is_negative() {
+            depth += 1
+        }
         depth = depth.max(0);
         let key = self.board.get_hash();
         let best_move = if is_pvs_node {
@@ -313,7 +312,7 @@ impl Engine {
                 continue;
             }
             let safe_to_apply_lmr =
-                self.can_apply_lmr(&_move) && !is_pvs_node && not_capture_move && not_in_check;
+                not_capture_move && not_in_check && !is_pvs_node && self.can_apply_lmr(&_move);
             self.push(_move);
             let mut score: Score;
             if move_index == 0 {
@@ -394,7 +393,7 @@ impl Engine {
             .move_sorter
             .get_weighted_capture_moves(self.board.generate_legal_captures(), &self.board)
         {
-            if weighted_move.weight < 0 {
+            if weighted_move.weight.is_negative() {
                 break;
             }
             self.push(weighted_move._move);
@@ -489,6 +488,7 @@ impl Engine {
 
     pub fn go(&mut self, depth: Depth, print: bool) -> (Move, Score) {
         self.reset_variables();
+        // self.transposition_table.clear();
         let mut current_depth = 1;
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
@@ -516,7 +516,7 @@ impl Engine {
             if print {
                 self.print_search_info(current_depth, score, time_passed);
             }
-            if current_depth == depth || is_checkmate(score) {
+            if current_depth == depth {
                 break;
             }
             current_depth += 1;
