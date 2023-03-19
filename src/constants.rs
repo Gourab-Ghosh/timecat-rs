@@ -258,6 +258,7 @@ pub mod engine_constants {
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
 
     pub const FOLLOW_PV: bool = true;
+    pub const PRINT_MOVE_INFO_TIME_THRESHOLD: f32 = 1.0;
 
     #[rustfmt::skip]
     pub const MVV_LVA: [[i32; 6]; 6] = [

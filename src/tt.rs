@@ -120,12 +120,11 @@ impl TranspositionTable {
         mut score: Score,
         flag: EntryFlag,
         best_move: Option<Move>,
-        write_tt: bool,
     ) {
         if is_checkmate(score) {
             score += score.signum() * ply as Score;
         }
-        let save_score = write_tt && !DISABLE_T_TABLE;
+        let save_score = !DISABLE_T_TABLE;
         let option_data = if save_score {
             Some(TranspositionTableData { depth, score, flag })
         } else {

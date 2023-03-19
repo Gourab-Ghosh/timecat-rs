@@ -83,9 +83,7 @@ impl Board {
         self.halfmove_clock = splitted_fen.next().unwrap_or("0").parse().unwrap();
         self.fullmove_number = splitted_fen.next().unwrap_or("1").parse().unwrap();
         self.repetition_table.clear();
-        self.num_repetitions = self
-            .repetition_table
-            .insert_and_get_repetition(self.hash());
+        self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
         self.starting_fen = self.get_fen();
         for square in *self.occupied() {
             let piece = self.piece_at(square).unwrap();
@@ -606,9 +604,7 @@ impl Board {
             .board
             .en_passant()
             .map(|ep_square| ep_square.forward(self.turn()).unwrap());
-        self.num_repetitions = self
-            .repetition_table
-            .insert_and_get_repetition(self.hash());
+        self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
         self.stack.push((board_state, _move));
     }
 
@@ -929,7 +925,9 @@ impl Board {
             if piece_mask == &BB_EMPTY {
                 continue;
             }
-            score += (piece_mask.popcnt() as Score - 2 * (piece_mask & black_occupied).popcnt() as Score) * evaluate_piece(piece);
+            score += (piece_mask.popcnt() as Score
+                - 2 * (piece_mask & black_occupied).popcnt() as Score)
+                * evaluate_piece(piece);
         }
         score
     }

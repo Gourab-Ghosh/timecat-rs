@@ -96,7 +96,7 @@ impl Engine {
         modified_score
     }
 
-    fn search(&mut self, depth: Depth, mut alpha: Score, beta: Score) -> Score {
+    fn search(&mut self, depth: Depth, mut alpha: Score, beta: Score, print_move_info: bool) -> Score {
         self.pv_length[self.ply] = self.ply;
         if self.board.is_game_over() {
             return if self.board.is_checkmate() {
@@ -106,7 +106,7 @@ impl Engine {
             };
         }
         let key = self.board.hash();
-        let (mut score, mut write_tt) = (-CHECKMATE_SCORE, false);
+        let mut score = -CHECKMATE_SCORE;
         let mut flag = HashAlpha;
         let draw_score = if self.board.is_endgame() {
             0
@@ -125,12 +125,28 @@ impl Engine {
             .enumerate()
         {
             let _move = weighted_move._move;
+            let clock = Instant::now();
             self.push(_move);
-            if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true).0 > alpha {
-                (score, write_tt) = self.alpha_beta(depth - 1, -beta, -alpha, true);
-                score = self.get_modified_score(score, draw_score);
+            if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true) > alpha {
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
             }
             self.pop();
+            if print_move_info {
+                let time_elapsed = clock.elapsed();
+                if time_elapsed.as_secs_f32() > PRINT_MOVE_INFO_TIME_THRESHOLD {
+                    println!(
+                        "{} {} {} {} {} {} {} {:.3} s",
+                        colorize("curr move", INFO_STYLE),
+                        self.board.san(_move).unwrap(),
+                        colorize("score", INFO_STYLE),
+                        score_to_string(score),
+                        colorize("nodes", INFO_STYLE),
+                        self.num_nodes_searched,
+                        colorize("time", INFO_STYLE),
+                        time_elapsed.as_secs_f32(),
+                    );
+                }
+            }
             if score > alpha {
                 flag = HashExact;
                 alpha = score;
@@ -143,7 +159,6 @@ impl Engine {
                         beta,
                         HashBeta,
                         Some(_move),
-                        write_tt,
                     );
                     return beta;
                 }
@@ -156,7 +171,6 @@ impl Engine {
             alpha,
             flag,
             self.pv_table[self.ply][self.ply],
-            write_tt,
         );
         alpha
     }
@@ -167,7 +181,7 @@ impl Engine {
         mut alpha: Score,
         mut beta: Score,
         apply_null_move: bool,
-    ) -> (Score, bool) {
+    ) -> Score {
         self.num_nodes_searched += 1;
         self.pv_length[self.ply] = self.ply;
         let num_pieces = self.board.get_num_pieces();
@@ -175,18 +189,19 @@ impl Engine {
         let not_in_check = !self.board.is_check();
         let is_pvs_node = alpha != beta - 1;
         if !is_pvs_node && (self.board.is_threefold_repetition() || self.board.is_fifty_moves()) {
-            return (0, false);
+            return 0;
         }
         if self.board.is_insufficient_material() {
-            return (0, true);
+            return 0;
         }
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
         let moves_gen = self.board.generate_legal_moves();
         if moves_gen.len() == 0 {
-            return (if not_in_check { 0 } else { -mate_score }, true);
+            return if not_in_check { 0 } else { -mate_score };
         }
-        // let static_evaluation = self.board.evaluate_flipped();
-        if !not_in_check && self.board.evaluate_flipped() < -evaluate_piece(Knight) {
+        if !not_in_check
+            && (is_endgame || self.board.get_material_score() < -evaluate_piece(Knight))
+        {
             depth += 1
         }
         depth = depth.max(0);
@@ -195,18 +210,18 @@ impl Engine {
             self.transposition_table.read_best_move(key)
         } else {
             match self.transposition_table.read(key, depth, alpha, beta) {
-                (Some(score), _) => return (score, true),
+                (Some(score), _) => return score,
                 (None, best_move) => best_move,
             }
         };
         if depth == 0 {
-            return (self.quiescence(alpha, beta), true);
+            return self.quiescence(alpha, beta);
         }
         // mate distance pruning
         alpha = alpha.max(-mate_score);
         beta = beta.min(mate_score - 1);
         if alpha >= beta {
-            return (alpha, true);
+            return alpha;
         }
         let mut futility_pruning = false;
         if not_in_check && !is_pvs_node {
@@ -216,50 +231,19 @@ impl Engine {
                 let evaluation_margin = PAWN_VALUE * depth as i16;
                 let evaluation_diff = static_evaluation - evaluation_margin;
                 if evaluation_diff >= beta {
-                    return (evaluation_diff, true);
+                    return evaluation_diff;
                 }
             }
-            // // null move reduction
-            // if apply_null_move && depth > 2 {
-            //     let r = NULL_MOVE_MIN_REDUCTION
-            //         + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
-            //     if depth > r {
-            //         self.push_null_move();
-            //         let (score, write_tt) = self.alpha_beta(depth - 1 - r, -beta, -beta + 1, false);
-            //         let score = -score;
-            //         self.pop_null_move();
-            //         if score >= beta {
-            //             return (beta, write_tt);
-            //         }
-            //     }
-            //     // razoring
-            //     if depth < 4 {
-            //         let mut evaluation = static_evaluation + PAWN_VALUE;
-            //         if evaluation < beta {
-            //             if depth == 1 {
-            //                 let new_evaluation = self.quiescence(alpha, beta);
-            //                 return (new_evaluation.max(evaluation), true);
-            //             }
-            //             evaluation += PAWN_VALUE;
-            //             if evaluation < beta && depth < 4 {
-            //                 let new_evaluation = self.quiescence(alpha, beta);
-            //                 if new_evaluation < beta {
-            //                     return (new_evaluation.max(evaluation), true);
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
+            // null move pruning
             if apply_null_move && static_evaluation > beta {
                 let r = NULL_MOVE_MIN_REDUCTION
                     + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
                 if depth > r {
                     self.push_null_move();
-                    let (score, write_tt) = self.alpha_beta(depth - 1 - r, -beta, -beta + 1, false);
-                    let score = -score;
+                    let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1, false);
                     self.pop_null_move();
                     if score >= beta {
-                        return (beta, write_tt);
+                        return beta;
                     }
                 }
                 // razoring
@@ -268,13 +252,13 @@ impl Engine {
                     if evaluation < beta {
                         if depth == 1 {
                             let new_evaluation = self.quiescence(alpha, beta);
-                            return (new_evaluation.max(evaluation), true);
+                            return new_evaluation.max(evaluation);
                         }
                         evaluation += PAWN_VALUE;
                         if evaluation < beta && depth < 4 {
                             let new_evaluation = self.quiescence(alpha, beta);
                             if new_evaluation < beta {
-                                return (new_evaluation.max(evaluation), true);
+                                return new_evaluation.max(evaluation);
                             }
                         }
                     }
@@ -300,7 +284,6 @@ impl Engine {
             best_move,
             self.pv_table[0][self.ply],
         );
-        let mut write_tt = true;
         for (move_index, weighted_move) in weighted_moves.enumerate() {
             let _move = weighted_move._move;
             let not_capture_move = !self.board.is_capture(_move);
@@ -317,8 +300,7 @@ impl Engine {
             self.push(_move);
             let mut score: Score;
             if move_index == 0 {
-                (score, write_tt) = self.alpha_beta(depth - 1, -beta, -alpha, true);
-                score = -score;
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
             } else {
                 if move_index >= FULL_DEPTH_SEARCH_LMR
                     && depth >= REDUCTION_LIMIT_LMR
@@ -326,18 +308,14 @@ impl Engine {
                     && !DISABLE_LMR
                 {
                     let lmr_reduction = self.get_lmr_reduction(depth, move_index);
-                    (score, write_tt) =
-                        self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha, true);
-                    score = -score;
+                    score = -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha, true);
                 } else {
                     score = alpha + 1;
                 }
                 if score > alpha {
-                    (score, write_tt) = self.alpha_beta(depth - 1, -alpha - 1, -alpha, true);
-                    score = -score;
+                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true);
                     if score > alpha && score < beta {
-                        (score, write_tt) = self.alpha_beta(depth - 1, -beta, -alpha, true);
-                        score = -score;
+                        score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
                     }
                 }
             }
@@ -357,12 +335,11 @@ impl Engine {
                         beta,
                         HashBeta,
                         Some(_move),
-                        write_tt,
                     );
                     if not_capture_move {
                         self.move_sorter.update_killer_moves(_move, self.ply);
                     }
-                    return (beta, write_tt);
+                    return beta;
                 }
             }
         }
@@ -373,9 +350,8 @@ impl Engine {
             alpha,
             flag,
             self.pv_table[self.ply][self.ply],
-            write_tt,
         );
-        (alpha, write_tt)
+        alpha
     }
 
     fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {
@@ -410,27 +386,27 @@ impl Engine {
         alpha
     }
 
-    fn get_pv(&self, depth: u8) -> Vec<Move> {
+    fn get_pv(&self, ply: Ply) -> Vec<Move> {
         let mut pv = Vec::new();
-        for i in 0..self.pv_length[depth as usize] {
-            pv.push(self.pv_table[depth as usize][i].unwrap_or_default());
+        for i in 0..self.pv_length[ply as usize] {
+            pv.push(self.pv_table[ply as usize][i].unwrap_or_default());
         }
         pv
     }
 
-    fn get_pv_as_uci(&self, depth: u8) -> String {
+    fn get_pv_as_uci(&self, ply: Ply) -> String {
         let mut pv_string = String::new();
-        for _move in self.get_pv(depth) {
+        for _move in self.get_pv(ply) {
             pv_string.push_str(&_move.to_string());
             pv_string.push(' ');
         }
         return pv_string.trim().to_string();
     }
 
-    fn get_pv_as_algebraic(&self, depth: u8, long: bool) -> String {
+    fn get_pv_as_algebraic(&self, ply: Ply, long: bool) -> String {
         let mut board = self.board.clone();
         let mut pv_string = String::new();
-        for _move in self.get_pv(depth) {
+        for _move in self.get_pv(ply) {
             pv_string += &(if board.is_legal(_move) {
                 board.san_and_push(_move).unwrap()
             } else {
@@ -440,12 +416,12 @@ impl Engine {
         return pv_string.trim().to_string();
     }
 
-    fn get_pv_as_san(&self, depth: u8) -> String {
-        self.get_pv_as_algebraic(depth, false)
+    fn get_pv_as_san(&self, ply: Ply) -> String {
+        self.get_pv_as_algebraic(ply, false)
     }
 
-    fn get_pv_as_lan(&self, depth: u8) -> String {
-        self.get_pv_as_algebraic(depth, true)
+    fn get_pv_as_lan(&self, ply: Ply) -> String {
+        self.get_pv_as_algebraic(ply, true)
     }
 
     pub fn get_pv_string(&self) -> String {
@@ -487,9 +463,9 @@ impl Engine {
         );
     }
 
-    pub fn go(&mut self, depth: Depth, print: bool) -> (Move, Score) {
+    pub fn go(&mut self, depth: Depth, print_info: bool) -> (Move, Score) {
         self.reset_variables();
-        // self.transposition_table.clear();
+        self.transposition_table.clear();
         let mut current_depth = 1;
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
@@ -499,10 +475,10 @@ impl Engine {
             if FOLLOW_PV {
                 self.move_sorter.follow_pv();
             }
-            score = self.search(current_depth, alpha, beta);
+            score = self.search(current_depth, alpha, beta, print_info);
             let time_passed = clock.elapsed();
             if score <= alpha || score >= beta {
-                if print {
+                if print_info {
                     self.print_warning_message(current_depth);
                 }
                 alpha = -INFINITY;
@@ -514,7 +490,7 @@ impl Engine {
             if self.board.turn() == Black {
                 score = -score;
             }
-            if print {
+            if print_info {
                 self.print_search_info(current_depth, score, time_passed);
             }
             if current_depth == depth {
