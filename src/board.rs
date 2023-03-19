@@ -48,7 +48,7 @@ impl Board {
         };
         board.num_repetitions = board
             .repetition_table
-            .insert_and_get_repetition(board.get_hash());
+            .insert_and_get_repetition(board.hash());
         for square in *board.occupied() {
             let piece = board.piece_at(square).unwrap();
             let color = board.color_at(square).unwrap();
@@ -85,7 +85,7 @@ impl Board {
         self.repetition_table.clear();
         self.num_repetitions = self
             .repetition_table
-            .insert_and_get_repetition(self.get_hash());
+            .insert_and_get_repetition(self.hash());
         self.starting_fen = self.get_fen();
         for square in *self.occupied() {
             let piece = self.piece_at(square).unwrap();
@@ -277,7 +277,7 @@ impl Board {
             &[
                 String::new(),
                 format_info("Fen", self.get_fen()),
-                format_info("Transposition Key", hash_to_string(self.get_hash())),
+                format_info("Transposition Key", hash_to_string(self.hash())),
                 format_info("Checkers", colorize(checkers_string.trim(), CHECKERS_STYLE)),
                 format_info("Current Evaluation", score_to_string(self.evaluate())),
             ]
@@ -608,7 +608,7 @@ impl Board {
             .map(|ep_square| ep_square.forward(self.turn()).unwrap());
         self.num_repetitions = self
             .repetition_table
-            .insert_and_get_repetition(self.get_hash());
+            .insert_and_get_repetition(self.hash());
         self.stack.push((board_state, _move));
     }
 
@@ -642,7 +642,7 @@ impl Board {
 
     pub fn pop_without_nnue(&mut self) -> Move {
         let (board_state, _move) = self.stack.pop().unwrap();
-        self.repetition_table.remove(self.get_hash());
+        self.repetition_table.remove(self.hash());
         self.restore(board_state);
         _move
     }
@@ -912,7 +912,7 @@ impl Board {
         self.generate_masked_legal_moves(*targets)
     }
 
-    pub fn get_hash(&self) -> u64 {
+    pub fn hash(&self) -> u64 {
         self.board.get_hash()
     }
 

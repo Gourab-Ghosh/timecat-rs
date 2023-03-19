@@ -6,6 +6,7 @@ pub struct Evaluator {
     network: Network,
     stockfish_network: StockfishNetwork,
     network_backup: Vec<Network>,
+    cache: HashMap<u64, Score>,
 }
 
 impl Evaluator {
@@ -14,6 +15,7 @@ impl Evaluator {
             network: Network::new(),
             stockfish_network: StockfishNetwork::new(),
             network_backup: Vec::new(),
+            cache: HashMap::default(),
         }
     }
 
@@ -65,12 +67,20 @@ impl Evaluator {
     }
 
     pub fn evaluate(&self, board: &Board) -> Score {
+        // let board_hash = board.hash();
+        // if let Some(score) = self.cache.get(&board_hash) {
+        //     return *score;
+        // }
+
         // let mut score = self.stockfish_network.eval(board);
         // if board.is_endgame() {
         //     score += self.network.eval(board);
         // }
         // return score as i16;
-        self.stockfish_network.eval(board) as i16
+
+        let score = self.stockfish_network.eval(board) as i16;
+        // self.cache.insert(board_hash, score);
+        score
         // self.network.eval(board)
     }
 }

@@ -105,7 +105,7 @@ impl Engine {
                 0
             };
         }
-        let key = self.board.get_hash();
+        let key = self.board.hash();
         let (mut score, mut write_tt) = (-CHECKMATE_SCORE, false);
         let mut flag = HashAlpha;
         let draw_score = if self.board.is_endgame() {
@@ -185,11 +185,12 @@ impl Engine {
         if moves_gen.len() == 0 {
             return (if not_in_check { 0 } else { -mate_score }, true);
         }
-        if !not_in_check && self.board.get_material_score_flipped().is_negative() {
+        // let static_evaluation = self.board.evaluate_flipped();
+        if !not_in_check && self.board.evaluate_flipped() < -evaluate_piece(Knight) {
             depth += 1
         }
         depth = depth.max(0);
-        let key = self.board.get_hash();
+        let key = self.board.hash();
         let best_move = if is_pvs_node {
             self.transposition_table.read_best_move(key)
         } else {
