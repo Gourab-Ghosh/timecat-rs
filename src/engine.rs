@@ -76,11 +76,6 @@ impl Engine {
     }
 
     fn get_lmr_reduction(&self, depth: Depth, move_index: usize) -> Depth {
-        // if depth < 3 || move_index < 3 {
-        //     return 0;
-        // }
-        // let reduction = (depth / 2).min(3);
-        // reduction
         (LMR_BASE_REDUCTION + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER)
             .round() as Depth
         // (LMR_BASE_REDUCTION + ((depth as usize * move_index) as f32).sqrt() / LMR_MOVE_DIVIDER).ceil() as Depth
@@ -200,7 +195,7 @@ impl Engine {
             return if not_in_check { 0 } else { -mate_score };
         }
         if !not_in_check
-            && (is_endgame || self.board.get_material_score() < -evaluate_piece(Knight))
+            && (self.board.get_num_pieces() < 7 || self.board.get_material_score_flipped() < -evaluate_piece(Knight))
         {
             depth += 1
         }

@@ -191,21 +191,21 @@ fn _main() {
         "6R1/8/5K2/5N2/8/2k5/8/8 b - - 0 68", // Taking really long to best move at depth 14
     ];
 
-    // let mut engine = Engine::default();
-    // // engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
-    // // engine.board.push_sans("e4 e5 Nf3 Nc6"); // e4 opwning
-    // // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
-    // // engine.board.push_sans("d4 d5 c4"); // queens gambit
-    // // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
-    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
-    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
-    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7"); // traxer counter attack with Nxf7
-    // // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59"); // endgame improvement 1
-    // // engine.board.set_fen("8/7R/8/8/8/7K/k7/8 w - - 0 1"); // endgame improvement 2
-    // // self_play(&mut engine, 16, false, Some(100));
-    // self_play(&mut engine, 12, false, None);
+    let mut engine = Engine::default();
+    // engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
+    // engine.board.push_sans("e4 e5 Nf3 Nc6"); // e4 opwning
+    // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
+    // engine.board.push_sans("d4 d5 c4"); // queens gambit
+    // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
+    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
+    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
+    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7"); // traxer counter attack with Nxf7
+    // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59"); // endgame improvement 1
+    // engine.board.set_fen("8/7R/8/8/8/7K/k7/8 w - - 0 1"); // endgame improvement 2
+    // self_play(&mut engine, 16, false, Some(100));
+    self_play(&mut engine, 12, false, None);
 
-    parse_command(&mut Engine::default(), "go depth 14");
+    // parse_command(&mut Engine::default(), "go depth 14");
     // parse_command(&mut Engine::default(), "go perft 7");
 
     // let mut engine = Engine::default();
