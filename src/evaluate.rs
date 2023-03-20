@@ -98,7 +98,7 @@ impl Evaluator {
         let mut score = self.stockfish_network.eval(board);
         let corner_forcing_score = self.force_king_to_corner(board);
         let center_forcing_score = self.force_king_to_corner(board);
-        if board.get_num_pieces() < 6 && score.abs() > evaluate_piece(Knight) {
+        if board.get_num_pieces() < ENDGAME_PIECE_THRESHOLD / 2 && score.abs() > evaluate_piece(Knight) {
             if (if board.turn() == White { score } else { -score }).is_positive() {
                 score += if board.turn() == White { corner_forcing_score } else { -corner_forcing_score };
             } else {

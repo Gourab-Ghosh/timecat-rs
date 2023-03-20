@@ -178,16 +178,12 @@ impl Engine {
         mut beta: Score,
         apply_null_move: bool,
     ) -> Score {
-        self.num_nodes_searched += 1;
         self.pv_length[self.ply] = self.ply;
         let num_pieces = self.board.get_num_pieces();
         let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
         let not_in_check = !self.board.is_check();
         let is_pvs_node = alpha != beta - 1;
-        if !is_pvs_node && (self.board.is_threefold_repetition() || self.board.is_fifty_moves()) {
-            return 0;
-        }
-        if self.board.is_insufficient_material() {
+        if self.board.is_other_draw() {
             return 0;
         }
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
@@ -196,7 +192,7 @@ impl Engine {
             return if not_in_check { 0 } else { -mate_score };
         }
         if !not_in_check
-            && (self.board.get_num_pieces() < 6 || self.board.get_material_score_flipped() < -evaluate_piece(Knight))
+            && (self.board.get_num_pieces() < ENDGAME_PIECE_THRESHOLD / 2 || self.board.get_material_score_flipped() < -evaluate_piece(Knight))
         {
             depth += 1
         }
@@ -210,15 +206,16 @@ impl Engine {
                 (None, best_move) => best_move,
             }
         };
-        if depth == 0 {
-            return self.quiescence(alpha, beta);
-        }
         // mate distance pruning
         alpha = alpha.max(-mate_score);
         beta = beta.min(mate_score - 1);
         if alpha >= beta {
             return alpha;
         }
+        if depth == 0 {
+            return self.quiescence(alpha, beta);
+        }
+        self.num_nodes_searched += 1;
         let mut futility_pruning = false;
         if not_in_check && !is_pvs_node {
             // static evaluation pruning
@@ -242,20 +239,20 @@ impl Engine {
                         return beta;
                     }
                 }
-                // razoring
-                if !is_pvs_node && self.board.has_non_pawn_material() && depth < 4 {
-                    let mut evaluation = static_evaluation + PAWN_VALUE;
-                    if evaluation < beta {
-                        if depth == 1 {
-                            let new_evaluation = self.quiescence(alpha, beta);
+            }
+            // razoring
+            if !is_pvs_node && depth < 4 {
+                let mut evaluation = static_evaluation + PAWN_VALUE;
+                if evaluation < beta {
+                    if depth == 1 {
+                        let new_evaluation = self.quiescence(alpha, beta);
+                        return new_evaluation.max(evaluation);
+                    }
+                    evaluation += PAWN_VALUE;
+                    if evaluation < beta && depth < 4 {
+                        let new_evaluation = self.quiescence(alpha, beta);
+                        if new_evaluation < beta {
                             return new_evaluation.max(evaluation);
-                        }
-                        evaluation += PAWN_VALUE;
-                        if evaluation < beta && depth < 4 {
-                            let new_evaluation = self.quiescence(alpha, beta);
-                            if new_evaluation < beta {
-                                return new_evaluation.max(evaluation);
-                            }
                         }
                     }
                 }
@@ -351,10 +348,14 @@ impl Engine {
     }
 
     fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {
-        self.num_nodes_searched += 1;
-        if self.board.is_draw() {
+        self.pv_length[self.ply] = self.ply;
+        if self.board.is_game_over() {
+            if self.board.status() == BoardStatus::Checkmate {
+                return -CHECKMATE_SCORE + self.ply as Score;
+            }
             return 0;
         }
+        self.num_nodes_searched += 1;
         let evaluation = self.board.evaluate_flipped();
         if evaluation >= beta {
             return beta;
@@ -362,9 +363,10 @@ impl Engine {
         if evaluation > alpha {
             alpha = evaluation;
         }
+        let legal_captures = self.board.generate_legal_captures();
         for weighted_move in self
             .move_sorter
-            .get_weighted_capture_moves(self.board.generate_legal_captures(), &self.board)
+            .get_weighted_capture_moves(legal_captures, &self.board)
         {
             if weighted_move.weight.is_negative() {
                 break;
@@ -373,6 +375,7 @@ impl Engine {
             let score = -self.quiescence(-beta, -alpha);
             self.pop();
             if score > alpha {
+                self.update_pv_table(weighted_move._move);
                 alpha = score;
                 if score >= beta {
                     return beta;

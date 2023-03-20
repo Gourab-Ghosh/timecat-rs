@@ -206,21 +206,14 @@ fn _main() {
     // self_play(&mut engine, 16, false, Some(100));
     self_play(&mut engine, 12, false, None);
 
-    // parse_command(&mut Engine::default(), "go depth 14");
     // parse_command(&mut Engine::default(), "go perft 7");
 
     // let mut engine = Engine::default();
     // // engine.board.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88"); // test if engine can find mate in 3
     // // engine.board.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111"); // test t_table -> nodes initially: 3203606
     // // engine.board.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105"); // gives incomplete pv line
-    // engine.board.set_fen(time_consuming_fens[7]);
+    // // engine.board.set_fen(time_consuming_fens[7]);
     // parse_command(&mut engine, "go depth 14");
-
-    // let mut engine = Engine::default();
-    // engine.board.set_fen("rnbqkbnr/pP4pp/8/2pppp2/8/8/1PPPPPPP/RNBQKBNR w KQkq - 0 5");
-    // for _move in engine.board.generate_legal_moves() {
-    //     println!("{}", engine.board.san(_move));
-    // }
 
     // let mut board = Board::new();
     // println!("\n{board}");
@@ -231,18 +224,6 @@ fn _main() {
     //     board.push(_move);
     //     println!("\n{board}");
     // }
-
-    // let mut engine = Engine::default();
-    // engine.board.set_fen("rnbqkbnr/ppp1p1pp/3p4/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
-    // let _move = engine.board.parse_uci("e5f6").unwrap();
-    // println!("{}", engine.board.is_en_passant(_move));
-    // println!("{}", engine.board.san(_move));
-
-    // let mut engine = Engine::default();
-    // engine.board.set_fen("rnbqkbnr/ppp1pppp/8/4P3/2Pp4/8/PP1P1PPP/RNBQKBNR b KQkq c3 0 3");
-    // let _move = engine.board.parse_uci("d4c3").unwrap();
-    // println!("{}", engine.board.is_en_passant(_move));
-    // println!("{}", engine.board.san(_move));
 }
 
 fn main() {
