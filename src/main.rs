@@ -193,6 +193,7 @@ fn _main() {
 
     let mut engine = Engine::default();
     // engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
+    // engine.board.set_fen("7K/8/8/8/3k4/8/8/R7 w - - 15 57");
     // engine.board.push_sans("e4 e5 Nf3 Nc6"); // e4 opwning
     // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
     // engine.board.push_sans("d4 d5 c4"); // queens gambit

@@ -83,13 +83,13 @@ impl StockfishNetwork {
         state
     }
 
-    pub fn eval(&self, board: &Board) -> i32 {
+    pub fn eval(&self, board: &Board) -> Score {
         let mut state = self.get_state(board);
         let color = match board.turn() {
             White => nnue_rs::Color::White,
             Black => nnue_rs::Color::Black,
         };
-        let score = state.activate(color)[0] / 16;
+        let score = (state.activate(color)[0] / 16) as Score;
         if color == nnue_rs::Color::White {
             score
         } else {

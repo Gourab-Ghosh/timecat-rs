@@ -123,7 +123,8 @@ impl Engine {
             let clock = Instant::now();
             self.push(_move);
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true) > alpha {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
+                score = self.alpha_beta(depth - 1, -beta, -alpha, true);
+                score = self.get_modified_score(score, draw_score);
             }
             self.pop();
             if print_move_info {
@@ -195,7 +196,7 @@ impl Engine {
             return if not_in_check { 0 } else { -mate_score };
         }
         if !not_in_check
-            && (self.board.get_num_pieces() < 7 || self.board.get_material_score_flipped() < -evaluate_piece(Knight))
+            && (self.board.get_num_pieces() < 6 || self.board.get_material_score_flipped() < -evaluate_piece(Knight))
         {
             depth += 1
         }

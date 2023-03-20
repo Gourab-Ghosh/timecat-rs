@@ -162,6 +162,13 @@ pub mod bitboard {
             BitBoard(0x0000_0000_0000_0000),
         ],
     ];
+
+    pub const BOARD_QUARTER_MASKS: [BitBoard; 4] = [
+        BitBoard(0x0f0f_0f0f_0000_0000),
+        BitBoard(0xf0f0_f0f0_0000_0000),
+        BitBoard(0x0000_0000_0f0f_0f0f),
+        BitBoard(0x0000_0000_f0f0_f0f0),
+    ];
 }
 
 pub mod square {
