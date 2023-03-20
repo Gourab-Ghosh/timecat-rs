@@ -91,7 +91,13 @@ impl Engine {
         modified_score
     }
 
-    fn search(&mut self, depth: Depth, mut alpha: Score, beta: Score, print_move_info: bool) -> Score {
+    fn search(
+        &mut self,
+        depth: Depth,
+        mut alpha: Score,
+        beta: Score,
+        print_move_info: bool,
+    ) -> Score {
         self.pv_length[self.ply] = self.ply;
         if self.board.is_game_over() {
             return if self.board.is_checkmate() {
@@ -192,7 +198,8 @@ impl Engine {
             return if not_in_check { 0 } else { -mate_score };
         }
         if !not_in_check
-            && (self.board.get_num_pieces() < ENDGAME_PIECE_THRESHOLD / 2 || self.board.get_material_score_flipped() < -evaluate_piece(Knight))
+            && (self.board.get_num_pieces() < ENDGAME_PIECE_THRESHOLD / 2
+                || self.board.get_material_score_flipped() < -evaluate_piece(Knight))
         {
             depth += 1
         }
@@ -217,7 +224,7 @@ impl Engine {
         }
         self.num_nodes_searched += 1;
         let mut futility_pruning = false;
-        if not_in_check && !is_pvs_node {
+        if not_in_check {
             // static evaluation pruning
             let static_evaluation = self.board.evaluate_flipped();
             if depth < 3 && (beta - 1).abs() > -mate_score + PAWN_VALUE {
@@ -228,7 +235,7 @@ impl Engine {
                 }
             }
             // null move pruning
-            if apply_null_move && static_evaluation > beta {
+            if apply_null_move {
                 let r = NULL_MOVE_MIN_REDUCTION
                     + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
                 if depth > r {
@@ -363,10 +370,9 @@ impl Engine {
         if evaluation > alpha {
             alpha = evaluation;
         }
-        let legal_captures = self.board.generate_legal_captures();
         for weighted_move in self
             .move_sorter
-            .get_weighted_capture_moves(legal_captures, &self.board)
+            .get_weighted_capture_moves(self.board.generate_legal_captures(), &self.board)
         {
             if weighted_move.weight.is_negative() {
                 break;

@@ -71,21 +71,28 @@ impl Evaluator {
         let opponent_king_square = board.get_king_square(!board.turn());
         let kings_distance = square_distance(self_king_square, opponent_king_square);
         let mut least_distance_corner = Square::default();
-        for (bb, &corner_square) in BOARD_QUARTER_MASKS.iter().zip([Square::A8, Square::H8, Square::A1, Square::H1].iter()) {
+        for (bb, &corner_square) in BOARD_QUARTER_MASKS
+            .iter()
+            .zip([Square::A8, Square::H8, Square::A1, Square::H1].iter())
+        {
             if bb & get_square_bb(self_king_square) != BB_EMPTY {
                 least_distance_corner = corner_square;
                 break;
             }
         }
         let mut score = (8 - kings_distance as Score) * PAWN_VALUE / 2;
-        score += (8 - square_distance(opponent_king_square, least_distance_corner) as Score) * PAWN_VALUE;
+        score += (8 - square_distance(opponent_king_square, least_distance_corner) as Score)
+            * PAWN_VALUE;
         score
     }
 
     fn force_king_to_center(&self, board: &Board) -> Score {
         let self_king_square = board.get_king_square(board.turn());
         let mut least_distance_center = Square::default();
-        for (bb, &corner_square) in BOARD_QUARTER_MASKS.iter().zip([Square::D5, Square::E5, Square::D4, Square::E4].iter()) {
+        for (bb, &corner_square) in BOARD_QUARTER_MASKS
+            .iter()
+            .zip([Square::D5, Square::E5, Square::D4, Square::E4].iter())
+        {
             if bb & get_square_bb(self_king_square) != BB_EMPTY {
                 least_distance_center = corner_square;
                 break;
@@ -98,12 +105,25 @@ impl Evaluator {
         let mut score = self.stockfish_network.eval(board);
         let corner_forcing_score = self.force_king_to_corner(board);
         let center_forcing_score = self.force_king_to_corner(board);
-        if board.get_num_pieces() < ENDGAME_PIECE_THRESHOLD / 2 && score.abs() > evaluate_piece(Knight) {
+        if board.get_num_pieces() < ENDGAME_PIECE_THRESHOLD / 2
+            && score.abs() > evaluate_piece(Knight)
+        {
             if (if board.turn() == White { score } else { -score }).is_positive() {
-                score += if board.turn() == White { corner_forcing_score } else { -corner_forcing_score };
+                score += if board.turn() == White {
+                    corner_forcing_score
+                } else {
+                    -corner_forcing_score
+                };
             } else {
-                score += if board.turn() == White { center_forcing_score } else { -center_forcing_score };
+                score += if board.turn() == White {
+                    center_forcing_score
+                } else {
+                    -center_forcing_score
+                };
             }
+        }
+        if score == 0 {
+            return 1;
         }
         score
     }
