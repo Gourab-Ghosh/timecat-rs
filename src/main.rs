@@ -121,10 +121,8 @@ fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<
         .min()
         .unwrap();
     // let prediction_accuracy = prediction_score_vec.iter().filter(|x| x.abs() < 1.5).count() as f32 / prediction_score_vec.len() as f32 * 100.0;
-    let prediction_score_rms = prediction_score_vec
-        .iter()
-        .map(|&x| x.powi(2))
-        .sum::<f32>()
+    let prediction_score_rms = (prediction_score_vec.iter().map(|&x| x.powi(2)).sum::<f32>()
+        / prediction_score_vec.len() as f32)
         .sqrt();
     let prediction_accuracy = calculate_prediction_accuracy(prediction_score_rms);
     println!(
@@ -184,18 +182,19 @@ fn _main() {
         "r2qk2r/p4pp1/2p4p/2b5/2n3n1/2NP4/PP2NPP1/R1BQK2R w KQkq - 2 15",
         "8/7R/8/8/8/8/2k3K1/8 w - - 4 3",
         "r3r3/3q1pk1/2pn2pp/pp1pR3/3P1P2/P6P/1P2QPP1/3NR1K1 b - - 10 33",
-        "4b3/8/8/2K5/8/8/1k6/q7 w - - 0 115",                                        // Taking really long to best move at depth 12
-        "6k1/8/8/8/2q5/8/8/1K6 b - - 89 164",                                        // Taking really long to best move at depth 12
-        "5r2/5PK1/Pk6/5RP1/8/8/8/8 w - - 1 78",                                      // Taking really long to best move at depth 12
-        "8/8/8/8/1K6/5k2/8/5q2 b - - 1 75",                                          // Taking really long to best move at depth 12
-        "8/8/q7/2K5/8/5k2/8/8 b - - 3 76",                                           // Taking really long to best move at depth 12
-        "6R1/8/5K2/5N2/8/2k5/8/8 b - - 0 68",                                        // Taking really long to best move at depth 14
+        "4b3/8/8/2K5/8/8/1k6/q7 w - - 0 115", // Taking really long to best move at depth 12
+        "6k1/8/8/8/2q5/8/8/1K6 b - - 89 164", // Taking really long to best move at depth 12
+        "5r2/5PK1/Pk6/5RP1/8/8/8/8 w - - 1 78", // Taking really long to best move at depth 12
+        "8/8/8/8/1K6/5k2/8/5q2 b - - 1 75",   // Taking really long to best move at depth 12
+        "8/8/q7/2K5/8/5k2/8/8 b - - 3 76",    // Taking really long to best move at depth 12
+        "6R1/8/5K2/5N2/8/2k5/8/8 b - - 0 68", // Taking really long to best move at depth 14
     ];
 
     let mut engine = Engine::default();
     // engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
     // engine.board.set_fen("7K/8/8/8/3k4/8/8/R7 w - - 15 57");
-    engine.board.push_sans("e4"); // e4 opwning
+    // engine.board.set_fen("2kr1br1/p1pn1p2/2N1q2p/1PpQP3/5p1P/P6R/5PP1/2R3K1 w - - 2 30"); // check for repetitions
+    // engine.board.push_sans("e4"); // e4 opwning
     // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
     // engine.board.push_sans("d4 d5 c4"); // queens gambit
     // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted

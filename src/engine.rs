@@ -103,12 +103,17 @@ impl Engine {
             let _move = weighted_move._move;
             let clock = Instant::now();
             self.push(Some(_move));
-            if !self.board.is_endgame() && self.board.is_draw() && self.board.evaluate_flipped() > -DRAW_SCORE && !self.board.generate_legal_moves().any(|m| self.board.gives_checkmate(m)) {
-                self.pop();
-                continue;
-            }
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true) > alpha {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
+                let temp_score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
+                // if move_index != 0
+                //     && ((!self.board.is_endgame() && self.board.is_draw())
+                //         || self.board.get_num_repetitions() > 1)
+                //     && temp_score > -DRAW_SCORE
+                // {
+                //     self.pop();
+                //     continue;
+                // }
+                score = temp_score;
             }
             self.pop();
             if print_move_info {
@@ -163,26 +168,20 @@ impl Engine {
         apply_null_move: bool,
     ) -> Score {
         self.pv_length[self.ply] = self.ply;
-        let num_repetitions = self.board.get_num_repetitions();
-        if num_repetitions > 1 {
-            return 0;
-        }
         let num_pieces = self.board.get_num_pieces();
         let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
         let not_in_check = !self.board.is_check();
         let is_pvs_node = alpha != beta - 1;
-        if self.board.is_other_draw() {
-            return 0;
-        }
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
         let moves_gen = self.board.generate_legal_moves();
         if moves_gen.len() == 0 {
             return if not_in_check { 0 } else { -mate_score };
         }
-        if !not_in_check
-            && (self.board.get_num_pieces() < ENDGAME_PIECE_THRESHOLD / 2
-                || self.board.get_material_score_flipped() < -evaluate_piece(Knight))
-        {
+        let num_repetitions = self.board.get_num_repetitions();
+        if num_repetitions > 1 || self.board.is_other_draw() {
+            return 0;
+        }
+        if !not_in_check && (self.board.get_num_pieces() < ENDGAME_PIECE_THRESHOLD / 2 || self.board.get_material_score_flipped() < -evaluate_piece(Knight)) {
             depth += 1
         }
         depth = depth.max(0);
@@ -206,7 +205,7 @@ impl Engine {
         }
         self.num_nodes_searched += 1;
         let mut futility_pruning = false;
-        if not_in_check {
+        if not_in_check && !is_pvs_node {
             // static evaluation pruning
             let static_evaluation = self.board.evaluate_flipped();
             if depth < 3 && (beta - 1).abs() > -mate_score + PAWN_VALUE {
@@ -217,7 +216,7 @@ impl Engine {
                 }
             }
             // null move pruning
-            if apply_null_move && !is_pvs_node {
+            if apply_null_move {
                 let r = NULL_MOVE_MIN_REDUCTION
                     + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
                 if depth > r {
@@ -247,7 +246,7 @@ impl Engine {
                 }
             }
             // futility pruning
-            if depth < 4 && alpha < mate_score && !is_endgame {
+            if depth < 4 && alpha < mate_score {
                 let futility_margin = match depth {
                     0 => 0,
                     1 => PAWN_VALUE,

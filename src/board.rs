@@ -615,9 +615,9 @@ impl Board {
                 .expect("Trying to push null move while in check!");
         }
         self.ep_square = self
-                .board
-                .en_passant()
-                .map(|ep_square| ep_square.forward(self.turn()).unwrap());
+            .board
+            .en_passant()
+            .map(|ep_square| ep_square.forward(self.turn()).unwrap());
         self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
         self.stack.push((board_state, option_move));
     }
@@ -888,7 +888,12 @@ impl Board {
     pub fn get_pgn(&self) -> String {
         self.variation_san(
             &Self::from_fen(&self.starting_fen),
-            Vec::from_iter(self.stack.clone().into_iter().map(|(_, option_m)| option_m.unwrap_or_default())),
+            Vec::from_iter(
+                self.stack
+                    .clone()
+                    .into_iter()
+                    .map(|(_, option_m)| option_m.unwrap_or_default()),
+            ),
         )
     }
 
