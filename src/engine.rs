@@ -24,24 +24,14 @@ impl Engine {
         }
     }
 
-    pub fn push(&mut self, _move: Move) {
-        self.board.push(_move);
+    pub fn push(&mut self, option_move: Option<Move>) {
+        self.board.push(option_move);
         self.ply += 1;
     }
 
-    pub fn pop(&mut self) -> Move {
+    pub fn pop(&mut self) -> Option<Move> {
         self.ply -= 1;
         self.board.pop()
-    }
-
-    pub fn push_null_move(&mut self) {
-        self.board.push_null_move();
-        self.ply += 1;
-    }
-
-    pub fn pop_null_move(&mut self) {
-        self.ply -= 1;
-        self.board.pop_null_move()
     }
 
     fn reset_variables(&mut self) {
@@ -81,16 +71,6 @@ impl Engine {
         // (LMR_BASE_REDUCTION + ((depth as usize * move_index) as f32).sqrt() / LMR_MOVE_DIVIDER).ceil() as Depth
     }
 
-    fn get_modified_score(&self, score: Score, draw_score: Score) -> Score {
-        let mut modified_score = -if score == 0 && !self.board.is_threefold_repetition() {
-            draw_score
-        } else {
-            score
-        };
-        modified_score -= draw_score * (self.board.get_num_repetitions() as Score - 1) as Score / 2;
-        modified_score
-    }
-
     fn search(
         &mut self,
         depth: Depth,
@@ -109,11 +89,6 @@ impl Engine {
         let key = self.board.hash();
         let mut score = -CHECKMATE_SCORE;
         let mut flag = HashAlpha;
-        let draw_score = if self.board.is_endgame() {
-            0
-        } else {
-            DRAW_SCORE
-        };
         for (move_index, weighted_move) in self
             .move_sorter
             .get_weighted_sort_moves(
@@ -127,10 +102,13 @@ impl Engine {
         {
             let _move = weighted_move._move;
             let clock = Instant::now();
-            self.push(_move);
+            self.push(Some(_move));
+            if !self.board.is_endgame() && self.board.is_draw() && self.board.evaluate_flipped() > -DRAW_SCORE && !self.board.generate_legal_moves().any(|m| self.board.gives_checkmate(m)) {
+                self.pop();
+                continue;
+            }
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true) > alpha {
-                score = self.alpha_beta(depth - 1, -beta, -alpha, true);
-                score = self.get_modified_score(score, draw_score);
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
             }
             self.pop();
             if print_move_info {
@@ -185,6 +163,10 @@ impl Engine {
         apply_null_move: bool,
     ) -> Score {
         self.pv_length[self.ply] = self.ply;
+        let num_repetitions = self.board.get_num_repetitions();
+        if num_repetitions > 1 {
+            return 0;
+        }
         let num_pieces = self.board.get_num_pieces();
         let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
         let not_in_check = !self.board.is_check();
@@ -235,31 +217,31 @@ impl Engine {
                 }
             }
             // null move pruning
-            if apply_null_move {
+            if apply_null_move && !is_pvs_node {
                 let r = NULL_MOVE_MIN_REDUCTION
                     + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
                 if depth > r {
-                    self.push_null_move();
+                    self.push(None);
                     let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1, false);
-                    self.pop_null_move();
+                    self.pop();
                     if score >= beta {
                         return beta;
                     }
                 }
-            }
-            // razoring
-            if !is_pvs_node && depth < 4 {
-                let mut evaluation = static_evaluation + PAWN_VALUE;
-                if evaluation < beta {
-                    if depth == 1 {
-                        let new_evaluation = self.quiescence(alpha, beta);
-                        return new_evaluation.max(evaluation);
-                    }
-                    evaluation += PAWN_VALUE;
-                    if evaluation < beta && depth < 4 {
-                        let new_evaluation = self.quiescence(alpha, beta);
-                        if new_evaluation < beta {
+                // razoring
+                if !is_pvs_node && depth < 4 {
+                    let mut evaluation = static_evaluation + PAWN_VALUE;
+                    if evaluation < beta {
+                        if depth == 1 {
+                            let new_evaluation = self.quiescence(alpha, beta);
                             return new_evaluation.max(evaluation);
+                        }
+                        evaluation += PAWN_VALUE;
+                        if evaluation < beta && depth < 4 {
+                            let new_evaluation = self.quiescence(alpha, beta);
+                            if new_evaluation < beta {
+                                return new_evaluation.max(evaluation);
+                            }
                         }
                     }
                 }
@@ -297,7 +279,7 @@ impl Engine {
             }
             let safe_to_apply_lmr =
                 not_capture_move && not_in_check && !is_pvs_node && self.can_apply_lmr(&_move);
-            self.push(_move);
+            self.push(Some(_move));
             let mut score: Score;
             if move_index == 0 {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
@@ -377,7 +359,7 @@ impl Engine {
             if weighted_move.weight.is_negative() {
                 break;
             }
-            self.push(weighted_move._move);
+            self.push(Some(weighted_move._move));
             let score = -self.quiescence(-beta, -alpha);
             self.pop();
             if score > alpha {

@@ -122,9 +122,6 @@ impl Evaluator {
                 };
             }
         }
-        if score == 0 {
-            return 1;
-        }
         score
     }
 }

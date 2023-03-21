@@ -23,7 +23,7 @@ struct BoardState {
 
 pub struct Board {
     board: chess::Board,
-    stack: Vec<(BoardState, Move)>,
+    stack: Vec<(BoardState, Option<Move>)>,
     ep_square: Option<Square>,
     halfmove_clock: u8,
     fullmove_number: u16,
@@ -235,7 +235,7 @@ impl Board {
         let mut skeleton = self.get_skeleton();
         let checkers = self.get_checkers();
         let king_square = self.get_king_square(self.board.side_to_move());
-        let last_move = self.stack.last().map(|(_, m)| m);
+        let last_move = self.stack.last().map(|(_, m)| *m).flatten();
         for square in SQUARES_180 {
             let symbol = if use_unicode {
                 self.piece_unicode_symbol_at(square, false)
@@ -330,6 +330,12 @@ impl Board {
         let mut temp_board = self.board;
         self.board.make_move(_move, &mut temp_board);
         return temp_board.checkers() != &BB_EMPTY;
+    }
+
+    pub fn gives_checkmate(&self, _move: Move) -> bool {
+        let mut temp_board = self.board;
+        self.board.make_move(_move, &mut temp_board);
+        return temp_board.status() == BoardStatus::Checkmate;
     }
 
     #[inline(always)]
@@ -589,37 +595,38 @@ impl Board {
             );
     }
 
-    pub fn push_without_nnue(&mut self, _move: Move) {
+    pub fn push_without_nnue(&mut self, option_move: Option<Move>) {
         let board_state = self.get_board_state();
-        if self.is_zeroing(_move) {
-            self.halfmove_clock = 0;
-        } else {
-            self.halfmove_clock += 1;
-        }
         if self.turn() == Black {
             self.fullmove_number += 1;
         }
-        self.board.clone().make_move(_move, &mut self.board);
+        if let Some(_move) = option_move {
+            if self.is_zeroing(_move) {
+                self.halfmove_clock = 0;
+            } else {
+                self.halfmove_clock += 1;
+            }
+            self.board.clone().make_move(_move, &mut self.board);
+        } else {
+            self.halfmove_clock += 1;
+            self.board = self
+                .board
+                .null_move()
+                .expect("Trying to push null move while in check!");
+        }
         self.ep_square = self
-            .board
-            .en_passant()
-            .map(|ep_square| ep_square.forward(self.turn()).unwrap());
+                .board
+                .en_passant()
+                .map(|ep_square| ep_square.forward(self.turn()).unwrap());
         self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
-        self.stack.push((board_state, _move));
+        self.stack.push((board_state, option_move));
     }
 
-    pub fn push(&mut self, _move: Move) {
-        // self.push_nnue(_move);
-        self.push_without_nnue(_move);
-    }
-
-    pub fn push_null_move(&mut self) {
-        let board_state = self.get_board_state();
-        self.board = self
-            .board
-            .null_move()
-            .expect("Trying to push null move while in check!");
-        self.stack.push((board_state, Move::default()));
+    pub fn push(&mut self, option_move: Option<Move>) {
+        // if let Some(_move) = option_move {
+        //     self.push_nnue(_move);
+        // }
+        self.push_without_nnue(option_move);
     }
 
     fn restore(&mut self, board_state: BoardState) {
@@ -637,21 +644,16 @@ impl Board {
             .restore();
     }
 
-    pub fn pop_without_nnue(&mut self) -> Move {
-        let (board_state, _move) = self.stack.pop().unwrap();
+    pub fn pop_without_nnue(&mut self) -> Option<Move> {
+        let (board_state, option_move) = self.stack.pop().unwrap();
         self.repetition_table.remove(self.hash());
         self.restore(board_state);
-        _move
+        option_move
     }
 
-    pub fn pop(&mut self) -> Move {
+    pub fn pop(&mut self) -> Option<Move> {
         // self.pop_nnue();
         self.pop_without_nnue()
-    }
-
-    pub fn pop_null_move(&mut self) {
-        let board_state = self.stack.pop().unwrap().0;
-        self.restore(board_state);
     }
 
     pub fn has_empty_stack(&self) -> bool {
@@ -683,7 +685,7 @@ impl Board {
 
     pub fn push_san(&mut self, san: &str) -> Move {
         let _move = self.parse_san(san).unwrap_or_else(|err| panic!("{}", err));
-        self.push(_move);
+        self.push(Some(_move));
         _move
     }
 
@@ -697,7 +699,7 @@ impl Board {
         let _move = self
             .parse_uci(uci)
             .unwrap_or_else(|_| panic!("Bad uci: {uci}"));
-        self.push(_move);
+        self.push(Some(_move));
         _move
     }
 
@@ -811,7 +813,7 @@ impl Board {
         let san = self.algebraic_without_suffix(_move, long)?;
 
         // Look ahead for check or checkmate.
-        self.push_without_nnue(_move);
+        self.push_without_nnue(Some(_move));
         let is_check = self.is_check();
         let is_checkmate = is_check && self.is_checkmate();
 
@@ -886,7 +888,7 @@ impl Board {
     pub fn get_pgn(&self) -> String {
         self.variation_san(
             &Self::from_fen(&self.starting_fen),
-            Vec::from_iter(self.stack.clone().into_iter().map(|(_, m)| m)),
+            Vec::from_iter(self.stack.clone().into_iter().map(|(_, option_m)| option_m.unwrap_or_default())),
         )
     }
 
@@ -965,7 +967,7 @@ impl Board {
         }
         let mut count: usize = 0;
         for _move in _moves {
-            self.push(_move);
+            self.push(Some(_move));
             let c_count = self.mini_perft(depth - 1, false);
             self.pop();
             if print_move {

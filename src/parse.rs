@@ -244,7 +244,7 @@ impl Push {
                     board_fen: engine.board.get_fen(),
                 });
             }
-            engine.board.push(_move);
+            engine.board.push(Some(_move));
             println!(
                 "{} {}",
                 colorize("Pushed move:", SUCCESS_MESSAGE_STYLE),
@@ -273,7 +273,7 @@ impl Pop {
             if engine.board.has_empty_stack() {
                 return Err(EmptyStack);
             }
-            let last_move = engine.board.pop();
+            let last_move = engine.board.pop().unwrap_or_default();
             println!(
                 "{} {}",
                 colorize("Popped move:", SUCCESS_MESSAGE_STYLE),
