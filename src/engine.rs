@@ -216,7 +216,7 @@ impl Engine {
                 }
             }
             // null move pruning
-            if apply_null_move {
+            if apply_null_move && static_evaluation > beta {
                 let r = NULL_MOVE_MIN_REDUCTION
                     + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
                 if depth > r {
@@ -228,7 +228,7 @@ impl Engine {
                     }
                 }
                 // razoring
-                if !is_pvs_node && depth < 4 {
+                if !is_pvs_node && self.board.has_non_pawn_material() && depth < 4 {
                     let mut evaluation = static_evaluation + PAWN_VALUE;
                     if evaluation < beta {
                         if depth == 1 {
@@ -246,7 +246,7 @@ impl Engine {
                 }
             }
             // futility pruning
-            if depth < 4 && alpha < mate_score {
+            if depth < 4 && alpha < mate_score && !is_endgame {
                 let futility_margin = match depth {
                     0 => 0,
                     1 => PAWN_VALUE,
@@ -484,7 +484,8 @@ impl Engine {
             }
             current_depth += 1;
         }
-        (self.get_best_move().unwrap(), score)
+        let best_move = self.get_best_move().unwrap();
+        (best_move, score)
     }
 }
 

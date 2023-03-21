@@ -209,14 +209,6 @@ impl MoveSorter {
                 }
             }
         }
-        if let Some(piece) = _move.get_promotion() {
-            return 1289000000;
-        }
-        if board.is_endgame() && board.is_passed_pawn(source) {
-            let promotion_distance = (board.turn().to_seventh_rank() as MoveWeight)
-                .abs_diff(source.get_rank() as MoveWeight);
-            return 1288000000 - promotion_distance as MoveWeight;
-        }
         // let threat_score = match sub_board.null_move() {
         //     Some(board) => {
         //         let mut moves = chess::MoveGen::new_legal(&board);
