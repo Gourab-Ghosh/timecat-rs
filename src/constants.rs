@@ -206,7 +206,7 @@ pub mod board_representation {
  +---+---+---+---+---+---+---+---+
  | O | O | O | O | O | O | O | O | 1
  +---+---+---+---+---+---+---+---+
-   a   b   c   d   e   f   g   h
+   A   B   C   D   E   F   G   H
 
 ";
 

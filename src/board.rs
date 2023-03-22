@@ -276,7 +276,7 @@ impl Board {
                 String::new(),
                 format_info("Fen", self.get_fen()),
                 format_info("Transposition Key", hash_to_string(self.hash())),
-                format_info("Checkers", colorize(checkers_string.trim(), CHECKERS_STYLE)),
+                format_info("Checkers", colorize(checkers_string.trim().to_uppercase(), CHECKERS_STYLE)),
                 format_info("Current Evaluation", score_to_string(self.evaluate())),
             ]
             .join("\n"),

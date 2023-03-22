@@ -68,7 +68,6 @@ impl Engine {
     fn get_lmr_reduction(&self, depth: Depth, move_index: usize) -> Depth {
         (LMR_BASE_REDUCTION + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER)
             .round() as Depth
-        // (LMR_BASE_REDUCTION + ((depth as usize * move_index) as f32).sqrt() / LMR_MOVE_DIVIDER).ceil() as Depth
     }
 
     fn search(
@@ -181,9 +180,10 @@ impl Engine {
         if num_repetitions > 1 || self.board.is_other_draw() {
             return 0;
         }
-        if !not_in_check && self.board.evaluate_flipped() < -PAWN_VALUE {
-            depth += 1
-        }
+        // // if !not_in_check && !is_pvs_node && depth < 3 && !is_endgame && num_pieces > 4 {
+        // if !not_in_check && depth < 3 {
+        //     depth += 1
+        // }
         depth = depth.max(0);
         let key = self.board.hash();
         let best_move = if is_pvs_node {
@@ -451,7 +451,10 @@ impl Engine {
 
     pub fn go(&mut self, depth: Depth, print_info: bool) -> (Move, Score) {
         self.reset_variables();
-        // self.transposition_table.clear();
+        // if !self.board.is_endgame() {
+        //     self.transposition_table.clear();
+        // }
+        self.transposition_table.clear();
         let mut current_depth = 1;
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
