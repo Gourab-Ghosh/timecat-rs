@@ -101,15 +101,15 @@ impl Engine {
             let _move = weighted_move._move;
             let clock = Instant::now();
             self.push(Some(_move));
+            if move_index != 0
+                && !self.board.is_endgame()
+                && (self.board.is_draw() || self.board.get_num_repetitions() > 1)
+                && score > -DRAW_SCORE
+            {
+                self.pop();
+                continue;
+            }
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true) > alpha {
-                if move_index != 0
-                    && !self.board.is_endgame()
-                    && (self.board.is_draw() || self.board.get_num_repetitions() > 1)
-                    && score > -DRAW_SCORE
-                {
-                    self.pop();
-                    continue;
-                }
                 score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
             }
             self.pop();
