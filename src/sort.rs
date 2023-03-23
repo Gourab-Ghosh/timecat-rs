@@ -8,7 +8,10 @@ pub struct WeightedMove {
 
 impl WeightedMove {
     pub fn new(_move: Move, weight: i32) -> Self {
-        Self { _move, weight }
+        Self {
+            _move: _move,
+            weight,
+        }
     }
 }
 
@@ -106,8 +109,8 @@ impl MoveSorter {
         arr[0] = Some(killer_move);
     }
 
-    pub fn is_killer_move(&self, _move: &Move, ply: Ply) -> bool {
-        self.killer_moves[ply].contains(&Some(*_move))
+    pub fn is_killer_move(&self, _move: Move, ply: Ply) -> bool {
+        self.killer_moves[ply].contains(&Some(_move))
     }
 
     pub fn add_history_move(&mut self, history_move: Move, board: &Board, depth: Depth) {
@@ -118,54 +121,49 @@ impl MoveSorter {
             [board.color_at(src).unwrap() as usize][dest.to_index()] += depth;
     }
 
-    fn get_least_attackers_move(&self, square: Square, board: &chess::Board) -> Option<Move> {
+    #[inline(always)]
+    pub fn get_history_score(&self, history_move: Move, board: &Board) -> MoveWeight {
+        let src = history_move.get_source();
+        let dest = history_move.get_dest();
+        self.history_move_scores[board.piece_at(src).unwrap().to_index()]
+            [board.color_at(src).unwrap() as usize][dest.to_index()]
+    }
+
+    fn get_least_attackers_move(square: Square, board: &chess::Board) -> Option<Move> {
         let mut captute_moves = chess::MoveGen::new_legal(board);
         captute_moves.set_iterator_mask(get_square_bb(square));
         captute_moves.next()
     }
 
-    fn see(&self, square: Square, board: &mut chess::Board) -> Score {
-        let least_attackers_move = match self.get_least_attackers_move(square, board) {
+    fn see(square: Square, board: &mut chess::Board) -> Score {
+        let least_attackers_move = match Self::get_least_attackers_move(square, board) {
             Some(_move) => _move,
             None => return 0,
         };
         let capture_piece = board.piece_on(square).unwrap_or(Pawn);
         board.clone().make_move(least_attackers_move, board);
-        (evaluate_piece(capture_piece) - self.see(square, board)).max(0)
+        (evaluate_piece(capture_piece) - Self::see(square, board)).max(0)
     }
 
-    fn see_capture(&self, square: Square, board: &mut chess::Board) -> Score {
-        let least_attackers_move = match self.get_least_attackers_move(square, board) {
+    fn see_capture(square: Square, board: &mut chess::Board) -> Score {
+        let least_attackers_move = match Self::get_least_attackers_move(square, board) {
             Some(_move) => _move,
             None => return 0,
         };
         let capture_piece = board.piece_on(square).unwrap_or(Pawn);
         board.clone().make_move(least_attackers_move, board);
-        evaluate_piece(capture_piece) - self.see(square, board)
+        evaluate_piece(capture_piece) - Self::see(square, board)
     }
 
-    fn mvv_lva(&self, _move: Move, board: &Board) -> MoveWeight {
-        MVV_LVA[board
-            .piece_at(_move.get_source())
-            .unwrap_or(Pawn)
-            .to_index()][board.piece_at(_move.get_dest()).unwrap().to_index()]
+    fn mvv_lva(_move: Move, board: &Board) -> MoveWeight {
+        MVV_LVA[board.piece_at(_move.get_source()).unwrap().to_index()]
+            [board.piece_at(_move.get_dest()).unwrap_or(Pawn).to_index()]
     }
 
     #[inline(always)]
-    fn score_capture(&self, _move: Move, board: &Board) -> MoveWeight {
-        self.see_capture(_move.get_dest(), &mut board.get_sub_board()) as MoveWeight
-        // self.mvv_lva(_move, board)
-    }
-
-    fn score_threat(&self, _move: Move, sub_board: &chess::Board) -> MoveWeight {
-        let dest = _move.get_dest();
-        let attacker_piece_score = evaluate_piece(sub_board.piece_on(_move.get_source()).unwrap());
-        let attacked_piece_score = evaluate_piece(sub_board.piece_on(dest).unwrap_or(Pawn));
-        let mut threat_score = attacker_piece_score - attacked_piece_score;
-        if sub_board.pinned() == &get_square_bb(dest) {
-            threat_score *= 2;
-        }
-        (threat_score + 16 * PAWN_VALUE) as MoveWeight
+    fn score_capture(_move: Move, board: &Board) -> MoveWeight {
+        Self::see_capture(_move.get_dest(), &mut board.get_sub_board()) as MoveWeight
+        // Self::mvv_lva(_move, board)
     }
 
     fn score_move(
@@ -176,18 +174,14 @@ impl MoveSorter {
         best_move: Option<Move>,
         pv_move: Option<Move>,
     ) -> MoveWeight {
-        if let Some(m) = best_move {
-            if m == _move {
-                return 1294000000;
-            }
+        // best move
+        if best_move == Some(_move) {
+            return 1294000;
         }
-        if self.score_pv {
-            if let Some(m) = pv_move {
-                if m == _move {
-                    self.score_pv = false;
-                    return 1293000000;
-                }
-            }
+        // pv move
+        if self.score_pv && pv_move == Some(_move) {
+            self.score_pv = false;
+            return 1293000;
         }
         let source = _move.get_source();
         let dest = _move.get_dest();
@@ -195,33 +189,84 @@ impl MoveSorter {
         sub_board.clone().make_move(_move, &mut sub_board);
         let checkers = *sub_board.checkers();
         let moving_piece = board.piece_at(source).unwrap();
+        // ckeck
         if checkers != BB_EMPTY {
-            return 1292000000 + 100 * checkers.popcnt() as MoveWeight + moving_piece as MoveWeight;
+            return 1292000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
         if board.is_capture(_move) {
-            let capture_value = self.score_capture(_move, board);
-            return 1291000000 + capture_value;
+            let capture_value = Self::score_capture(_move, board);
+            return 1291000 + capture_value;
         }
-        for (i, option_move) in self.killer_moves[ply].iter().enumerate() {
-            if let Some(killer_move) = option_move {
-                if killer_move == &_move {
-                    return 1290000000 - i as MoveWeight;
-                }
+        for (idx, &option_move) in self.killer_moves[ply].iter().enumerate() {
+            if option_move == Some(_move) {
+                return 1290000 - idx as MoveWeight;
             }
         }
-        // let threat_score = match sub_board.null_move() {
-        //     Some(board) => {
-        //         let mut moves = chess::MoveGen::new_legal(&board);
-        //         moves.set_iterator_mask(*board.color_combined(!board.side_to_move()));
-        //         moves.into_iter().map(|m| self.threat_value(m, &board)).sum::<MoveWeight>()
-        //     },
-        //     None => 0,
-        // };
-
-        // 100 * history_moves_score + threat_score
-        self.history_move_scores[moving_piece.to_index()][board.color_at(source).unwrap() as usize]
-            [dest.to_index()]
+        self.get_history_score(_move, board)
     }
+
+    // const HASH_MOVE_SCORE: MoveWeight = 25000;
+    // const PV_MOVE_SCORE: MoveWeight = 24000;
+    // const WINNING_CAPTURES_OFFSET: MoveWeight = 10;
+    // const KILLER_MOVE_SCORE: MoveWeight = 2;
+    // const CASTLING_SCORE: MoveWeight = 1;
+    // const HISTORY_MOVE_OFFSET: MoveWeight = -30000;
+    // const LOSING_CAPTURES_OFFSET: MoveWeight = -30001;
+
+    // fn score_move(
+    //     &mut self,
+    //     _move: Move,
+    //     board: &Board,
+    //     ply: Ply,
+    //     best_move: Option<Move>,
+    //     pv_move: Option<Move>,
+    // ) -> MoveWeight {
+    //     if Some(_move) == best_move {
+    //         return Self::HASH_MOVE_SCORE;
+    //     }
+
+    //     if self.score_pv {
+    //         if let Some(m) = pv_move {
+    //             if m == _move {
+    //                 self.score_pv = false;
+    //                 return Self::PV_MOVE_SCORE;
+    //             }
+    //         }
+    //     }
+
+    //     if board.is_quiet(_move) {
+    //         if self.killer_moves[ply].contains(&Some(_move)) {
+    //             return Self::KILLER_MOVE_SCORE;
+    //         }
+
+    //         if board.is_castling(_move) {
+    //             return Self::CASTLING_SCORE;
+    //         }
+
+    //         return Self::HISTORY_MOVE_OFFSET + self.get_history_score(_move, board);
+    //     }
+
+    //     let mut score = 0;
+    //     if board.is_capture(_move) {
+    //         if board.is_en_passant(_move) {
+    //             return Self::WINNING_CAPTURES_OFFSET;
+    //         }
+
+    //         score += Self::mvv_lva(_move, board);
+
+    //         if Self::score_capture(_move, board).is_positive() {
+    //             score += Self::WINNING_CAPTURES_OFFSET;
+    //         } else {
+    //             score += Self::LOSING_CAPTURES_OFFSET;
+    //         }
+    //     }
+
+    //     score += match _move.get_promotion() {
+    //         Some(piece) => evaluate_piece(piece),
+    //         None => 0,
+    //     } as MoveWeight;
+    //     score
+    // }
 
     pub fn get_weighted_sort_moves<T: IntoIterator<Item = Move>>(
         &mut self,
@@ -241,10 +286,11 @@ impl MoveSorter {
                 }
             }
         }
-        WeightedMoveListSorter::from_iter(moves_vec.into_iter().map(|m| {
+        WeightedMoveListSorter::from_iter(moves_vec.into_iter().enumerate().map(|(idx, m)| {
             WeightedMove::new(
                 m,
-                self.score_move(m, board, ply, best_move, optional_pv_move),
+                1000 * self.score_move(m, board, ply, best_move, optional_pv_move)
+                    - idx as MoveWeight,
             )
         }))
     }
@@ -254,11 +300,13 @@ impl MoveSorter {
         moves_gen: T,
         board: &Board,
     ) -> WeightedMoveListSorter {
-        WeightedMoveListSorter::from_iter(
-            moves_gen
-                .into_iter()
-                .map(|m| WeightedMove::new(m, self.score_capture(m, board) as MoveWeight)),
-        )
+        WeightedMoveListSorter::from_iter(moves_gen.into_iter().enumerate().map(|(idx, m)| {
+            WeightedMove::new(
+                m,
+                1000 * Self::score_capture(m, board) + MAX_MOVES_PER_POSITION as MoveWeight
+                    - idx as MoveWeight,
+            )
+        }))
     }
 
     pub fn follow_pv(&mut self) {

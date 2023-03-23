@@ -73,7 +73,8 @@ fn calculate_prediction_accuracy(rms: f32) -> f32 {
 }
 
 fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<u16>) {
-    let mut time_taken_vec = Vec::new();
+    let mut time_taken_vec: Vec<f32> = Vec::new();
+    let mut max_time_taken_fen = String::new();
     let mut prediction_score_vec = Vec::new();
     println!("\n{}\n", engine.board);
     while !engine.board.is_game_over()
@@ -85,6 +86,9 @@ fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<
         let best_move_san = engine.board.san(best_move).unwrap();
         let pv = engine.get_pv_string();
         engine.push(Some(best_move));
+        if time_elapsed.as_secs_f32() > *time_taken_vec.iter().max_by(|&x, &y| x.partial_cmp(y).unwrap()).unwrap_or(&0.0) {
+            max_time_taken_fen = engine.board.get_fen();
+        }
         time_taken_vec.push(time_elapsed.as_secs_f32());
         prediction_score_vec.push(score as f32 / PAWN_VALUE as f32);
         let nps =
@@ -161,6 +165,7 @@ fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<
     );
     println_info("Max time taken", format!("{:.3} s", max_time_taken));
     println_info("Min time taken", format!("{:.3} s", min_time_taken));
+    println_info("Max time taken by fen", max_time_taken_fen);
     println_info("Max prediction magnitude", score_to_string(max_abs_score));
     println_info("Min prediction magnitude", score_to_string(min_abs_score));
 }
@@ -191,6 +196,7 @@ fn _main() {
         "8/8/q7/2K5/8/5k2/8/8 b - - 3 76",    // Taking really long to best move at depth 12
         "6R1/8/5K2/5N2/8/2k5/8/8 b - - 0 68", // Taking really long to best move at depth 14
         "1Q6/5pk1/8/4p3/8/6q1/3Q4/2K5 w - - 2 61", // Taking really long to best move at depth 12
+        "r1bqr1k1/p1p2pp1/1b5p/3n4/2Q1N3/5N1P/PPP2PP1/R1B2RK1 b - - 2 16", // Taking really long to best move at depth 12
     ];
 
     let mut engine = Engine::default();
@@ -200,14 +206,16 @@ fn _main() {
     // engine.board.set_fen("2kr1br1/p1pn1p2/2N1q2p/1PpQP3/5p1P/P6R/5PP1/2R3K1 w - - 2 30"); // check for repetitions
     // engine.board.push_sans("e4 e5"); // e4 opwning
     // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
-    engine.board.push_sans("d4 d5 c4"); // queens gambit
+    // engine.board.push_sans("d4 d5 c4"); // queens gambit
     // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
-    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
+    engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
     // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
     // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7"); // traxer counter attack with Nxf7
     // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59"); // endgame improvement 1
     // engine.board.set_fen("8/7R/8/8/8/7K/k7/8 w - - 0 1"); // endgame improvement 2
-    // engine.board.set_fen("8/8/8/8/7P/8/6K1/3kr3 w - - 0 82"); // endgame improvement 2
+    // engine.board.set_fen("8/8/8/8/7P/8/6K1/3kr3 w - - 0 82"); // endgame improvement 3
+    // engine.board.set_fen("8/8/8/8/1K3k2/8/8/2r5 b - - 9 79"); // endgame improvement 4
+    // engine.board.set_fen("8/1K6/8/6R1/8/3k4/8/8 b - - 0 62"); // endgame improvement 4
     // self_play(&mut engine, 16, false, Some(100));
     self_play(&mut engine, 12, false, None);
 

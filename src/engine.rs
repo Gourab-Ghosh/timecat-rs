@@ -54,7 +54,7 @@ impl Engine {
         self.pv_length[self.ply] = self.pv_length[self.ply + 1];
     }
 
-    pub fn can_apply_lmr(&self, _move: &Move) -> bool {
+    pub fn can_apply_lmr(&self, _move: Move) -> bool {
         // return false;
         if _move.get_promotion().is_some() {
             return false;
@@ -88,31 +88,29 @@ impl Engine {
         let key = self.board.hash();
         let mut score = -CHECKMATE_SCORE;
         let mut flag = HashAlpha;
-        for (move_index, weighted_move) in self
-            .move_sorter
-            .get_weighted_sort_moves(
-                self.board.generate_legal_moves(),
-                &self.board,
-                self.ply,
-                self.transposition_table.read_best_move(key),
-                self.pv_table[0][self.ply],
-            )
-            .enumerate()
-        {
+        let mut moves_vec_sorted = Vec::from_iter(self.move_sorter.get_weighted_sort_moves(
+            self.board.generate_legal_moves(),
+            &self.board,
+            self.ply,
+            self.transposition_table.read_best_move(key),
+            self.pv_table[0][self.ply],
+        ));
+        moves_vec_sorted.sort_by_cached_key(|&wm| self.board.gives_repetition(wm._move));
+        // println!("{:?}", &moves_vec_sorted.iter().map(|&wm|self.board.gives_repetition(wm._move)).collect::<Vec<_>>());
+        for (move_index, weighted_move) in moves_vec_sorted.iter().enumerate() {
             let _move = weighted_move._move;
             let clock = Instant::now();
             self.push(Some(_move));
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true) > alpha {
-                let temp_score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
-                // if move_index != 0
-                //     && ((!self.board.is_endgame() && self.board.is_draw())
-                //         || self.board.get_num_repetitions() > 1)
-                //     && temp_score > -DRAW_SCORE
-                // {
-                //     self.pop();
-                //     continue;
-                // }
-                score = temp_score;
+                if move_index != 0
+                    && !self.board.is_endgame()
+                    && (self.board.is_draw() || self.board.get_num_repetitions() > 1)
+                    && score > -DRAW_SCORE
+                {
+                    self.pop();
+                    continue;
+                }
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
             }
             self.pop();
             if print_move_info {
@@ -180,10 +178,10 @@ impl Engine {
         if num_repetitions > 1 || self.board.is_other_draw() {
             return 0;
         }
-        // // if !not_in_check && !is_pvs_node && depth < 3 && !is_endgame && num_pieces > 4 {
-        // if !not_in_check && depth < 3 {
-        //     depth += 1
-        // }
+        // if !not_in_check && !is_pvs_node && depth < 3 && !is_endgame && num_pieces > 4 {
+        if !not_in_check && depth < 3 {
+            depth += 1
+        }
         depth = depth.max(0);
         let key = self.board.hash();
         let best_move = if is_pvs_node {
@@ -277,7 +275,7 @@ impl Engine {
                 continue;
             }
             let safe_to_apply_lmr =
-                not_capture_move && not_in_check && !is_pvs_node && self.can_apply_lmr(&_move);
+                not_capture_move && not_in_check && !is_pvs_node && self.can_apply_lmr(_move);
             self.push(Some(_move));
             let mut score: Score;
             if move_index == 0 {

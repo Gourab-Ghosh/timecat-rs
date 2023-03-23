@@ -8,6 +8,7 @@ pub mod common_utils {
         score.abs() > CHECKMATE_THRESHOLD
     }
 
+    #[inline(always)]
     pub fn evaluate_piece(piece: Piece) -> i16 {
         match piece {
             Pawn => PAWN_VALUE,
@@ -138,6 +139,10 @@ pub mod classes {
             Self {
                 count: Arc::new(Mutex::new(HashMap::default())),
             }
+        }
+
+        pub fn get_repetition(&self, key: u64) -> u8 {
+            *self.count.lock().unwrap().get(&key).unwrap_or(&0) as u8
         }
 
         pub fn insert_and_get_repetition(&self, key: u64) -> u8 {

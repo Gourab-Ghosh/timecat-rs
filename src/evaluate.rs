@@ -80,10 +80,22 @@ impl Evaluator {
                 break;
             }
         }
-        let mut score = (8 - kings_distance as Score) * PAWN_VALUE / 2;
-        score += (8 - square_distance(opponent_king_square, least_distance_corner) as Score)
+        let mut score = (8 - kings_distance as Score) * PAWN_VALUE;
+        score += (16
+            - opponent_king_square
+                .get_rank()
+                .to_index()
+                .abs_diff(least_distance_corner.get_rank().to_index()) as Score
+            - opponent_king_square
+                .get_file()
+                .to_index()
+                .abs_diff(least_distance_corner.get_file().to_index()) as Score)
             * PAWN_VALUE;
-        score
+        if board.turn() == White {
+            score
+        } else {
+            -score
+        }
     }
 
     fn force_king_to_center(&self, board: &Board) -> Score {
@@ -98,30 +110,24 @@ impl Evaluator {
                 break;
             }
         }
-        (8 - square_distance(self_king_square, least_distance_center) as Score) * PAWN_VALUE
+        let score =
+            (8 - square_distance(self_king_square, least_distance_center) as Score) * PAWN_VALUE;
+        if board.turn() == White {
+            score
+        } else {
+            -score
+        }
     }
 
     pub fn evaluate(&self, board: &Board) -> Score {
-        let mut score = self.stockfish_network.eval(board);
-        let corner_forcing_score = self.force_king_to_corner(board);
-        let center_forcing_score = self.force_king_to_corner(board);
-        if board.get_num_pieces() < ENDGAME_PIECE_THRESHOLD / 2
-            && score.abs() > evaluate_piece(Knight)
-        {
-            if (if board.turn() == White { score } else { -score }).is_positive() {
-                score += if board.turn() == White {
-                    corner_forcing_score
-                } else {
-                    -corner_forcing_score
-                };
-            } else {
-                score += if board.turn() == White {
-                    center_forcing_score
-                } else {
-                    -center_forcing_score
-                };
-            }
-        }
-        score
+        // if board.is_endgame() {
+        //     let mut eval = self.network.eval(board);
+        //     if eval.abs() < 0 {
+        //         return self.stockfish_network.eval(board);
+        //     }
+        //     eval = eval +  if eval.is_positive() { self.force_king_to_center(board) } else { self.force_king_to_corner(board) } / 10;
+        //     return 50 * PAWN_VALUE * eval.signum() + eval;
+        // }
+        self.stockfish_network.eval(board)
     }
 }

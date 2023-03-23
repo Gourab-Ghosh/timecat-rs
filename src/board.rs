@@ -210,7 +210,7 @@ impl Board {
             let mut _char = c.to_string();
             let style = if "+-|".contains(c) {
                 BOARD_SKELETON_STYLE
-            } else if "abcdefgh12345678".contains(c) {
+            } else if "abcdefghABCDEFGH12345678".contains(c) {
                 BOARD_LABEL_STYLE
             } else {
                 ""
@@ -276,7 +276,10 @@ impl Board {
                 String::new(),
                 format_info("Fen", self.get_fen()),
                 format_info("Transposition Key", hash_to_string(self.hash())),
-                format_info("Checkers", colorize(checkers_string.trim().to_uppercase(), CHECKERS_STYLE)),
+                format_info(
+                    "Checkers",
+                    colorize(checkers_string.trim().to_uppercase(), CHECKERS_STYLE),
+                ),
                 format_info("Current Evaluation", score_to_string(self.evaluate())),
             ]
             .join("\n"),
@@ -358,8 +361,18 @@ impl Board {
         self.num_repetitions
     }
 
+    pub fn is_repetition(&self, n_times: usize) -> bool {
+        self.get_num_repetitions() as usize >= n_times
+    }
+
+    pub fn gives_repetition(&self, _move: Move) -> bool {
+        let mut new_board = self.get_sub_board();
+        new_board.clone().make_move(_move, &mut new_board);
+        self.repetition_table.get_repetition(new_board.get_hash()) > 1
+    }
+
     pub fn is_threefold_repetition(&self) -> bool {
-        self.get_num_repetitions() >= 3
+        self.is_repetition(3)
     }
 
     fn is_halfmoves(&self, n: u8) -> bool {
@@ -459,6 +472,10 @@ impl Board {
     pub fn is_capture(&self, _move: Move) -> bool {
         let touched = get_square_bb(_move.get_source()) ^ get_square_bb(_move.get_dest());
         (touched & self.occupied_co(!self.turn())) != BB_EMPTY || self.is_en_passant(_move)
+    }
+
+    pub fn is_quiet(&self, _move: Move) -> bool {
+        !self.gives_check(_move) && !self.is_capture(_move)
     }
 
     pub fn is_zeroing(&self, _move: Move) -> bool {
@@ -652,8 +669,11 @@ impl Board {
     }
 
     pub fn pop(&mut self) -> Option<Move> {
-        // self.pop_nnue();
-        self.pop_without_nnue()
+        let option_move = self.pop_without_nnue();
+        // if let Some(_move) = option_move {
+        //     self.pop_nnue();
+        // }
+        option_move
     }
 
     pub fn has_empty_stack(&self) -> bool {
