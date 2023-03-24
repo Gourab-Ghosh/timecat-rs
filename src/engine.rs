@@ -95,8 +95,8 @@ impl Engine {
             self.transposition_table.read_best_move(key),
             self.pv_table[0][self.ply],
         ));
+        moves_vec_sorted.sort_by_cached_key(|&wm| self.board.gives_claimable_threefold_repetition(wm._move));
         moves_vec_sorted.sort_by_cached_key(|&wm| self.board.gives_repetition(wm._move));
-        // println!("{:?}", &moves_vec_sorted.iter().map(|&wm|self.board.gives_repetition(wm._move)).collect::<Vec<_>>());
         for (move_index, weighted_move) in moves_vec_sorted.iter().enumerate() {
             let _move = weighted_move._move;
             let clock = Instant::now();

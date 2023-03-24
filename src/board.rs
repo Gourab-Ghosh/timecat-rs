@@ -368,7 +368,27 @@ impl Board {
     pub fn gives_repetition(&self, _move: Move) -> bool {
         let mut new_board = self.get_sub_board();
         new_board.clone().make_move(_move, &mut new_board);
-        self.repetition_table.get_repetition(new_board.get_hash()) > 1
+        self.repetition_table.get_repetition(new_board.get_hash()) != 0
+    }
+
+    pub fn gives_threefold_repetition(&self, _move: Move) -> bool {
+        let mut new_board = self.get_sub_board();
+        new_board.clone().make_move(_move, &mut new_board);
+        self.repetition_table.get_repetition(new_board.get_hash()) == 2
+    }
+
+    pub fn gives_claimable_threefold_repetition(&mut self, _move: Move) -> bool {
+        self.push_without_nnue(Some(_move));
+        if self.is_threefold_repetition() {
+            self.pop_without_nnue();
+            return true;
+        }
+        if self.generate_legal_moves().any(|m| self.gives_threefold_repetition(m)) {
+            self.pop_without_nnue();
+            return true;
+        }
+        self.pop_without_nnue();
+        return false;
     }
 
     pub fn is_threefold_repetition(&self) -> bool {
