@@ -43,6 +43,7 @@ use engine::Engine;
 use evaluate::*;
 use failure::Fail;
 use fxhash::FxHashMap as HashMap;
+use itertools::Itertools;
 use parse::*;
 use sort::*;
 use std::cmp::{self, Ordering};
@@ -147,7 +148,7 @@ fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<
         time_taken_vec
             .iter()
             .map(|x| (x * 1000.0).round() / 1000.0)
-            .collect::<Vec<f32>>(),
+            .collect_vec(),
     );
     println!(
         "\n{}:\n\n{:?}\n",
@@ -211,7 +212,7 @@ fn _main() {
     // engine.board.set_fen("2kr1br1/p1pn1p2/2N1q2p/1PpQP3/5p1P/P6R/5PP1/2R3K1 w - - 2 30"); // check for repetitions
     // engine.board.push_sans("e4 e5"); // e4 opwning
     // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
-    // engine.board.push_sans("d4 d5 c4"); // queens gambit
+    engine.board.push_sans("d4 d5 c4"); // queens gambit
     // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
     // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
     // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
@@ -222,7 +223,7 @@ fn _main() {
     // engine.board.set_fen("8/8/8/8/1K3k2/8/8/2r5 b - - 9 79"); // endgame improvement 4
     // engine.board.set_fen("8/1K6/8/6R1/8/3k4/8/8 b - - 0 62"); // endgame improvement 4
     // self_play(&mut engine, 16, false, Some(100));
-    self_play(&mut engine, 13, false, None);
+    self_play(&mut engine, 13, true, None);
 
     // parse_command(&mut Engine::default(), "go perft 7");
 
