@@ -95,17 +95,16 @@ impl Engine {
             self.transposition_table.read_best_move(key),
             self.pv_table[0][self.ply],
         ));
-        moves_vec_sorted.sort_by_cached_key(|&wm| self.board.gives_claimable_threefold_repetition(wm._move));
+        moves_vec_sorted
+            .sort_by_cached_key(|&wm| self.board.gives_claimable_threefold_repetition(wm._move));
         moves_vec_sorted.sort_by_cached_key(|&wm| self.board.gives_repetition(wm._move));
         for (move_index, weighted_move) in moves_vec_sorted.iter().enumerate() {
             let _move = weighted_move._move;
             let clock = Instant::now();
+            let repetition_draw_possible = self.board.gives_repetition(_move)
+                || self.board.gives_claimable_threefold_repetition(_move);
             self.push(Some(_move));
-            if move_index != 0
-                && !self.board.is_endgame()
-                && (self.board.is_draw() || self.board.get_num_repetitions() > 1)
-                && score > -DRAW_SCORE
-            {
+            if !self.board.is_endgame() && repetition_draw_possible && score > -DRAW_SCORE {
                 self.pop();
                 continue;
             }

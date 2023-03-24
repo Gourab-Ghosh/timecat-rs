@@ -290,7 +290,7 @@ impl MoveSorter {
             WeightedMove::new(
                 m,
                 1000 * self.score_move(m, board, ply, best_move, optional_pv_move)
-                    - idx as MoveWeight,
+                    + idx as MoveWeight,
             )
         }))
     }
@@ -304,7 +304,7 @@ impl MoveSorter {
             WeightedMove::new(
                 m,
                 1000 * Self::score_capture(m, board) + MAX_MOVES_PER_POSITION as MoveWeight
-                    - idx as MoveWeight,
+                    + idx as MoveWeight,
             )
         }))
     }

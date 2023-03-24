@@ -383,7 +383,10 @@ impl Board {
             self.pop_without_nnue();
             return true;
         }
-        if self.generate_legal_moves().any(|m| self.gives_threefold_repetition(m)) {
+        if self
+            .generate_legal_moves()
+            .any(|m| self.gives_threefold_repetition(m))
+        {
             self.pop_without_nnue();
             return true;
         }

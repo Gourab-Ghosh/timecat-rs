@@ -86,7 +86,12 @@ fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<
         let best_move_san = engine.board.san(best_move).unwrap();
         let pv = engine.get_pv_string();
         engine.push(Some(best_move));
-        if time_elapsed.as_secs_f32() > *time_taken_vec.iter().max_by(|&x, &y| x.partial_cmp(y).unwrap()).unwrap_or(&0.0) {
+        if time_elapsed.as_secs_f32()
+            > *time_taken_vec
+                .iter()
+                .max_by(|&x, &y| x.partial_cmp(y).unwrap())
+                .unwrap_or(&0.0)
+        {
             max_time_taken_fen = engine.board.get_fen();
         }
         time_taken_vec.push(time_elapsed.as_secs_f32());
@@ -217,7 +222,7 @@ fn _main() {
     // engine.board.set_fen("8/8/8/8/1K3k2/8/8/2r5 b - - 9 79"); // endgame improvement 4
     // engine.board.set_fen("8/1K6/8/6R1/8/3k4/8/8 b - - 0 62"); // endgame improvement 4
     // self_play(&mut engine, 16, false, Some(100));
-    self_play(&mut engine, 12, false, None);
+    self_play(&mut engine, 13, false, None);
 
     // parse_command(&mut Engine::default(), "go perft 7");
 
