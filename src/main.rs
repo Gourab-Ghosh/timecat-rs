@@ -82,6 +82,9 @@ fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<
         && engine.board.get_fullmove_number() < move_limit.unwrap_or(u16::MAX)
     {
         let clock = Instant::now();
+        if print {
+            println!();
+        }
         let (best_move, score) = engine.go(depth, print);
         let time_elapsed = clock.elapsed();
         let best_move_san = engine.board.san(best_move).unwrap();

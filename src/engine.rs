@@ -108,17 +108,27 @@ impl Engine {
                 self.pop();
                 continue;
             }
-            if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true) > alpha {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
+            let check_extension_depth = match_interpolate!(
+                0,
+                0.7 * depth as f32,
+                INITIAL_MATERIAL_SCORE_ABS,
+                evaluate_piece(Bishop),
+                self.board.get_material_score_abs()
+            )
+            .round() as Depth;
+            if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, check_extension_depth, true) > alpha {
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth, true);
             }
             self.pop();
             if print_move_info {
                 let time_elapsed = clock.elapsed();
                 if time_elapsed.as_secs_f32() > PRINT_MOVE_INFO_TIME_THRESHOLD {
                     println!(
-                        "{} {} {} {} {} {} {} {:.3} s",
+                        "{} {} {} {} {} {} {} {} {} {:.3} s",
                         colorize("curr move", INFO_STYLE),
                         self.board.san(_move).unwrap(),
+                        colorize("depth", INFO_STYLE),
+                        depth,
                         colorize("score", INFO_STYLE),
                         score_to_string(if self.board.turn() == White {
                             score
@@ -165,6 +175,7 @@ impl Engine {
         mut depth: Depth,
         mut alpha: Score,
         mut beta: Score,
+        check_extension_depth: Depth,
         apply_null_move: bool,
     ) -> Score {
         self.pv_length[self.ply] = self.ply;
@@ -182,8 +193,7 @@ impl Engine {
             return 0;
         }
         // if !not_in_check && !is_pvs_node && depth < 3 && !is_endgame && num_pieces > 4 {
-        // if !not_in_check && depth < match_interpolate!(0, depth + 1, INITIAL_MATERIAL_SCORE_ABS, 0, self.board.get_material_score_abs()).round() as Depth {
-        if !not_in_check && depth < 3 {
+        if !not_in_check && depth < check_extension_depth {
             depth += 1
         }
         depth = depth.max(0);
@@ -223,7 +233,13 @@ impl Engine {
                     + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
                 if depth > r {
                     self.push(None);
-                    let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1, false);
+                    let score = -self.alpha_beta(
+                        depth - 1 - r,
+                        -beta,
+                        -beta + 1,
+                        check_extension_depth,
+                        false,
+                    );
                     self.pop();
                     if score >= beta {
                         return beta;
@@ -283,7 +299,7 @@ impl Engine {
             self.push(Some(_move));
             let mut score: Score;
             if move_index == 0 {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth, true);
             } else {
                 if move_index >= FULL_DEPTH_SEARCH_LMR
                     && depth >= REDUCTION_LIMIT_LMR
@@ -291,14 +307,27 @@ impl Engine {
                     && !DISABLE_LMR
                 {
                     let lmr_reduction = self.get_lmr_reduction(depth, move_index);
-                    score = -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha, true);
+                    score = -self.alpha_beta(
+                        depth - 1 - lmr_reduction,
+                        -alpha - 1,
+                        -alpha,
+                        check_extension_depth,
+                        true,
+                    );
                 } else {
                     score = alpha + 1;
                 }
                 if score > alpha {
-                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha, true);
+                    score = -self.alpha_beta(
+                        depth - 1,
+                        -alpha - 1,
+                        -alpha,
+                        check_extension_depth,
+                        true,
+                    );
                     if score > alpha && score < beta {
-                        score = -self.alpha_beta(depth - 1, -beta, -alpha, true);
+                        score =
+                            -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth, true);
                     }
                 }
             }

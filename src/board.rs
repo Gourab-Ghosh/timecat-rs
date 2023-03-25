@@ -992,7 +992,10 @@ impl Board {
     }
 
     pub fn get_material_score_abs(&self) -> Score {
-        chess::ALL_PIECES[0..5].iter().map(|&piece| evaluate_piece(piece) * self.get_piece_mask(piece).popcnt() as Score).sum()
+        chess::ALL_PIECES[0..5]
+            .iter()
+            .map(|&piece| evaluate_piece(piece) * self.get_piece_mask(piece).popcnt() as Score)
+            .sum()
     }
 
     pub fn evaluate(&self) -> Score {
