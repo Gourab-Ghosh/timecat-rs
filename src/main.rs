@@ -226,6 +226,7 @@ fn _main() {
     // engine.board.set_fen("8/8/8/8/7P/8/6K1/3kr3 w - - 0 82"); // endgame improvement 3
     // engine.board.set_fen("8/8/8/8/1K3k2/8/8/2r5 b - - 9 79"); // endgame improvement 4
     // engine.board.set_fen("8/1K6/8/6R1/8/3k4/8/8 b - - 0 62"); // endgame improvement 4
+    // engine.board.set_fen("8/8/4K3/p7/P7/6kp/6p1/6Q1 w - - 0 70"); // endgame improvement 4
     // self_play(&mut engine, 16, false, Some(100));
     self_play(&mut engine, 12, true, None);
 
