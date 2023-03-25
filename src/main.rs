@@ -189,6 +189,7 @@ fn _main() {
     let could_have_probably_played_better_move = [
         "5rk1/6pp/p1p5/1p1pqn2/1P6/2NP3P/2PQ1PP1/R5K1 w - - 0 26",
         "4b2k/N7/p1P1rn2/7p/1r1p1p1P/1P3P2/3K4/R2B2R1 b - - 0 42",
+        "8/8/4K3/p7/P7/6kp/6p1/6Q1 w - - 0 70",
     ];
 
     let time_consuming_fens = [
@@ -226,7 +227,6 @@ fn _main() {
     // engine.board.set_fen("8/8/8/8/7P/8/6K1/3kr3 w - - 0 82"); // endgame improvement 3
     // engine.board.set_fen("8/8/8/8/1K3k2/8/8/2r5 b - - 9 79"); // endgame improvement 4
     // engine.board.set_fen("8/1K6/8/6R1/8/3k4/8/8 b - - 0 62"); // endgame improvement 4
-    // engine.board.set_fen("8/8/4K3/p7/P7/6kp/6p1/6Q1 w - - 0 70"); // endgame improvement 4
     // self_play(&mut engine, 16, false, Some(100));
     self_play(&mut engine, 12, true, None);
 
@@ -239,6 +239,7 @@ fn _main() {
     // // engine.board.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1"); // test endgame
     // // engine.board.set_fen("4k2r/Q7/3b4/Q7/8/2N5/5PPP/5RK1 b - - 0 1"); // test draw by repetition
     // // engine.board.set_fen(time_consuming_fens[7]);
+    // engine.board.set_fen(could_have_probably_played_better_move[2]);
     // parse_command(&mut engine, "go depth 14");
 
     // let mut board = Board::new();

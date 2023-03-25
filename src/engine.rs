@@ -70,6 +70,17 @@ impl Engine {
             .round() as Depth
     }
 
+    fn calculate_check_extension(&self, depth: Depth) -> Depth {
+        let min_depth = 0.0;
+        let max_depth = 0.7 * depth as f32;
+        if min_depth >= max_depth {
+            return min_depth.round() as Depth;
+        }
+        let extension = match_interpolate!(min_depth, max_depth, INITIAL_MATERIAL_SCORE_ABS, evaluate_piece(Bishop), self.board.get_material_score_abs());
+        // extension = match_interpolate!(min_depth, max_depth, min_depth.sqrt(), max_depth.sqrt(), extension.sqrt());
+        extension.round() as Depth
+    }
+
     fn search(
         &mut self,
         depth: Depth,
@@ -108,14 +119,7 @@ impl Engine {
                 self.pop();
                 continue;
             }
-            let check_extension_depth = match_interpolate!(
-                0,
-                0.7 * depth as f32,
-                INITIAL_MATERIAL_SCORE_ABS,
-                evaluate_piece(Bishop),
-                self.board.get_material_score_abs()
-            )
-            .round() as Depth;
+            let check_extension_depth = self.calculate_check_extension(depth);
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, check_extension_depth, true) > alpha {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth, true);
             }
@@ -217,18 +221,18 @@ impl Engine {
         }
         self.num_nodes_searched += 1;
         let mut futility_pruning = false;
-        if not_in_check && !is_pvs_node {
+        if not_in_check {
             // static evaluation pruning
             let static_evaluation = self.board.evaluate_flipped();
             if depth < 3 && (beta - 1).abs() > -mate_score + PAWN_VALUE {
-                let evaluation_margin = PAWN_VALUE * depth as i16;
+                let evaluation_margin = PAWN_VALUE * depth as Score;
                 let evaluation_diff = static_evaluation - evaluation_margin;
                 if evaluation_diff >= beta {
                     return evaluation_diff;
                 }
             }
             // null move pruning
-            if apply_null_move && static_evaluation > beta {
+            if apply_null_move {
                 let r = NULL_MOVE_MIN_REDUCTION
                     + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
                 if depth > r {
@@ -245,20 +249,20 @@ impl Engine {
                         return beta;
                     }
                 }
-                // razoring
-                if !is_pvs_node && self.board.has_non_pawn_material() && depth < 4 {
-                    let mut evaluation = static_evaluation + PAWN_VALUE;
-                    if evaluation < beta {
-                        if depth == 1 {
-                            let new_evaluation = self.quiescence(alpha, beta);
+            }
+            // razoring
+            if !is_pvs_node && depth < 4 {
+                let mut evaluation = static_evaluation + PAWN_VALUE;
+                if evaluation < beta {
+                    if depth == 1 {
+                        let new_evaluation = self.quiescence(alpha, beta);
+                        return new_evaluation.max(evaluation);
+                    }
+                    evaluation += PAWN_VALUE;
+                    if evaluation < beta && depth < 4 {
+                        let new_evaluation = self.quiescence(alpha, beta);
+                        if new_evaluation < beta {
                             return new_evaluation.max(evaluation);
-                        }
-                        evaluation += PAWN_VALUE;
-                        if evaluation < beta && depth < 4 {
-                            let new_evaluation = self.quiescence(alpha, beta);
-                            if new_evaluation < beta {
-                                return new_evaluation.max(evaluation);
-                            }
                         }
                     }
                 }
