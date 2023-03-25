@@ -970,7 +970,7 @@ impl Board {
     pub fn get_material_score(&self) -> Score {
         let mut score = 0;
         let black_occupied = self.black_occupied();
-        for piece in [Pawn, Knight, Bishop, Rook, Queen, King] {
+        for &piece in chess::ALL_PIECES[0..5].iter() {
             let piece_mask = self.get_piece_mask(piece);
             if piece_mask == &BB_EMPTY {
                 continue;
@@ -989,6 +989,10 @@ impl Board {
         } else {
             -score
         }
+    }
+
+    pub fn get_material_score_abs(&self) -> Score {
+        chess::ALL_PIECES[0..5].iter().map(|&piece| evaluate_piece(piece) * self.get_piece_mask(piece).popcnt() as Score).sum()
     }
 
     pub fn evaluate(&self) -> Score {

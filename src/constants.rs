@@ -240,6 +240,9 @@ pub mod print_style {
 }
 
 pub mod engine_constants {
+    use crate::utils::common_utils::evaluate_piece;
+    use chess::Piece::*;
+
     use super::types::*;
     pub const MAX_PLY: usize = 255;
     pub const INFINITY: Score = 30_000;
@@ -266,6 +269,8 @@ pub mod engine_constants {
 
     pub const FOLLOW_PV: bool = true;
     pub const PRINT_MOVE_INFO_TIME_THRESHOLD: f32 = 1.0;
+
+    pub const INITIAL_MATERIAL_SCORE_ABS: Score = 16 * PAWN_VALUE + 4 * evaluate_piece(Bishop) + 4 * evaluate_piece(Knight) + 2 * evaluate_piece(Rook) + 2 * evaluate_piece(Queen);
 
     #[rustfmt::skip]
     pub const MVV_LVA: [[i32; 6]; 6] = [

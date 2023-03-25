@@ -9,7 +9,7 @@ pub mod common_utils {
     }
 
     #[inline(always)]
-    pub fn evaluate_piece(piece: Piece) -> i16 {
+    pub const fn evaluate_piece(piece: Piece) -> i16 {
         match piece {
             Pawn => PAWN_VALUE,
             Knight => (32 * PAWN_VALUE) / 10,

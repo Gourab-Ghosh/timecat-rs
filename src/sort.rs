@@ -303,7 +303,8 @@ impl MoveSorter {
         WeightedMoveListSorter::from_iter(moves_gen.into_iter().enumerate().map(|(idx, m)| {
             WeightedMove::new(
                 m,
-                1000 * Self::score_capture(m, board) + MAX_MOVES_PER_POSITION as MoveWeight
+                1000 * Self::score_capture(m, board)
+                    + MAX_MOVES_PER_POSITION as MoveWeight
                     + idx as MoveWeight,
             )
         }))

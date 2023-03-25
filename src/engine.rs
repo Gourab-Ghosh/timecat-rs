@@ -120,7 +120,11 @@ impl Engine {
                         colorize("curr move", INFO_STYLE),
                         self.board.san(_move).unwrap(),
                         colorize("score", INFO_STYLE),
-                        score_to_string(score),
+                        score_to_string(if self.board.turn() == White {
+                            score
+                        } else {
+                            -score
+                        }),
                         colorize("nodes", INFO_STYLE),
                         self.num_nodes_searched,
                         colorize("time", INFO_STYLE),
@@ -178,6 +182,7 @@ impl Engine {
             return 0;
         }
         // if !not_in_check && !is_pvs_node && depth < 3 && !is_endgame && num_pieces > 4 {
+        // if !not_in_check && depth < match_interpolate!(0, depth + 1, INITIAL_MATERIAL_SCORE_ABS, 0, self.board.get_material_score_abs()).round() as Depth {
         if !not_in_check && depth < 3 {
             depth += 1
         }
