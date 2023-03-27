@@ -54,7 +54,7 @@ if is_error_free:
         release_file = "\"" + os.path.join(current_path, "target", "release", executable) + "\""
         need_to_run = True
         if which("perf") is not None:
-            need_to_run = bool(timed_run(lambda: os.system(f"perf record {release_file}")))
+            need_to_run = bool(timed_run(lambda: os.system(f"perf record {release_file} --test")))
         if need_to_run:
             print("Running without using perf")
-            timed_run(lambda: os.system(release_file))
+            timed_run(lambda: os.system(release_file + " --test"))

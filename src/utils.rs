@@ -178,6 +178,17 @@ pub mod classes {
     }
 }
 
+pub mod score_utils {
+    use std::default;
+
+    #[derive(Clone, Debug)]
+    enum Score {
+        Cp(i16),
+        Mate(i16),
+        Infinity(i16),
+    }
+}
+
 pub mod unsafe_utils {
     use super::*;
 

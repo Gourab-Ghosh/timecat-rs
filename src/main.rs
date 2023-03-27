@@ -184,7 +184,7 @@ pub fn parse_command(engine: &mut Engine, raw_input: &str) {
         .unwrap_or_else(|err| panic!("{}", err.generate_error(Some(raw_input))))
 }
 
-fn _main() {
+fn test() {
     // open_tablebase("directory", true, true, None, Board::new());
     let could_have_probably_played_better_move = [
         "5rk1/6pp/p1p5/1p1pqn2/1P6/2NP3P/2PQ1PP1/R5K1 w - - 0 26",
@@ -219,7 +219,7 @@ fn _main() {
     // engine.board.push_sans("d4 d5 c4"); // queens gambit
     // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
     // engine.board.push_sans("e4 c5"); // sicilian defense
-    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
+    engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
     // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
     // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7"); // traxer counter attack with Nxf7
     // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59"); // endgame improvement 1
@@ -228,7 +228,7 @@ fn _main() {
     // engine.board.set_fen("8/8/8/8/1K3k2/8/8/2r5 b - - 9 79"); // endgame improvement 4
     // engine.board.set_fen("8/1K6/8/6R1/8/3k4/8/8 b - - 0 62"); // endgame improvement 4
     // self_play(&mut engine, 16, false, Some(100));
-    self_play(&mut engine, 12, true, None);
+    self_play(&mut engine, 11, true, None);
 
     // parse_command(&mut Engine::default(), "go perft 7");
 
@@ -259,8 +259,11 @@ fn main() {
         set_colored_output(false);
     }
     let clock = Instant::now();
-    // Parser::main_loop();
-    _main();
+    if env::args().contains(&String::from("--test")) {
+        test();
+    } else {
+        Parser::main_loop();
+    }
     let elapsed_time = clock.elapsed().as_secs_f32();
     let precision = 3;
     println_info("\nRun Time", format!("{:.1$} s", elapsed_time, precision));

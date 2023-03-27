@@ -76,7 +76,13 @@ impl Engine {
         if min_depth >= max_depth {
             return min_depth.round() as Depth;
         }
-        let extension = match_interpolate!(min_depth, max_depth, INITIAL_MATERIAL_SCORE_ABS, evaluate_piece(Bishop), self.board.get_material_score_abs());
+        let extension = match_interpolate!(
+            min_depth,
+            max_depth,
+            INITIAL_MATERIAL_SCORE_ABS,
+            evaluate_piece(Bishop),
+            self.board.get_material_score_abs()
+        );
         // extension = match_interpolate!(min_depth, max_depth, min_depth.sqrt(), max_depth.sqrt(), extension.sqrt());
         extension.round() as Depth
     }
@@ -106,22 +112,28 @@ impl Engine {
             self.transposition_table.read_best_move(key),
             self.pv_table[0][self.ply],
         ));
-        moves_vec_sorted
-            .sort_by_cached_key(|&wm| self.board.gives_claimable_threefold_repetition(wm._move));
-        moves_vec_sorted.sort_by_cached_key(|&wm| self.board.gives_repetition(wm._move));
+        let is_endgame = self.board.is_endgame();
+        if !is_endgame {
+            moves_vec_sorted.sort_by_cached_key(|&wm| {
+                self.board.gives_claimable_threefold_repetition(wm._move)
+            });
+            moves_vec_sorted.sort_by_cached_key(|&wm| self.board.gives_repetition(wm._move));
+        }
         for (move_index, weighted_move) in moves_vec_sorted.iter().enumerate() {
             let _move = weighted_move._move;
             let clock = Instant::now();
             let repetition_draw_possible = self.board.gives_repetition(_move)
                 || self.board.gives_claimable_threefold_repetition(_move);
             self.push(Some(_move));
-            if !self.board.is_endgame() && repetition_draw_possible && score > -DRAW_SCORE {
+            if !is_endgame && repetition_draw_possible && score > -DRAW_SCORE {
                 self.pop();
                 continue;
             }
             let check_extension_depth = self.calculate_check_extension(depth);
-            if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, check_extension_depth, true) > alpha {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth, true);
+            if move_index == 0
+                || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, check_extension_depth) > alpha
+            {
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth);
             }
             self.pop();
             if print_move_info {
@@ -180,13 +192,12 @@ impl Engine {
         mut alpha: Score,
         mut beta: Score,
         check_extension_depth: Depth,
-        apply_null_move: bool,
     ) -> Score {
         self.pv_length[self.ply] = self.ply;
         let num_pieces = self.board.get_num_pieces();
         let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
         let not_in_check = !self.board.is_check();
-        let is_pvs_node = alpha != beta - 1;
+        let is_pv_node = alpha != beta - 1;
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
         let moves_gen = self.board.generate_legal_moves();
         if moves_gen.len() == 0 {
@@ -196,13 +207,14 @@ impl Engine {
         if num_repetitions > 1 || self.board.is_other_draw() {
             return 0;
         }
-        // if !not_in_check && !is_pvs_node && depth < 3 && !is_endgame && num_pieces > 4 {
-        if !not_in_check && depth < check_extension_depth {
+        // if !not_in_check && !is_pv_node && depth < 3 && !is_endgame && num_pieces > 4 {
+        // if !not_in_check && depth <= check_extension_depth {
+        if !not_in_check {
             depth += 1
         }
         depth = depth.max(0);
         let key = self.board.hash();
-        let best_move = if is_pvs_node {
+        let best_move = if is_pv_node {
             self.transposition_table.read_best_move(key)
         } else {
             match self.transposition_table.read(key, depth, alpha, beta) {
@@ -222,28 +234,22 @@ impl Engine {
         self.num_nodes_searched += 1;
         let mut futility_pruning = false;
         if not_in_check {
-            // static evaluation pruning
+            // static evaluation
             let static_evaluation = self.board.evaluate_flipped();
-            if depth < 3 && (beta - 1).abs() > -mate_score + PAWN_VALUE {
-                let evaluation_margin = PAWN_VALUE * depth as Score;
-                let evaluation_diff = static_evaluation - evaluation_margin;
-                if evaluation_diff >= beta {
-                    return evaluation_diff;
+            if depth < 3 && !is_pv_node && beta.abs_diff(1) as Score > -INFINITY + PAWN_VALUE {
+                let eval_margin = 120 * depth as Score;
+                if static_evaluation - eval_margin >= beta {
+                    return static_evaluation - eval_margin;
                 }
             }
             // null move pruning
-            if apply_null_move {
+            if true {
                 let r = NULL_MOVE_MIN_REDUCTION
                     + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
                 if depth > r {
                     self.push(None);
-                    let score = -self.alpha_beta(
-                        depth - 1 - r,
-                        -beta,
-                        -beta + 1,
-                        check_extension_depth,
-                        false,
-                    );
+                    let score =
+                        -self.alpha_beta(depth - 1 - r, -beta, -beta + 1, check_extension_depth);
                     self.pop();
                     if score >= beta {
                         return beta;
@@ -251,24 +257,24 @@ impl Engine {
                 }
             }
             // razoring
-            if !is_pvs_node && depth < 4 {
-                let mut evaluation = static_evaluation + PAWN_VALUE;
-                if evaluation < beta {
+            if !is_pv_node && depth <= 3 {
+                let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
+                if score < beta {
                     if depth == 1 {
-                        let new_evaluation = self.quiescence(alpha, beta);
-                        return new_evaluation.max(evaluation);
+                        let new_score = self.quiescence(alpha, beta);
+                        return new_score.max(score);
                     }
-                    evaluation += PAWN_VALUE;
-                    if evaluation < beta && depth < 4 {
-                        let new_evaluation = self.quiescence(alpha, beta);
-                        if new_evaluation < beta {
-                            return new_evaluation.max(evaluation);
+                    score += (7 * PAWN_VALUE) / 4;
+                    if score < beta && depth <= 2 {
+                        let new_score = self.quiescence(alpha, beta);
+                        if new_score < beta {
+                            return new_score.max(score);
                         }
                     }
                 }
             }
             // futility pruning
-            if depth < 4 && alpha < mate_score && !is_endgame {
+            if depth < 4 && alpha < mate_score && !is_endgame && false {
                 let futility_margin = match depth {
                     0 => 0,
                     1 => PAWN_VALUE,
@@ -299,11 +305,11 @@ impl Engine {
                 continue;
             }
             let safe_to_apply_lmr =
-                not_capture_move && not_in_check && !is_pvs_node && self.can_apply_lmr(_move);
+                not_capture_move && not_in_check && !is_pv_node && self.can_apply_lmr(_move);
             self.push(Some(_move));
             let mut score: Score;
             if move_index == 0 {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth, true);
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth);
             } else {
                 if move_index >= FULL_DEPTH_SEARCH_LMR
                     && depth >= REDUCTION_LIMIT_LMR
@@ -316,22 +322,14 @@ impl Engine {
                         -alpha - 1,
                         -alpha,
                         check_extension_depth,
-                        true,
                     );
                 } else {
                     score = alpha + 1;
                 }
                 if score > alpha {
-                    score = -self.alpha_beta(
-                        depth - 1,
-                        -alpha - 1,
-                        -alpha,
-                        check_extension_depth,
-                        true,
-                    );
+                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha, check_extension_depth);
                     if score > alpha && score < beta {
-                        score =
-                            -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth, true);
+                        score = -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth);
                     }
                 }
             }
