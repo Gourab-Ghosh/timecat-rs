@@ -70,22 +70,22 @@ impl Engine {
             .round() as Depth
     }
 
-    fn calculate_check_extension(&self, depth: Depth) -> Depth {
-        let min_depth = 0.0;
-        let max_depth = 0.7 * depth as f32;
-        if min_depth >= max_depth {
-            return min_depth.round() as Depth;
-        }
-        let extension = match_interpolate!(
-            min_depth,
-            max_depth,
-            INITIAL_MATERIAL_SCORE_ABS,
-            evaluate_piece(Bishop),
-            self.board.get_material_score_abs()
-        );
-        // extension = match_interpolate!(min_depth, max_depth, min_depth.sqrt(), max_depth.sqrt(), extension.sqrt());
-        extension.round() as Depth
-    }
+    // fn calculate_check_extension(&self, depth: Depth) -> Depth {
+    //     let min_depth = 0.0;
+    //     let max_depth = 0.7 * depth as f32;
+    //     if min_depth >= max_depth {
+    //         return min_depth.round() as Depth;
+    //     }
+    //     let extension = match_interpolate!(
+    //         min_depth,
+    //         max_depth,
+    //         INITIAL_MATERIAL_SCORE_ABS,
+    //         evaluate_piece(Bishop),
+    //         self.board.get_material_score_abs()
+    //     );
+    //     // extension = match_interpolate!(min_depth, max_depth, min_depth.sqrt(), max_depth.sqrt(), extension.sqrt());
+    //     extension.round() as Depth
+    // }
 
     fn search(
         &mut self,
@@ -129,11 +129,8 @@ impl Engine {
                 self.pop();
                 continue;
             }
-            let check_extension_depth = self.calculate_check_extension(depth);
-            if move_index == 0
-                || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, check_extension_depth) > alpha
-            {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth);
+            if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha) > alpha {
+                score = -self.alpha_beta(depth - 1, -beta, -alpha);
             }
             self.pop();
             if print_move_info {
@@ -186,13 +183,7 @@ impl Engine {
         alpha
     }
 
-    fn alpha_beta(
-        &mut self,
-        mut depth: Depth,
-        mut alpha: Score,
-        mut beta: Score,
-        check_extension_depth: Depth,
-    ) -> Score {
+    fn alpha_beta(&mut self, mut depth: Depth, mut alpha: Score, mut beta: Score) -> Score {
         self.pv_length[self.ply] = self.ply;
         let num_pieces = self.board.get_num_pieces();
         let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
@@ -207,8 +198,6 @@ impl Engine {
         if num_repetitions > 1 || self.board.is_other_draw() {
             return 0;
         }
-        // if !not_in_check && !is_pv_node && depth < 3 && !is_endgame && num_pieces > 4 {
-        // if !not_in_check && depth <= check_extension_depth {
         if !not_in_check {
             depth += 1
         }
@@ -232,7 +221,6 @@ impl Engine {
             return self.quiescence(alpha, beta);
         }
         self.num_nodes_searched += 1;
-        let mut futility_pruning = false;
         if not_in_check {
             // static evaluation
             let static_evaluation = self.board.evaluate_flipped();
@@ -243,17 +231,14 @@ impl Engine {
                 }
             }
             // null move pruning
-            if true {
-                let r = NULL_MOVE_MIN_REDUCTION
-                    + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
-                if depth > r {
-                    self.push(None);
-                    let score =
-                        -self.alpha_beta(depth - 1 - r, -beta, -beta + 1, check_extension_depth);
-                    self.pop();
-                    if score >= beta {
-                        return beta;
-                    }
+            let r =
+                NULL_MOVE_MIN_REDUCTION + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
+            if depth > r {
+                self.push(None);
+                let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1);
+                self.pop();
+                if score >= beta {
+                    return beta;
                 }
             }
             // razoring
@@ -273,17 +258,6 @@ impl Engine {
                     }
                 }
             }
-            // futility pruning
-            if depth < 4 && alpha < mate_score && !is_endgame && false {
-                let futility_margin = match depth {
-                    0 => 0,
-                    1 => PAWN_VALUE,
-                    2 => evaluate_piece(Knight),
-                    3 => evaluate_piece(Rook),
-                    _ => unreachable!(),
-                };
-                futility_pruning = static_evaluation + futility_margin <= alpha;
-            }
         }
         let mut flag = HashAlpha;
         let weighted_moves = self.move_sorter.get_weighted_sort_moves(
@@ -296,20 +270,12 @@ impl Engine {
         for (move_index, weighted_move) in weighted_moves.enumerate() {
             let _move = weighted_move._move;
             let not_capture_move = !self.board.is_capture(_move);
-            if move_index != 0
-                && futility_pruning
-                && not_capture_move
-                && _move.get_promotion().is_none()
-                && not_in_check
-            {
-                continue;
-            }
             let safe_to_apply_lmr =
                 not_capture_move && not_in_check && !is_pv_node && self.can_apply_lmr(_move);
             self.push(Some(_move));
             let mut score: Score;
             if move_index == 0 {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth);
+                score = -self.alpha_beta(depth - 1, -beta, -alpha);
             } else {
                 if move_index >= FULL_DEPTH_SEARCH_LMR
                     && depth >= REDUCTION_LIMIT_LMR
@@ -317,19 +283,14 @@ impl Engine {
                     && !DISABLE_LMR
                 {
                     let lmr_reduction = self.get_lmr_reduction(depth, move_index);
-                    score = -self.alpha_beta(
-                        depth - 1 - lmr_reduction,
-                        -alpha - 1,
-                        -alpha,
-                        check_extension_depth,
-                    );
+                    score = -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha);
                 } else {
                     score = alpha + 1;
                 }
                 if score > alpha {
-                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha, check_extension_depth);
+                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha);
                     if score > alpha && score < beta {
-                        score = -self.alpha_beta(depth - 1, -beta, -alpha, check_extension_depth);
+                        score = -self.alpha_beta(depth - 1, -beta, -alpha);
                     }
                 }
             }
