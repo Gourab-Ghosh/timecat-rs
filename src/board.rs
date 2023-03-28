@@ -235,7 +235,7 @@ impl Board {
         let mut skeleton = self.get_skeleton();
         let checkers = self.get_checkers();
         let king_square = self.get_king_square(self.board.side_to_move());
-        let last_move = self.stack.last().map(|(_, m)| *m).flatten();
+        let last_move = self.stack.last().and_then(|(_, m)| *m);
         for square in SQUARES_180 {
             let symbol = if use_unicode {
                 self.piece_unicode_symbol_at(square, false)
@@ -338,7 +338,7 @@ impl Board {
     pub fn gives_checkmate(&self, _move: Move) -> bool {
         let mut temp_board = self.board;
         self.board.make_move(_move, &mut temp_board);
-        return temp_board.status() == BoardStatus::Checkmate;
+        temp_board.status() == BoardStatus::Checkmate
     }
 
     #[inline(always)]
@@ -391,7 +391,7 @@ impl Board {
             return true;
         }
         self.pop_without_nnue();
-        return false;
+        false
     }
 
     pub fn is_threefold_repetition(&self) -> bool {

@@ -10,6 +10,7 @@
 #![allow(unused_macros)]
 #![allow(clippy::enum_variant_names)]
 #![allow(clippy::too_many_arguments)]
+#![allow(clippy::let_and_return)]
 
 mod board;
 mod constants;

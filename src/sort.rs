@@ -9,7 +9,7 @@ pub struct WeightedMove {
 impl WeightedMove {
     pub fn new(_move: Move, weight: i32) -> Self {
         Self {
-            _move: _move,
+            _move,
             weight,
         }
     }

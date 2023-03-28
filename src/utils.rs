@@ -54,7 +54,7 @@ pub mod string_utils {
     }
 
     fn colorize_string(s: ColoredString, color: &str) -> ColoredString {
-        return match color {
+        match color {
             "red" => s.red(),
             "blue" => s.blue(),
             "green" => s.green(),
@@ -67,7 +67,7 @@ pub mod string_utils {
             "bright_yellow" => s.bright_yellow(),
             "bold" => s.bold(),
             unknown_color => panic!("Cannot colorize string to {}", unknown_color),
-        };
+        }
     }
 
     pub fn colorize<T: ToString>(obj: T, styles: &str) -> String {
@@ -98,7 +98,7 @@ pub mod string_utils {
     }
 
     pub fn hash_to_string(hash: u64) -> String {
-        return format!("{:x}", hash).to_uppercase();
+        format!("{:x}", hash).to_uppercase()
     }
 }
 
@@ -118,9 +118,9 @@ pub mod square_utils {
     pub fn square_distance(square1: Square, square2: Square) -> u8 {
         let (file1, rank1) = (square1.get_file(), square1.get_rank());
         let (file2, rank2) = (square2.get_file(), square2.get_rank());
-        let file_distance = (file1 as i8 - file2 as i8).abs() as u8;
-        let rank_distance = (rank1 as i8 - rank2 as i8).abs() as u8;
-        return file_distance.max(rank_distance);
+        let file_distance = (file1 as i8).abs_diff(file2 as i8);
+        let rank_distance = (rank1 as i8).abs_diff(rank2 as i8);
+        file_distance.max(rank_distance)
     }
 }
 

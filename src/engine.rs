@@ -368,8 +368,8 @@ impl Engine {
 
     fn get_pv(&self, ply: Ply) -> Vec<Move> {
         let mut pv = Vec::new();
-        for i in 0..self.pv_length[ply as usize] {
-            pv.push(self.pv_table[ply as usize][i].unwrap_or_default());
+        for i in 0..self.pv_length[ply] {
+            pv.push(self.pv_table[ply][i].unwrap_or_default());
         }
         pv
     }
