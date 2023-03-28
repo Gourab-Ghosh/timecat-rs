@@ -1,7 +1,7 @@
 use super::*;
 use EntryFlag::*;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum GoCommand {
     Infinite,
     Time(Duration),
@@ -103,6 +103,7 @@ impl Engine {
         depth: Depth,
         mut alpha: Score,
         beta: Score,
+        mut score: Score,
         print_move_info: bool,
     ) -> Score {
         if self.timer.stop_search() || self.timer.is_time_up() {
@@ -116,7 +117,6 @@ impl Engine {
             };
         }
         let key = self.board.hash();
-        let mut score = -CHECKMATE_SCORE;
         let mut flag = HashAlpha;
         let mut moves_vec_sorted = Vec::from_iter(self.move_sorter.get_weighted_sort_moves(
             self.board.generate_legal_moves(),
@@ -143,7 +143,10 @@ impl Engine {
                 continue;
             }
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha) > alpha {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha);
+                let temp_score = -self.alpha_beta(depth - 1, -beta, -alpha);
+                if !self.timer.stop_search() {
+                    score = temp_score;
+                }
             }
             self.pop();
             if self.timer.stop_search() {
@@ -198,7 +201,7 @@ impl Engine {
                 self.pv_table[self.ply][self.ply],
             );
         }
-        alpha
+        score
     }
 
     fn alpha_beta(&mut self, mut depth: Depth, mut alpha: Score, mut beta: Score) -> Score {
@@ -402,7 +405,7 @@ impl Engine {
     }
 
     fn get_pv(&self, ply: Ply) -> Vec<Move> {
-        self.pv_table[ply][0..self.pv_length[ply]].into_iter().map(|option_move| option_move.unwrap_or_default()).collect_vec()
+        self.pv_table[ply][0..self.pv_length[ply]].iter().map(|option_move| option_move.unwrap_or_default()).collect_vec()
     }
 
     fn get_pv_as_uci(&self, ply: Ply) -> String {
@@ -483,11 +486,14 @@ impl Engine {
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
         let mut score = 0;
-        while !self.timer.stop_search() {
+        loop {
             if FOLLOW_PV {
                 self.move_sorter.follow_pv();
             }
-            score = self.search(current_depth, alpha, beta, print_info);
+            if self.timer.stop_search() {
+                break;
+            }
+            score = self.search(current_depth, alpha, beta, score, print_info);
             let time_passed = self.timer.elapsed();
             if score <= alpha || score >= beta {
                 if print_info {
@@ -505,7 +511,7 @@ impl Engine {
             if print_info {
                 self.print_search_info(current_depth, score, time_passed);
             }
-            if command == GoCommand::Depth(current_depth) {
+            if current_depth == Depth::MAX || command == GoCommand::Depth(current_depth) {
                 break;
             }
             current_depth += 1;

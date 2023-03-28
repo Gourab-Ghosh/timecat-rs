@@ -48,6 +48,6 @@ impl Timer {
             self.stop_search = self.elapsed() >= max_time;
             return self.stop_search;
         }
-        return false;
+        false
     }
 }
