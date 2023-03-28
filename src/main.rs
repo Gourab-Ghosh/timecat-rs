@@ -21,6 +21,7 @@ mod nnue_rs;
 mod nnue_weights;
 mod parse;
 mod sort;
+mod timer;
 mod tt;
 mod useful_macros;
 mod utils;
@@ -40,7 +41,7 @@ use constants::fen::*;
 use constants::print_style::*;
 use constants::square::*;
 use constants::types::*;
-use engine::Engine;
+use engine::{Engine, GoCommand};
 use evaluate::*;
 use failure::Fail;
 use fxhash::FxHashMap as HashMap;
@@ -58,6 +59,7 @@ use std::str::FromStr;
 use std::str::ParseBoolError;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+use timer::Timer;
 use tt::*;
 use useful_macros::*;
 use utils::classes::*;
@@ -86,7 +88,7 @@ fn self_play(engine: &mut Engine, depth: Depth, print: bool, move_limit: Option<
         if print {
             println!();
         }
-        let (best_move, score) = engine.go(depth, print);
+        let (best_move, score) = engine.go(GoCommand::Depth(depth), print);
         let time_elapsed = clock.elapsed();
         let best_move_san = engine.board.san(best_move).unwrap();
         let pv = engine.get_pv_string();
@@ -241,7 +243,8 @@ fn test() {
     // engine.board.set_fen("4k2r/Q7/3b4/Q7/8/2N5/5PPP/5RK1 b - - 0 1"); // test draw by repetition
     // engine.board.set_fen(time_consuming_fens[7]);
     // engine.board.set_fen(could_have_probably_played_better_move[2]);
-    parse_command(&mut engine, "go depth 12");
+    // parse_command(&mut engine, "go depth 12");
+    parse_command(&mut engine, "go time 5000");
 
     // let mut board = Board::new();
     // println!("\n{board}");

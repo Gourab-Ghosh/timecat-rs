@@ -131,10 +131,10 @@ impl Go {
         position_count
     }
 
-    fn depth(engine: &mut Engine, depth: Depth) -> usize {
+    fn go_command(engine: &mut Engine, go_command: GoCommand) -> usize {
         println!("{}\n", engine.board);
         let clock = Instant::now();
-        let (best_move, score) = engine.go(depth, true);
+        let (best_move, score) = engine.go(go_command, true);
         let elapsed_time = clock.elapsed();
         let position_count = engine.get_num_nodes_searched();
         let nps = format!(
@@ -154,18 +154,20 @@ impl Go {
     pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         let depth_str = commands.get(2).ok_or(UnknownCommand)?.to_string();
-        let depth = depth_str.parse().unwrap_or(0);
         if commands.get(3).is_some() {
             return Err(UnknownCommand);
         }
-        if depth == 0 {
-            return Err(InvalidDepth { depth: depth_str });
-        }
         if second_command == "perft" {
+            let depth = depth_str.parse()?;
             Self::perft(engine, depth);
             return Ok(());
         } else if second_command == "depth" {
-            Self::depth(engine, depth);
+            let depth = depth_str.parse()?;
+            Self::go_command(engine, GoCommand::Depth(depth));
+            return Ok(());
+        } else if second_command == "time" {
+            let time = depth_str.parse()?;
+            Self::go_command(engine, GoCommand::Time(Duration::from_millis(time)));
             return Ok(());
         }
         Err(UnknownCommand)

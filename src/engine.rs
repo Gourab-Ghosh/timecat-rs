@@ -1,6 +1,13 @@
 use super::*;
 use EntryFlag::*;
 
+#[derive(PartialEq, Eq)]
+pub enum GoCommand {
+    Infinite,
+    Time(Duration),
+    Depth(Depth),
+}
+
 pub struct Engine {
     pub board: Board,
     num_nodes_searched: usize,
@@ -9,6 +16,7 @@ pub struct Engine {
     pv_table: [[Option<Move>; MAX_PLY]; MAX_PLY],
     move_sorter: MoveSorter,
     transposition_table: TranspositionTable,
+    timer: Timer,
 }
 
 impl Engine {
@@ -21,6 +29,7 @@ impl Engine {
             pv_table: [[None; MAX_PLY]; MAX_PLY],
             move_sorter: MoveSorter::default(),
             transposition_table: TranspositionTable::default(),
+            timer: Timer::new(),
         }
     }
 
@@ -44,6 +53,8 @@ impl Engine {
             }
         }
         self.move_sorter.reset_variables();
+        self.timer.reset_variables();
+        self.transposition_table.clear();
     }
 
     fn update_pv_table(&mut self, _move: Move) {
@@ -94,7 +105,9 @@ impl Engine {
         beta: Score,
         print_move_info: bool,
     ) -> Score {
-        self.pv_length[self.ply] = self.ply;
+        if self.timer.stop_search() || self.timer.is_time_up() {
+            return 0;
+        }
         if self.board.is_game_over() {
             return if self.board.is_checkmate() {
                 -CHECKMATE_SCORE
@@ -133,6 +146,9 @@ impl Engine {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha);
             }
             self.pop();
+            if self.timer.stop_search() {
+                break;
+            }
             if print_move_info {
                 let time_elapsed = clock.elapsed();
                 if time_elapsed.as_secs_f32() > PRINT_MOVE_INFO_TIME_THRESHOLD {
@@ -172,18 +188,23 @@ impl Engine {
                 }
             }
         }
-        self.transposition_table.write(
-            key,
-            depth,
-            self.ply,
-            alpha,
-            flag,
-            self.pv_table[self.ply][self.ply],
-        );
+        if !self.timer.stop_search() {
+            self.transposition_table.write(
+                key,
+                depth,
+                self.ply,
+                alpha,
+                flag,
+                self.pv_table[self.ply][self.ply],
+            );
+        }
         alpha
     }
 
     fn alpha_beta(&mut self, mut depth: Depth, mut alpha: Score, mut beta: Score) -> Score {
+        if self.ply == MAX_PLY || self.timer.stop_search() || self.timer.is_time_up() {
+            return 0;
+        }
         self.pv_length[self.ply] = self.ply;
         let num_pieces = self.board.get_num_pieces();
         let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
@@ -237,6 +258,9 @@ impl Engine {
                 self.push(None);
                 let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1);
                 self.pop();
+                if self.timer.stop_search() {
+                    return 0;
+                }
                 if score >= beta {
                     return beta;
                 }
@@ -295,6 +319,9 @@ impl Engine {
                 }
             }
             self.pop();
+            if self.timer.stop_search() {
+                return 0;
+            }
             if score > alpha {
                 flag = HashExact;
                 self.update_pv_table(_move);
@@ -318,18 +345,23 @@ impl Engine {
                 }
             }
         }
-        self.transposition_table.write(
-            key,
-            depth,
-            self.ply,
-            alpha,
-            flag,
-            self.pv_table[self.ply][self.ply],
-        );
+        if !self.timer.stop_search() {
+            self.transposition_table.write(
+                key,
+                depth,
+                self.ply,
+                alpha,
+                flag,
+                self.pv_table[self.ply][self.ply],
+            );
+        }
         alpha
     }
 
     fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {
+        if self.ply == MAX_PLY || self.timer.stop_search() || self.timer.is_time_up() {
+            return 0;
+        }
         self.pv_length[self.ply] = self.ply;
         if self.board.is_game_over() {
             if self.board.status() == BoardStatus::Checkmate {
@@ -355,6 +387,9 @@ impl Engine {
             self.push(Some(weighted_move._move));
             let score = -self.quiescence(-beta, -alpha);
             self.pop();
+            if self.timer.stop_search() {
+                return 0;
+            }
             if score > alpha {
                 self.update_pv_table(weighted_move._move);
                 alpha = score;
@@ -367,11 +402,7 @@ impl Engine {
     }
 
     fn get_pv(&self, ply: Ply) -> Vec<Move> {
-        let mut pv = Vec::new();
-        for i in 0..self.pv_length[ply] {
-            pv.push(self.pv_table[ply][i].unwrap_or_default());
-        }
-        pv
+        self.pv_table[ply][0..self.pv_length[ply]].into_iter().map(|option_move| option_move.unwrap_or_default()).collect_vec()
     }
 
     fn get_pv_as_uci(&self, ply: Ply) -> String {
@@ -443,23 +474,21 @@ impl Engine {
         );
     }
 
-    pub fn go(&mut self, depth: Depth, print_info: bool) -> (Move, Score) {
+    pub fn go(&mut self, command: GoCommand, print_info: bool) -> (Move, Score) {
         self.reset_variables();
-        // if !self.board.is_endgame() {
-        //     self.transposition_table.clear();
-        // }
-        self.transposition_table.clear();
+        if let GoCommand::Time(duration) = command {
+            self.timer.set_max_time(Some(duration));
+        }
         let mut current_depth = 1;
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
-        let mut score;
-        let clock = Instant::now();
-        loop {
+        let mut score = 0;
+        while !self.timer.stop_search() {
             if FOLLOW_PV {
                 self.move_sorter.follow_pv();
             }
             score = self.search(current_depth, alpha, beta, print_info);
-            let time_passed = clock.elapsed();
+            let time_passed = self.timer.elapsed();
             if score <= alpha || score >= beta {
                 if print_info {
                     self.print_warning_message(current_depth);
@@ -476,7 +505,7 @@ impl Engine {
             if print_info {
                 self.print_search_info(current_depth, score, time_passed);
             }
-            if current_depth == depth {
+            if command == GoCommand::Depth(current_depth) {
                 break;
             }
             current_depth += 1;
