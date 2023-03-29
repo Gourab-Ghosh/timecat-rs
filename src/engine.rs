@@ -103,7 +103,7 @@ impl Engine {
         depth: Depth,
         mut alpha: Score,
         beta: Score,
-        mut score: Score,
+        prev_score: Score,
         print_move_info: bool,
     ) -> Score {
         if self.timer.stop_search() || self.timer.is_time_up() {
@@ -117,6 +117,7 @@ impl Engine {
             };
         }
         let key = self.board.hash();
+        let mut score = -CHECKMATE_SCORE;
         let mut flag = HashAlpha;
         let mut moves_vec_sorted = Vec::from_iter(self.move_sorter.get_weighted_sort_moves(
             self.board.generate_legal_moves(),
@@ -201,7 +202,7 @@ impl Engine {
                 self.pv_table[self.ply][self.ply],
             );
         }
-        score
+        if score == -CHECKMATE_SCORE { prev_score } else { score }
     }
 
     fn alpha_beta(&mut self, mut depth: Depth, mut alpha: Score, mut beta: Score) -> Score {
