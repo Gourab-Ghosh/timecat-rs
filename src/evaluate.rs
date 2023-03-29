@@ -91,11 +91,7 @@ impl Evaluator {
                 .to_index()
                 .abs_diff(least_distance_corner.get_file().to_index()) as Score)
             * PAWN_VALUE;
-        if board.turn() == White {
-            score
-        } else {
-            -score
-        }
+        board.score_flipped(score)
     }
 
     fn force_king_to_center(&self, board: &Board) -> Score {
@@ -112,11 +108,7 @@ impl Evaluator {
         }
         let score =
             (8 - square_distance(self_king_square, least_distance_center) as Score) * PAWN_VALUE;
-        if board.turn() == White {
-            score
-        } else {
-            -score
-        }
+        board.score_flipped(score)
     }
 
     pub fn evaluate(&self, board: &Board) -> Score {

@@ -163,11 +163,7 @@ impl Engine {
                         colorize("depth", INFO_STYLE),
                         depth,
                         colorize("score", INFO_STYLE),
-                        score_to_string(if self.board.turn() == White {
-                            score
-                        } else {
-                            -score
-                        }),
+                        score_to_string(self.board.score_flipped(score)),
                         colorize("nodes", INFO_STYLE),
                         self.num_nodes_searched,
                         colorize("time", INFO_STYLE),
@@ -506,11 +502,8 @@ impl Engine {
             }
             alpha = score - ASPIRATION_WINDOW_CUTOFF;
             beta = score + ASPIRATION_WINDOW_CUTOFF;
-            if self.board.turn() == Black {
-                score = -score;
-            }
             if print_info {
-                self.print_search_info(current_depth, score, time_passed);
+                self.print_search_info(current_depth, self.board.score_flipped(score), time_passed);
             }
             if current_depth == Depth::MAX || command == GoCommand::Depth(current_depth) {
                 break;
@@ -518,7 +511,7 @@ impl Engine {
             current_depth += 1;
         }
         let best_move = self.get_best_move().unwrap();
-        (best_move, score)
+        (best_move, self.board.score_flipped(score))
     }
 }
 

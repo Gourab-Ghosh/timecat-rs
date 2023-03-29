@@ -248,7 +248,7 @@ fn test() {
     // engine.board.set_fen("4k2r/Q7/3b4/Q7/8/2N5/5PPP/5RK1 b - - 0 1"); // test draw by repetition
     // engine.board.set_fen(time_consuming_fens[7]);
     // engine.board.set_fen(could_have_probably_played_better_move[2]);
-    engine.board.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54");
+    engine.board.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54"); // incpmplete pv line in 3 secs in my pc
     parse_command(&mut engine, "go time 3000");
     // parse_command(&mut engine, "go depth 12");
 

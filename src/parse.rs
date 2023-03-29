@@ -145,7 +145,7 @@ impl Go {
         println_info("Score", score_to_string(score));
         println_info("PV Line", engine.get_pv_string());
         println_info("Position Count", position_count);
-        println_info("Time", format!("{} s", elapsed_time.as_secs_f32()));
+        println_info("Time", format!("{:.3} s", elapsed_time.as_secs_f32()));
         println_info("Speed", nps);
         println_info("Best Move", engine.board.san(best_move).unwrap());
         position_count

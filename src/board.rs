@@ -967,6 +967,15 @@ impl Board {
         self.board.get_pawn_hash()
     }
 
+    #[inline(always)]
+    pub fn score_flipped(&self, score: Score) -> Score {
+        if self.turn() == White {
+            score
+        } else {
+            -score
+        }
+    }
+
     pub fn get_material_score(&self) -> Score {
         let mut score = 0;
         let black_occupied = self.black_occupied();
@@ -983,12 +992,7 @@ impl Board {
     }
 
     pub fn get_material_score_flipped(&self) -> Score {
-        let score = self.get_material_score();
-        if self.turn() == White {
-            score
-        } else {
-            -score
-        }
+        self.score_flipped(self.get_material_score())
     }
 
     pub fn get_material_score_abs(&self) -> Score {
@@ -1006,12 +1010,7 @@ impl Board {
     }
 
     pub fn evaluate_flipped(&self) -> Score {
-        let score = self.evaluate();
-        if self.turn() == White {
-            score
-        } else {
-            -score
-        }
+        self.score_flipped(self.evaluate())
     }
 
     fn mini_perft(&mut self, depth: Depth, print_move: bool) -> usize {
