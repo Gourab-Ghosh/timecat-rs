@@ -103,7 +103,6 @@ impl Engine {
         depth: Depth,
         mut alpha: Score,
         beta: Score,
-        prev_score: Score,
         print_move_info: bool,
     ) -> Score {
         if self.timer.stop_search() || self.timer.is_time_up() {
@@ -135,6 +134,7 @@ impl Engine {
         }
         for (move_index, weighted_move) in moves_vec_sorted.iter().enumerate() {
             let _move = weighted_move._move;
+            // let san = self.board.san(_move).unwrap();
             let clock = Instant::now();
             let repetition_draw_possible = self.board.gives_repetition(_move)
                 || self.board.gives_claimable_threefold_repetition(_move);
@@ -144,10 +144,8 @@ impl Engine {
                 continue;
             }
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha) > alpha {
-                let temp_score = -self.alpha_beta(depth - 1, -beta, -alpha);
-                if !self.timer.stop_search() {
-                    score = temp_score;
-                }
+                score = -self.alpha_beta(depth - 1, -beta, -alpha);
+                // println!("{} {}", san, score_to_string(score));
             }
             self.pop();
             if self.timer.stop_search() {
@@ -155,7 +153,7 @@ impl Engine {
             }
             if print_move_info {
                 let time_elapsed = clock.elapsed();
-                if time_elapsed.as_secs_f32() > PRINT_MOVE_INFO_TIME_THRESHOLD {
+                if time_elapsed > PRINT_MOVE_INFO_DURATION_THRESHOLD {
                     println!(
                         "{} {} {} {} {} {} {} {} {} {:.3} s",
                         colorize("curr move", INFO_STYLE),
@@ -198,7 +196,7 @@ impl Engine {
                 self.pv_table[self.ply][self.ply],
             );
         }
-        if score == -CHECKMATE_SCORE { prev_score } else { score }
+        alpha
     }
 
     fn alpha_beta(&mut self, mut depth: Depth, mut alpha: Score, mut beta: Score) -> Score {
@@ -447,15 +445,18 @@ impl Engine {
         self.pv_table[0][0]
     }
 
-    pub fn print_warning_message(&self, current_depth: Depth) {
+    pub fn print_warning_message(&self, current_depth: Depth, alpha: Score, beta: Score) {
         let warning_message = format!(
-            "Resetting alpha to -INFINITY and beta to INFINITY at depth {}",
-            current_depth
+            "Resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {} and beta {} with time {:.3} s",
+            current_depth,
+            score_to_string(alpha),
+            score_to_string(beta),
+            self.timer.elapsed().as_secs_f32(),
         );
         println!("{}", colorize(warning_message, WARNING_MESSAGE_STYLE));
     }
 
-    pub fn print_search_info(&self, current_depth: Depth, score: Score, time_passed: Duration) {
+    pub fn print_search_info(&self, current_depth: Depth, score: Score, time_elapsed: Duration) {
         let style = SUCCESS_MESSAGE_STYLE;
         println!(
             "{} {} {} {} {} {} {} {} {} {:.3} {} {}",
@@ -466,9 +467,9 @@ impl Engine {
             colorize("nodes", style),
             self.num_nodes_searched,
             colorize("nps", style),
-            (self.num_nodes_searched as u128 * 10_u128.pow(9)) / time_passed.as_nanos(),
+            (self.num_nodes_searched as u128 * 10_u128.pow(9)) / time_elapsed.as_nanos(),
             colorize("time", style),
-            time_passed.as_secs_f32(),
+            time_elapsed.as_secs_f32(),
             colorize("pv", style),
             self.get_pv_string(),
         );
@@ -487,14 +488,21 @@ impl Engine {
             if FOLLOW_PV {
                 self.move_sorter.follow_pv();
             }
+            let prev_score = score;
+            score = self.search(current_depth, alpha, beta, print_info);
+            let time_elapsed = self.timer.elapsed();
+            if print_info {
+                self.print_search_info(current_depth, self.board.score_flipped(score), time_elapsed);
+            }
             if self.timer.stop_search() {
+                if score == -INFINITY {
+                    score = prev_score;
+                }
                 break;
             }
-            score = self.search(current_depth, alpha, beta, score, print_info);
-            let time_passed = self.timer.elapsed();
             if score <= alpha || score >= beta {
                 if print_info {
-                    self.print_warning_message(current_depth);
+                    self.print_warning_message(current_depth, alpha, beta);
                 }
                 alpha = -INFINITY;
                 beta = INFINITY;
@@ -502,9 +510,6 @@ impl Engine {
             }
             alpha = score - ASPIRATION_WINDOW_CUTOFF;
             beta = score + ASPIRATION_WINDOW_CUTOFF;
-            if print_info {
-                self.print_search_info(current_depth, self.board.score_flipped(score), time_passed);
-            }
             if current_depth == Depth::MAX || command == GoCommand::Depth(current_depth) {
                 break;
             }

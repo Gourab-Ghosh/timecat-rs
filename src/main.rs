@@ -164,7 +164,10 @@ fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit
     if let GoCommand::Depth(depth) = go_command {
         println_info("Depth Searched", format!("{}", depth));
     } else if let GoCommand::Time(time) = go_command {
-        println_info("Time Searched Per Move", format!("{:.3}", time.as_secs_f32()));
+        println_info(
+            "Time Searched Per Move",
+            format!("{:.3}", time.as_secs_f32()),
+        );
     }
     println_info(
         "Time taken per move",
@@ -235,7 +238,12 @@ fn test() {
     // // engine.board.set_fen("8/8/8/8/1K3k2/8/8/2r5 b - - 9 79"); // endgame improvement 4
     // // engine.board.set_fen("8/1K6/8/6R1/8/3k4/8/8 b - - 0 62"); // endgame improvement 4
     // // self_play(&mut engine, 16, false, Some(100));
-    // self_play(&mut engine, GoCommand::Time(Duration::from_secs(3)), true, None);
+    // self_play(
+    //     &mut engine,
+    //     GoCommand::Time(Duration::from_secs(3)),
+    //     true,
+    //     None,
+    // );
     // // self_play(&mut engine, GoCommand::Depth(10), true, None);
 
     // parse_command(&mut Engine::default(), "go perft 7");
@@ -248,7 +256,8 @@ fn test() {
     // engine.board.set_fen("4k2r/Q7/3b4/Q7/8/2N5/5PPP/5RK1 b - - 0 1"); // test draw by repetition
     // engine.board.set_fen(time_consuming_fens[7]);
     // engine.board.set_fen(could_have_probably_played_better_move[2]);
-    engine.board.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54"); // incpmplete pv line in 3 secs in my pc
+    // engine.board.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54"); // incomplete pv line in 3 secs in my pc
+    engine.board.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47"); // weird results in 3 secs in my pc
     parse_command(&mut engine, "go time 3000");
     // parse_command(&mut engine, "go depth 12");
 

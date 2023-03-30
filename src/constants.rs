@@ -240,13 +240,15 @@ pub mod print_style {
 }
 
 pub mod engine_constants {
+    use std::time::Duration;
+
     use crate::utils::common_utils::evaluate_piece;
     use chess::Piece::*;
 
     use super::types::*;
     pub const MAX_PLY: usize = 255;
     pub const INFINITY: Score = 30_000;
-    pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
+    pub const DRAW_SCORE: Score = PAWN_VALUE / 4;
     pub const CHECKMATE_SCORE: Score = 25_000;
     pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - MAX_PLY as Score - 1;
     pub const NUM_KILLER_MOVES: usize = 3;
@@ -268,7 +270,7 @@ pub mod engine_constants {
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
 
     pub const FOLLOW_PV: bool = true;
-    pub const PRINT_MOVE_INFO_TIME_THRESHOLD: f32 = 1.0;
+    pub const PRINT_MOVE_INFO_DURATION_THRESHOLD: Duration = Duration::from_millis(1000);
 
     pub const INITIAL_MATERIAL_SCORE_ABS: Score = 16 * PAWN_VALUE
         + 4 * (evaluate_piece(Knight) + evaluate_piece(Bishop) + evaluate_piece(Rook))

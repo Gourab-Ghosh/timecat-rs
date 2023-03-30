@@ -88,6 +88,12 @@ pub mod string_utils {
     }
 
     pub fn score_to_string(score: Score) -> String {
+        if score == INFINITY {
+            return "INFINITY".to_string();
+        }
+        if score == -INFINITY {
+            return "-INFINITY".to_string();
+        }
         if is_checkmate(score) {
             let mut mate_string = String::from(if score.is_positive() { "M" } else { "-M" });
             let mate_distance = (CHECKMATE_SCORE - score.abs() + 1) / 2;
