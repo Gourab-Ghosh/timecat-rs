@@ -400,7 +400,10 @@ impl Engine {
     }
 
     fn get_pv(&self, ply: Ply) -> Vec<Move> {
-        self.pv_table[ply][0..self.pv_length[ply]].iter().map(|option_move| option_move.unwrap_or_default()).collect_vec()
+        self.pv_table[ply][0..self.pv_length[ply]]
+            .iter()
+            .map(|option_move| option_move.unwrap_or_default())
+            .collect_vec()
     }
 
     fn get_pv_as_uci(&self, ply: Ply) -> String {
@@ -492,7 +495,11 @@ impl Engine {
             score = self.search(current_depth, alpha, beta, print_info);
             let time_elapsed = self.timer.elapsed();
             if print_info {
-                self.print_search_info(current_depth, self.board.score_flipped(score), time_elapsed);
+                self.print_search_info(
+                    current_depth,
+                    self.board.score_flipped(score),
+                    time_elapsed,
+                );
             }
             if self.timer.stop_search() {
                 if score == -INFINITY {
