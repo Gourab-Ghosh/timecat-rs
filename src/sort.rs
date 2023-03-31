@@ -171,13 +171,13 @@ impl MoveSorter {
         best_move: Option<Move>,
         pv_move: Option<Move>,
     ) -> MoveWeight {
+        // best move
+        if best_move == Some(_move) {
+            return 1294000;
+        }
         // pv move
         if self.score_pv && pv_move == Some(_move) {
             self.score_pv = false;
-            return 1294000;
-        }
-        // best move
-        if best_move == Some(_move) {
             return 1293000;
         }
         let source = _move.get_source();

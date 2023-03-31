@@ -238,8 +238,8 @@ fn test() {
     // engine.board.set_fen("8/8/8/8/1K3k2/8/8/2r5 b - - 9 79"); // endgame improvement 4
     // engine.board.set_fen("8/1K6/8/6R1/8/3k4/8/8 b - - 0 62"); // endgame improvement 4
     // self_play(&mut engine, 16, false, Some(100));
-    self_play(&mut engine, GoCommand::Time(Duration::from_secs(5)), true, None);
-    // self_play(&mut engine, GoCommand::Depth(10), true, None);
+    self_play(&mut engine, GoCommand::Time(Duration::from_secs(3)), true, None);
+    // self_play(&mut engine, GoCommand::Depth(13), true, None);
 
     // parse_command(&mut Engine::default(), "go perft 7");
 
@@ -252,9 +252,9 @@ fn test() {
     // // engine.board.set_fen(time_consuming_fens[7]);
     // // engine.board.set_fen(could_have_probably_played_better_move[2]);
     // // engine.board.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54"); // incomplete pv line in 3 secs in my pc
-    // engine.board.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47"); // weird results in 3 secs in my pc
-    // parse_command(&mut engine, "go time 3000");
-    // // parse_command(&mut engine, "go depth 12");
+    // // engine.board.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47"); // weird results in 3 secs in my pc
+    // // parse_command(&mut engine, "go time 3000");
+    // parse_command(&mut engine, "go depth 14");
 
     // let mut board = Board::new();
     // println!("\n{board}");

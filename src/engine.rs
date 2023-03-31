@@ -243,24 +243,38 @@ impl Engine {
         if not_in_check {
             // static evaluation
             let static_evaluation = self.board.evaluate_flipped();
+
             if depth < 3 && !is_pv_node && beta.abs_diff(1) as Score > -INFINITY + PAWN_VALUE {
-                let eval_margin = 120 * depth as Score;
+                let eval_margin = (6 * PAWN_VALUE * depth as Score) / 5;
                 if static_evaluation - eval_margin >= beta {
                     return static_evaluation - eval_margin;
                 }
             }
+
+            // if depth <= 8 && !is_pv_node && !is_checkmate(beta) {
+            //     let eval_margin = (6 * PAWN_VALUE * depth as Score) / 5;
+            //     if static_evaluation - eval_margin >= beta {
+            //         return static_evaluation - eval_margin;
+            //     }
+            // }
+
             // null move pruning
-            let r =
-                NULL_MOVE_MIN_REDUCTION + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
-            if depth > r {
-                self.push(None);
-                let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1);
-                self.pop();
-                if self.timer.stop_search() {
-                    return 0;
-                }
-                if score >= beta {
-                    return beta;
+            if depth >= NULL_MOVE_MIN_DEPTH
+                && self.board.has_non_pawn_material()
+                && static_evaluation >= beta
+            {
+                let r = NULL_MOVE_MIN_REDUCTION
+                    + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
+                if depth > r {
+                    self.push(None);
+                    let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1);
+                    self.pop();
+                    if self.timer.stop_search() {
+                        return 0;
+                    }
+                    if score >= beta {
+                        return beta;
+                    }
                 }
             }
             // razoring
@@ -292,9 +306,10 @@ impl Engine {
         for (move_index, weighted_move) in weighted_moves.enumerate() {
             let _move = weighted_move._move;
             let not_capture_move = !self.board.is_capture(_move);
-            let safe_to_apply_lmr =
-                not_capture_move && not_in_check && !is_pv_node && self.can_apply_lmr(_move);
+            let mut safe_to_apply_lmr =
+                not_capture_move && not_in_check && self.can_apply_lmr(_move);
             self.push(Some(_move));
+            safe_to_apply_lmr = safe_to_apply_lmr && !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha);
@@ -305,7 +320,11 @@ impl Engine {
                     && !DISABLE_LMR
                 {
                     let lmr_reduction = self.get_lmr_reduction(depth, move_index);
-                    score = -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha);
+                    if depth > lmr_reduction {
+                        score = -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha);
+                    } else {
+                        score = alpha + 1;
+                    }
                 } else {
                     score = alpha + 1;
                 }
@@ -452,8 +471,8 @@ impl Engine {
         let warning_message = format!(
             "Resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {} and beta {} with time {:.3} s",
             current_depth,
-            score_to_string(alpha),
-            score_to_string(beta),
+            score_to_string(self.board.score_flipped(alpha)),
+            score_to_string(self.board.score_flipped(beta)),
             self.timer.elapsed().as_secs_f32(),
         );
         println!("{}", colorize(warning_message, WARNING_MESSAGE_STYLE));
