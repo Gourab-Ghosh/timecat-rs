@@ -65,20 +65,13 @@ impl Engine {
         self.pv_length[self.ply] = self.pv_length[self.ply + 1];
     }
 
-    pub fn can_apply_lmr(&self, _move: Move) -> bool {
-        // return false;
-        if _move.get_promotion().is_some() {
-            return false;
+    fn get_lmr_reduction(depth: Depth, move_index: usize, is_pv_node: bool) -> Depth {
+        let mut reduction =
+            LMR_BASE_REDUCTION + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER;
+        if is_pv_node {
+            reduction = (2.0 * reduction) / 3.0
         }
-        if self.move_sorter.is_killer_move(_move, self.ply) {
-            return false;
-        }
-        true
-    }
-
-    fn get_lmr_reduction(&self, depth: Depth, move_index: usize) -> Depth {
-        (LMR_BASE_REDUCTION + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER)
-            .round() as Depth
+        reduction.round() as Depth
     }
 
     // fn calculate_check_extension(&self, depth: Depth) -> Depth {
@@ -306,10 +299,14 @@ impl Engine {
         for (move_index, weighted_move) in weighted_moves.enumerate() {
             let _move = weighted_move._move;
             let not_capture_move = !self.board.is_capture(_move);
-            let mut safe_to_apply_lmr =
-                not_capture_move && not_in_check && self.can_apply_lmr(_move);
+            let mut safe_to_apply_lmr = not_capture_move
+                && not_in_check
+                && depth >= 3
+                && _move.get_promotion().is_none()
+                && !self.move_sorter.is_killer_move(_move, self.ply)
+                && !self.board.is_passed_pawn(_move.get_source());
             self.push(Some(_move));
-            safe_to_apply_lmr = safe_to_apply_lmr && !self.board.is_check();
+            safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha);
@@ -319,7 +316,7 @@ impl Engine {
                     && safe_to_apply_lmr
                     && !DISABLE_LMR
                 {
-                    let lmr_reduction = self.get_lmr_reduction(depth, move_index);
+                    let lmr_reduction = Self::get_lmr_reduction(depth, move_index, is_pv_node);
                     if depth > lmr_reduction {
                         score = -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha);
                     } else {

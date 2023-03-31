@@ -24,6 +24,7 @@ panic = "abort"
 [dependencies]
 binread = { version = "2.2.0", features = ["const_generics"] }
 bytemuck = { version = "1.13.0", features = ["min_const_generics", "derive", "extern_crate_alloc"] }
+cached = "0.42.0"
 chess = "3.2.0"
 colored = "2.0.0"
 failure = "0.1.8"
