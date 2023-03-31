@@ -255,6 +255,7 @@ fn test() {
     // engine.board.set_fen(could_have_probably_played_better_move[2]);
     // engine.board.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54"); // incomplete pv line in 3 secs in my pc
     // engine.board.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47"); // weird results in 3 secs in my pc
+    // engine.board.set_fen("8/3k2P1/1p2Q3/3P4/4p3/2P1P3/6K1/q7 b - - 1 56"); // weird mating results in 3 secs in my pc
     // parse_command(&mut engine, "go time 3000");
     parse_command(&mut engine, "go depth 13");
 

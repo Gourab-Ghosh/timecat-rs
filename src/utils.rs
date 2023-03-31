@@ -185,13 +185,13 @@ pub mod classes {
 }
 
 pub mod score_utils {
-    use std::default;
+    use super::*;
 
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Copy, Debug)]
     enum Score {
         Cp(i16),
         Mate(i16),
-        Infinity(i16),
+        Infinity,
     }
 }
 

@@ -499,11 +499,10 @@ impl Engine {
         if let GoCommand::Time(duration) = command {
             self.timer.set_max_time(Some(duration));
         }
-        let mut current_depth = 1;
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
         let mut score = 0;
-        loop {
+        for current_depth in 1..=Depth::MAX {
             if FOLLOW_PV {
                 self.move_sorter.follow_pv();
             }
@@ -523,7 +522,7 @@ impl Engine {
                 }
                 break;
             }
-            if score <= alpha || score >= beta {
+            if score <= alpha || score >= beta || is_checkmate(score) {
                 if print_info {
                     self.print_warning_message(current_depth, alpha, beta);
                 }
@@ -533,10 +532,9 @@ impl Engine {
             }
             alpha = score - ASPIRATION_WINDOW_CUTOFF;
             beta = score + ASPIRATION_WINDOW_CUTOFF;
-            if current_depth == Depth::MAX || command == GoCommand::Depth(current_depth) {
+            if command == GoCommand::Depth(current_depth) {
                 break;
             }
-            current_depth += 1;
         }
         let best_move = self.get_best_move().unwrap();
         (best_move, self.board.score_flipped(score))
