@@ -238,14 +238,14 @@ impl Engine {
             let static_evaluation = self.board.evaluate_flipped();
 
             if depth < 3 && !is_pv_node && beta.abs_diff(1) as Score > -INFINITY + PAWN_VALUE {
-                let eval_margin = (6 * PAWN_VALUE * depth as Score) / 5;
+                let eval_margin = ((6 * PAWN_VALUE) / 5) * depth as Score;
                 if static_evaluation - eval_margin >= beta {
                     return static_evaluation - eval_margin;
                 }
             }
 
             // if depth <= 8 && !is_pv_node && !is_checkmate(beta) {
-            //     let eval_margin = (6 * PAWN_VALUE * depth as Score) / 5;
+            //     let eval_margin = ((6 * PAWN_VALUE) / 5) * depth as Score;
             //     if static_evaluation - eval_margin >= beta {
             //         return static_evaluation - eval_margin;
             //     }
@@ -502,7 +502,8 @@ impl Engine {
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
         let mut score = 0;
-        for current_depth in 1..=Depth::MAX {
+        let mut current_depth = 1;
+        while current_depth < Depth::MAX {
             if FOLLOW_PV {
                 self.move_sorter.follow_pv();
             }
@@ -522,7 +523,7 @@ impl Engine {
                 }
                 break;
             }
-            if score <= alpha || score >= beta || is_checkmate(score) {
+            if score <= alpha || score >= beta {
                 if print_info {
                     self.print_warning_message(current_depth, alpha, beta);
                 }
@@ -535,6 +536,7 @@ impl Engine {
             if command == GoCommand::Depth(current_depth) {
                 break;
             }
+            current_depth += 1;
         }
         let best_move = self.get_best_move().unwrap();
         (best_move, self.board.score_flipped(score))

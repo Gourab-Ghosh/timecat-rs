@@ -5,7 +5,8 @@ pub mod common_utils {
 
     #[inline(always)]
     pub fn is_checkmate(score: Score) -> bool {
-        score.abs() > CHECKMATE_THRESHOLD
+        let abs_score = score.abs();
+        abs_score > CHECKMATE_THRESHOLD && abs_score <= CHECKMATE_SCORE
     }
 
     #[inline(always)]

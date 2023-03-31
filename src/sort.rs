@@ -111,7 +111,7 @@ impl MoveSorter {
     }
 
     pub fn add_history_move(&mut self, history_move: Move, board: &Board, depth: Depth) {
-        let depth = (depth as MoveWeight).pow(2);
+        let depth = (depth as MoveWeight).pow(3);
         let src = history_move.get_source();
         let dest = history_move.get_dest();
         self.history_move_scores[board.piece_at(src).unwrap().to_index()]
