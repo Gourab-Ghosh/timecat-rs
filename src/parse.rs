@@ -30,6 +30,9 @@ pub enum ParserError {
     #[fail(display = "Move Stack is enpty, pop not possible! Try again!")]
     EmptyStack,
 
+    #[fail(display = "Best move not found in fen {}! Try again!", fen)]
+    BestMoveNotFound { fen: String },
+
     #[fail(display = "{}", err_msg)]
     CustomError { err_msg: String },
 }
@@ -131,10 +134,12 @@ impl Go {
         position_count
     }
 
-    fn go_command(engine: &mut Engine, go_command: GoCommand) -> usize {
+    fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<(), ParserError> {
         println!("{}\n", engine.board);
         let clock = Instant::now();
-        let (best_move, score) = engine.go(go_command, true);
+        let (Some(best_move), score) = engine.go(go_command, true) else {
+            return Err(BestMoveNotFound { fen: engine.board.get_fen() });
+        };
         let elapsed_time = clock.elapsed();
         let position_count = engine.get_num_nodes_searched();
         let nps = format!(
@@ -148,7 +153,7 @@ impl Go {
         println_info("Time", format!("{:.3} s", elapsed_time.as_secs_f32()));
         println_info("Speed", nps);
         println_info("Best Move", engine.board.san(best_move).unwrap());
-        position_count
+        Ok(())
     }
 
     pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
@@ -163,12 +168,10 @@ impl Go {
             return Ok(());
         } else if second_command == "depth" {
             let depth = depth_str.parse()?;
-            Self::go_command(engine, GoCommand::Depth(depth));
-            return Ok(());
+            return Self::go_command(engine, GoCommand::Depth(depth));
         } else if second_command == "time" {
             let time = depth_str.parse()?;
-            Self::go_command(engine, GoCommand::Time(Duration::from_millis(time)));
-            return Ok(());
+            return Self::go_command(engine, GoCommand::Time(Duration::from_millis(time)));
         }
         Err(UnknownCommand)
     }

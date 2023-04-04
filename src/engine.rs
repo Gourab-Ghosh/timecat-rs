@@ -494,7 +494,7 @@ impl Engine {
         );
     }
 
-    pub fn go(&mut self, command: GoCommand, print_info: bool) -> (Move, Score) {
+    pub fn go(&mut self, command: GoCommand, print_info: bool) -> (Option<Move>, Score) {
         self.reset_variables();
         if let GoCommand::Time(duration) = command {
             self.timer.set_max_time(Some(duration));
@@ -538,8 +538,7 @@ impl Engine {
             }
             current_depth += 1;
         }
-        let best_move = self.get_best_move().unwrap();
-        (best_move, self.board.score_flipped(score))
+        (self.get_best_move(), self.board.score_flipped(score))
     }
 }
 

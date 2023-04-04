@@ -90,7 +90,7 @@ fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit
         if print {
             println!();
         }
-        let (best_move, score) = engine.go(go_command, print);
+        let (Some(best_move), score) = engine.go(go_command, print) else {panic!("No moves found")};
         let time_elapsed = clock.elapsed();
         let best_move_san = engine.board.san(best_move).unwrap();
         let pv = engine.get_pv_string();
