@@ -468,8 +468,8 @@ impl Engine {
         let warning_message = format!(
             "Resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {} and beta {} with time {:.3} s",
             current_depth,
-            score_to_string(self.board.score_flipped(alpha)),
-            score_to_string(self.board.score_flipped(beta)),
+            score_to_string(alpha),
+            score_to_string(beta),
             self.timer.elapsed().as_secs_f32(),
         );
         println!("{}", colorize(warning_message, WARNING_MESSAGE_STYLE));
