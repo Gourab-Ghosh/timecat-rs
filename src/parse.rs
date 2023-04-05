@@ -30,7 +30,7 @@ pub enum ParserError {
     #[fail(display = "Move Stack is enpty, pop not possible! Try again!")]
     EmptyStack,
 
-    #[fail(display = "Best move not found in fen {}! Try again!", fen)]
+    #[fail(display = "Best move not found in position {}! Try again!", fen)]
     BestMoveNotFound { fen: String },
 
     #[fail(display = "{}", err_msg)]
