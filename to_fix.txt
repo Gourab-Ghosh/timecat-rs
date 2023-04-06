@@ -1,0 +1,1295 @@
+https://www.chess.com/game/live/74562131811
+
+In [3]: browser.board.play_game()                                                                                                                                                                  
+Board flipped: True
+Started Playing...
++---+---+---+---+---+---+---+---+
+| r | n | b | q | k | b | n | r | 8
++---+---+---+---+---+---+---+---+
+| p | p | p | p | p | p | p | p | 7
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 4
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P | P | P | P | P | P | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N | B | Q | K | B | N | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+Transposition Key: 7D394EC8095ED75A
+Checkers:
+Current Evaluation: 0.57
+Pushed move: b2b3
++---+---+---+---+---+---+---+---+
+| r | n | b | q | k | b | n | r | 8
++---+---+---+---+---+---+---+---+
+| p | p | p | p | p | p | p | p | 7
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   |   |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P | P | P | P | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N | B | Q | K | B | N | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: rnbqkbnr/pppppppp/8/8/8/1P6/P1PPPPPP/RNBQKBNR b KQkq - 0 1
+Transposition Key: 14FC341169F26FEA
+Checkers:
+Current Evaluation: -0.15
+
+info depth 1 score -0.7 nodes 24 nps 216362 time 0.000 pv e5
+info depth 2 score -0.51 nodes 83 nps 256575 time 0.000 pv e5 c4
+info depth 3 score -0.45 nodes 706 nps 351258 time 0.002 pv e5 Bb2 Nc6
+info depth 4 score -0.23 nodes 1610 nps 333524 time 0.005 pv Nf6 Bb2 d5 Nf3
+info depth 5 score -0.34 nodes 8307 nps 347781 time 0.024 pv d5 Bb2 c5 e3 Nf6
+info depth 6 score -0.26 nodes 18261 nps 328305 time 0.056 pv e5 Bb2 Nc6 c4 d5 cxd5 Qxd5
+info depth 7 score -0.3 nodes 45442 nps 337892 time 0.134 pv d5 Bb2 c5 Nf3 Nc6 e3 Nf6
+info depth 8 score -0.39 nodes 105303 nps 358674 time 0.294 pv e5 c4 Nf6 Bb2 Nc6 Nf3 e4 Nd4
+info depth 9 score -0.42 nodes 169246 nps 355798 time 0.476 pv e5 c4 Nf6 Bb2 Nc6 a3 d5 cxd5 Qxd5
+info depth 10 score -0.03 nodes 352927 nps 352913 time 1.000 pv e5 c4 Nf6 Bb2 Nc6 e3 d5 cxd5 Nxd5 a3
+
+Score: -0.03
+PV Line: e5 c4 Nf6 Bb2 Nc6 e3 d5 cxd5 Nxd5 a3
+Position Count: 352927
+Time: 1.000 s
+Speed: 352880 Nodes/sec
+Best Move: e5
+Pushed move: e7e5
+Pushed move: c1b2
++---+---+---+---+---+---+---+---+
+| r | n | b | q | k | b | n | r | 8
++---+---+---+---+---+---+---+---+
+| p | p | p | p |   | p | p | p | 7
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   | p |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   |   |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P | B | P | P | P | P | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   | Q | K | B | N | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: rnbqkbnr/pppp1ppp/8/4p3/8/1P6/PBPPPPPP/RN1QKBNR b KQkq - 1 2
+Transposition Key: B1B4DFA85E59D913
+Checkers:
+Current Evaluation: -0.6
+
+info depth 1 score -0.45 nodes 43 nps 210256 time 0.000 pv Nc6
+info depth 2 score 0.05 nodes 123 nps 234724 time 0.001 pv Nc6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha -0.05 and beta 0.95 with time 0.001 s
+info depth 2 score 0.15 nodes 261 nps 262519 time 0.001 pv d6 c4
+info depth 3 score -0.26 nodes 834 nps 310765 time 0.003 pv Nc6 c4 d5 cxd5 Qxd5
+info depth 4 score -0.26 nodes 1871 nps 348151 time 0.005 pv Nc6 c4 d5 cxd5 Qxd5
+info depth 5 score -0.26 nodes 5560 nps 369901 time 0.015 pv Nc6 c4 d5 cxd5 Qxd5
+info depth 6 score -0.02 nodes 11677 nps 312414 time 0.037 pv Nc6 c4 d5 cxd5 Qxd5 e3
+info depth 7 score -0.42 nodes 28533 nps 323331 time 0.088 pv Nc6 c4 Nf6 a3 d5 cxd5 Qxd5
+info depth 8 score -0.03 nodes 67724 nps 333051 time 0.203 pv Nc6 c4 Nf6 e3 d5 cxd5 Nxd5 a3
+info depth 9 score -0.36 nodes 108499 nps 343636 time 0.316 pv Nc6 c4 Nf6 e3 d5 cxd5 Nxd5 Nf3 Bd6
+info depth 10 score -0.1 nodes 244630 nps 368599 time 0.664 pv Nc6 c4 Nf6 e3 d5 cxd5 Nxd5 a3 Be6 Nf3
+info depth 11 score -0.19 nodes 374932 nps 374931 time 1.000 pv Nc6 c4 Nf6 e3 d5 cxd5 Nxd5 a3 Be6 Nf3 Bd6
+
+Score: -0.19
+PV Line: Nc6 c4 Nf6 e3 d5 cxd5 Nxd5 a3 Be6 Nf3 Bd6
+Position Count: 374932
+Time: 1.000 s
+Speed: 374892 Nodes/sec
+Best Move: Nc6
+Pushed move: b8c6
+Pushed move: e2e3
++---+---+---+---+---+---+---+---+
+| r |   | b | q | k | b | n | r | 8
++---+---+---+---+---+---+---+---+
+| p | p | p | p |   | p | p | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | n |   |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   | p |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | P |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P | B | P | P |   | P | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   | Q | K | B | N | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: r1bqkbnr/pppp1ppp/2n5/4p3/8/1P2P3/PBPP1PPP/RN1QKBNR b KQkq - 0 3
+Transposition Key: A12CFF97B214DD36
+Checkers:
+Current Evaluation: -0.15
+
+info depth 1 score -0.91 nodes 35 nps 155675 time 0.000 pv d5
+info depth 2 score -0.74 nodes 148 nps 205580 time 0.001 pv d5 Bb5
+info depth 3 score -0.84 nodes 1087 nps 210518 time 0.005 pv d5 d4 exd4 exd4
+info depth 4 score -0.48 nodes 2910 nps 264833 time 0.011 pv d5 Bb5 Bd6 c4 dxc4
+info depth 5 score -0.64 nodes 9307 nps 225957 time 0.041 pv d5 d4 exd4 exd4 Bf5
+info depth 6 score -0.78 nodes 14593 nps 261507 time 0.056 pv d5 d4 exd4 exd4 Bd6 Nf3
+info depth 7 score -0.81 nodes 31893 nps 313759 time 0.102 pv d5 Bb5 Bd6 Nf3 e4 Nd4 Ne7
+info depth 8 score -0.69 nodes 70176 nps 306553 time 0.229 pv d5 Bb5 Bd6 Nf3 e4 Nd4 Bd7 Bxc6 bxc6
+info depth 9 score -0.49 nodes 161069 nps 333454 time 0.483 pv d5 Bb5 Bd6 Nf3 e4 Nd4 Bd7 d3 Nf6 Bxc6 bxc6
+info depth 10 score -0.52 nodes 357989 nps 357988 time 1.000 pv d5 Bb5 Bd6 Nf3 f6 c4 a6 Bxc6+ bxc6 Qc2 Ne7
+
+Score: -0.52
+PV Line: d5 Bb5 Bd6 Nf3 f6 c4 a6 Bxc6+ bxc6 Qc2 Ne7
+Position Count: 357989
+Time: 1.000 s
+Speed: 357950 Nodes/sec
+Best Move: d5
+Pushed move: d7d5
+Pushed move: f1b5
++---+---+---+---+---+---+---+---+
+| r |   | b | q | k | b | n | r | 8
++---+---+---+---+---+---+---+---+
+| p | p | p |   |   | p | p | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | n |   |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   | B |   | p | p |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | P |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P | B | P | P |   | P | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   | Q | K |   | N | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: r1bqkbnr/ppp2ppp/2n5/1B1pp3/8/1P2P3/PBPP1PPP/RN1QK1NR b KQkq - 1 4
+Transposition Key: D645976DDE28BDB3
+Checkers:
+Current Evaluation: -0.74
+
+info depth 1 score -0.93 nodes 46 nps 122642 time 0.000 pv Bd6
+info depth 2 score -0.48 nodes 318 nps 246395 time 0.001 pv Bd6 c4 dxc4
+info depth 3 score -0.94 nodes 894 nps 296318 time 0.003 pv Bd6 Nf3 a6
+info depth 4 score -0.62 nodes 2639 nps 336156 time 0.008 pv Bd6 Nf3 e4 Nd4
+info depth 5 score -0.81 nodes 5702 nps 342830 time 0.017 pv Bd6 Nf3 e4 Nd4 Ne7
+info depth 6 score -0.69 nodes 13264 nps 308193 time 0.043 pv Bd6 Nf3 e4 Nd4 Bd7 Bxc6 bxc6
+info depth 7 score -0.49 nodes 31315 nps 301661 time 0.104 pv Bd6 Nf3 e4 Nd4 Bd7 d3 Nf6 Bxc6 bxc6
+info depth 8 score -0.35 nodes 86973 nps 320824 time 0.271 pv Bd6 Nf3 f6 c4 a6 Ba4 Ne7 O-O
+info depth 9 score -0.03 nodes 233364 nps 358854 time 0.650 pv Bd6 Nf3 Qe7 c4 Nf6 Bxc6+ bxc6 c5 Bxc5 Bxe5
+info depth 10 score 0.04 nodes 367657 nps 367655 time 1.000 pv Bd6 Nf3 f6 c4 a6 Ba4 Ne7 Nc3 Be6 O-O dxc4 bxc4 Bxc4
+
+Score: 0.04
+PV Line: Bd6 Nf3 f6 c4 a6 Ba4 Ne7 Nc3 Be6 O-O dxc4 bxc4 Bxc4
+Position Count: 367657
+Time: 1.000 s
+Speed: 367619 Nodes/sec
+Best Move: Bd6
+Pushed move: f8d6
+Pushed move: f2f4
++---+---+---+---+---+---+---+---+
+| r |   | b | q | k |   | n | r | 8
++---+---+---+---+---+---+---+---+
+| p | p | p |   |   | p | p | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | n | b |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   | B |   | p | p |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   | P |   |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | P |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P | B | P | P |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   | Q | K |   | N | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: r1bqk1nr/ppp2ppp/2nb4/1B1pp3/5P2/1P2P3/PBPP2PP/RN1QK1NR b KQkq - 0 5
+Transposition Key: ED13E19E69C24AAC
+Checkers:
+Current Evaluation: -1.93
+
+info depth 1 score -2.44 nodes 43 nps 155156 time 0.000 pv Qh4+ g3
+info depth 2 score -1.94 nodes 222 nps 237997 time 0.001 pv Qh4+ g3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha 1.94 and beta 2.94 with time 0.001 s
+info depth 2 score -1.39 nodes 612 nps 269170 time 0.002 pv Qh4+ g3 Qe7 fxe5 Bxe5 Bxe5 Qxe5
+info depth 3 score -1.87 nodes 1356 nps 297357 time 0.005 pv exf4 Bxc6+ bxc6 Bxg7
+info depth 4 score -2.37 nodes 1504 nps 296235 time 0.005 pv exf4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha 1.37 and beta 2.37 with time 0.005 s
+info depth 4 score -2.63 nodes 2684 nps 316251 time 0.008 pv exf4 exf4 Qh4+ g3 Qe7+ Qe2
+info depth 5 score -2.34 nodes 5977 nps 348765 time 0.017 pv exf4 exf4 Qh4+ g3 Qh6 Qe2+ Ne7
+info depth 6 score -2.64 nodes 13553 nps 321539 time 0.042 pv exf4 exf4 Qe7+ Qe2 Bg4 Bxc6+ bxc6 Nf3
+info depth 7 score -2.84 nodes 32311 nps 325524 time 0.099 pv exf4 exf4 Ne7 Bxc6+ bxc6 Nf3 O-O O-O Bxf4
+info depth 8 score -2.84 nodes 58864 nps 350027 time 0.168 pv exf4 exf4 Ne7 Bxc6+ bxc6 Nf3 O-O O-O Bxf4
+info depth 9 score -3.01 nodes 128139 nps 361868 time 0.354 pv exf4 exf4 Ne7 Ne2 h5 O-O Bg4 Kh1 Nf5
+info depth 10 score -2.51 nodes 319368 nps 391731 time 0.815 pv exf4 exf4 Ne7 Ne2 h5 O-O Bg4 Kh1 Nf5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 10 having alpha 2.51 and beta 3.51 with time 0.815 s
+info depth 10 score INFINITY nodes 393404 nps 393403 time 1.000 pv exf4 exf4 Ne7 Ne2 h5 O-O Bg4 Kh1 Nf5
+
+Score: -2.51
+PV Line: exf4 exf4 Ne7 Ne2 h5 O-O Bg4 Kh1 Nf5
+Position Count: 393404
+Time: 1.000 s
+Speed: 393372 Nodes/sec
+Best Move: exf4
+Pushed move: e5f4
+Pushed move: b2g7
++---+---+---+---+---+---+---+---+
+| r |   | b | q | k |   | n | r | 8
++---+---+---+---+---+---+---+---+
+| p | p | p |   |   | p | B | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | n | b |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   | B |   | p |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   | p |   |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | P |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P | P |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   | Q | K |   | N | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: r1bqk1nr/ppp2pBp/2nb4/1B1p4/5p2/1P2P3/P1PP2PP/RN1QK1NR b KQkq - 0 6
+Transposition Key: 84220A656EF575D3
+Checkers:
+Current Evaluation: -1.28
+
+info depth 1 score -4.38 nodes 61 nps 188879 time 0.000 pv Qh4+ Kf1
+info depth 2 score -4.88 nodes 107 nps 201411 time 0.001 pv Qh4+
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha 3.88 and beta 4.88 with time 0.001 s
+info depth 2 score -5.67 nodes 266 nps 252633 time 0.001 pv Qh4+ Kf1 Bg4
+info depth 3 score -5.2 nodes 894 nps 313978 time 0.003 pv Qh4+ g3 fxg3 Nf3
+info depth 4 score -4.7 nodes 1763 nps 320346 time 0.006 pv Qh4+ g3 fxg3 Nf3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha 4.7 and beta 5.7 with time 0.006 s
+info depth 4 score -2.02 nodes 3394 nps 344610 time 0.010 pv Qh4+ Kf1 Bg4 Nf3 Bxf3 Qxf3
+info depth 5 score -2.52 nodes 4140 nps 347357 time 0.012 pv Qh4+
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha 1.52 and beta 2.52 with time 0.012 s
+info depth 5 score -4.3 nodes 6190 nps 346909 time 0.018 pv Qh4+ Kf1 fxe3 dxe3 Bg4 Qxd5
+info depth 6 score -4.8 nodes 7105 nps 299683 time 0.024 pv Qh4+
+Resetting alpha to -INFINITY and beta to INFINITY at depth 6 having alpha 3.8 and beta 4.8 with time 0.024 s
+info depth 6 score -2.63 nodes 13378 nps 283444 time 0.047 pv Qh4+ Kf1 fxe3 dxe3 Bg4 Nf3 Bxf3 Qxf3
+info depth 7 score -2.63 nodes 27211 nps 303124 time 0.090 pv Qh4+ Kf1 fxe3 dxe3 Bg4 Nf3 Bxf3 Qxf3
+info depth 8 score -2.13 nodes 56470 nps 310228 time 0.182 pv Qh4+ Kf1 fxe3 dxe3 Bg4 Nf3 Bxf3 Qxf3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha 2.13 and beta 3.13 with time 0.182 s
+info depth 8 score -1.5 nodes 113340 nps 337992 time 0.335 pv Qh4+ Kf1 fxe3 dxe3 Bg4 Nf3 Bxf3 Qxf3 a6 Bxh8 axb5 Qxd5
+info depth 9 score -1 nodes 192845 nps 357822 time 0.539 pv Qh4+ Kf1 fxe3 dxe3 Bg4 Nf3 Bxf3 Qxf3 a6 Bxh8 axb5 Qxd5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 9 having alpha 1 and beta 2 with time 0.539 s
+info depth 9 score 2.04 nodes 390412 nps 390411 time 1.000 pv Qh4+ Kf1 fxe3 dxe3 Bf5 Bxc6+ bxc6 Bxh8 f6 Nf3 Qh5
+
+Score: 2.04
+PV Line: Qh4+ Kf1 fxe3 dxe3 Bf5 Bxc6+ bxc6 Bxh8 f6 Nf3 Qh5
+Position Count: 390412
+Time: 1.000 s
+Speed: 390368 Nodes/sec
+Best Move: Qh4+
+Pushed move: d8h4
+Pushed move: e1f1
++---+---+---+---+---+---+---+---+
+| r |   | b |   | k |   | n | r | 8
++---+---+---+---+---+---+---+---+
+| p | p | p |   |   | p | B | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | n | b |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   | B |   | p |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   | p |   | q | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | P |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P | P |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   | Q |   | K | N | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: r1b1k1nr/ppp2pBp/2nb4/1B1p4/5p1q/1P2P3/P1PP2PP/RN1Q1KNR b kq - 2 7
+Transposition Key: E78733DD32698A15
+Checkers:
+Current Evaluation: -4.38
+
+info depth 1 score -5.67 nodes 141 nps 238320 time 0.001 pv Bg4
+info depth 2 score -5.66 nodes 367 nps 118360 time 0.003 pv Bg4 Bxc6+ bxc6 exf4
+info depth 3 score -5.16 nodes 1035 nps 202847 time 0.005 pv Bg4 Bxc6+ bxc6 exf4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 3 having alpha 5.16 and beta 6.16 with time 0.005 s
+info depth 3 score -2.02 nodes 1874 nps 241760 time 0.008 pv Bg4 Nf3 Bxf3 Qxf3
+info depth 4 score -2.52 nodes 2495 nps 265104 time 0.009 pv fxe3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha 1.52 and beta 2.52 with time 0.009 s
+info depth 4 score -4.3 nodes 4287 nps 303537 time 0.014 pv fxe3 dxe3 Bg4 Qxd5
+info depth 5 score -4.8 nodes 4604 nps 305347 time 0.015 pv fxe3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha 3.8 and beta 4.8 with time 0.015 s
+info depth 5 score -2.63 nodes 8856 nps 312279 time 0.028 pv fxe3 dxe3 Bg4 Nf3 Bxf3 Qxf3
+info depth 6 score -2.63 nodes 17817 nps 301229 time 0.059 pv fxe3 dxe3 Bg4 Nf3 Bxf3 Qxf3
+info depth 7 score -2.13 nodes 38806 nps 316285 time 0.123 pv fxe3 dxe3 Bg4 Nf3 Bxf3 Qxf3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha 2.13 and beta 3.13 with time 0.123 s
+info depth 7 score -1.5 nodes 64193 nps 320772 time 0.200 pv fxe3 dxe3 Bg4 Nf3 Bxf3 Qxf3 a6 Bxh8 axb5 Qxd5
+info depth 8 score -1 nodes 123850 nps 341149 time 0.363 pv fxe3 dxe3 Bg4 Nf3 Bxf3 Qxf3 a6 Bxh8 axb5 Qxd5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha 1 and beta 2 with time 0.363 s
+info depth 8 score 1.21 nodes 256834 nps 374255 time 0.686 pv fxe3 dxe3 Bg4 Bxc6+ bxc6 Qe1 Qh5 Bxh8 O-O-O
+info depth 9 score 1.71 nodes 389831 nps 389830 time 1.000 pv fxe3 dxe3 Bg4 Bxc6+ bxc6 Qe1 Qh5 Bxh8 O-O-O
+
+Score: 1.71
+PV Line: fxe3 dxe3 Bg4 Bxc6+ bxc6 Qe1 Qh5 Bxh8 O-O-O
+Position Count: 389831
+Time: 1.000 s
+Speed: 389800 Nodes/sec
+Best Move: fxe3
+Pushed move: f4e3
+Pushed move: d1e1
++---+---+---+---+---+---+---+---+
+| r |   | b |   | k |   | n | r | 8
++---+---+---+---+---+---+---+---+
+| p | p | p |   |   | p | B | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | n | b |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   | B |   | p |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   | q | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | p |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P | P |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   |   | Q | K | N | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: r1b1k1nr/ppp2pBp/2nb4/1B1p4/7q/1P2p3/P1PP2PP/RN2QKNR b kq - 1 8
+Transposition Key: 2937F1CE51B9EEBA
+Checkers:
+Current Evaluation: -9.88
+
+info depth 1 score -7.4 nodes 162 nps 236683 time 0.001 pv Qf4+ Nf3
+info depth 2 score -6.9 nodes 506 nps 248088 time 0.002 pv Qf4+ Nf3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha 6.9 and beta 7.9 with time 0.002 s
+info depth 2 score -5.04 nodes 984 nps 265712 time 0.004 pv Qxe1+ Kxe1 exd2+ Nxd2
+info depth 3 score -4.54 nodes 2429 nps 310306 time 0.008 pv Qxe1+ Kxe1 exd2+ Nxd2
+Resetting alpha to -INFINITY and beta to INFINITY at depth 3 having alpha 4.54 and beta 5.54 with time 0.008 s
+info depth 3 score -2.27 nodes 4267 nps 317489 time 0.013 pv Qxe1+ Kxe1 exd2+ Nxd2 a6 Bxh8 axb5
+info depth 4 score -2.13 nodes 9194 nps 247348 time 0.037 pv Qf4+ Nf3 Bh3 Qxe3+ Qxe3 dxe3
+info depth 5 score -1.63 nodes 16911 nps 271701 time 0.062 pv Qf4+ Nf3 Bh3 Qxe3+ Qxe3 dxe3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha 1.63 and beta 2.63 with time 0.062 s
+info depth 5 score 1.73 nodes 30497 nps 278737 time 0.109 pv Qf4+ Nf3 Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3
+info depth 6 score 1.73 nodes 55170 nps 290813 time 0.190 pv Qf4+ Nf3 Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3
+info depth 7 score 1.97 nodes 122554 nps 319692 time 0.383 pv Qf4+ Nf3 Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3 Bh5
+info depth 8 score 2.47 nodes 288395 nps 361467 time 0.798 pv Qf4+ Nf3 Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3 Bh5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha -2.47 and beta -1.47 with time 0.798 s
+info depth 8 score 2.77 nodes 366512 nps 366511 time 1.000 pv Qf4+ Nf3 Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3 Be4 Nc3
+
+Score: 2.77
+PV Line: Qf4+ Nf3 Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3 Be4 Nc3
+Position Count: 366512
+Time: 1.000 s
+Speed: 366478 Nodes/sec
+Best Move: Qf4+
+Pushed move: h4f4
+Pushed move: g1f3
++---+---+---+---+---+---+---+---+
+| r |   | b |   | k |   | n | r | 8
++---+---+---+---+---+---+---+---+
+| p | p | p |   |   | p | B | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | n | b |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   | B |   | p |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   | q |   |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | p | N |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P | P |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   |   | Q | K |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: r1b1k1nr/ppp2pBp/2nb4/1B1p4/5q2/1P2pN2/P1PP2PP/RN2QK1R b kq - 3 9
+Transposition Key: C44B424688032700
+Checkers:
+Current Evaluation: -7.4
+
+info depth 1 score -3.88 nodes 163 nps 177237 time 0.001 pv a6 Qxe3+ Qxe3 dxe3
+info depth 2 score -3.38 nodes 408 nps 211247 time 0.002 pv a6 Qxe3+ Qxe3 dxe3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha 3.38 and beta 4.38 with time 0.002 s
+info depth 2 score -2.13 nodes 814 nps 158837 time 0.005 pv Bh3 Qxe3+ Qxe3 dxe3
+info depth 3 score -2.13 nodes 1919 nps 226495 time 0.008 pv Bh3 Qxe3+ Qxe3 dxe3
+info depth 4 score -1.63 nodes 4607 nps 284987 time 0.016 pv Bh3 Qxe3+ Qxe3 dxe3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha 1.63 and beta 2.63 with time 0.016 s
+info depth 4 score 1.73 nodes 12687 nps 284816 time 0.045 pv Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3
+info depth 5 score 1.23 nodes 18738 nps 290967 time 0.064 pv Bh3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha -2.23 and beta -1.23 with time 0.064 s
+info depth 5 score 1.73 nodes 28281 nps 293493 time 0.096 pv Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3
+info depth 6 score 1.97 nodes 49622 nps 300734 time 0.165 pv Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3 Bh5
+info depth 7 score 2.47 nodes 105713 nps 320038 time 0.330 pv Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3 Bh5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha -2.47 and beta -1.47 with time 0.330 s
+info depth 7 score 2.77 nodes 159554 nps 333759 time 0.478 pv Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3 Be4 Nc3
+info depth 8 score 2.96 nodes 296824 nps 362412 time 0.819 pv Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3 Bh5 Bxc6+ bxc6 Bd4
+info depth 9 score 3.46 nodes 369446 nps 369445 time 1.000 pv Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3 Bh5 Bxc6+ bxc6 Bd4
+
+Score: 3.46
+PV Line: Bg4 Bxh8 Bxf3 Qxe3+ Qxe3 dxe3 Bh5 Bxc6+ bxc6 Bd4
+Position Count: 369446
+Time: 1.000 s
+Speed: 369410 Nodes/sec
+Best Move: Bg4
+Pushed move: c8g4
+Pushed move: e1e3
++---+---+---+---+---+---+---+---+
+| r |   |   |   | k |   | n | r | 8
++---+---+---+---+---+---+---+---+
+| p | p | p |   |   | p | B | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | n | b |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   | B |   | p |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   | q | b |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | Q | N |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P | P |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   |   |   | K |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: r3k1nr/ppp2pBp/2nb4/1B1p4/5qb1/1P2QN2/P1PP2PP/RN3K1R b kq - 0 10
+Transposition Key: EA50B7F4A69C0AFC
+Checkers: E3
+Current Evaluation: -3.86
+
+info depth 1 score -3.26 nodes 17 nps 112328 time 0.000 pv Qxe3 dxe3
+info depth 2 score -3.26 nodes 88 nps 203425 time 0.000 pv Qxe3 dxe3
+info depth 3 score -2.76 nodes 209 nps 243842 time 0.001 pv Qxe3 dxe3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 3 having alpha 2.76 and beta 3.76 with time 0.001 s
+info depth 3 score -0.73 nodes 421 nps 277941 time 0.002 pv Qxe3 dxe3 a6 Bxh8 axb5
+info depth 4 score -0.23 nodes 700 nps 230866 time 0.003 pv Qxe3 dxe3 a6 Bxh8 axb5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha 0.23 and beta 1.23 with time 0.003 s
+info depth 4 score 1.73 nodes 1100 nps 265205 time 0.004 pv Qxe3 dxe3 Bxf3 Bxh8
+info depth 5 score 1.97 nodes 2348 nps 307367 time 0.008 pv Qxe3 dxe3 Bxf3 Bxh8 Bh5
+info depth 6 score 2.47 nodes 4960 nps 340566 time 0.015 pv Qxe3 dxe3 Bxf3 Bxh8 Bh5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 6 having alpha -2.47 and beta -1.47 with time 0.015 s
+info depth 6 score 2.77 nodes 7436 nps 314292 time 0.024 pv Qxe3 dxe3 Bxf3 Bxh8 Be4 Nc3
+info depth 7 score 2.96 nodes 13671 nps 316305 time 0.043 pv Qxe3 dxe3 Bxf3 Bxh8 Bh5 Bxc6+ bxc6 Bd4
+info depth 8 score 3.46 nodes 27258 nps 306549 time 0.089 pv Qxe3 dxe3 Bxf3 Bxh8 Bh5 Bxc6+ bxc6 Bd4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha -3.46 and beta -2.46 with time 0.089 s
+info depth 8 score 7.61 nodes 115478 nps 363375 time 0.318 pv Qe4 Bxh8 O-O-O Bxc6 bxc6 Nc3 Qg6 Bd4
+info depth 9 score 7.49 nodes 170054 nps 373179 time 0.456 pv Qe4 Bxh8 O-O-O Bxc6 bxc6 Nc3 Qg6 Bd4 c5 Bxc5 Bxc5 Qxc5
+info depth 10 score 7.99 nodes 280385 nps 391736 time 0.716 pv Qe4 Bxh8 O-O-O Bxc6 bxc6 Nc3 Qg6 Bd4 c5 Bxc5 Bxc5 Qxc5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 10 having alpha -7.99 and beta -6.99 with time 0.716 s
+info depth 10 score 8.79 nodes 403921 nps 403919 time 1.000 pv Qe4 Bxh8 O-O-O Bd3 Qb4 Nc3 h5 a3 Qa5 Re1
+
+Score: 8.79
+PV Line: Qe4 Bxh8 O-O-O Bd3 Qb4 Nc3 h5 a3 Qa5 Re1
+Position Count: 403921
+Time: 1.000 s
+Speed: 403881 Nodes/sec
+Best Move: Qe4
+Pushed move: f4e4
+Pushed move: g7h8
++---+---+---+---+---+---+---+---+
+| r |   |   |   | k |   | n | B | 8
++---+---+---+---+---+---+---+---+
+| p | p | p |   |   | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | n | b |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   | B |   | p |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   | q |   | b |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | Q | N |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P | P |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   |   |   | K |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: r3k1nB/ppp2p1p/2nb4/1B1p4/4q1b1/1P2QN2/P1PP2PP/RN3K1R b q - 0 11
+Transposition Key: 164BDC6929F545AA
+Checkers:
+Current Evaluation: 10.05
+
+info depth 1 score 6.85 nodes 57 nps 151481 time 0.000 pv O-O-O
+info depth 2 score 7.02 nodes 179 nps 198705 time 0.001 pv O-O-O Bxc6 bxc6 Qxe4 dxe4
+info depth 3 score 7.02 nodes 549 nps 270888 time 0.002 pv O-O-O Bxc6 bxc6 Qxe4 dxe4
+info depth 4 score 7.02 nodes 1194 nps 314141 time 0.004 pv O-O-O Bxc6 bxc6 Qxe4 dxe4
+info depth 5 score 7.23 nodes 5037 nps 356542 time 0.014 pv O-O-O Bxc6 bxc6 Bc3 Bxf3 Qxf3
+info depth 6 score 7.61 nodes 16008 nps 321329 time 0.050 pv O-O-O Bxc6 bxc6 Nc3 Qg6 Bd4
+info depth 7 score 8.11 nodes 55740 nps 352635 time 0.158 pv O-O-O Bxc6 bxc6 Nc3 Qg6 Bd4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha -8.11 and beta -7.11 with time 0.158 s
+info depth 7 score 8.9 nodes 104738 nps 345206 time 0.303 pv O-O-O Bd3 Qb4 Nc3 h5 Nxd5 Qa5
+info depth 8 score 8.4 nodes 107833 nps 346529 time 0.311 pv O-O-O
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha -9.4 and beta -8.4 with time 0.311 s
+info depth 8 score 8.79 nodes 287229 nps 393519 time 0.730 pv O-O-O Bd3 Qb4 Nc3 h5 a3 Qa5 Re1
+info depth 9 score 9.29 nodes 404947 nps 404946 time 1.000 pv O-O-O Bd3 Qb4 Nc3 h5 a3 Qa5 Re1
+
+Score: 9.29
+PV Line: O-O-O Bd3 Qb4 Nc3 h5 a3 Qa5 Re1
+Position Count: 404947
+Time: 1.000 s
+Speed: 404915 Nodes/sec
+Best Move: O-O-O
+Pushed move: e8c8
+Pushed move: b5c6
++---+---+---+---+---+---+---+---+
+|   |   | k | r |   |   | n | B | 8
++---+---+---+---+---+---+---+---+
+| p | p | p |   |   | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | B | b |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   | p |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   | q |   | b |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | Q | N |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P | P |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   |   |   | K |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2kr2nB/ppp2p1p/2Bb4/3p4/4q1b1/1P2QN2/P1PP2PP/RN3K1R b - - 0 12
+Transposition Key: B28034FF7DD3939B
+Checkers:
+Current Evaluation: 7.63
+
+info depth 1 score 7.02 nodes 88 nps 195773 time 0.000 pv bxc6 Qxe4 dxe4
+info depth 2 score 7.02 nodes 201 nps 223231 time 0.001 pv bxc6 Qxe4 dxe4
+info depth 3 score 7.23 nodes 773 nps 312596 time 0.002 pv bxc6 Bc3 Bxf3 Qxf3
+info depth 4 score 7.61 nodes 3463 nps 378286 time 0.009 pv bxc6 Nc3 Qg6 Bd4
+info depth 5 score 7.49 nodes 7660 nps 355528 time 0.022 pv bxc6 Nc3 Qg6 Bd4 c5 Bxc5 Bxc5 Qxc5
+info depth 6 score 7.49 nodes 17456 nps 331973 time 0.053 pv bxc6 Nc3 Qg6 Bd4 c5 Bxc5 Bxc5 Qxc5
+info depth 7 score 7.49 nodes 36051 nps 333863 time 0.108 pv bxc6 Nc3 Qg6 Bd4 c5 Bxc5 Bxc5 Qxc5
+info depth 8 score 7.99 nodes 91392 nps 374541 time 0.244 pv bxc6 Nc3 Qg6 Bd4 c5 Bxc5 Bxc5 Qxc5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha -7.99 and beta -6.99 with time 0.244 s
+info depth 8 score 8.41 nodes 153929 nps 371227 time 0.415 pv bxc6 Nc3 Qg6 Re1 Kb7 Bd4 c5 Bxc5 Bxc5 Qxc5
+info depth 9 score 8.41 nodes 285369 nps 386857 time 0.738 pv bxc6 Nc3 Qg6 Re1 Kb7 Bd4 c5 Bxc5 Bxc5 Qxc5
+info depth 10 score 8.54 nodes 386528 nps 386527 time 1.000 pv bxc6 Nc3 Qxc2 Bd4 c5 Bxc5 Bxc5 Qxc5 Bxf3 gxf3 Qxd2
+
+Score: 8.54
+PV Line: bxc6 Nc3 Qxc2 Bd4 c5 Bxc5 Bxc5 Qxc5 Bxf3 gxf3 Qxd2
+Position Count: 386528
+Time: 1.000 s
+Speed: 386440 Nodes/sec
+Best Move: bxc6
+Pushed move: b7c6
+Pushed move: e3e4
++---+---+---+---+---+---+---+---+
+|   |   | k | r |   |   | n | B | 8
++---+---+---+---+---+---+---+---+
+| p |   | p |   |   | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | p | b |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   | p |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   | Q |   | b |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   |   | N |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P | P |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   |   |   | K |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2kr2nB/p1p2p1p/2pb4/3p4/4Q1b1/1P3N2/P1PP2PP/RN3K1R b - - 0 13
+Transposition Key: 92FA2E0BFB0F698F
+Checkers:
+Current Evaluation: 15.95
+
+info depth 1 score 7.02 nodes 33 nps 152176 time 0.000 pv dxe4
+info depth 2 score 6.52 nodes 69 nps 178509 time 0.000 pv dxe4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha -7.52 and beta -6.52 with time 0.000 s
+info depth 2 score 5.98 nodes 218 nps 250630 time 0.001 pv dxe4 h3 exf3 hxg4
+info depth 3 score 6.48 nodes 395 nps 284235 time 0.001 pv dxe4 h3 exf3 hxg4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 3 having alpha -6.48 and beta -5.48 with time 0.001 s
+info depth 3 score 6.85 nodes 546 nps 289102 time 0.002 pv dxe4 Ne1 h5
+info depth 4 score 7.35 nodes 862 nps 305483 time 0.003 pv dxe4 Ne1 h5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha -7.35 and beta -6.35 with time 0.003 s
+info depth 4 score 7.86 nodes 1213 nps 313881 time 0.004 pv dxe4 Ne1 h5 Bb2
+info depth 5 score 8.36 nodes 2358 nps 352039 time 0.007 pv dxe4 Ne1 h5 Bb2
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha -8.36 and beta -7.36 with time 0.007 s
+info depth 5 score 9.37 nodes 4272 nps 379674 time 0.011 pv dxe4 Ne1 Nh6 Bb2 Bd1
+info depth 6 score 8.87 nodes 4539 nps 379629 time 0.012 pv dxe4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 6 having alpha -9.87 and beta -8.87 with time 0.012 s
+info depth 6 score 8.3 nodes 8286 nps 397683 time 0.021 pv dxe4 Ne5 Bh5 Nc3 e3 dxe3
+info depth 7 score 8.8 nodes 12532 nps 339071 time 0.037 pv dxe4 Ne5 Bh5 Nc3 e3 dxe3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha -8.8 and beta -7.8 with time 0.037 s
+info depth 7 score 8.27 nodes 15939 nps 348764 time 0.046 pv dxe4 Ne1 Nh6 Bb2 Bc5 b4 Nf5 bxc5
+info depth 8 score 8.29 nodes 24777 nps 355708 time 0.070 pv dxe4 Ne1 Nh6 Nc3 Rxh8 Nxe4 Be5 c3
+info depth 9 score 8.79 nodes 39754 nps 364055 time 0.109 pv dxe4 Ne1 Nh6 Nc3 Rxh8 Nxe4 Be5 c3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 9 having alpha -8.79 and beta -7.79 with time 0.109 s
+info depth 9 score 8.85 nodes 67843 nps 368130 time 0.184 pv dxe4 Ne5 Nh6 Nxg4 Nxg4 Bc3 Nxh2+ Rxh2 Bxh2 Na3
+info depth 10 score 8.35 nodes 80258 nps 371751 time 0.216 pv dxe4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 10 having alpha -9.35 and beta -8.35 with time 0.216 s
+info depth 10 score 9.07 nodes 108430 nps 364439 time 0.298 pv dxe4 Ne5 Bxe5 Bxe5 e3 Bc3 f5 dxe3 Rd1+ Be1 f4
+info depth 11 score 8.57 nodes 141937 nps 362766 time 0.391 pv dxe4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 11 having alpha -9.57 and beta -8.57 with time 0.391 s
+info depth 11 score 8.61 nodes 169248 nps 371143 time 0.456 pv dxe4 Ne5 Nh6 Nxg4 Nxg4 Nc3 Nxh2+ Kg1 e3 dxe3 Rxh8 Re1
+info depth 12 score 8.16 nodes 394541 nps 418264 time 0.943 pv dxe4 Ne5 Nh6 Nxg4 Nxg4 Nc3 Nxh2+ Kg1 e3 dxe3 Rxh8 Ne4 Ng4 Nxd6+
+info depth 13 score 8.66 nodes 417159 nps 417153 time 1.000 pv dxe4 Ne5 Nh6 Nxg4 Nxg4 Nc3 Nxh2+ Kg1 e3 dxe3 Rxh8 Ne4 Ng4 Nxd6+
+
+Score: 8.66
+PV Line: dxe4 Ne5 Nh6 Nxg4 Nxg4 Nc3 Nxh2+ Kg1 e3 dxe3 Rxh8 Ne4 Ng4 Nxd6+
+Position Count: 417159
+Time: 1.000 s
+Speed: 417003 Nodes/sec
+Best Move: dxe4
+Pushed move: d5e4
+Pushed move: f3g5
++---+---+---+---+---+---+---+---+
+|   |   | k | r |   |   | n | B | 8
++---+---+---+---+---+---+---+---+
+| p |   | p |   |   | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | p | b |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | N |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   | p |   | b |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   |   |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P | P |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   |   |   | K |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2kr2nB/p1p2p1p/2pb4/6N1/4p1b1/1P6/P1PP2PP/RN3K1R b - - 1 14
+Transposition Key: 7ADA7F44D135CAC0
+Checkers:
+Current Evaluation: 5.77
+
+info depth 1 score 6.22 nodes 76 nps 227906 time 0.000 pv Ne7 Nxe4 Rxh8
+info depth 2 score 6.72 nodes 189 nps 228924 time 0.001 pv Ne7 Nxe4 Rxh8
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha -6.72 and beta -5.72 with time 0.001 s
+info depth 2 score 6.83 nodes 302 nps 234848 time 0.001 pv Ne7 Nc3 Rxh8 Ngxe4
+info depth 3 score 6.92 nodes 1206 nps 352393 time 0.003 pv Ne7 Bc3 e3
+info depth 4 score 7.42 nodes 2617 nps 409352 time 0.006 pv Ne7 Bc3 e3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha -7.42 and beta -6.42 with time 0.006 s
+info depth 4 score 7.17 nodes 3344 nps 402127 time 0.008 pv e3 dxe3 Nh6 Nf3 Rxh8
+info depth 5 score 7.67 nodes 5342 nps 406719 time 0.013 pv e3 dxe3 Nh6 Nf3 Rxh8
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha -7.67 and beta -6.67 with time 0.013 s
+info depth 5 score 8.12 nodes 8205 nps 413393 time 0.020 pv e3 dxe3 h6 Nf3 Bxf3 gxf3
+info depth 6 score 8.12 nodes 14448 nps 374795 time 0.039 pv e3 dxe3 h6 Nf3 Bxf3 gxf3
+info depth 7 score 7.62 nodes 22743 nps 373121 time 0.061 pv e3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha -8.62 and beta -7.62 with time 0.061 s
+info depth 7 score 7.58 nodes 49214 nps 377048 time 0.131 pv e3 dxe3 Be7 Nc3 Bxg5 Bd4 Ne7
+info depth 8 score 7.23 nodes 99923 nps 396413 time 0.252 pv e3 Bc3 Bc5 b4 Bb6 Ke1 exd2+ Nxd2 Re8+ Kf1
+info depth 9 score 7.73 nodes 146194 nps 403931 time 0.362 pv e3 Bc3 Bc5 b4 Bb6 Ke1 exd2+ Nxd2 Re8+ Kf1
+Resetting alpha to -INFINITY and beta to INFINITY at depth 9 having alpha -7.73 and beta -6.73 with time 0.362 s
+info depth 9 score 7.69 nodes 209894 nps 413046 time 0.508 pv e3 Bc3 Bc5 b4 Bb6 Nf3 Bh5 a4 Bxf3 gxf3
+info depth 10 score 7.47 nodes 411422 nps 444039 time 0.927 pv e3 Bc3 Bc5 h3 Bh5 b4 Bb6 Ke1 exd2+ Nxd2 Re8+ Kf1
+info depth 11 score 7.97 nodes 440140 nps 440139 time 1.000 pv e3 Bc3 Bc5 h3 Bh5 b4 Bb6 Ke1 exd2+ Nxd2 Re8+ Kf1
+
+Score: 7.97
+PV Line: e3 Bc3 Bc5 h3 Bh5 b4 Bb6 Ke1 exd2+ Nxd2 Re8+ Kf1
+Position Count: 440140
+Time: 1.000 s
+Speed: 440096 Nodes/sec
+Best Move: e3
+Pushed move: e4e3
+Pushed move: d2e3
++---+---+---+---+---+---+---+---+
+|   |   | k | r |   |   | n | B | 8
++---+---+---+---+---+---+---+---+
+| p |   | p |   |   | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | p | b |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | N |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | b |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | P |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P |   |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   |   |   | K |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2kr2nB/p1p2p1p/2pb4/6N1/6b1/1P2P3/P1P3PP/RN3K1R b - - 0 15
+Transposition Key: 5581682D97C037E3
+Checkers:
+Current Evaluation: 6.9
+
+info depth 1 score 8.64 nodes 58 nps 247016 time 0.000 pv Nh6
+info depth 2 score 8.14 nodes 89 nps 242835 time 0.000 pv Nh6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha -9.14 and beta -8.14 with time 0.000 s
+info depth 2 score 7.17 nodes 178 nps 271354 time 0.001 pv Nh6 Nf3 Rxh8
+info depth 3 score 7.67 nodes 1218 nps 400111 time 0.003 pv Nh6 Nf3 Rxh8
+Resetting alpha to -INFINITY and beta to INFINITY at depth 3 having alpha -7.67 and beta -6.67 with time 0.003 s
+info depth 3 score 7.13 nodes 2709 nps 424450 time 0.006 pv Be7 Bd4 Bxg5
+info depth 4 score 7.16 nodes 4176 nps 432271 time 0.010 pv Be7 Bd4 Bxg5 Nc3
+info depth 5 score 7.58 nodes 6193 nps 428855 time 0.014 pv Be7 Bd4 Bxg5 Nc3 Ne7
+info depth 6 score 7.69 nodes 14648 nps 431107 time 0.034 pv Be7 Nf3 Rd1+ Ne1 f6 Kf2 Nh6
+info depth 7 score 7.77 nodes 25311 nps 413514 time 0.061 pv Be7 Nf3 Rd1+ Ne1 f6 h3 Bh5 Kf2
+info depth 8 score 7.27 nodes 55596 nps 428481 time 0.130 pv Nh6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha -8.27 and beta -7.27 with time 0.130 s
+info depth 8 score 7.62 nodes 107129 nps 416071 time 0.257 pv Nh6 Nd2 Rxh8 Nge4 Bb4 a3 Nf5 Kf2
+info depth 9 score 7.41 nodes 204185 nps 440355 time 0.464 pv Be7 Nf3 Rd1+ Kf2 Rxh1 Nbd2 Rxa1 Bxa1 Bh5 Bd4
+info depth 10 score 7.28 nodes 300243 nps 449671 time 0.668 pv Be7 Nf3 Nf6 Nbd2 Rxh8 h3 Bf5 Ke2 Bxc2 g4
+info depth 11 score 6.83 nodes 445758 nps 458802 time 0.972 pv Be7 Nf3 Nf6 Nbd2 Rxh8 h3 Bf5 Ke2 Bxc2 g4 Nd5
+info depth 12 score 7.33 nodes 458067 nps 458064 time 1.000 pv Be7 Nf3 Nf6 Nbd2 Rxh8 h3 Bf5 Ke2 Bxc2 g4 Nd5
+
+Score: 7.33
+PV Line: Be7 Nf3 Nf6 Nbd2 Rxh8 h3 Bf5 Ke2 Bxc2 g4 Nd5
+Position Count: 458067
+Time: 1.000 s
+Speed: 457943 Nodes/sec
+Best Move: Be7
+Pushed move: d6e7
+Pushed move: g5f3
++---+---+---+---+---+---+---+---+
+|   |   | k | r |   |   | n | B | 8
++---+---+---+---+---+---+---+---+
+| p |   | p |   | b | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | p |   |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | b |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | P | N |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P |   |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   |   |   | K |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2kr2nB/p1p1bp1p/2p5/8/6b1/1P2PN2/P1P3PP/RN3K1R b - - 2 16
+Transposition Key: 360B44F9F0A7FBA2
+Checkers:
+Current Evaluation: 9.05
+
+info depth 1 score 6.78 nodes 41 nps 210710 time 0.000 pv Rd1+ Ne1
+info depth 2 score 6.28 nodes 77 nps 227721 time 0.000 pv Rd1+
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha -7.28 and beta -6.28 with time 0.000 s
+info depth 2 score 5.56 nodes 159 nps 267822 time 0.001 pv Rd1+ Ne1 Bh4
+info depth 3 score 6.06 nodes 305 nps 301425 time 0.001 pv Rd1+ Ne1 Bh4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 3 having alpha -6.06 and beta -5.06 with time 0.001 s
+info depth 3 score 7.36 nodes 603 nps 330844 time 0.002 pv Rd1+ Ne1 f6 h3
+info depth 4 score 7.69 nodes 1612 nps 386877 time 0.004 pv Rd1+ Ne1 f6 Kf2 Nh6
+info depth 5 score 7.77 nodes 4536 nps 410799 time 0.011 pv Rd1+ Ne1 f6 h3 Bh5 Kf2
+info depth 6 score 7.46 nodes 16798 nps 421108 time 0.040 pv Nf6 Nbd2 Rxh8 Kf2 Bb4 Rhf1
+info depth 7 score 6.96 nodes 22975 nps 398511 time 0.058 pv Nf6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha -7.96 and beta -6.96 with time 0.058 s
+info depth 7 score 7.11 nodes 35447 nps 417664 time 0.085 pv Nf6 Nbd2 Rxh8 Ke2 Bb4 h3 Nd5
+info depth 8 score 7.28 nodes 59390 nps 419202 time 0.142 pv Nf6 Nbd2 Rxh8 h3 Bf5 Ke2 Bxc2 g4
+info depth 9 score 7.17 nodes 103770 nps 412599 time 0.252 pv Nf6 Nbd2 Rxh8 Re1 Bb4 a3 Bxa3 Kf2 Bb4
+info depth 10 score 7.05 nodes 180819 nps 411702 time 0.439 pv Nf6 Nbd2 Rxh8 h3 Bf5 g4 Bxc2 Ke2 Rd8 Rhc1
+info depth 11 score 7.02 nodes 384757 nps 447838 time 0.859 pv Rd1+ Kf2 Rxh1 Nbd2 Rxa1 Bxa1 Bh5 h3 Bg6 e4 Nf6 Bxf6 Bxf6
+info depth 12 score 7.02 nodes 446983 nps 446981 time 1.000 pv Rd1+ Kf2 Rxh1 Nbd2 Rxa1 Bxa1 Bh5 h3 Bg6 e4 Nf6 Bxf6 Bxf6
+
+Score: 7.02
+PV Line: Rd1+ Kf2 Rxh1 Nbd2 Rxa1 Bxa1 Bh5 h3 Bg6 e4 Nf6 Bxf6 Bxf6
+Position Count: 446983
+Time: 1.000 s
+Speed: 446940 Nodes/sec
+Best Move: Rd1+
+Pushed move: d8d1
+Pushed move: f3e1
++---+---+---+---+---+---+---+---+
+|   |   | k |   |   |   | n | B | 8
++---+---+---+---+---+---+---+---+
+| p |   | p |   | b | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | p |   |   |   |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | b |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | P |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P |   |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   | r | N | K |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2k3nB/p1p1bp1p/2p5/8/6b1/1P2P3/P1P3PP/RN1rNK1R b - - 4 17
+Transposition Key: D118535689D89F2F
+Checkers:
+Current Evaluation: 6.78
+
+info depth 1 score 5.56 nodes 55 nps 119122 time 0.000 pv Bh4
+info depth 2 score 6.06 nodes 161 nps 191576 time 0.001 pv Bh4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha -6.06 and beta -5.06 with time 0.001 s
+info depth 2 score 7.36 nodes 359 nps 251619 time 0.001 pv f6 h3
+info depth 3 score 7.69 nodes 1367 nps 365404 time 0.004 pv f6 Kf2 Nh6
+info depth 4 score 7.45 nodes 3761 nps 380968 time 0.010 pv Nh6 Na3 Nf5 Rxd1
+info depth 5 score 7.95 nodes 7134 nps 281337 time 0.025 pv Nh6 Na3 Nf5 Rxd1
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha -7.95 and beta -6.95 with time 0.026 s
+info depth 5 score 8.05 nodes 12623 nps 300454 time 0.042 pv f6 Kf2 Bh5 h3 Bc5
+info depth 6 score 7.55 nodes 13190 nps 302221 time 0.044 pv f6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 6 having alpha -8.55 and beta -7.55 with time 0.044 s
+info depth 6 score 6.97 nodes 21101 nps 325989 time 0.065 pv Nf6 h3 Ne4 hxg4 Ng3+ Kf2 Nxh1+ Ke2
+info depth 7 score 6.47 nodes 22508 nps 324153 time 0.069 pv Nf6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha -7.47 and beta -6.47 with time 0.070 s
+info depth 7 score 6.36 nodes 27710 nps 327538 time 0.085 pv Nf6 h3 Ne4 hxg4 Ng3+ Kf2 Nxh1+ Ke2 Rxb1
+info depth 8 score 6.83 nodes 48655 nps 352601 time 0.138 pv Nf6 h3 Ne4 hxg4 Ng3+ Kf2 Nxh1+ Ke2 Rxb1 Kf3
+info depth 9 score 7.33 nodes 100078 nps 367626 time 0.272 pv Nf6 h3 Ne4 hxg4 Ng3+ Kf2 Nxh1+ Ke2 Rxb1 Kf3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 9 having alpha -7.33 and beta -6.33 with time 0.272 s
+info depth 9 score 7.01 nodes 113830 nps 374183 time 0.304 pv Nf6 h3 Bh5 g4 Bb4 Bxf6 Rxe1+ Kg2 Rxh1 Kxh1
+info depth 10 score 6.51 nodes 221384 nps 408251 time 0.542 pv Bf6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 10 having alpha -7.51 and beta -6.51 with time 0.542 s
+info depth 10 score 4.66 nodes 285920 nps 419272 time 0.682 pv Bf6 Bxf6 Nxf6 g3 Bh3+ Ke2 Bg4+ Kf2 Ne4+ Kg2 Ng5 Rf1 Rxe1 Rxe1
+info depth 11 score 5.16 nodes 323317 nps 418350 time 0.773 pv Bf6 Bxf6 Nxf6 g3 Bh3+ Ke2 Bg4+ Kf2 Ne4+ Kg2 Ng5 Rf1 Rxe1 Rxe1
+Resetting alpha to -INFINITY and beta to INFINITY at depth 11 having alpha -5.16 and beta -4.16 with time 0.773 s
+info depth 11 score 8.92 nodes 431603 nps 431602 time 1.000 pv Bf6 Bxf6 Nxf6 h3 Bh5 g4 Ne4 Kg2 Bg6 Rg1 Rxe1 Rxe1
+
+Score: 8.92
+PV Line: Bf6 Bxf6 Nxf6 h3 Bh5 g4 Ne4 Kg2 Bg6 Rg1 Rxe1 Rxe1
+Position Count: 431603
+Time: 1.000 s
+Speed: 431564 Nodes/sec
+Best Move: Bf6
+Pushed move: e7f6
+Pushed move: h8f6
++---+---+---+---+---+---+---+---+
+|   |   | k |   |   |   | n |   | 8
++---+---+---+---+---+---+---+---+
+| p |   | p |   |   | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | p |   |   | B |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | b |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | P |   |   |   | 3
++---+---+---+---+---+---+---+---+
+| P |   | P |   |   |   | P | P | 2
++---+---+---+---+---+---+---+---+
+| R | N |   | r | N | K |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2k3n1/p1p2p1p/2p2B2/8/6b1/1P2P3/P1P3PP/RN1rNK1R b - - 0 18
+Transposition Key: D3474E374385161C
+Checkers:
+Current Evaluation: 9.33
+
+info depth 1 score 15.54 nodes 37 nps 207923 time 0.000 pv Nxf6
+info depth 2 score 15.04 nodes 53 nps 206710 time 0.000 pv Nxf6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha -16.0 and beta -15.0 with time 0.000 s
+info depth 2 score 9.01 nodes 107 nps 248753 time 0.000 pv Nxf6 h3
+info depth 3 score 9.07 nodes 232 nps 302034 time 0.001 pv Nxf6 h3 Ne4
+info depth 4 score 8.57 nodes 320 nps 311166 time 0.001 pv Nxf6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha -9.57 and beta -8.57 with time 0.001 s
+info depth 4 score 6.82 nodes 779 nps 375722 time 0.002 pv Nxf6 h3 Ne4 hxg4
+info depth 5 score 7.32 nodes 1112 nps 390629 time 0.003 pv Nxf6 h3 Ne4 hxg4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha -7.32 and beta -6.32 with time 0.003 s
+info depth 5 score 8.01 nodes 1708 nps 411944 time 0.004 pv Nxf6 h3 Ne4 hxg4 Ng3+ Kf2
+info depth 6 score 7.51 nodes 1925 nps 411911 time 0.005 pv Nxf6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 6 having alpha -8.51 and beta -7.51 with time 0.005 s
+info depth 6 score 4.72 nodes 3974 nps 425512 time 0.009 pv Nxf6 h3 Ne4 hxg4 Ng3+ Kg1 Rxe1+ Kf2
+info depth 7 score 5.22 nodes 4302 nps 425891 time 0.010 pv Nxf6 h3 Ne4 hxg4 Ng3+ Kg1 Rxe1+ Kf2
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha -5.22 and beta -4.22 with time 0.010 s
+info depth 7 score 5.2 nodes 5039 nps 422033 time 0.012 pv Nxf6 h3 Ne4 hxg4 Ng3+ Kg1 Rxe1+ Kf2 Rxh1 Kxg3
+info depth 8 score 5.7 nodes 6147 nps 428197 time 0.014 pv Nxf6 h3 Ne4 hxg4 Ng3+ Kg1 Rxe1+ Kf2 Rxh1 Kxg3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha -5.7 and beta -4.7 with time 0.014 s
+info depth 8 score 5.2 nodes 8005 nps 320639 time 0.025 pv Nxf6 h3 Ne4 hxg4 Ng3+ Kg1 Rxe1+ Kf2 Rxh1 Kxg3
+info depth 9 score 5.7 nodes 11610 nps 318734 time 0.036 pv Nxf6 h3 Ne4 hxg4 Ng3+ Kg1 Rxe1+ Kf2 Rxh1 Kxg3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 9 having alpha -5.7 and beta -4.7 with time 0.036 s
+info depth 9 score 9.74 nodes 42175 nps 371149 time 0.114 pv Nxf6 h3 Bh5 Kg1 Rxe1+ Kh2 Re2 Nc3 Rxc2 Rhf1
+info depth 10 score 10.24 nodes 78204 nps 365200 time 0.214 pv Nxf6 h3 Bh5 Kg1 Rxe1+ Kh2 Re2 Nc3 Rxc2 Rhf1
+Resetting alpha to -INFINITY and beta to INFINITY at depth 10 having alpha -10.2 and beta -9.24 with time 0.214 s
+info depth 10 score 13.76 nodes 157736 nps 367783 time 0.429 pv Nxf6 h3 Bh5 g4 Ne4 gxh5 Ng3+ Kg2 Nxh1 Nf3 f5
+info depth 11 score 13.26 nodes 162947 nps 369793 time 0.441 pv Nxf6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 11 having alpha -14.2 and beta -13.2 with time 0.441 s
+info depth 11 score 12.79 nodes 437322 nps 437320 time 1.000 pv Nxf6 h3 Bh5 g4 Bg6 Ke2 Bxc2 Nxc2 Rxh1 Nd2 Rh2+ Kd3 Rxh3
+
+Score: 12.79
+PV Line: Nxf6 h3 Bh5 g4 Bg6 Ke2 Bxc2 Nxc2 Rxh1 Nd2 Rh2+ Kd3 Rxh3
+Position Count: 437322
+Time: 1.000 s
+Speed: 437282 Nodes/sec
+Best Move: Nxf6
+Pushed move: g8f6
+Pushed move: h2h3
++---+---+---+---+---+---+---+---+
+|   |   | k |   |   |   |   |   | 8
++---+---+---+---+---+---+---+---+
+| p |   | p |   |   | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | p |   |   | n |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | b |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | P |   |   | P | 3
++---+---+---+---+---+---+---+---+
+| P |   | P |   |   |   | P |   | 2
++---+---+---+---+---+---+---+---+
+| R | N |   | r | N | K |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2k5/p1p2p1p/2p2n2/8/6b1/1P2P2P/P1P3P1/RN1rNK1R b - - 0 19
+Transposition Key: 96211F28301DD394
+Checkers:
+Current Evaluation: 9.01
+
+info depth 1 score 9.07 nodes 45 nps 266472 time 0.000 pv Ne4
+info depth 2 score 8.57 nodes 60 nps 249443 time 0.000 pv Ne4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha -9.57 and beta -8.57 with time 0.000 s
+info depth 2 score 6.82 nodes 120 nps 288660 time 0.000 pv Ne4 hxg4
+info depth 3 score 7.32 nodes 198 nps 316606 time 0.001 pv Ne4 hxg4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 3 having alpha -7.32 and beta -6.32 with time 0.001 s
+info depth 3 score 8.01 nodes 304 nps 344522 time 0.001 pv Ne4 hxg4 Ng3+ Kf2
+info depth 4 score 7.51 nodes 331 nps 336565 time 0.001 pv Ne4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha -8.51 and beta -7.51 with time 0.001 s
+info depth 4 score 4.72 nodes 926 nps 393087 time 0.002 pv Ne4 hxg4 Ng3+ Kg1 Rxe1+ Kf2
+info depth 5 score 5.2 nodes 1450 nps 392816 time 0.004 pv Ne4 hxg4 Ng3+ Kg1 Rxe1+ Kf2 Rxh1 Kxg3
+info depth 6 score 5.7 nodes 2623 nps 410739 time 0.006 pv Ne4 hxg4 Ng3+ Kg1 Rxe1+ Kf2 Rxh1 Kxg3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 6 having alpha -5.7 and beta -4.7 with time 0.006 s
+info depth 6 score 5.2 nodes 3374 nps 374674 time 0.009 pv Ne4 hxg4 Ng3+ Kg1 Rxe1+ Kf2 Rxh1 Kxg3
+info depth 7 score 5.7 nodes 4854 nps 397036 time 0.012 pv Ne4 hxg4 Ng3+ Kg1 Rxe1+ Kf2 Rxh1 Kxg3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha -5.7 and beta -4.7 with time 0.012 s
+info depth 7 score 9.74 nodes 32273 nps 429708 time 0.075 pv Bh5 Kg1 Rxe1+ Kh2 Re2 Nc3 Rxc2 Rhf1
+info depth 8 score 9.24 nodes 33040 nps 429447 time 0.077 pv Bh5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha -10.2 and beta -9.24 with time 0.077 s
+info depth 8 score 13.09 nodes 84914 nps 431739 time 0.197 pv Be6 Ke2 Rxb1 Rxb1 Ne4 Rf1 Bc4+ Kf3 Nd2+ Kf4
+info depth 9 score 12.59 nodes 125333 nps 421001 time 0.298 pv Bh5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 9 having alpha -13.5 and beta -12.5 with time 0.298 s
+info depth 9 score 14.63 nodes 233935 nps 451080 time 0.519 pv Bh5 g4 Nxg4 hxg4 Bxg4 Kf2 c5 Nc3 Rd2+ Ne2
+info depth 10 score 14.13 nodes 238737 nps 451767 time 0.528 pv Bh5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 10 having alpha -15.1 and beta -14.1 with time 0.528 s
+info depth 10 score 11.18 nodes 342693 nps 456873 time 0.750 pv Bh5 g4 Bg6 Ke2 Bxc2 Nxc2 Rxh1 Nc3 Rh2+ Kd3 Rxc2 Kxc2
+info depth 11 score 10.68 nodes 349166 nps 456961 time 0.764 pv Bh5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 11 having alpha -11.6 and beta -10.6 with time 0.764 s
+info depth 11 score 13.48 nodes 460985 nps 460984 time 1.000 pv Bh5 g4 Bg6 Ke2 Bxc2 Rf1 Ne4 Nxc2 Rxf1 Kxf1 Ng3+ Ke1
+
+Score: 13.48
+PV Line: Bh5 g4 Bg6 Ke2 Bxc2 Rf1 Ne4 Nxc2 Rxf1 Kxf1 Ng3+ Ke1
+Position Count: 460985
+Time: 1.000 s
+Speed: 460939 Nodes/sec
+Best Move: Bh5
+Pushed move: g4h5
+Pushed move: g2g4
++---+---+---+---+---+---+---+---+
+|   |   | k |   |   |   |   |   | 8
++---+---+---+---+---+---+---+---+
+| p |   | p |   |   | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | p |   |   | n |   |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   | b | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | P |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | P |   |   | P | 3
++---+---+---+---+---+---+---+---+
+| P |   | P |   |   |   |   |   | 2
++---+---+---+---+---+---+---+---+
+| R | N |   | r | N | K |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2k5/p1p2p1p/2p2n2/7b/6P1/1P2P2P/P1P5/RN1rNK1R b - - 0 20
+Transposition Key: 55A806365CE85116
+Checkers:
+Current Evaluation: 8.53
+
+info depth 1 score 8.13 nodes 37 nps 175302 time 0.000 pv Ne4
+info depth 2 score 8.04 nodes 104 nps 224619 time 0.000 pv Ne4 Ke2
+info depth 3 score 7.54 nodes 144 nps 236588 time 0.001 pv Ne4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 3 having alpha -8.54 and beta -7.54 with time 0.001 s
+info depth 3 score 8.8 nodes 400 nps 325402 time 0.001 pv Ne4 gxh5 Ng3+ Kg2
+info depth 4 score 9.3 nodes 734 nps 366241 time 0.002 pv Ne4 gxh5 Ng3+ Kg2
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha -9.3 and beta -8.3 with time 0.002 s
+info depth 4 score 10.78 nodes 1390 nps 399384 time 0.003 pv Ne4 gxh5 Rxb1 Rxb1
+info depth 5 score 10.28 nodes 1552 nps 399401 time 0.004 pv Ne4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha -11.2 and beta -10.2 with time 0.004 s
+info depth 5 score 8.92 nodes 3335 nps 421320 time 0.008 pv Ne4 Kg2 Bg6 Rg1 Rxe1 Rxe1
+info depth 6 score 9.42 nodes 6259 nps 416231 time 0.015 pv Ne4 Kg2 Bg6 Rg1 Rxe1 Rxe1
+Resetting alpha to -INFINITY and beta to INFINITY at depth 6 having alpha -9.42 and beta -8.42 with time 0.015 s
+info depth 6 score 9.07 nodes 7134 nps 360882 time 0.020 pv Ne4 gxh5 Ng3+ Kg2 Nxh1 Nd3 Rxd3 cxd3
+info depth 7 score 9.07 nodes 12196 nps 341805 time 0.036 pv Ne4 gxh5 Ng3+ Kg2 Nxh1 Nd3 Rxd3 cxd3
+info depth 8 score 9.57 nodes 21498 nps 357374 time 0.060 pv Ne4 gxh5 Ng3+ Kg2 Nxh1 Nd3 Rxd3 cxd3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha -9.57 and beta -8.57 with time 0.060 s
+info depth 8 score 8.56 nodes 68615 nps 391380 time 0.175 pv Bg6 Ke2 Bxc2 Nxc2 Rxh1 Nc3 Rxh3 Rf1
+info depth 9 score 9.06 nodes 84334 nps 397324 time 0.212 pv Bg6 Ke2 Bxc2 Nxc2 Rxh1 Nc3 Rxh3 Rf1
+Resetting alpha to -INFINITY and beta to INFINITY at depth 9 having alpha -9.06 and beta -8.06 with time 0.212 s
+info depth 9 score 13.48 nodes 135418 nps 408461 time 0.332 pv Bg6 Ke2 Bxc2 Rf1 Ne4 Nxc2 Rxf1 Kxf1 Ng3+ Ke1
+info depth 10 score 12.98 nodes 142075 nps 411590 time 0.345 pv Bg6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 10 having alpha -13.9 and beta -12.9 with time 0.345 s
+info depth 10 score 8.11 nodes 228099 nps 425269 time 0.536 pv Bg6 Ke2 Rc1 Rf1 Ne4 Kf3 a5 Kg2 Rxe1 Rxe1
+info depth 11 score 8.61 nodes 280284 nps 430964 time 0.650 pv Bg6 Ke2 Rc1 Rf1 Ne4 Kf3 a5 Kg2 Rxe1 Rxe1
+Resetting alpha to -INFINITY and beta to INFINITY at depth 11 having alpha -8.61 and beta -7.61 with time 0.650 s
+info depth 11 score 16.1 nodes 458879 nps 458878 time 1.000 pv Bg6 Ke2 Bxc2 Rf1 Nd5 Nxc2 Rxf1 Kxf1 Nxe3+ Nxe3 Kb7 Na3
+
+Score: 16.1
+PV Line: Bg6 Ke2 Bxc2 Rf1 Nd5 Nxc2 Rxf1 Kxf1 Nxe3+ Nxe3 Kb7 Na3
+Position Count: 458879
+Time: 1.000 s
+Speed: 458841 Nodes/sec
+Best Move: Bg6
+Pushed move: h5g6
+Pushed move: f1e2
++---+---+---+---+---+---+---+---+
+|   |   | k |   |   |   |   |   | 8
++---+---+---+---+---+---+---+---+
+| p |   | p |   |   | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | p |   |   | n | b |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | P |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   |   | P |   |   | P | 3
++---+---+---+---+---+---+---+---+
+| P |   | P |   | K |   |   |   | 2
++---+---+---+---+---+---+---+---+
+| R | N |   | r | N |   |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2k5/p1p2p1p/2p2nb1/8/6P1/1P2P2P/P1P1K3/RN1rN2R b - - 2 21
+Transposition Key: DF4F483E87CA5519
+Checkers:
+Current Evaluation: 8.87
+
+info depth 1 score 12.74 nodes 55 nps 207159 time 0.000 pv Rxb1 Rxb1
+info depth 2 score 12.74 nodes 131 nps 251629 time 0.001 pv Rxb1 Rxb1
+info depth 3 score 13.24 nodes 211 nps 279919 time 0.001 pv Rxb1 Rxb1
+Resetting alpha to -INFINITY and beta to INFINITY at depth 3 having alpha -13.2 and beta -12.2 with time 0.001 s
+info depth 3 score 17.28 nodes 537 nps 364169 time 0.001 pv Bxc2 Nxc2 Rxh1
+info depth 4 score 16.78 nodes 576 nps 359660 time 0.002 pv Bxc2
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha -17.7 and beta -16.7 with time 0.002 s
+info depth 4 score 12.84 nodes 1742 nps 412853 time 0.004 pv Bxc2 Rf1 Rxb1 Rxb1
+info depth 5 score 13.34 nodes 3184 nps 438834 time 0.007 pv Bxc2 Rf1 Rxb1 Rxb1
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha -13.3 and beta -12.3 with time 0.007 s
+info depth 5 score 12.79 nodes 3442 nps 430227 time 0.008 pv Bxc2 Nxc2 Rxh1 Nd2 Rh2+ Kd3 Rxh3
+info depth 6 score 12.29 nodes 3636 nps 424371 time 0.009 pv Bxc2
+Resetting alpha to -INFINITY and beta to INFINITY at depth 6 having alpha -13.2 and beta -12.2 with time 0.009 s
+info depth 6 score 9.72 nodes 9524 nps 421162 time 0.023 pv Rc1 Rf1 Ne4 Kf3 f5 Ke2
+info depth 7 score 10.22 nodes 13223 nps 418581 time 0.032 pv Rc1 Rf1 Ne4 Kf3 f5 Ke2
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha -10.2 and beta -9.22 with time 0.032 s
+info depth 7 score 7.48 nodes 20400 nps 380315 time 0.054 pv Rc1 Rf1 Ne4 Kf3 f6 Kf4 Nf2
+info depth 8 score 7.98 nodes 24301 nps 391492 time 0.062 pv Rc1 Rf1 Ne4 Kf3 f6 Kf4 Nf2
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha -7.98 and beta -6.98 with time 0.062 s
+info depth 8 score 7.18 nodes 47848 nps 386006 time 0.124 pv Rc1 h4 Ne4 Kf3 Rd1 h5 f5 hxg6
+info depth 9 score 7.68 nodes 63523 nps 386184 time 0.164 pv Rc1 h4 Ne4 Kf3 Rd1 h5 f5 hxg6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 9 having alpha -7.68 and beta -6.68 with time 0.165 s
+info depth 9 score 14.99 nodes 206348 nps 455557 time 0.453 pv Bxc2 Rf1 Ne4 Nxc2 Rxf1 Kxf1 Ng3+ Kf2 Ne4+ Kf3 Ng5+ Ke2
+info depth 10 score 14.49 nodes 368664 nps 480043 time 0.768 pv Rd7
+Resetting alpha to -INFINITY and beta to INFINITY at depth 10 having alpha -15.4 and beta -14.4 with time 0.768 s
+info depth 10 score INFINITY nodes 482761 nps 482760 time 1.000 pv Rd7
+
+Score: 14.49
+PV Line: Rd7
+Position Count: 482761
+Time: 1.000 s
+Speed: 482731 Nodes/sec
+Best Move: Rd7
+Pushed move: d1d7
+Pushed move: b1c3
++---+---+---+---+---+---+---+---+
+|   |   | k |   |   |   |   |   | 8
++---+---+---+---+---+---+---+---+
+| p |   | p | r |   | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   | p |   |   | n | b |   | 6
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | P |   | 4
++---+---+---+---+---+---+---+---+
+|   | P | N |   | P |   |   | P | 3
++---+---+---+---+---+---+---+---+
+| P |   | P |   | K |   |   |   | 2
++---+---+---+---+---+---+---+---+
+| R |   |   |   | N |   |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2k5/p1pr1p1p/2p2nb1/8/6P1/1PN1P2P/P1P1K3/R3N2R b - - 4 22
+Transposition Key: 5BE95434D9BD4697
+Checkers:
+Current Evaluation: 9.21
+
+info depth 1 score 16.29 nodes 34 nps 156553 time 0.000 pv Bd3+ cxd3
+info depth 2 score 16.79 nodes 106 nps 173245 time 0.001 pv Bd3+ cxd3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha -16.7 and beta -15.7 with time 0.001 s
+info depth 2 score 23.39 nodes 209 nps 233959 time 0.001 pv Rd2+ Kxd2 Ne4+ Kc1
+info depth 3 score 22.89 nodes 281 nps 260110 time 0.001 pv Bd3+
+Resetting alpha to -INFINITY and beta to INFINITY at depth 3 having alpha -23.8 and beta -22.8 with time 0.001 s
+info depth 3 score 19.51 nodes 688 nps 335761 time 0.002 pv Bxc2 Nxc2 Rd2+ Kxd2
+info depth 4 score 19.01 nodes 1123 nps 371745 time 0.003 pv c5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha -20.0 and beta -19.0 with time 0.003 s
+info depth 4 score 16.72 nodes 3293 nps 430495 time 0.008 pv Nh5 gxh5 Bxh5+ Kf2 Rd2+ Ne2
+info depth 5 score 17.22 nodes 5000 nps 443791 time 0.011 pv Nh5 gxh5 Bxh5+ Kf2 Rd2+ Ne2
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha -17.2 and beta -16.2 with time 0.011 s
+info depth 5 score 17.78 nodes 8114 nps 446073 time 0.018 pv Rd8 Nf3 Bd3+ cxd3 Nxg4 hxg4
+info depth 6 score 17.28 nodes 12691 nps 457178 time 0.028 pv Bxc2
+Resetting alpha to -INFINITY and beta to INFINITY at depth 6 having alpha -18.2 and beta -17.2 with time 0.028 s
+info depth 6 score 17.06 nodes 25269 nps 424343 time 0.060 pv h5 Rd1 hxg4 hxg4 Rxd1 Kxd1
+info depth 7 score 17.56 nodes 42191 nps 448353 time 0.094 pv h5 Rd1 hxg4 hxg4 Rxd1 Kxd1
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha -17.5 and beta -16.5 with time 0.094 s
+info depth 7 score 17.18 nodes 71630 nps 436979 time 0.164 pv Nh5 gxh5 Bxh5+ Nf3 a6 Kf1 Re7 Rh2
+info depth 8 score 16.68 nodes 81483 nps 436498 time 0.187 pv Ne4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha -17.6 and beta -16.6 with time 0.187 s
+info depth 8 score 17.93 nodes 190478 nps 439855 time 0.433 pv Ne4 Nxe4 Bxe4 Rh2 Bxc2 Kf1 Rd2 Rf2 Rxf2+ Kxf2
+info depth 9 score 18.43 nodes 296258 nps 456103 time 0.650 pv Ne4 Nxe4 Bxe4 Rh2 Bxc2 Kf1 Rd2 Rf2 Rxf2+ Kxf2
+Resetting alpha to -INFINITY and beta to INFINITY at depth 9 having alpha -18.4 and beta -17.4 with time 0.650 s
+info depth 9 score 22.7 nodes 471463 nps 471460 time 1.000 pv c5 Rf1 Nh5 gxh5 Bxh5+ Kf2 Bd1 Nf3 Bxc2 a4
+
+Score: 22.7
+PV Line: c5 Rf1 Nh5 gxh5 Bxh5+ Kf2 Bd1 Nf3 Bxc2 a4
+Position Count: 471463
+Time: 1.000 s
+Speed: 471421 Nodes/sec
+Best Move: c5
+Pushed move: c6c5
+Pushed move: e1d3
++---+---+---+---+---+---+---+---+
+|   |   | k |   |   |   |   |   | 8
++---+---+---+---+---+---+---+---+
+| p |   | p | r |   | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   | n | b |   | 6
++---+---+---+---+---+---+---+---+
+|   |   | p |   |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | P |   | 4
++---+---+---+---+---+---+---+---+
+|   | P | N | N | P |   |   | P | 3
++---+---+---+---+---+---+---+---+
+| P |   | P |   | K |   |   |   | 2
++---+---+---+---+---+---+---+---+
+| R |   |   |   |   |   |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2k5/p1pr1p1p/5nb1/2p5/6P1/1PNNP2P/P1P1K3/R6R b - - 1 23
+Transposition Key: 7AEBEE9730BC8308
+Checkers:
+Current Evaluation: 8.79
+
+info depth 1 score 12.25 nodes 34 nps 172923 time 0.000 pv Rxd3
+info depth 2 score 11.75 nodes 65 nps 201622 time 0.000 pv Rxd3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha -12.7 and beta -11.7 with time 0.000 s
+info depth 2 score 10.89 nodes 123 nps 238687 time 0.001 pv Rxd3 cxd3
+info depth 3 score 11.39 nodes 173 nps 248736 time 0.001 pv Rxd3 cxd3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 3 having alpha -11.3 and beta -10.3 with time 0.001 s
+info depth 3 score 16.04 nodes 257 nps 276064 time 0.001 pv Rxd3 cxd3 Bxd3+ Kxd3
+info depth 4 score 15.54 nodes 545 nps 346861 time 0.002 pv c4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha -16.5 and beta -15.5 with time 0.002 s
+info depth 4 score 14.02 nodes 1452 nps 422890 time 0.003 pv c4 bxc4 Rxd3 cxd3
+info depth 5 score 14.52 nodes 2421 nps 433412 time 0.006 pv c4 bxc4 Rxd3 cxd3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha -14.5 and beta -13.5 with time 0.006 s
+info depth 5 score 16.95 nodes 4798 nps 433997 time 0.011 pv Nh5 gxh5 Bxh5+ Kf2 Rxd3 cxd3
+info depth 6 score 16.45 nodes 7415 nps 439733 time 0.017 pv c4
+Resetting alpha to -INFINITY and beta to INFINITY at depth 6 having alpha -17.4 and beta -16.4 with time 0.017 s
+info depth 6 score 16.68 nodes 16849 nps 265429 time 0.063 pv Ne4 Nxe4 Bxe4 Rhf1 Rxd3 cxd3
+info depth 7 score 17.18 nodes 26300 nps 296723 time 0.089 pv Ne4 Nxe4 Bxe4 Rhf1 Rxd3 cxd3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha -17.1 and beta -16.1 with time 0.089 s
+info depth 7 score 19.41 nodes 60729 nps 298232 time 0.204 pv Nd5 Nxd5 Rxd5 Ke1 h5 gxh5 c4 hxg6
+info depth 8 score 18.91 nodes 96869 nps 323205 time 0.300 pv Rd8
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha -19.9 and beta -18.9 with time 0.300 s
+info depth 8 score 18.93 nodes 212764 nps 360455 time 0.590 pv Nd5 Nxd5 Rxd5 Ke1 Bxd3 cxd3 Rxd3 Kf2
+info depth 9 score 19.43 nodes 340020 nps 394131 time 0.863 pv Nd5 Nxd5 Rxd5 Ke1 Bxd3 cxd3 Rxd3 Kf2
+Resetting alpha to -INFINITY and beta to INFINITY at depth 9 having alpha -19.4 and beta -18.4 with time 0.863 s
+info depth 9 score 23.34 nodes 399796 nps 399794 time 1.000 pv Nd5 Nxd5 Rxd5 Nf2 Re5 Kf1 Bxc2 Rh2 Rxe3
+
+Score: 23.34
+PV Line: Nd5 Nxd5 Rxd5 Nf2 Re5 Kf1 Bxc2 Rh2 Rxe3
+Position Count: 399796
+Time: 1.000 s
+Speed: 399759 Nodes/sec
+Best Move: Nd5
+Pushed move: f6d5
+Pushed move: c3d5
++---+---+---+---+---+---+---+---+
+|   |   | k |   |   |   |   |   | 8
++---+---+---+---+---+---+---+---+
+| p |   | p | r |   | p |   | p | 7
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | b |   | 6
++---+---+---+---+---+---+---+---+
+|   |   | p | N |   |   |   |   | 5
++---+---+---+---+---+---+---+---+
+|   |   |   |   |   |   | P |   | 4
++---+---+---+---+---+---+---+---+
+|   | P |   | N | P |   |   | P | 3
++---+---+---+---+---+---+---+---+
+| P |   | P |   | K |   |   |   | 2
++---+---+---+---+---+---+---+---+
+| R |   |   |   |   |   |   | R | 1
++---+---+---+---+---+---+---+---+
+A   B   C   D   E   F   G   H
+
+Fen: 2k5/p1pr1p1p/6b1/2pN4/6P1/1P1NP2P/P1P1K3/R6R b - - 0 24
+Transposition Key: FDD602B9AD665D57
+Checkers:
+Current Evaluation: 14.23
+
+info depth 1 score 20.76 nodes 27 nps 168508 time 0.000 pv Bxd3+ cxd3
+info depth 2 score 21.26 nodes 62 nps 198485 time 0.000 pv Bxd3+ cxd3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 2 having alpha -21.2 and beta -20.2 with time 0.000 s
+info depth 2 score 16.55 nodes 184 nps 273340 time 0.001 pv Rxd5 Raf1
+info depth 3 score 17.05 nodes 233 nps 271642 time 0.001 pv Rxd5 Raf1
+Resetting alpha to -INFINITY and beta to INFINITY at depth 3 having alpha -17.0 and beta -16.0 with time 0.001 s
+info depth 3 score 20.24 nodes 334 nps 288448 time 0.001 pv Rxd5 Raf1 Bxd3+ cxd3
+info depth 4 score 19.74 nodes 448 nps 307895 time 0.001 pv Rxd5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 4 having alpha -20.7 and beta -19.7 with time 0.001 s
+info depth 4 score 15.77 nodes 928 nps 365348 time 0.003 pv Rxd5 Rhf1 Rxd3 Rf6
+info depth 5 score 16.27 nodes 2355 nps 408166 time 0.006 pv Rxd5 Rhf1 Rxd3 Rf6
+Resetting alpha to -INFINITY and beta to INFINITY at depth 5 having alpha -16.2 and beta -15.2 with time 0.006 s
+info depth 5 score 17.85 nodes 4550 nps 435550 time 0.010 pv Rxd5 Rae1 c4 bxc4 Rxd3 cxd3
+info depth 6 score 17.85 nodes 7770 nps 392470 time 0.020 pv Rxd5 Rae1 c4 bxc4 Rxd3 cxd3
+info depth 7 score 18.35 nodes 18522 nps 357867 time 0.052 pv Rxd5 Rae1 c4 bxc4 Rxd3 cxd3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 7 having alpha -18.3 and beta -17.3 with time 0.052 s
+info depth 7 score 24.11 nodes 77694 nps 433647 time 0.179 pv Rxd5 Ne1 Kb7 Rf1 Bd3+ cxd3 Rxd3 Kf2
+info depth 8 score 23.61 nodes 80097 nps 434297 time 0.184 pv Rxd5
+Resetting alpha to -INFINITY and beta to INFINITY at depth 8 having alpha -24.6 and beta -23.6 with time 0.184 s
+info depth 8 score 21.02 nodes 142261 nps 430648 time 0.330 pv Rxd5 Rhf1 a5 Kf2 c4 bxc4 Rxd3 cxd3
+info depth 9 score 21.52 nodes 257514 nps 450765 time 0.571 pv Rxd5 Rhf1 a5 Kf2 c4 bxc4 Rxd3 cxd3
+Resetting alpha to -INFINITY and beta to INFINITY at depth 9 having alpha -21.5 and beta -20.5 with time 0.571 s
+info depth 9 score 21.57 nodes 358895 nps 460106 time 0.780 pv Rxd5 Nf2 Bxc2 Rhf1 a5 Rfe1 Bd3+ Nxd3 Rxd3 Kf2
+info depth 10 score 22.07 nodes 466243 nps 466242 time 1.000 pv Rxd5 Nf2 Bxc2 Rhf1 a5 Rfe1 Bd3+ Nxd3 Rxd3 Kf2
+
+Score: 22.07
+PV Line: Rxd5 Nf2 Bxc2 Rhf1 a5 Rfe1 Bd3+ Nxd3 Rxd3 Kf2
+Position Count: 466243
+Time: 1.000 s
+Speed: 466206 Nodes/sec
+Best Move: Rxd5
+Pushed move: d7d5
