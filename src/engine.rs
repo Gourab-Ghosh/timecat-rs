@@ -520,7 +520,7 @@ impl Engine {
                 );
             }
             if self.timer.stop_search() {
-                if score == -CHECKMATE_SCORE {
+                if score == 0 {
                     score = prev_score;
                 }
                 break;
