@@ -110,6 +110,7 @@ impl Engine {
         }
         let key = self.board.hash();
         let mut score = -CHECKMATE_SCORE;
+        let mut max_score = score;
         let mut flag = HashAlpha;
         let mut moves_vec_sorted = Vec::from_iter(self.move_sorter.get_weighted_sort_moves(
             self.board.generate_legal_moves(),
@@ -132,12 +133,13 @@ impl Engine {
             let repetition_draw_possible = self.board.gives_repetition(_move)
                 || self.board.gives_claimable_threefold_repetition(_move);
             self.push(Some(_move));
-            if !is_endgame && repetition_draw_possible && score > -DRAW_SCORE {
+            if !is_endgame && repetition_draw_possible && max_score > -DRAW_SCORE {
                 self.pop();
                 continue;
             }
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha) > alpha {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha);
+                max_score = max_score.max(score);
                 // println!("{} {}", san, score_to_string(score));
             }
             self.pop();
@@ -189,7 +191,7 @@ impl Engine {
                 self.pv_table[self.ply][self.ply],
             );
         }
-        alpha
+        max_score
     }
 
     fn alpha_beta(&mut self, mut depth: Depth, mut alpha: Score, mut beta: Score) -> Score {
@@ -518,7 +520,7 @@ impl Engine {
                 );
             }
             if self.timer.stop_search() {
-                if score == -INFINITY {
+                if score == -CHECKMATE_SCORE {
                     score = prev_score;
                 }
                 break;
