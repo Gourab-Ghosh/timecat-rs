@@ -258,8 +258,8 @@ pub mod engine_constants {
     pub const NULL_MOVE_MIN_DEPTH: Depth = 2;
     pub const NULL_MOVE_DEPTH_DIVIDER: Depth = 4;
 
-    pub const FULL_DEPTH_SEARCH_LMR: usize = 4;
-    pub const REDUCTION_LIMIT_LMR: Depth = 3;
+    pub const FULL_DEPTH_SEARCH_LMR: usize = 5;
+    pub const REDUCTION_LIMIT_LMR: Depth = 4;
     pub const LMR_BASE_REDUCTION: f32 = 0.75;
     pub const LMR_MOVE_DIVIDER: f32 = 2.25;
     pub const DISABLE_LMR: bool = false;
@@ -277,7 +277,7 @@ pub mod engine_constants {
         + 2 * evaluate_piece(Queen);
 
     #[rustfmt::skip]
-    pub const MVV_LVA: [[i32; 6]; 6] = [
+    pub const MVV_LVA: [[MoveWeight; 6]; 6] = [
         [105, 205, 305, 405, 505, 605],
         [104, 204, 304, 404, 504, 604],
         [103, 203, 303, 403, 503, 603],

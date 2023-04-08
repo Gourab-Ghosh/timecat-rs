@@ -136,6 +136,14 @@ pub mod square_utils {
     }
 }
 
+pub mod bitboard_utils {
+    use super::*;
+    
+    pub fn get_queen_moves(sq: Square, blockers: BitBoard) -> BitBoard {
+        get_rook_moves(sq, blockers) | get_bishop_moves(sq, blockers)
+    }
+}
+
 pub mod classes {
     use super::*;
     // use std::collections::hash_map::DefaultHasher;

@@ -68,6 +68,7 @@ impl Engine {
     fn get_lmr_reduction(depth: Depth, move_index: usize, is_pv_node: bool) -> Depth {
         let mut reduction =
             LMR_BASE_REDUCTION + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER;
+        // let mut reduction = (depth as f32 - 1.0).max(0.0).sqrt() + (move_index as f32 - 1.0).max(0.0).sqrt();
         if is_pv_node {
             reduction = (2.0 * reduction) / 3.0
         }

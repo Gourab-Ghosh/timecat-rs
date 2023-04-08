@@ -111,7 +111,7 @@ impl MoveSorter {
     }
 
     pub fn add_history_move(&mut self, history_move: Move, board: &Board, depth: Depth) {
-        let depth = (depth as MoveWeight).pow(3);
+        let depth = (depth as MoveWeight).pow(2);
         let src = history_move.get_source();
         let dest = history_move.get_dest();
         self.history_move_scores[board.piece_at(src).unwrap().to_index()]
@@ -163,9 +163,23 @@ impl MoveSorter {
         // Self::mvv_lva(_move, board)
     }
 
-    fn score_threat(_move: Move, board: &Board) -> MoveWeight {
-        Self::see_capture(_move.get_dest(), &mut board.get_sub_board()) as MoveWeight
-        // Self::mvv_lva(_move, board)
+    fn score_threat(_move: Move, move_pushed_sub_board: &chess::Board) -> MoveWeight {
+        let attacker_piece_square = _move.get_dest();
+        let attacker_piece = move_pushed_sub_board.piece_on(attacker_piece_square).unwrap();
+        let attacked_piece_mask = match attacker_piece {
+            Pawn => get_pawn_attacks(attacker_piece_square, !move_pushed_sub_board.side_to_move(), *move_pushed_sub_board.combined()),
+            Knight => get_knight_moves(attacker_piece_square),
+            Bishop => get_bishop_moves(attacker_piece_square, *move_pushed_sub_board.combined()),
+            Rook => get_rook_moves(attacker_piece_square, *move_pushed_sub_board.combined()),
+            Queen => get_queen_moves(attacker_piece_square, *move_pushed_sub_board.combined()),
+            King => get_king_moves(attacker_piece_square),
+        } & move_pushed_sub_board.color_combined(move_pushed_sub_board.side_to_move());
+        let mut threat_score = 0;
+        for square in attacked_piece_mask {
+            let attacked_piece = move_pushed_sub_board.piece_on(square).unwrap_or(Pawn);
+            threat_score += evaluate_piece(attacked_piece) as MoveWeight - evaluate_piece(attacker_piece) as MoveWeight;
+        }
+        threat_score / PAWN_VALUE as MoveWeight
     }
 
     fn score_move(
@@ -191,7 +205,7 @@ impl MoveSorter {
         sub_board.clone().make_move(_move, &mut sub_board);
         let checkers = *sub_board.checkers();
         let moving_piece = board.piece_at(source).unwrap();
-        // ckeck
+        // check
         if checkers != BB_EMPTY {
             return 1292000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
@@ -202,6 +216,14 @@ impl MoveSorter {
             if option_move == Some(_move) {
                 return 1290000 - idx as MoveWeight;
             }
+        }
+        // let threat_score = Self::score_threat(_move, &sub_board);
+        // if threat_score != 0 {
+        //     return 1289000 + threat_score;
+        // }
+        if board.is_passed_pawn(source) {
+            let promotion_distance = board.turn().to_their_backrank().to_index().abs_diff(dest.get_rank().to_index());
+            return 1288000 - promotion_distance as MoveWeight;
         }
         self.get_history_score(_move, board)
     }
