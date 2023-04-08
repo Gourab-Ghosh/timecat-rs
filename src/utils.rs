@@ -101,7 +101,12 @@ pub mod string_utils {
             mate_string += &mate_distance.to_string();
             return mate_string;
         }
-        format!("{:.5}", (score as f32 / PAWN_VALUE as f32).to_string())
+        let to_return = score as f32 / PAWN_VALUE as f32;
+        if to_return % 1.0 == 0.0 {
+            format!("{}", to_return as i32)
+        } else {
+            format!("{:.2}", to_return)
+        }
     }
 
     pub fn hash_to_string(hash: u64) -> String {

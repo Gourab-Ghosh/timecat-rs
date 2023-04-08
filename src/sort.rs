@@ -163,6 +163,11 @@ impl MoveSorter {
         // Self::mvv_lva(_move, board)
     }
 
+    fn score_threat(_move: Move, board: &Board) -> MoveWeight {
+        Self::see_capture(_move.get_dest(), &mut board.get_sub_board()) as MoveWeight
+        // Self::mvv_lva(_move, board)
+    }
+
     fn score_move(
         &mut self,
         _move: Move,
@@ -191,8 +196,7 @@ impl MoveSorter {
             return 1292000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
         if board.is_capture(_move) {
-            let capture_value = Self::score_capture(_move, board);
-            return 1291000 + capture_value;
+            return 1291000 + Self::score_capture(_move, board);
         }
         for (idx, &option_move) in self.killer_moves[ply].iter().enumerate() {
             if option_move == Some(_move) {
