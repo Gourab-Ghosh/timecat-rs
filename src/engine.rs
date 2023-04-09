@@ -57,8 +57,8 @@ impl Engine {
         self.transposition_table.clear();
     }
 
-    fn update_pv_table(&mut self, _move: Move) {
-        self.pv_table[self.ply][self.ply] = Some(_move);
+    fn update_pv_table(&mut self, move_: Move) {
+        self.pv_table[self.ply][self.ply] = Some(move_);
         for next_ply in (self.ply + 1)..self.pv_length[self.ply + 1] {
             self.pv_table[self.ply][next_ply] = self.pv_table[self.ply + 1][next_ply];
         }
@@ -110,6 +110,8 @@ impl Engine {
             };
         }
         let key = self.board.hash();
+        let initial_alpha = alpha;
+        let initial_beta = beta;
         let mut score = -CHECKMATE_SCORE;
         let mut max_score = score;
         let mut flag = HashAlpha;
@@ -123,17 +125,17 @@ impl Engine {
         let is_endgame = self.board.is_endgame();
         if !is_endgame {
             moves_vec_sorted.sort_by_cached_key(|&wm| {
-                self.board.gives_claimable_threefold_repetition(wm._move)
+                self.board.gives_claimable_threefold_repetition(wm.move_)
             });
         }
-        moves_vec_sorted.sort_by_cached_key(|&wm| self.board.gives_repetition(wm._move));
+        moves_vec_sorted.sort_by_cached_key(|&wm| self.board.gives_repetition(wm.move_));
         for (move_index, weighted_move) in moves_vec_sorted.iter().enumerate() {
-            let _move = weighted_move._move;
-            // let san = self.board.san(_move).unwrap();
+            let move_ = weighted_move.move_;
+            // let san = self.board.san(move_).unwrap();
             let clock = Instant::now();
-            let repetition_draw_possible = self.board.gives_repetition(_move)
-                || self.board.gives_claimable_threefold_repetition(_move);
-            self.push(Some(_move));
+            let repetition_draw_possible = self.board.gives_repetition(move_)
+                || self.board.gives_claimable_threefold_repetition(move_);
+            self.push(Some(move_));
             if !is_endgame && repetition_draw_possible && max_score > -DRAW_SCORE {
                 self.pop();
                 continue;
@@ -153,7 +155,7 @@ impl Engine {
                     println!(
                         "{} {} {} {} {} {} {} {} {} {:.3} s",
                         colorize("curr move", INFO_STYLE),
-                        self.board.san(_move).unwrap(),
+                        self.board.san(move_).unwrap(),
                         colorize("depth", INFO_STYLE),
                         depth,
                         colorize("score", INFO_STYLE),
@@ -168,7 +170,9 @@ impl Engine {
             if score > alpha {
                 flag = HashExact;
                 alpha = score;
-                self.update_pv_table(_move);
+                if initial_alpha < score && score < initial_beta {
+                    self.update_pv_table(move_);
+                }
                 if score >= beta {
                     self.transposition_table.write(
                         key,
@@ -176,7 +180,7 @@ impl Engine {
                         self.ply,
                         beta,
                         HashBeta,
-                        Some(_move),
+                        Some(move_),
                     );
                     return beta;
                 }
@@ -209,7 +213,8 @@ impl Engine {
         if moves_gen.len() == 0 {
             return if not_in_check { 0 } else { -mate_score };
         }
-        if self.board.is_other_draw() {
+        let num_repetitions = self.board.get_num_repetitions();
+        if num_repetitions > 1 || self.board.is_other_draw() {
             return 0;
         }
         if !not_in_check {
@@ -299,15 +304,15 @@ impl Engine {
             self.pv_table[0][self.ply],
         );
         for (move_index, weighted_move) in weighted_moves.enumerate() {
-            let _move = weighted_move._move;
-            let not_capture_move = !self.board.is_capture(_move);
+            let move_ = weighted_move.move_;
+            let not_capture_move = !self.board.is_capture(move_);
             let mut safe_to_apply_lmr = not_capture_move
                 && not_in_check
                 && depth >= 3
-                && _move.get_promotion().is_none()
-                && !self.move_sorter.is_killer_move(_move, self.ply)
-                && !self.board.is_passed_pawn(_move.get_source());
-            self.push(Some(_move));
+                && move_.get_promotion().is_none()
+                && !self.move_sorter.is_killer_move(move_, self.ply)
+                && !self.board.is_passed_pawn(move_.get_source());
+            self.push(Some(move_));
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
@@ -340,10 +345,10 @@ impl Engine {
             }
             if score > alpha {
                 flag = HashExact;
-                self.update_pv_table(_move);
+                self.update_pv_table(move_);
                 alpha = score;
                 if not_capture_move {
-                    self.move_sorter.add_history_move(_move, &self.board, depth);
+                    self.move_sorter.add_history_move(move_, &self.board, depth);
                 }
                 if score >= beta {
                     self.transposition_table.write(
@@ -352,10 +357,10 @@ impl Engine {
                         self.ply,
                         beta,
                         HashBeta,
-                        Some(_move),
+                        Some(move_),
                     );
                     if not_capture_move {
-                        self.move_sorter.update_killer_moves(_move, self.ply);
+                        self.move_sorter.update_killer_moves(move_, self.ply);
                     }
                     return beta;
                 }
@@ -400,14 +405,14 @@ impl Engine {
             if weighted_move.weight.is_negative() {
                 break;
             }
-            self.push(Some(weighted_move._move));
+            self.push(Some(weighted_move.move_));
             let score = -self.quiescence(-beta, -alpha);
             self.pop();
             if self.timer.stop_search() {
                 return 0;
             }
             if score > alpha {
-                self.update_pv_table(weighted_move._move);
+                self.update_pv_table(weighted_move.move_);
                 alpha = score;
                 if score >= beta {
                     return beta;
@@ -426,8 +431,8 @@ impl Engine {
 
     fn get_pv_as_uci(&self, ply: Ply) -> String {
         let mut pv_string = String::new();
-        for _move in self.get_pv(ply) {
-            pv_string.push_str(&_move.to_string());
+        for move_ in self.get_pv(ply) {
+            pv_string.push_str(&move_.to_string());
             pv_string.push(' ');
         }
         return pv_string.trim().to_string();
@@ -436,11 +441,11 @@ impl Engine {
     fn get_pv_as_algebraic(&self, ply: Ply, long: bool) -> String {
         let mut board = self.board.clone();
         let mut pv_string = String::new();
-        for _move in self.get_pv(ply) {
-            pv_string += &(if board.is_legal(_move) {
-                board.san_and_push(_move).unwrap()
+        for move_ in self.get_pv(ply) {
+            pv_string += &(if board.is_legal(move_) {
+                board.san_and_push(move_).unwrap()
             } else {
-                colorize(_move, ERROR_MESSAGE_STYLE)
+                colorize(move_, ERROR_MESSAGE_STYLE)
             } + " ");
         }
         return pv_string.trim().to_string();
@@ -466,12 +471,13 @@ impl Engine {
         self.pv_table[0][0]
     }
 
-    pub fn print_warning_message(&self, current_depth: Depth, alpha: Score, beta: Score) {
+    pub fn print_warning_message(&self, current_depth: Depth, alpha: Score, beta: Score, score: Score) {
         let warning_message = format!(
-            "Resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {} and beta {} with time {:.3} s",
+            "Resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {}, beta {} and score {} with time {:.3} s",
             current_depth,
             score_to_string(alpha),
             score_to_string(beta),
+            score_to_string(score),
             self.timer.elapsed().as_secs_f32(),
         );
         println!("{}", colorize(warning_message, WARNING_MESSAGE_STYLE));
@@ -513,11 +519,13 @@ impl Engine {
             score = self.search(current_depth, alpha, beta, print_info);
             let time_elapsed = self.timer.elapsed();
             if print_info {
-                self.print_search_info(
-                    current_depth,
-                    self.board.score_flipped(score),
-                    time_elapsed,
-                );
+                if alpha < score && score < beta {
+                    self.print_search_info(
+                        current_depth,
+                        self.board.score_flipped(score),
+                        time_elapsed,
+                    );
+                }
             }
             if self.timer.stop_search() {
                 if score == 0 {
@@ -527,7 +535,7 @@ impl Engine {
             }
             if score <= alpha || score >= beta {
                 if print_info {
-                    self.print_warning_message(current_depth, alpha, beta);
+                    self.print_warning_message(current_depth, alpha, beta, score);
                 }
                 alpha = -INFINITY;
                 beta = INFINITY;

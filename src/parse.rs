@@ -233,23 +233,23 @@ impl Push {
     fn moves(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         for move_text in commands.iter().skip(2) {
-            let _move: Move;
+            let move_: Move;
             if second_command == "san" {
-                _move = engine.board.parse_san(move_text)?;
+                move_ = engine.board.parse_san(move_text)?;
             } else if second_command == "uci" {
-                _move = engine.board.parse_uci(move_text)?;
+                move_ = engine.board.parse_uci(move_text)?;
             } else if second_command == "move" {
-                _move = engine.board.parse_move(move_text)?;
+                move_ = engine.board.parse_move(move_text)?;
             } else {
                 return Err(UnknownCommand);
             }
-            if !engine.board.is_legal(_move) {
+            if !engine.board.is_legal(move_) {
                 return Err(IllegalMove {
                     move_text: move_text.to_string(),
                     board_fen: engine.board.get_fen(),
                 });
             }
-            engine.board.push(Some(_move));
+            engine.board.push(Some(move_));
             println!(
                 "{} {}",
                 colorize("Pushed move:", SUCCESS_MESSAGE_STYLE),

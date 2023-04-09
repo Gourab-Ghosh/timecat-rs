@@ -260,16 +260,17 @@ fn test() {
     // engine.board.set_fen("8/3k2P1/1p2Q3/3P4/4p3/2P1P3/6K1/q7 b - - 1 56"); // weird mating results in 3 secs in my pc
     // engine.board.set_fen(could_have_probably_played_better_move[3]);
     // engine.board.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170");
-    // parse_command(&mut engine, "go time 3000");
-    parse_command(&mut engine, "go depth 13");
+    engine.board.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24");
+    parse_command(&mut engine, "go time 3000");
+    // parse_command(&mut engine, "go depth 13");
 
     // let mut board = Board::new();
     // println!("\n{board}");
     // for san in ["e4", "Nf6", "Be2", "Nxe4"] {
-    //     let _move = board.parse_san(san).unwrap();
-    //     let move_str = board.san(_move);
+    //     let move_ = board.parse_san(san).unwrap();
+    //     let move_str = board.san(move_);
     //     println!("\nPushing move {move_str}");
-    //     board.push(_move);
+    //     board.push(move_);
     //     println!("\n{board}");
     // }
 }

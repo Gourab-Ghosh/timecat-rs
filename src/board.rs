@@ -4,9 +4,9 @@ use super::*;
 pub enum BoardError {
     #[fail(
         display = "san() and lan() expect move to be legal or null, but got {} in {}",
-        _move, fen
+        move_, fen
     )]
-    InvalidSanMove { _move: Move, fen: String },
+    InvalidSanMove { move_: Move, fen: String },
 
     #[fail(display = "{}", err_msg)]
     CustomError { err_msg: String },
@@ -329,15 +329,15 @@ impl Board {
         self.status() == BoardStatus::Checkmate
     }
 
-    pub fn gives_check(&self, _move: Move) -> bool {
+    pub fn gives_check(&self, move_: Move) -> bool {
         let mut temp_board = self.board;
-        self.board.make_move(_move, &mut temp_board);
+        self.board.make_move(move_, &mut temp_board);
         return temp_board.checkers() != &BB_EMPTY;
     }
 
-    pub fn gives_checkmate(&self, _move: Move) -> bool {
+    pub fn gives_checkmate(&self, move_: Move) -> bool {
         let mut temp_board = self.board;
-        self.board.make_move(_move, &mut temp_board);
+        self.board.make_move(move_, &mut temp_board);
         temp_board.status() == BoardStatus::Checkmate
     }
 
@@ -365,20 +365,20 @@ impl Board {
         self.get_num_repetitions() as usize >= n_times
     }
 
-    pub fn gives_repetition(&self, _move: Move) -> bool {
+    pub fn gives_repetition(&self, move_: Move) -> bool {
         let mut new_board = self.get_sub_board();
-        new_board.clone().make_move(_move, &mut new_board);
+        new_board.clone().make_move(move_, &mut new_board);
         self.repetition_table.get_repetition(new_board.get_hash()) != 0
     }
 
-    pub fn gives_threefold_repetition(&self, _move: Move) -> bool {
+    pub fn gives_threefold_repetition(&self, move_: Move) -> bool {
         let mut new_board = self.get_sub_board();
-        new_board.clone().make_move(_move, &mut new_board);
+        new_board.clone().make_move(move_, &mut new_board);
         self.repetition_table.get_repetition(new_board.get_hash()) == 2
     }
 
-    pub fn gives_claimable_threefold_repetition(&mut self, _move: Move) -> bool {
-        self.push_without_nnue(Some(_move));
+    pub fn gives_claimable_threefold_repetition(&mut self, move_: Move) -> bool {
+        self.push_without_nnue(Some(move_));
         if self.is_threefold_repetition() {
             self.pop_without_nnue();
             return true;
@@ -459,17 +459,17 @@ impl Board {
         self.is_other_draw() || self.status() != BoardStatus::Ongoing
     }
 
-    // pub fn is_double_pawn_push(&self, _move: Move) -> bool {
-    //     let source = _move.get_source();
-    //     let dest = _move.get_dest();
+    // pub fn is_double_pawn_push(&self, move_: Move) -> bool {
+    //     let source = move_.get_source();
+    //     let dest = move_.get_dest();
     //     let pawn_mask = self.get_piece_mask(Pawn);
     // }
 
-    pub fn is_en_passant(&self, _move: Move) -> bool {
+    pub fn is_en_passant(&self, move_: Move) -> bool {
         match self.ep_square() {
             Some(ep_square) => {
-                let source = _move.get_source();
-                let dest = _move.get_dest();
+                let source = move_.get_source();
+                let dest = move_.get_dest();
                 ep_square == dest
                     && self.get_piece_mask(Pawn) & get_square_bb(source) != BB_EMPTY
                     && [7, 9].contains(&dest.to_int().abs_diff(source.to_int()))
@@ -492,17 +492,17 @@ impl Board {
             == BB_EMPTY
     }
 
-    pub fn is_capture(&self, _move: Move) -> bool {
-        let touched = get_square_bb(_move.get_source()) ^ get_square_bb(_move.get_dest());
-        (touched & self.occupied_co(!self.turn())) != BB_EMPTY || self.is_en_passant(_move)
+    pub fn is_capture(&self, move_: Move) -> bool {
+        let touched = get_square_bb(move_.get_source()) ^ get_square_bb(move_.get_dest());
+        (touched & self.occupied_co(!self.turn())) != BB_EMPTY || self.is_en_passant(move_)
     }
 
-    pub fn is_quiet(&self, _move: Move) -> bool {
-        !self.gives_check(_move) && !self.is_capture(_move)
+    pub fn is_quiet(&self, move_: Move) -> bool {
+        !self.gives_check(move_) && !self.is_capture(move_)
     }
 
-    pub fn is_zeroing(&self, _move: Move) -> bool {
-        let touched = get_square_bb(_move.get_source()) ^ get_square_bb(_move.get_dest());
+    pub fn is_zeroing(&self, move_: Move) -> bool {
+        let touched = get_square_bb(move_.get_source()) ^ get_square_bb(move_.get_dest());
         return touched & self.get_piece_mask(Pawn) != BB_EMPTY
             || (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
     }
@@ -535,9 +535,9 @@ impl Board {
         self.board.pieces(piece)
     }
 
-    fn reduces_castling_rights(&self, _move: Move) -> bool {
+    fn reduces_castling_rights(&self, move_: Move) -> bool {
         let cr = self.clean_castling_rights();
-        let touched = get_square_bb(_move.get_source()) ^ get_square_bb(_move.get_dest());
+        let touched = get_square_bb(move_.get_source()) ^ get_square_bb(move_.get_dest());
         ((touched & cr) != BB_EMPTY)
             || ((cr & BB_RANK_1 & touched & self.get_piece_mask(King) & self.occupied_co(White))
                 != BB_EMPTY)
@@ -545,8 +545,8 @@ impl Board {
                 != BB_EMPTY)
     }
 
-    pub fn is_irreversible(&self, _move: Move) -> bool {
-        self.is_zeroing(_move) || self.reduces_castling_rights(_move) || self.has_legal_en_passant()
+    pub fn is_irreversible(&self, move_: Move) -> bool {
+        self.is_zeroing(move_) || self.reduces_castling_rights(move_) || self.has_legal_en_passant()
     }
 
     #[inline(always)]
@@ -554,17 +554,17 @@ impl Board {
         self.ep_square
     }
 
-    pub fn is_castling(&self, _move: Move) -> bool {
-        if (self.get_piece_mask(King) & get_square_bb(_move.get_source())) != BB_EMPTY {
-            let rank_diff = _move
+    pub fn is_castling(&self, move_: Move) -> bool {
+        if (self.get_piece_mask(King) & get_square_bb(move_.get_source())) != BB_EMPTY {
+            let rank_diff = move_
                 .get_source()
                 .get_file()
                 .to_index()
-                .abs_diff(_move.get_dest().get_file().to_index());
+                .abs_diff(move_.get_dest().get_file().to_index());
             return rank_diff > 1
                 || (self.get_piece_mask(Rook)
                     & self.occupied_co(self.turn())
-                    & get_square_bb(_move.get_dest()))
+                    & get_square_bb(move_.get_dest()))
                     != BB_EMPTY;
         }
         false
@@ -578,21 +578,21 @@ impl Board {
         self.get_num_pieces() <= ENDGAME_PIECE_THRESHOLD
     }
 
-    fn push_nnue(&mut self, _move: Move) {
+    fn push_nnue(&mut self, move_: Move) {
         self.evaluator
             .as_mut()
             .expect("No Evaluator found!")
             .backup();
         let self_color = self.turn();
-        let source = _move.get_source();
-        let dest = _move.get_dest();
+        let source = move_.get_source();
+        let dest = move_.get_dest();
         let self_piece = self.piece_at(source).unwrap();
         self.evaluator
             .as_mut()
             .expect("No Evaluator found!")
             .deactivate_nnue(self_piece, self_color, source);
-        if self.is_capture(_move) {
-            let remove_piece_square = if self.is_en_passant(_move) {
+        if self.is_capture(move_) {
+            let remove_piece_square = if self.is_en_passant(move_) {
                 dest.backward(self_color).unwrap()
             } else {
                 dest
@@ -602,9 +602,9 @@ impl Board {
                 .as_mut()
                 .expect("No Evaluator found!")
                 .deactivate_nnue(piece, !self_color, remove_piece_square);
-        } else if self.is_castling(_move) {
-            let (rook_source, rook_dest) = if _move.get_dest().get_file().to_index()
-                > _move.get_source().get_file().to_index()
+        } else if self.is_castling(move_) {
+            let (rook_source, rook_dest) = if move_.get_dest().get_file().to_index()
+                > move_.get_source().get_file().to_index()
             {
                 match self_color {
                     White => (Square::H1, Square::F1),
@@ -629,7 +629,7 @@ impl Board {
             .as_mut()
             .expect("No Evaluator found!")
             .activate_nnue(
-                _move.get_promotion().unwrap_or(self_piece),
+                move_.get_promotion().unwrap_or(self_piece),
                 self_color,
                 dest,
             );
@@ -640,13 +640,13 @@ impl Board {
         if self.turn() == Black {
             self.fullmove_number += 1;
         }
-        if let Some(_move) = option_move {
-            if self.is_zeroing(_move) {
+        if let Some(move_) = option_move {
+            if self.is_zeroing(move_) {
                 self.halfmove_clock = 0;
             } else {
                 self.halfmove_clock += 1;
             }
-            self.board.clone().make_move(_move, &mut self.board);
+            self.board.clone().make_move(move_, &mut self.board);
         } else {
             self.halfmove_clock += 1;
             self.board = self
@@ -663,8 +663,8 @@ impl Board {
     }
 
     pub fn push(&mut self, option_move: Option<Move>) {
-        // if let Some(_move) = option_move {
-        //     self.push_nnue(_move);
+        // if let Some(move_) = option_move {
+        //     self.push_nnue(move_);
         // }
         self.push_without_nnue(option_move);
     }
@@ -693,7 +693,7 @@ impl Board {
 
     pub fn pop(&mut self) -> Option<Move> {
         let option_move = self.pop_without_nnue();
-        // if let Some(_move) = option_move {
+        // if let Some(move_) = option_move {
         //     self.pop_nnue();
         // }
         option_move
@@ -705,9 +705,9 @@ impl Board {
 
     pub fn parse_san(&self, san: &str) -> Result<Move, chess::Error> {
         let san = san.replace('0', "O");
-        for _move in self.generate_legal_moves() {
-            if self.san(_move).unwrap() == san {
-                return Ok(_move);
+        for move_ in self.generate_legal_moves() {
+            if self.san(move_).unwrap() == san {
+                return Ok(move_);
             }
         }
         Err(chess::Error::InvalidSanMove)
@@ -727,9 +727,9 @@ impl Board {
     }
 
     pub fn push_san(&mut self, san: &str) -> Move {
-        let _move = self.parse_san(san).unwrap_or_else(|err| panic!("{}", err));
-        self.push(Some(_move));
-        _move
+        let move_ = self.parse_san(san).unwrap_or_else(|err| panic!("{}", err));
+        self.push(Some(move_));
+        move_
     }
 
     pub fn push_sans(&mut self, sans: &str) {
@@ -739,11 +739,11 @@ impl Board {
     }
 
     pub fn push_uci(&mut self, uci: &str) -> Move {
-        let _move = self
+        let move_ = self
             .parse_uci(uci)
             .unwrap_or_else(|_| panic!("Bad uci: {uci}"));
-        self.push(Some(_move));
-        _move
+        self.push(Some(move_));
+        move_
     }
 
     pub fn push_str(&mut self, s: &str) {
@@ -756,15 +756,15 @@ impl Board {
         }
     }
 
-    fn algebraic_without_suffix(&self, _move: Move, long: bool) -> Result<String, BoardError> {
+    fn algebraic_without_suffix(&self, move_: Move, long: bool) -> Result<String, BoardError> {
         // Null move.
-        if _move.get_source() == _move.get_dest() {
+        if move_.get_source() == move_.get_dest() {
             return Ok("--".to_string());
         }
 
         // Castling.
-        if self.is_castling(_move) {
-            return if _move.get_dest().get_file() < _move.get_source().get_file() {
+        if self.is_castling(move_) {
+            return if move_.get_dest().get_file() < move_.get_source().get_file() {
                 Ok("O-O-O".to_string())
             } else {
                 Ok("O-O".to_string())
@@ -772,12 +772,12 @@ impl Board {
         }
 
         let piece = self
-            .piece_at(_move.get_source())
+            .piece_at(move_.get_source())
             .ok_or(BoardError::InvalidSanMove {
-                _move,
+                move_,
                 fen: self.get_fen(),
             })?;
-        let capture = self.is_capture(_move);
+        let capture = self.is_capture(move_);
         let mut san = if piece == Pawn {
             String::new()
         } else {
@@ -785,7 +785,7 @@ impl Board {
         };
 
         if long {
-            san += &_move.get_source().to_string();
+            san += &move_.get_source().to_string();
         } else if piece != Pawn {
             // Get ambiguous move candidates.
             // Relevant candidates: not exactly the current move,
@@ -793,8 +793,8 @@ impl Board {
             let mut others = BB_EMPTY;
             let from_mask = self.get_piece_mask(piece)
                 & self.occupied_co(self.turn())
-                & !get_square_bb(_move.get_source());
-            let to_mask = get_square_bb(_move.get_dest());
+                & !get_square_bb(move_.get_source());
+            let to_mask = get_square_bb(move_.get_dest());
             for candidate in self
                 .generate_masked_legal_moves(to_mask)
                 .filter(|m| get_square_bb(m.get_source()) & from_mask != BB_EMPTY)
@@ -805,10 +805,10 @@ impl Board {
             // Disambiguate.
             if others != BB_EMPTY {
                 let (mut row, mut column) = (false, false);
-                if others & get_rank_bb(_move.get_source().get_rank()) != BB_EMPTY {
+                if others & get_rank_bb(move_.get_source().get_rank()) != BB_EMPTY {
                     column = true;
                 }
-                if others & get_file_bb(_move.get_source().get_file()) != BB_EMPTY {
+                if others & get_file_bb(move_.get_source().get_file()) != BB_EMPTY {
                     row = true;
                 } else {
                     column = true;
@@ -817,19 +817,19 @@ impl Board {
                     san.push(
                         "abcdefgh"
                             .chars()
-                            .nth(_move.get_source().get_file().to_index())
+                            .nth(move_.get_source().get_file().to_index())
                             .unwrap(),
                     );
                 }
                 if row {
-                    san += &(_move.get_source().get_rank().to_index() + 1).to_string();
+                    san += &(move_.get_source().get_rank().to_index() + 1).to_string();
                 }
             }
         } else if capture {
             san.push(
                 "abcdefgh"
                     .chars()
-                    .nth(_move.get_source().get_file().to_index())
+                    .nth(move_.get_source().get_file().to_index())
                     .unwrap(),
             );
         }
@@ -842,56 +842,56 @@ impl Board {
         }
 
         // Destination square.
-        san += &_move.get_dest().to_string();
+        san += &move_.get_dest().to_string();
 
         // Promotion.
-        if let Some(promotion) = _move.get_promotion() {
+        if let Some(promotion) = move_.get_promotion() {
             san += &format!("={}", promotion.to_string(White))
         }
 
         Ok(san)
     }
 
-    fn algebraic_and_push(&mut self, _move: Move, long: bool) -> Result<String, BoardError> {
-        let san = self.algebraic_without_suffix(_move, long)?;
+    fn algebraic_and_push(&mut self, move_: Move, long: bool) -> Result<String, BoardError> {
+        let san = self.algebraic_without_suffix(move_, long)?;
 
         // Look ahead for check or checkmate.
-        self.push_without_nnue(Some(_move));
+        self.push_without_nnue(Some(move_));
         let is_check = self.is_check();
         let is_checkmate = is_check && self.is_checkmate();
 
         // Add check or checkmate suffix.
-        if is_checkmate && _move.get_source() != _move.get_dest() {
+        if is_checkmate && move_.get_source() != move_.get_dest() {
             Ok(san + "#")
-        } else if is_check && _move.get_source() != _move.get_dest() {
+        } else if is_check && move_.get_source() != move_.get_dest() {
             Ok(san + "+")
         } else {
             Ok(san)
         }
     }
 
-    fn algebraic(&self, _move: Move, long: bool) -> Result<String, BoardError> {
-        self.clone().algebraic_and_push(_move, long)
+    fn algebraic(&self, move_: Move, long: bool) -> Result<String, BoardError> {
+        self.clone().algebraic_and_push(move_, long)
     }
 
     /// Gets the standard algebraic notation of the given move in the context
     /// of the current position.
-    pub fn san(&self, _move: Move) -> Result<String, BoardError> {
-        self.algebraic(_move, false)
+    pub fn san(&self, move_: Move) -> Result<String, BoardError> {
+        self.algebraic(move_, false)
     }
 
-    pub fn san_and_push(&mut self, _move: Move) -> Result<String, BoardError> {
-        self.algebraic_and_push(_move, false)
+    pub fn san_and_push(&mut self, move_: Move) -> Result<String, BoardError> {
+        self.algebraic_and_push(move_, false)
     }
 
     /// Gets the long algebraic notation of the given move in the context of
     /// the current position.
-    pub fn lan(&self, _move: Move) -> Result<String, BoardError> {
-        self.algebraic(_move, true)
+    pub fn lan(&self, move_: Move) -> Result<String, BoardError> {
+        self.algebraic(move_, true)
     }
 
-    pub fn lan_and_push(&mut self, _move: Move) -> Result<String, BoardError> {
-        self.algebraic_and_push(_move, true)
+    pub fn lan_and_push(&mut self, move_: Move) -> Result<String, BoardError> {
+        self.algebraic_and_push(move_, true)
     }
 
     /// Given a sequence of moves, returns a string representing the sequence
@@ -904,19 +904,19 @@ impl Board {
     fn variation_san(&self, board: &Board, variation: Vec<Move>) -> String {
         let mut board = board.clone();
         let mut san = Vec::new();
-        for _move in variation {
-            if !board.is_legal(_move) {
-                panic!("illegal move {_move} in position {}", board.get_fen());
+        for move_ in variation {
+            if !board.is_legal(move_) {
+                panic!("illegal move {move_} in position {}", board.get_fen());
             }
 
             if board.turn() == White {
-                let san_str = board.san_and_push(_move);
+                let san_str = board.san_and_push(move_);
                 san.push(format!("{}. {}", board.fullmove_number, san_str.unwrap()));
             } else if san.is_empty() {
-                let san_str = board.san_and_push(_move);
+                let san_str = board.san_and_push(move_);
                 san.push(format!("{}...{}", board.fullmove_number, san_str.unwrap()));
             } else {
-                san.push(board.san_and_push(_move).unwrap().to_string());
+                san.push(board.san_and_push(move_).unwrap().to_string());
             }
         }
         let mut san_string = String::new();
@@ -940,8 +940,8 @@ impl Board {
         )
     }
 
-    pub fn is_legal(&self, _move: Move) -> bool {
-        self.board.legal(_move)
+    pub fn is_legal(&self, move_: Move) -> bool {
+        self.board.legal(move_)
     }
 
     pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> chess::MoveGen {
@@ -1020,14 +1020,14 @@ impl Board {
             return _moves.len();
         }
         let mut count: usize = 0;
-        for _move in _moves {
-            self.push(Some(_move));
+        for move_ in _moves {
+            self.push(Some(move_));
             let c_count = self.mini_perft(depth - 1, false);
             self.pop();
             if print_move {
                 println!(
                     "{}: {}",
-                    colorize(_move, PERFT_MOVE_STYLE),
+                    colorize(move_, PERFT_MOVE_STYLE),
                     colorize(c_count, PERFT_COUNT_STYLE),
                 );
             }
