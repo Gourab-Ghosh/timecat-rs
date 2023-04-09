@@ -125,8 +125,8 @@ impl Engine {
             moves_vec_sorted.sort_by_cached_key(|&wm| {
                 self.board.gives_claimable_threefold_repetition(wm._move)
             });
-            moves_vec_sorted.sort_by_cached_key(|&wm| self.board.gives_repetition(wm._move));
         }
+        moves_vec_sorted.sort_by_cached_key(|&wm| self.board.gives_repetition(wm._move));
         for (move_index, weighted_move) in moves_vec_sorted.iter().enumerate() {
             let _move = weighted_move._move;
             // let san = self.board.san(_move).unwrap();
@@ -209,8 +209,7 @@ impl Engine {
         if moves_gen.len() == 0 {
             return if not_in_check { 0 } else { -mate_score };
         }
-        let num_repetitions = self.board.get_num_repetitions();
-        if num_repetitions > 1 || self.board.is_other_draw() {
+        if self.board.is_other_draw() {
             return 0;
         }
         if !not_in_check {

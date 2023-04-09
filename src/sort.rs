@@ -165,19 +165,27 @@ impl MoveSorter {
 
     fn score_threat(_move: Move, move_pushed_sub_board: &chess::Board) -> MoveWeight {
         let attacker_piece_square = _move.get_dest();
-        let attacker_piece = move_pushed_sub_board.piece_on(attacker_piece_square).unwrap();
+        let attacker_piece = move_pushed_sub_board
+            .piece_on(attacker_piece_square)
+            .unwrap();
         let attacked_piece_mask = match attacker_piece {
-            Pawn => get_pawn_attacks(attacker_piece_square, !move_pushed_sub_board.side_to_move(), *move_pushed_sub_board.combined()),
+            Pawn => get_pawn_attacks(
+                attacker_piece_square,
+                !move_pushed_sub_board.side_to_move(),
+                *move_pushed_sub_board.combined(),
+            ),
             Knight => get_knight_moves(attacker_piece_square),
             Bishop => get_bishop_moves(attacker_piece_square, *move_pushed_sub_board.combined()),
             Rook => get_rook_moves(attacker_piece_square, *move_pushed_sub_board.combined()),
             Queen => get_queen_moves(attacker_piece_square, *move_pushed_sub_board.combined()),
             King => get_king_moves(attacker_piece_square),
-        } & move_pushed_sub_board.color_combined(move_pushed_sub_board.side_to_move());
+        } & move_pushed_sub_board
+            .color_combined(move_pushed_sub_board.side_to_move());
         let mut threat_score = 0;
         for square in attacked_piece_mask {
             let attacked_piece = move_pushed_sub_board.piece_on(square).unwrap_or(Pawn);
-            threat_score += evaluate_piece(attacked_piece) as MoveWeight - evaluate_piece(attacker_piece) as MoveWeight;
+            threat_score += evaluate_piece(attacked_piece) as MoveWeight
+                - evaluate_piece(attacker_piece) as MoveWeight;
         }
         threat_score / PAWN_VALUE as MoveWeight
     }
@@ -225,7 +233,11 @@ impl MoveSorter {
         //     return 1288000 + threat_score;
         // }
         if board.is_passed_pawn(source) {
-            let promotion_distance = board.turn().to_their_backrank().to_index().abs_diff(source.get_rank().to_index());
+            let promotion_distance = board
+                .turn()
+                .to_their_backrank()
+                .to_index()
+                .abs_diff(source.get_rank().to_index());
             return 1287000 - promotion_distance as MoveWeight;
         }
         self.get_history_score(_move, board)
@@ -315,7 +327,8 @@ impl MoveSorter {
         WeightedMoveListSorter::from_iter(moves_vec.into_iter().enumerate().map(|(idx, m)| {
             WeightedMove::new(
                 m,
-                1000 * self.score_move(m, board, ply, best_move, optional_pv_move) + MAX_MOVES_PER_POSITION as MoveWeight
+                1000 * self.score_move(m, board, ply, best_move, optional_pv_move)
+                    + MAX_MOVES_PER_POSITION as MoveWeight
                     - idx as MoveWeight,
             )
         }))
