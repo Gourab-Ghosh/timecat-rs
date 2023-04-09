@@ -519,13 +519,11 @@ impl Engine {
             score = self.search(current_depth, alpha, beta, print_info);
             let time_elapsed = self.timer.elapsed();
             if print_info {
-                if alpha < score && score < beta {
-                    self.print_search_info(
-                        current_depth,
-                        self.board.score_flipped(score),
-                        time_elapsed,
-                    );
-                }
+                self.print_search_info(
+                    current_depth,
+                    self.board.score_flipped(score),
+                    time_elapsed,
+                );
             }
             if self.timer.stop_search() {
                 if score == 0 {
