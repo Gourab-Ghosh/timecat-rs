@@ -224,10 +224,10 @@ impl MoveSorter {
         // if threat_score != 0 {
         //     return 1288000 + threat_score;
         // }
-        // if board.is_passed_pawn(source) {
-        //     let promotion_distance = board.turn().to_their_backrank().to_index().abs_diff(source.get_rank().to_index());
-        //     return 1287000 - promotion_distance as MoveWeight;
-        // }
+        if board.is_passed_pawn(source) {
+            let promotion_distance = board.turn().to_their_backrank().to_index().abs_diff(source.get_rank().to_index());
+            return 1287000 - promotion_distance as MoveWeight;
+        }
         self.get_history_score(_move, board)
     }
 
@@ -315,7 +315,7 @@ impl MoveSorter {
         WeightedMoveListSorter::from_iter(moves_vec.into_iter().enumerate().map(|(idx, m)| {
             WeightedMove::new(
                 m,
-                1000 * self.score_move(m, board, ply, best_move, optional_pv_move) + 1000
+                1000 * self.score_move(m, board, ply, best_move, optional_pv_move) + MAX_MOVES_PER_POSITION as MoveWeight
                     - idx as MoveWeight,
             )
         }))
@@ -329,7 +329,7 @@ impl MoveSorter {
         WeightedMoveListSorter::from_iter(moves_gen.into_iter().enumerate().map(|(idx, m)| {
             WeightedMove::new(
                 m,
-                1000 * Self::score_capture(m, board) + MAX_MOVES_PER_POSITION as MoveWeight + 1000
+                1000 * Self::score_capture(m, board) + MAX_MOVES_PER_POSITION as MoveWeight
                     - idx as MoveWeight,
             )
         }))
