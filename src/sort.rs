@@ -199,6 +199,9 @@ impl MoveSorter {
             self.score_pv = false;
             return 1293000;
         }
+        if let Some(piece) = _move.get_promotion() {
+            return 1292000;
+        }
         let source = _move.get_source();
         let dest = _move.get_dest();
         let mut sub_board = board.get_sub_board();
@@ -207,24 +210,24 @@ impl MoveSorter {
         let moving_piece = board.piece_at(source).unwrap();
         // check
         if checkers != BB_EMPTY {
-            return 1292000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
+            return 1291000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
         if board.is_capture(_move) {
-            return 1291000 + Self::score_capture(_move, board);
+            return 1290000 + Self::score_capture(_move, board);
         }
         for (idx, &option_move) in self.killer_moves[ply].iter().enumerate() {
             if option_move == Some(_move) {
-                return 1290000 - idx as MoveWeight;
+                return 1289000 - idx as MoveWeight;
             }
         }
         // let threat_score = Self::score_threat(_move, &sub_board);
         // if threat_score != 0 {
-        //     return 1289000 + threat_score;
+        //     return 1288000 + threat_score;
         // }
-        if board.is_passed_pawn(source) {
-            let promotion_distance = board.turn().to_their_backrank().to_index().abs_diff(dest.get_rank().to_index());
-            return 1288000 - promotion_distance as MoveWeight;
-        }
+        // if board.is_passed_pawn(source) {
+        //     let promotion_distance = board.turn().to_their_backrank().to_index().abs_diff(source.get_rank().to_index());
+        //     return 1287000 - promotion_distance as MoveWeight;
+        // }
         self.get_history_score(_move, board)
     }
 
