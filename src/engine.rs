@@ -471,7 +471,13 @@ impl Engine {
         self.pv_table[0][0]
     }
 
-    pub fn print_warning_message(&self, current_depth: Depth, alpha: Score, beta: Score, score: Score) {
+    pub fn print_warning_message(
+        &self,
+        current_depth: Depth,
+        alpha: Score,
+        beta: Score,
+        score: Score,
+    ) {
         let warning_message = format!(
             "Resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {}, beta {} and score {} with time {:.3} s",
             current_depth,
