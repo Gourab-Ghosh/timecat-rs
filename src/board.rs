@@ -287,6 +287,7 @@ impl Board {
         skeleton
     }
 
+    #[inline(always)]
     pub fn to_unicode_string(&self) -> String {
         self.to_board_string(true)
     }
@@ -301,30 +302,37 @@ impl Board {
         }
     }
 
+    #[inline(always)]
     pub fn turn(&self) -> Color {
         self.board.side_to_move()
     }
 
+    #[inline(always)]
     pub fn occupied(&self) -> &BitBoard {
         return self.board.combined();
     }
 
+    #[inline(always)]
     pub fn occupied_co(&self, color: Color) -> &BitBoard {
         return self.board.color_combined(color);
     }
 
+    #[inline(always)]
     pub fn black_occupied(&self) -> &BitBoard {
         return self.board.color_combined(Black);
     }
 
+    #[inline(always)]
     pub fn white_occupied(&self) -> &BitBoard {
         return self.board.color_combined(White);
     }
 
+    #[inline(always)]
     pub fn is_check(&self) -> bool {
         self.get_checkers() != BB_EMPTY
     }
 
+    #[inline(always)]
     pub fn is_checkmate(&self) -> bool {
         self.status() == BoardStatus::Checkmate
     }
@@ -361,6 +369,7 @@ impl Board {
         self.num_repetitions
     }
 
+    #[inline(always)]
     pub fn is_repetition(&self, n_times: usize) -> bool {
         self.get_num_repetitions() as usize >= n_times
     }
@@ -394,14 +403,17 @@ impl Board {
         false
     }
 
+    #[inline(always)]
     pub fn is_threefold_repetition(&self) -> bool {
         self.is_repetition(3)
     }
 
+    #[inline(always)]
     fn is_halfmoves(&self, n: u8) -> bool {
         self.halfmove_clock >= n
     }
 
+    #[inline(always)]
     pub fn is_fifty_moves(&self) -> bool {
         self.is_halfmoves(100)
     }
@@ -419,6 +431,7 @@ impl Board {
         };
     }
 
+    #[inline(always)]
     pub fn has_non_pawn_material(&self) -> bool {
         self.get_piece_mask(Pawn) | self.get_piece_mask(King) != *self.occupied()
     }
@@ -443,18 +456,22 @@ impl Board {
         }
     }
 
+    #[inline(always)]
     pub fn is_stalemate(&self) -> bool {
         self.status() == BoardStatus::Stalemate
     }
 
+    #[inline(always)]
     pub fn is_other_draw(&self) -> bool {
         self.is_threefold_repetition() || self.is_fifty_moves() || self.is_insufficient_material()
     }
 
+    #[inline(always)]
     pub fn is_draw(&self) -> bool {
         self.is_other_draw() || self.is_stalemate()
     }
 
+    #[inline(always)]
     pub fn is_game_over(&self) -> bool {
         self.is_other_draw() || self.status() != BoardStatus::Ongoing
     }
@@ -497,6 +514,7 @@ impl Board {
         (touched & self.occupied_co(!self.turn())) != BB_EMPTY || self.is_en_passant(move_)
     }
 
+    #[inline(always)]
     pub fn is_quiet(&self, move_: Move) -> bool {
         !self.gives_check(move_) && !self.is_capture(move_)
     }
@@ -507,10 +525,12 @@ impl Board {
             || (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
     }
 
+    #[inline(always)]
     pub fn get_enpassant_square(&self) -> Option<Square> {
         self.board.en_passant()
     }
 
+    #[inline(always)]
     pub fn has_legal_en_passant(&self) -> bool {
         self.get_enpassant_square().is_some()
     }
@@ -531,6 +551,7 @@ impl Board {
         white_castling_righrs | black_castling_righrs
     }
 
+    #[inline(always)]
     pub fn get_piece_mask(&self, piece: Piece) -> &BitBoard {
         self.board.pieces(piece)
     }
@@ -538,13 +559,15 @@ impl Board {
     fn reduces_castling_rights(&self, move_: Move) -> bool {
         let cr = self.clean_castling_rights();
         let touched = get_square_bb(move_.get_source()) ^ get_square_bb(move_.get_dest());
-        ((touched & cr) != BB_EMPTY)
-            || ((cr & BB_RANK_1 & touched & self.get_piece_mask(King) & self.occupied_co(White))
-                != BB_EMPTY)
-            || ((cr & BB_RANK_8 & touched & self.get_piece_mask(King) & self.occupied_co(Black))
-                != BB_EMPTY)
+        let touched_cr = touched & cr;
+        let kings = self.get_piece_mask(King);
+        let touched_kings_cr = touched_cr & kings;
+        touched_cr != BB_EMPTY
+            || BB_RANK_1 & touched_kings_cr & self.occupied_co(White) != BB_EMPTY
+            || BB_RANK_8 & touched_kings_cr & self.occupied_co(Black) != BB_EMPTY
     }
 
+    #[inline(always)]
     pub fn is_irreversible(&self, move_: Move) -> bool {
         self.is_zeroing(move_) || self.reduces_castling_rights(move_) || self.has_legal_en_passant()
     }
@@ -562,18 +585,20 @@ impl Board {
                 .to_index()
                 .abs_diff(move_.get_dest().get_file().to_index());
             return rank_diff > 1
-                || (self.get_piece_mask(Rook)
+                || self.get_piece_mask(Rook)
                     & self.occupied_co(self.turn())
-                    & get_square_bb(move_.get_dest()))
+                    & get_square_bb(move_.get_dest())
                     != BB_EMPTY;
         }
         false
     }
 
+    #[inline(always)]
     pub fn get_num_pieces(&self) -> u32 {
         self.occupied().popcnt()
     }
 
+    #[inline(always)]
     pub fn is_endgame(&self) -> bool {
         self.get_num_pieces() <= ENDGAME_PIECE_THRESHOLD
     }
@@ -699,6 +724,7 @@ impl Board {
         option_move
     }
 
+    #[inline(always)]
     pub fn has_empty_stack(&self) -> bool {
         self.stack.is_empty()
     }
@@ -714,6 +740,7 @@ impl Board {
         // Move::from_san(&self.board, &san.replace('0', "O"))
     }
 
+    #[inline(always)]
     pub fn parse_uci(&self, uci: &str) -> Result<Move, chess::Error> {
         Move::from_str(uci)
     }
@@ -746,6 +773,7 @@ impl Board {
         move_
     }
 
+    #[inline(always)]
     pub fn push_str(&mut self, s: &str) {
         self.push_uci(s);
     }
@@ -870,26 +898,31 @@ impl Board {
         }
     }
 
+    #[inline(always)]
     fn algebraic(&self, move_: Move, long: bool) -> Result<String, BoardError> {
         self.clone().algebraic_and_push(move_, long)
     }
 
     /// Gets the standard algebraic notation of the given move in the context
     /// of the current position.
+    #[inline(always)]
     pub fn san(&self, move_: Move) -> Result<String, BoardError> {
         self.algebraic(move_, false)
     }
 
+    #[inline(always)]
     pub fn san_and_push(&mut self, move_: Move) -> Result<String, BoardError> {
         self.algebraic_and_push(move_, false)
     }
 
     /// Gets the long algebraic notation of the given move in the context of
     /// the current position.
+    #[inline(always)]
     pub fn lan(&self, move_: Move) -> Result<String, BoardError> {
         self.algebraic(move_, true)
     }
 
+    #[inline(always)]
     pub fn lan_and_push(&mut self, move_: Move) -> Result<String, BoardError> {
         self.algebraic_and_push(move_, true)
     }
@@ -940,6 +973,7 @@ impl Board {
         )
     }
 
+    #[inline(always)]
     pub fn is_legal(&self, move_: Move) -> bool {
         self.board.legal(move_)
     }
@@ -950,6 +984,7 @@ impl Board {
         moves
     }
 
+    #[inline(always)]
     pub fn generate_legal_moves(&self) -> chess::MoveGen {
         chess::MoveGen::new_legal(&self.board)
     }
@@ -959,10 +994,12 @@ impl Board {
         self.generate_masked_legal_moves(*targets)
     }
 
+    #[inline(always)]
     pub fn hash(&self) -> u64 {
         self.board.get_hash()
     }
 
+    #[inline(always)]
     pub fn get_pawn_hash(&self) -> u64 {
         self.board.get_pawn_hash()
     }
@@ -991,10 +1028,12 @@ impl Board {
         score
     }
 
+    #[inline(always)]
     pub fn get_material_score_flipped(&self) -> Score {
         self.score_flipped(self.get_material_score())
     }
 
+    #[inline(always)]
     pub fn get_material_score_abs(&self) -> Score {
         chess::ALL_PIECES[0..5]
             .iter()
@@ -1002,6 +1041,7 @@ impl Board {
             .sum()
     }
 
+    #[inline(always)]
     pub fn evaluate(&self) -> Score {
         self.evaluator
             .as_ref()
@@ -1009,6 +1049,7 @@ impl Board {
             .evaluate(self)
     }
 
+    #[inline(always)]
     pub fn evaluate_flipped(&self) -> Score {
         self.score_flipped(self.evaluate())
     }
@@ -1036,6 +1077,7 @@ impl Board {
         count
     }
 
+    #[inline(always)]
     pub fn perft(&mut self, depth: Depth) -> usize {
         self.mini_perft(depth, true)
     }

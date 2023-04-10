@@ -223,46 +223,46 @@ fn test() {
         "r1bqr1k1/p1p2pp1/1b5p/3n4/2Q1N3/5N1P/PPP2PP1/R1B2RK1 b - - 2 16", // Taking really long to best move at depth 12
     ];
 
-    let mut engine = Engine::default();
-    // engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
-    // engine.board.set_fen("7K/8/8/8/3k4/8/8/R7 w - - 15 57");
-    // engine.board.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1"); // test endgame
-    // engine.board.set_fen("2kr1br1/p1pn1p2/2N1q2p/1PpQP3/5p1P/P6R/5PP1/2R3K1 w - - 2 30"); // check for repetitions
-    // engine.board.push_sans("e4 e5"); // e4 opwning
-    // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
-    // engine.board.push_sans("d4 d5 c4"); // queens gambit
-    // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
-    // engine.board.push_sans("e4 c5"); // sicilian defense
-    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
-    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
-    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7"); // traxer counter attack with Nxf7
-    // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59"); // endgame improvement 1
-    // engine.board.set_fen("8/7R/8/8/8/7K/k7/8 w - - 0 1"); // endgame improvement 2
-    // engine.board.set_fen("8/8/8/8/7P/8/6K1/3kr3 w - - 0 82"); // endgame improvement 3
-    // engine.board.set_fen("8/8/8/8/1K3k2/8/8/2r5 b - - 9 79"); // endgame improvement 4
-    // engine.board.set_fen("8/1K6/8/6R1/8/3k4/8/8 b - - 0 62"); // endgame improvement 4
-    // self_play(&mut engine, 16, false, Some(100));
-    self_play(&mut engine, GoCommand::Time(Duration::from_secs(3)), true, None);
-    // self_play(&mut engine, GoCommand::Depth(11), true, None);
+    // let mut engine = Engine::default();
+    // // engine.board.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96");
+    // // engine.board.set_fen("7K/8/8/8/3k4/8/8/R7 w - - 15 57");
+    // // engine.board.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1"); // test endgame
+    // // engine.board.set_fen("2kr1br1/p1pn1p2/2N1q2p/1PpQP3/5p1P/P6R/5PP1/2R3K1 w - - 2 30"); // check for repetitions
+    // // engine.board.push_sans("e4 e5"); // e4 opwning
+    // // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
+    // // engine.board.push_sans("d4 d5 c4"); // queens gambit
+    // // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
+    // // engine.board.push_sans("e4 c5"); // sicilian defense
+    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
+    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
+    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7"); // traxer counter attack with Nxf7
+    // // engine.board.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59"); // endgame improvement 1
+    // // engine.board.set_fen("8/7R/8/8/8/7K/k7/8 w - - 0 1"); // endgame improvement 2
+    // // engine.board.set_fen("8/8/8/8/7P/8/6K1/3kr3 w - - 0 82"); // endgame improvement 3
+    // // engine.board.set_fen("8/8/8/8/1K3k2/8/8/2r5 b - - 9 79"); // endgame improvement 4
+    // // engine.board.set_fen("8/1K6/8/6R1/8/3k4/8/8 b - - 0 62"); // endgame improvement 4
+    // // self_play(&mut engine, 16, false, Some(100));
+    // self_play(&mut engine, GoCommand::Time(Duration::from_secs(3)), true, None);
+    // // self_play(&mut engine, GoCommand::Depth(11), true, None);
 
     // parse_command(&mut Engine::default(), "go perft 7");
 
-    // let mut engine = Engine::default();
-    // // engine.board.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88"); // test if engine can find mate in 3
-    // // engine.board.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111"); // test t_table -> nodes initially: 3203606
-    // // engine.board.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105"); // gives incomplete pv line
-    // // engine.board.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1"); // test endgame
-    // // engine.board.set_fen("4k2r/Q7/3b4/Q7/8/2N5/5PPP/5RK1 b - - 0 1"); // test draw by repetition
-    // // engine.board.set_fen(time_consuming_fens[7]);
-    // // engine.board.set_fen(could_have_probably_played_better_move[2]);
-    // // engine.board.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54"); // incomplete pv line in 3 secs in my pc
-    // // engine.board.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47"); // weird results in 3 secs in my pc
-    // // engine.board.set_fen("8/3k2P1/1p2Q3/3P4/4p3/2P1P3/6K1/q7 b - - 1 56"); // weird mating results in 3 secs in my pc
-    // // engine.board.set_fen(could_have_probably_played_better_move[3]);
-    // // engine.board.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170");
+    let mut engine = Engine::default();
+    // engine.board.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88"); // test if engine can find mate in 3
+    // engine.board.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111"); // test t_table -> nodes initially: 3203606
+    // engine.board.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105"); // gives incomplete pv line
+    // engine.board.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1"); // test endgame
+    // engine.board.set_fen("4k2r/Q7/3b4/Q7/8/2N5/5PPP/5RK1 b - - 0 1"); // test draw by repetition
+    // engine.board.set_fen(time_consuming_fens[7]);
+    // engine.board.set_fen(could_have_probably_played_better_move[2]);
+    // engine.board.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54"); // incomplete pv line in 3 secs in my pc
+    // engine.board.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47"); // weird results in 3 secs in my pc
+    // engine.board.set_fen("8/3k2P1/1p2Q3/3P4/4p3/2P1P3/6K1/q7 b - - 1 56"); // weird mating results in 3 secs in my pc
+    // engine.board.set_fen(could_have_probably_played_better_move[3]);
+    // engine.board.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170");
     // engine.board.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24");
     // parse_command(&mut engine, "go time 3000");
-    // // parse_command(&mut engine, "go depth 13");
+    parse_command(&mut engine, "go depth 13");
 
     // let mut board = Board::new();
     // println!("\n{board}");

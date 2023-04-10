@@ -123,8 +123,8 @@ pub mod square_utils {
     }
 
     #[inline(always)]
-    pub fn get_square_bb(square: Square) -> BitBoard {
-        get_item_unchecked!(BB_SQUARES, square.to_index())
+    pub fn get_square_bb(sq: Square) -> BitBoard {
+        get_item_unchecked!(BB_SQUARES, sq.to_index())
     }
 
     pub fn square_distance(square1: Square, square2: Square) -> u8 {
