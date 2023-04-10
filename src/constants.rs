@@ -248,25 +248,27 @@ pub mod engine_constants {
     use super::types::*;
     pub const MAX_PLY: usize = 255;
     pub const INFINITY: Score = 30_000;
-    pub const DRAW_SCORE: Score = PAWN_VALUE / 4;
+    pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;
     pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - MAX_PLY as Score - 1;
     pub const NUM_KILLER_MOVES: usize = 3;
     pub const PAWN_VALUE: Score = 100;
 
-    pub const NULL_MOVE_MIN_REDUCTION: Depth = 2;
+    pub const DISABLE_ALL_PRUNINGS: bool = false;
+
     pub const NULL_MOVE_MIN_DEPTH: Depth = 2;
+    pub const NULL_MOVE_MIN_REDUCTION: Depth = 2;
     pub const NULL_MOVE_DEPTH_DIVIDER: Depth = 4;
 
     pub const FULL_DEPTH_SEARCH_LMR: usize = 5;
     pub const REDUCTION_LIMIT_LMR: Depth = 4;
     pub const LMR_BASE_REDUCTION: f32 = 0.75;
     pub const LMR_MOVE_DIVIDER: f32 = 2.25;
-    pub const DISABLE_LMR: bool = false;
+    pub const DISABLE_LMR: bool = false || DISABLE_ALL_PRUNINGS;
 
     pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;
     pub const DISABLE_T_TABLE: bool = false;
-    pub const MAX_MOVES_PER_POSITION: usize = 218;
+    pub const MAX_MOVES_PER_POSITION: usize = 250;
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
 
     pub const FOLLOW_PV: bool = true;

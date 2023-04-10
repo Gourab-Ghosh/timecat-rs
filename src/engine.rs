@@ -240,7 +240,7 @@ impl Engine {
             return self.quiescence(alpha, beta);
         }
         self.num_nodes_searched += 1;
-        if not_in_check {
+        if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
             let static_evaluation = self.board.evaluate_flipped();
 
@@ -264,7 +264,7 @@ impl Engine {
                 && static_evaluation >= beta
             {
                 let r = NULL_MOVE_MIN_REDUCTION
-                    + (depth - NULL_MOVE_MIN_DEPTH) / NULL_MOVE_DEPTH_DIVIDER;
+                    + depth.abs_diff(NULL_MOVE_MIN_DEPTH) as Depth / NULL_MOVE_DEPTH_DIVIDER;
                 if depth > r {
                     self.push(None);
                     let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1);
