@@ -732,7 +732,7 @@ impl Board {
     pub fn parse_san(&self, san: &str) -> Result<Move, chess::Error> {
         let san = san.replace('0', "O");
         for move_ in self.generate_legal_moves() {
-            if self.san(move_).unwrap() == san {
+            if self.san(Some(move_)).unwrap() == san {
                 return Ok(move_);
             }
         }
@@ -784,11 +784,13 @@ impl Board {
         }
     }
 
-    fn algebraic_without_suffix(&self, move_: Move, long: bool) -> Result<String, BoardError> {
+    fn algebraic_without_suffix(&self, option_move: Option<Move>, long: bool) -> Result<String, BoardError> {
         // Null move.
-        if move_.get_source() == move_.get_dest() {
+        if option_move.is_none() {
             return Ok("--".to_string());
         }
+
+        let move_ = option_move.unwrap();
 
         // Castling.
         if self.is_castling(move_) {
@@ -880,18 +882,18 @@ impl Board {
         Ok(san)
     }
 
-    fn algebraic_and_push(&mut self, move_: Move, long: bool) -> Result<String, BoardError> {
-        let san = self.algebraic_without_suffix(move_, long)?;
+    fn algebraic_and_push(&mut self, option_move: Option<Move>, long: bool) -> Result<String, BoardError> {
+        let san = self.algebraic_without_suffix(option_move, long)?;
 
         // Look ahead for check or checkmate.
-        self.push_without_nnue(Some(move_));
+        self.push_without_nnue(option_move);
         let is_check = self.is_check();
         let is_checkmate = is_check && self.is_checkmate();
 
         // Add check or checkmate suffix.
-        if is_checkmate && move_.get_source() != move_.get_dest() {
+        if is_checkmate && option_move.is_some() {
             Ok(san + "#")
-        } else if is_check && move_.get_source() != move_.get_dest() {
+        } else if is_check && option_move.is_some() {
             Ok(san + "+")
         } else {
             Ok(san)
@@ -899,32 +901,32 @@ impl Board {
     }
 
     #[inline(always)]
-    fn algebraic(&self, move_: Move, long: bool) -> Result<String, BoardError> {
-        self.clone().algebraic_and_push(move_, long)
+    fn algebraic(&self, option_move: Option<Move>, long: bool) -> Result<String, BoardError> {
+        self.clone().algebraic_and_push(option_move, long)
     }
 
     /// Gets the standard algebraic notation of the given move in the context
     /// of the current position.
     #[inline(always)]
-    pub fn san(&self, move_: Move) -> Result<String, BoardError> {
-        self.algebraic(move_, false)
+    pub fn san(&self, option_move: Option<Move>) -> Result<String, BoardError> {
+        self.algebraic(option_move, false)
     }
 
     #[inline(always)]
-    pub fn san_and_push(&mut self, move_: Move) -> Result<String, BoardError> {
-        self.algebraic_and_push(move_, false)
+    pub fn san_and_push(&mut self, option_move: Option<Move>) -> Result<String, BoardError> {
+        self.algebraic_and_push(option_move, false)
     }
 
     /// Gets the long algebraic notation of the given move in the context of
     /// the current position.
     #[inline(always)]
-    pub fn lan(&self, move_: Move) -> Result<String, BoardError> {
-        self.algebraic(move_, true)
+    pub fn lan(&self, option_move: Option<Move>) -> Result<String, BoardError> {
+        self.algebraic(option_move, true)
     }
 
     #[inline(always)]
-    pub fn lan_and_push(&mut self, move_: Move) -> Result<String, BoardError> {
-        self.algebraic_and_push(move_, true)
+    pub fn lan_and_push(&mut self, option_move: Option<Move>) -> Result<String, BoardError> {
+        self.algebraic_and_push(option_move, true)
     }
 
     /// Given a sequence of moves, returns a string representing the sequence
@@ -934,22 +936,24 @@ impl Board {
     /// The board will not be modified as a result of calling this.
 
     /// panics if any moves in the sequence are illegal.
-    fn variation_san(&self, board: &Board, variation: Vec<Move>) -> String {
+    fn variation_san(&self, board: &Board, variation: Vec<Option<Move>>) -> String {
         let mut board = board.clone();
         let mut san = Vec::new();
-        for move_ in variation {
-            if !board.is_legal(move_) {
-                panic!("illegal move {move_} in position {}", board.get_fen());
+        for option_move in variation {
+            if let Some(move_) = option_move {
+                if !board.is_legal(move_) {
+                    panic!("illegal move {move_} in position {}", board.get_fen());
+                }
             }
 
             if board.turn() == White {
-                let san_str = board.san_and_push(move_);
+                let san_str = board.san_and_push(option_move);
                 san.push(format!("{}. {}", board.fullmove_number, san_str.unwrap()));
             } else if san.is_empty() {
-                let san_str = board.san_and_push(move_);
+                let san_str = board.san_and_push(option_move);
                 san.push(format!("{}...{}", board.fullmove_number, san_str.unwrap()));
             } else {
-                san.push(board.san_and_push(move_).unwrap().to_string());
+                san.push(board.san_and_push(option_move).unwrap().to_string());
             }
         }
         let mut san_string = String::new();
@@ -968,7 +972,7 @@ impl Board {
                 self.stack
                     .clone()
                     .into_iter()
-                    .map(|(_, option_m)| option_m.unwrap_or_default()),
+                    .map(|(_, option_m)| option_m),
             ),
         )
     }

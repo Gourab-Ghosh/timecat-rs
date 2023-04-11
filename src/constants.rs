@@ -260,8 +260,8 @@ pub mod engine_constants {
     pub const NULL_MOVE_MIN_REDUCTION: Depth = 2;
     pub const NULL_MOVE_DEPTH_DIVIDER: Depth = 4;
 
-    pub const FULL_DEPTH_SEARCH_LMR: usize = 5;
-    pub const REDUCTION_LIMIT_LMR: Depth = 4;
+    pub const FULL_DEPTH_SEARCH_LMR: usize = 4;
+    pub const REDUCTION_LIMIT_LMR: Depth = 3;
     pub const LMR_BASE_REDUCTION: f32 = 0.75;
     pub const LMR_MOVE_DIVIDER: f32 = 2.25;
     pub const DISABLE_LMR: bool = false || DISABLE_ALL_PRUNINGS;

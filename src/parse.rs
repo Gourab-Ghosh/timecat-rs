@@ -152,7 +152,7 @@ impl Go {
         println_info("Position Count", position_count);
         println_info("Time", format!("{:.3} s", elapsed_time.as_secs_f32()));
         println_info("Speed", nps);
-        println_info("Best Move", engine.board.san(best_move).unwrap());
+        println_info("Best Move", engine.board.san(Some(best_move)).unwrap());
         Ok(())
     }
 
@@ -186,7 +186,7 @@ impl Set {
         if !Board::is_good_fen(&fen) {
             return Err(BadFen { fen });
         };
-        engine.board.set_fen(&fen);
+        engine.set_fen(&fen);
         println!("{}", engine.board);
         Ok(())
     }
@@ -282,7 +282,7 @@ impl Pop {
             println!(
                 "{} {}",
                 colorize("Popped move:", SUCCESS_MESSAGE_STYLE),
-                colorize(engine.board.san(last_move).unwrap(), INFO_STYLE),
+                colorize(engine.board.san(Some(last_move)).unwrap(), INFO_STYLE),
             );
         }
         Ok(())

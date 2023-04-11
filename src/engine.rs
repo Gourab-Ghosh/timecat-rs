@@ -43,6 +43,11 @@ impl Engine {
         self.board.pop()
     }
 
+    pub fn set_fen(&mut self, fen: &str) {
+        self.board.set_fen(fen);
+        self.reset_variables()
+    }
+
     fn reset_variables(&mut self) {
         self.ply = 0;
         self.num_nodes_searched = 0;
@@ -70,7 +75,7 @@ impl Engine {
             LMR_BASE_REDUCTION + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER;
         // let mut reduction = (depth as f32 - 1.0).max(0.0).sqrt() + (move_index as f32 - 1.0).max(0.0).sqrt();
         if is_pv_node {
-            reduction = (2.0 * reduction) / 3.0
+            reduction /= 3.0;
         }
         reduction.round() as Depth
     }
@@ -155,7 +160,7 @@ impl Engine {
                     println!(
                         "{} {} {} {} {} {} {} {} {} {:.3} s",
                         colorize("curr move", INFO_STYLE),
-                        self.board.san(move_).unwrap(),
+                        self.board.san(Some(move_)).unwrap(),
                         colorize("depth", INFO_STYLE),
                         depth,
                         colorize("score", INFO_STYLE),
@@ -240,14 +245,18 @@ impl Engine {
             return self.quiescence(alpha, beta);
         }
         self.num_nodes_searched += 1;
+        if [0xF954E2189204481A, 0x190D35C3E8AA12AE].contains(&key) {
+            println!("Reached {}, depth: {}, pgn: {}", self.board.get_fen(), depth, self.board.get_pgn());
+        }
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
             let static_evaluation = self.board.evaluate_flipped();
 
             if depth < 3 && !is_pv_node && beta.abs_diff(1) as Score > -INFINITY + PAWN_VALUE {
                 let eval_margin = ((6 * PAWN_VALUE) / 5) * depth as Score;
-                if static_evaluation - eval_margin >= beta {
-                    return static_evaluation - eval_margin;
+                let new_score = static_evaluation - eval_margin;
+                if new_score >= beta {
+                    return new_score;
                 }
             }
 
@@ -264,7 +273,7 @@ impl Engine {
                 && static_evaluation >= beta
             {
                 let r = NULL_MOVE_MIN_REDUCTION
-                    + depth.abs_diff(NULL_MOVE_MIN_DEPTH) as Depth / NULL_MOVE_DEPTH_DIVIDER;
+                    + (depth.abs_diff(NULL_MOVE_MIN_DEPTH) as f32 / NULL_MOVE_DEPTH_DIVIDER as f32).round() as Depth;
                 if depth > r {
                     self.push(None);
                     let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1);
@@ -277,23 +286,23 @@ impl Engine {
                     }
                 }
             }
-            // razoring
-            if !is_pv_node && depth <= 3 {
-                let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
-                if score < beta {
-                    if depth == 1 {
-                        let new_score = self.quiescence(alpha, beta);
-                        return new_score.max(score);
-                    }
-                    score += (7 * PAWN_VALUE) / 4;
-                    if score < beta && depth <= 2 {
-                        let new_score = self.quiescence(alpha, beta);
-                        if new_score < beta {
-                            return new_score.max(score);
-                        }
-                    }
-                }
-            }
+            // // razoring
+            // if !is_pv_node && depth <= 3 {
+            //     let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
+            //     if score < beta {
+            //         if depth == 1 {
+            //             let new_score = self.quiescence(alpha, beta);
+            //             return new_score.max(score);
+            //         }
+            //         score += (7 * PAWN_VALUE) / 4;
+            //         if score < beta && depth <= 2 {
+            //             let new_score = self.quiescence(alpha, beta);
+            //             if new_score < beta {
+            //                 return new_score.max(score);
+            //             }
+            //         }
+            //     }
+            // }
         }
         let mut flag = HashAlpha;
         let weighted_moves = self.move_sorter.get_weighted_sort_moves(
@@ -384,12 +393,6 @@ impl Engine {
             return 0;
         }
         self.pv_length[self.ply] = self.ply;
-        if self.board.is_game_over() {
-            if self.board.status() == BoardStatus::Checkmate {
-                return -CHECKMATE_SCORE + self.ply as Score;
-            }
-            return 0;
-        }
         self.num_nodes_searched += 1;
         let evaluation = self.board.evaluate_flipped();
         if evaluation >= beta {
@@ -443,7 +446,7 @@ impl Engine {
         let mut pv_string = String::new();
         for move_ in self.get_pv(ply) {
             pv_string += &(if board.is_legal(move_) {
-                board.san_and_push(move_).unwrap()
+                board.san_and_push(Some(move_)).unwrap()
             } else {
                 colorize(move_, ERROR_MESSAGE_STYLE)
             } + " ");
