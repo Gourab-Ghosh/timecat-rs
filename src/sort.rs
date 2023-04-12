@@ -207,9 +207,6 @@ impl MoveSorter {
             self.score_pv = false;
             return 1293000;
         }
-        if let Some(piece) = move_.get_promotion() {
-            return 1292000;
-        }
         let source = move_.get_source();
         let dest = move_.get_dest();
         let mut sub_board = board.get_sub_board();
@@ -218,20 +215,23 @@ impl MoveSorter {
         let moving_piece = board.piece_at(source).unwrap();
         // check
         if checkers != BB_EMPTY {
-            return 1291000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
+            return 1292000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
         if board.is_capture(move_) {
-            return 1290000 + Self::score_capture(move_, board);
+            return 1291000 + Self::score_capture(move_, board);
         }
         for (idx, &option_move) in self.killer_moves[ply].iter().enumerate() {
             if option_move == Some(move_) {
-                return 1289000 - idx as MoveWeight;
+                return 1290000 - idx as MoveWeight;
             }
         }
         // let threat_score = Self::score_threat(move_, &sub_board);
         // if threat_score != 0 {
-        //     return 1288000 + threat_score;
+        //     return 1289000 + threat_score;
         // }
+        if let Some(piece) = move_.get_promotion() {
+            return 1288000;
+        }
         if board.is_passed_pawn(source) {
             let promotion_distance = board
                 .turn()

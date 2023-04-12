@@ -245,9 +245,9 @@ impl Engine {
             return self.quiescence(alpha, beta);
         }
         self.num_nodes_searched += 1;
-        if [0xF954E2189204481A, 0x190D35C3E8AA12AE].contains(&key) {
-            println!("Reached {}, depth: {}, pgn: {}", self.board.get_fen(), depth, self.board.get_pgn());
-        }
+        // if [0xF954E2189204481A, 0x190D35C3E8AA12AE].contains(&key) {
+        //     println!("Reached {}, depth: {}, pgn: {}", self.board.get_fen(), depth, self.board.get_pgn());
+        // }
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
             let static_evaluation = self.board.evaluate_flipped();
@@ -286,23 +286,23 @@ impl Engine {
                     }
                 }
             }
-            // // razoring
-            // if !is_pv_node && depth <= 3 {
-            //     let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
-            //     if score < beta {
-            //         if depth == 1 {
-            //             let new_score = self.quiescence(alpha, beta);
-            //             return new_score.max(score);
-            //         }
-            //         score += (7 * PAWN_VALUE) / 4;
-            //         if score < beta && depth <= 2 {
-            //             let new_score = self.quiescence(alpha, beta);
-            //             if new_score < beta {
-            //                 return new_score.max(score);
-            //             }
-            //         }
-            //     }
-            // }
+            // razoring
+            if !is_pv_node && depth <= 3 && is_endgame {
+                let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
+                if score < beta {
+                    if depth == 1 {
+                        let new_score = self.quiescence(alpha, beta);
+                        return new_score.max(score);
+                    }
+                    score += (7 * PAWN_VALUE) / 4;
+                    if score < beta && depth <= 2 {
+                        let new_score = self.quiescence(alpha, beta);
+                        if new_score < beta {
+                            return new_score.max(score);
+                        }
+                    }
+                }
+            }
         }
         let mut flag = HashAlpha;
         let weighted_moves = self.move_sorter.get_weighted_sort_moves(

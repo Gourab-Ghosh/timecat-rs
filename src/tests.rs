@@ -134,6 +134,7 @@ pub fn test() {
         "8/8/4K3/p7/P7/6kp/6p1/6Q1 w - - 0 70",
         "r1bqk1nr/ppp2ppp/2nb4/1B1pp3/5P2/1P2P3/PBPP2PP/RN1QK1NR b KQkq - 0 5",
         "7r/Q1pk1ppp/1p2p3/8/8/2q1BK2/P5PP/7R b - - 0 1",
+        "B7/8/1p1knn2/pP4pp/P1KP1p1P/5P2/3B4/8 w - - 0 1",
     ];
 
     let time_consuming_fens = [
@@ -188,12 +189,12 @@ pub fn test() {
     // engine.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54"); // incomplete pv line in 3 secs in my pc
     // engine.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47"); // weird results in 3 secs in my pc
     // engine.set_fen("8/3k2P1/1p2Q3/3P4/4p3/2P1P3/6K1/q7 b - - 1 56"); // weird mating results in 3 secs in my pc
-    engine.set_fen(could_have_probably_played_better_move[4]);
+    engine.set_fen(could_have_probably_played_better_move[5]);
     // engine.board.push_sans("Qc6+ Kf2 Ra8 Rd1+ Ke8 Rc1 Qe4 Rxc7 Rxa7");
     // engine.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170");
     // engine.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24");
-    // parse_command(&mut engine, "go time 10000");
-    parse_command(&mut engine, "go depth 15");
+    parse_command(&mut engine, "go time 10000");
+    // parse_command(&mut engine, "go depth 15");
 
     // let mut board = Board::new();
     // println!("\n{board}");
