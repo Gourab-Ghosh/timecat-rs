@@ -37,6 +37,7 @@ use chess::{
     get_knight_moves, get_pawn_attacks, get_rank as get_rank_bb, get_rook_moves, BitBoard,
     BoardStatus, ChessMove as Move, Color, File, Piece, Rank, Square,
 };
+use constants::VERSION;
 use constants::bitboard::*;
 use constants::board_representation::*;
 use constants::engine_constants::*;
@@ -82,6 +83,8 @@ fn main() {
     if env::args().contains(&String::from("--test")) {
         test();
     } else {
+        let info_text = format!("Timecat {}", VERSION);
+        println!("{}", colorize(info_text, SUCCESS_MESSAGE_STYLE));
         Parser::main_loop();
     }
     let elapsed_time = clock.elapsed().as_secs_f32();

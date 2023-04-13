@@ -1,3 +1,5 @@
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 macro_rules! make_array_recursively {
     ($($x:expr),*) => ([$(make_array_recursively!($x)),*]);
     ($x:expr) => ($x);
