@@ -70,32 +70,37 @@ impl Engine {
         self.pv_length[self.ply] = self.pv_length[self.ply + 1];
     }
 
-    fn get_lmr_reduction(depth: Depth, move_index: usize, is_pv_node: bool) -> Depth {
-        let mut reduction =
-            LMR_BASE_REDUCTION + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER;
-        // let mut reduction = (depth as f32 - 1.0).max(0.0).sqrt() + (move_index as f32 - 1.0).max(0.0).sqrt();
-        if is_pv_node {
-            reduction /= 3.0;
-        }
-        reduction.round() as Depth
+    fn print_root_node_info(&self, curr_move: Move, depth: Depth, score: Score, time_elapsed: Duration) {
+        println!(
+            "{} {} {} {} {} {} {} {} {} {:.3} s",
+            colorize("curr move", INFO_STYLE),
+            self.board.san(Some(curr_move)).unwrap(),
+            colorize("depth", INFO_STYLE),
+            depth,
+            colorize("score", INFO_STYLE),
+            score_to_string(self.board.score_flipped(score)),
+            colorize("nodes", INFO_STYLE),
+            self.num_nodes_searched,
+            colorize("time", INFO_STYLE),
+            time_elapsed.as_secs_f32(),
+        );
     }
 
-    // fn calculate_check_extension(&self, depth: Depth) -> Depth {
-    //     let min_depth = 0.0;
-    //     let max_depth = 0.7 * depth as f32;
-    //     if min_depth >= max_depth {
-    //         return min_depth.round() as Depth;
-    //     }
-    //     let extension = match_interpolate!(
-    //         min_depth,
-    //         max_depth,
-    //         INITIAL_MATERIAL_SCORE_ABS,
-    //         evaluate_piece(Bishop),
-    //         self.board.get_material_score_abs()
-    //     );
-    //     // extension = match_interpolate!(min_depth, max_depth, min_depth.sqrt(), max_depth.sqrt(), extension.sqrt());
-    //     extension.round() as Depth
-    // }
+    fn is_draw_move(&mut self, move_: Move) -> bool {
+        self.board.gives_repetition(move_) || self.board.gives_claimable_threefold_repetition(move_)
+    }
+
+    fn get_sorted_root_node_moves(&mut self) -> Vec<Move> {
+        let mut moves_vec_sorted = Vec::from_iter(self.move_sorter.get_weighted_sort_moves(
+            self.board.generate_legal_moves(),
+            &self.board,
+            self.ply,
+            self.transposition_table.read_best_move(self.board.hash()),
+            self.pv_table[0][self.ply],
+        ).map(|wm| wm.move_));
+        moves_vec_sorted.sort_by_cached_key(|&move_| -MoveSorter::score_root_moves(&mut self.board, move_));
+        moves_vec_sorted
+    }
 
     fn search(
         &mut self,
@@ -120,31 +125,14 @@ impl Engine {
         let mut score = -CHECKMATE_SCORE;
         let mut max_score = score;
         let mut flag = HashAlpha;
-        let mut moves_vec_sorted = Vec::from_iter(self.move_sorter.get_weighted_sort_moves(
-            self.board.generate_legal_moves(),
-            &self.board,
-            self.ply,
-            self.transposition_table.read_best_move(key),
-            self.pv_table[0][self.ply],
-        ));
         let is_endgame = self.board.is_endgame();
-        if !is_endgame {
-            moves_vec_sorted.sort_by_cached_key(|&wm| {
-                self.board.gives_claimable_threefold_repetition(wm.move_)
-            });
-        }
-        moves_vec_sorted.sort_by_cached_key(|&wm| self.board.gives_repetition(wm.move_));
-        for (move_index, weighted_move) in moves_vec_sorted.iter().enumerate() {
-            let move_ = weighted_move.move_;
+        for (move_index, &move_) in self.get_sorted_root_node_moves().iter().enumerate() {
             // let san = self.board.san(move_).unwrap();
-            let clock = Instant::now();
-            let repetition_draw_possible = self.board.gives_repetition(move_)
-                || self.board.gives_claimable_threefold_repetition(move_);
-            self.push(Some(move_));
-            if !is_endgame && repetition_draw_possible && max_score > -DRAW_SCORE {
-                self.pop();
+            if !is_endgame && self.is_draw_move(move_) && max_score > -DRAW_SCORE {
                 continue;
             }
+            let clock = Instant::now();
+            self.push(Some(move_));
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha) > alpha {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha);
                 max_score = max_score.max(score);
@@ -157,19 +145,7 @@ impl Engine {
             if print_move_info {
                 let time_elapsed = clock.elapsed();
                 if time_elapsed > PRINT_MOVE_INFO_DURATION_THRESHOLD {
-                    println!(
-                        "{} {} {} {} {} {} {} {} {} {:.3} s",
-                        colorize("curr move", INFO_STYLE),
-                        self.board.san(Some(move_)).unwrap(),
-                        colorize("depth", INFO_STYLE),
-                        depth,
-                        colorize("score", INFO_STYLE),
-                        score_to_string(self.board.score_flipped(score)),
-                        colorize("nodes", INFO_STYLE),
-                        self.num_nodes_searched,
-                        colorize("time", INFO_STYLE),
-                        time_elapsed.as_secs_f32(),
-                    );
+                    self.print_root_node_info(move_, depth, score, time_elapsed)
                 }
             }
             if score > alpha {
@@ -202,6 +178,16 @@ impl Engine {
             );
         }
         max_score
+    }
+
+    fn get_lmr_reduction(depth: Depth, move_index: usize, is_pv_node: bool) -> Depth {
+        let mut reduction =
+            LMR_BASE_REDUCTION + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER;
+        // let mut reduction = (depth as f32 - 1.0).max(0.0).sqrt() + (move_index as f32 - 1.0).max(0.0).sqrt();
+        if is_pv_node {
+            reduction /= 3.0;
+        }
+        reduction.round() as Depth
     }
 
     fn alpha_beta(&mut self, mut depth: Depth, mut alpha: Score, mut beta: Score) -> Score {
@@ -286,23 +272,23 @@ impl Engine {
                     }
                 }
             }
-            // razoring
-            if !is_pv_node && depth <= 3 && is_endgame {
-                let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
-                if score < beta {
-                    if depth == 1 {
-                        let new_score = self.quiescence(alpha, beta);
-                        return new_score.max(score);
-                    }
-                    score += (7 * PAWN_VALUE) / 4;
-                    if score < beta && depth <= 2 {
-                        let new_score = self.quiescence(alpha, beta);
-                        if new_score < beta {
-                            return new_score.max(score);
-                        }
-                    }
-                }
-            }
+            // // razoring
+            // if !is_pv_node && depth <= 3 && is_endgame {
+            //     let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
+            //     if score < beta {
+            //         if depth == 1 {
+            //             let new_score = self.quiescence(alpha, beta);
+            //             return new_score.max(score);
+            //         }
+            //         score += (7 * PAWN_VALUE) / 4;
+            //         if score < beta && depth <= 2 {
+            //             let new_score = self.quiescence(alpha, beta);
+            //             if new_score < beta {
+            //                 return new_score.max(score);
+            //             }
+            //         }
+            //     }
+            // }
         }
         let mut flag = HashAlpha;
         let weighted_moves = self.move_sorter.get_weighted_sort_moves(
