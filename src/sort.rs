@@ -163,28 +163,29 @@ impl MoveSorter {
         // Self::mvv_lva(move_, board)
     }
 
-    pub fn score_root_moves(board: &mut Board, move_: Move) -> i8 {
+    pub fn score_root_moves(board: &mut Board, move_: Move) -> MoveWeight {
         if board.gives_repetition(move_) {
-            return -5;
+            return -50;
         }
-        if board.is_endgame() {
+        let is_endgame = board.is_endgame();
+        if !is_endgame && board.gives_claimable_threefold_repetition(move_) {
+            return -40;
+        }
+        let mut score = 0;
+        if is_endgame {
             if move_.get_promotion().is_some() {
-                return 30;
+                score += 30000;
             }
             if board.is_capture(move_) {
-                return 20 + Self::score_capture(move_, &board) as i8 / PAWN_VALUE as i8;
+                score +=  2000 + Self::score_capture(move_, &board);
             }
             let source = move_.get_source();
             if board.is_passed_pawn(source) {
                 let promotion_distance = board.turn().to_their_backrank().to_index().abs_diff(source.get_rank().to_index());
-                return 20 - promotion_distance as i8;
-            }
-        } else {
-            if board.gives_claimable_threefold_repetition(move_) {
-                return -4;
+                score += 20 - promotion_distance as MoveWeight;
             }
         }
-        return 0;
+        return score;
     }
 
     fn score_threat(move_: Move, move_pushed_sub_board: &chess::Board) -> MoveWeight {
