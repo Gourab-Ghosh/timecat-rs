@@ -181,7 +181,7 @@ impl MoveSorter {
                 score += 30000;
             }
             if board.is_capture(move_) {
-                score += 2000 * evaluation.signum() + Self::score_capture(move_, &board);
+                score += 2000 * evaluation.signum() + Self::score_capture(move_, board);
             }
             let source = move_.get_source();
             if board.is_passed_pawn(source) {
@@ -193,7 +193,7 @@ impl MoveSorter {
                 score += 20 - promotion_distance as MoveWeight;
             }
         }
-        return score;
+        score
     }
 
     fn score_threat(move_: Move, move_pushed_sub_board: &chess::Board) -> MoveWeight {
