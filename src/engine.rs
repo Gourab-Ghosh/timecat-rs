@@ -70,7 +70,13 @@ impl Engine {
         self.pv_length[self.ply] = self.pv_length[self.ply + 1];
     }
 
-    fn print_root_node_info(&self, curr_move: Move, depth: Depth, score: Score, time_elapsed: Duration) {
+    fn print_root_node_info(
+        &self,
+        curr_move: Move,
+        depth: Depth,
+        score: Score,
+        time_elapsed: Duration,
+    ) {
         println!(
             "{} {} {} {} {} {} {} {} {} {:.3} s",
             colorize("curr move", INFO_STYLE),
@@ -87,18 +93,27 @@ impl Engine {
     }
 
     fn is_draw_move(&mut self, move_: Move) -> bool {
-        self.board.gives_repetition(move_) || self.board.gives_claimable_threefold_repetition(move_)
+        self.board.gives_threefold_repetition(move_) || self.board.gives_claimable_threefold_repetition(move_)
     }
 
-    fn get_sorted_root_node_moves(&mut self) -> Vec<Move> {
-        let mut moves_vec_sorted = Vec::from_iter(self.move_sorter.get_weighted_sort_moves(
-            self.board.generate_legal_moves(),
-            &self.board,
-            self.ply,
-            self.transposition_table.read_best_move(self.board.hash()),
-            self.pv_table[0][self.ply],
-        ).map(|wm| wm.move_));
-        moves_vec_sorted.sort_by_cached_key(|&move_| -MoveSorter::score_root_moves(&mut self.board, move_));
+    fn get_sorted_root_node_moves(&mut self) -> Vec<(Move, MoveWeight)> {
+        let mut moves_vec_sorted = self
+            .move_sorter
+            .get_weighted_sort_moves(
+                self.board.generate_legal_moves(),
+                &self.board,
+                self.ply,
+                self.transposition_table.read_best_move(self.board.hash()),
+                self.pv_table[0][self.ply],
+            )
+            .map(|wm| {
+                (
+                    wm.move_,
+                    MoveSorter::score_root_moves(&mut self.board, wm.move_),
+                )
+            })
+            .collect_vec();
+        moves_vec_sorted.sort_by_key(|&t| -t.1);
         moves_vec_sorted
     }
 
@@ -126,7 +141,7 @@ impl Engine {
         let mut max_score = score;
         let mut flag = HashAlpha;
         let is_endgame = self.board.is_endgame();
-        for (move_index, &move_) in self.get_sorted_root_node_moves().iter().enumerate() {
+        for (move_index, &(move_, weight)) in self.get_sorted_root_node_moves().iter().enumerate() {
             // let san = self.board.san(move_).unwrap();
             if !is_endgame && self.is_draw_move(move_) && max_score > -DRAW_SCORE {
                 continue;
@@ -204,8 +219,7 @@ impl Engine {
         if moves_gen.len() == 0 {
             return if not_in_check { 0 } else { -mate_score };
         }
-        let num_repetitions = self.board.get_num_repetitions();
-        if num_repetitions > 1 || self.board.is_other_draw() {
+        if self.board.is_other_draw() {
             return 0;
         }
         if !not_in_check {
@@ -231,9 +245,6 @@ impl Engine {
             return self.quiescence(alpha, beta);
         }
         self.num_nodes_searched += 1;
-        // if [0xF954E2189204481A, 0x190D35C3E8AA12AE].contains(&key) {
-        //     println!("Reached {}, depth: {}, pgn: {}", self.board.get_fen(), depth, self.board.get_pgn());
-        // }
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
             let static_evaluation = self.board.evaluate_flipped();
@@ -259,7 +270,8 @@ impl Engine {
                 && static_evaluation >= beta
             {
                 let r = NULL_MOVE_MIN_REDUCTION
-                    + (depth.abs_diff(NULL_MOVE_MIN_DEPTH) as f32 / NULL_MOVE_DEPTH_DIVIDER as f32).round() as Depth;
+                    + (depth.abs_diff(NULL_MOVE_MIN_DEPTH) as f32 / NULL_MOVE_DEPTH_DIVIDER as f32)
+                        .round() as Depth;
                 if depth > r {
                     self.push(None);
                     let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1);

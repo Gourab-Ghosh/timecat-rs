@@ -172,16 +172,24 @@ impl MoveSorter {
             return -40;
         }
         let mut score = 0;
+        let mut evaluation = board.evaluate_flipped() as MoveWeight;
+        if evaluation == 0 {
+            evaluation = 1;
+        }
         if is_endgame {
             if move_.get_promotion().is_some() {
                 score += 30000;
             }
             if board.is_capture(move_) {
-                score +=  2000 + Self::score_capture(move_, &board);
+                score += 2000 * evaluation.signum() + Self::score_capture(move_, &board);
             }
             let source = move_.get_source();
             if board.is_passed_pawn(source) {
-                let promotion_distance = board.turn().to_their_backrank().to_index().abs_diff(source.get_rank().to_index());
+                let promotion_distance = board
+                    .turn()
+                    .to_their_backrank()
+                    .to_index()
+                    .abs_diff(source.get_rank().to_index());
                 score += 20 - promotion_distance as MoveWeight;
             }
         }

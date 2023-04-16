@@ -784,7 +784,11 @@ impl Board {
         }
     }
 
-    fn algebraic_without_suffix(&self, option_move: Option<Move>, long: bool) -> Result<String, BoardError> {
+    fn algebraic_without_suffix(
+        &self,
+        option_move: Option<Move>,
+        long: bool,
+    ) -> Result<String, BoardError> {
         // Null move.
         if option_move.is_none() {
             return Ok("--".to_string());
@@ -882,7 +886,11 @@ impl Board {
         Ok(san)
     }
 
-    fn algebraic_and_push(&mut self, option_move: Option<Move>, long: bool) -> Result<String, BoardError> {
+    fn algebraic_and_push(
+        &mut self,
+        option_move: Option<Move>,
+        long: bool,
+    ) -> Result<String, BoardError> {
         let san = self.algebraic_without_suffix(option_move, long)?;
 
         // Look ahead for check or checkmate.
@@ -968,12 +976,7 @@ impl Board {
     pub fn get_pgn(&self) -> String {
         self.variation_san(
             &Self::from_fen(&self.starting_fen),
-            Vec::from_iter(
-                self.stack
-                    .clone()
-                    .into_iter()
-                    .map(|(_, option_m)| option_m),
-            ),
+            Vec::from_iter(self.stack.clone().into_iter().map(|(_, option_m)| option_m)),
         )
     }
 

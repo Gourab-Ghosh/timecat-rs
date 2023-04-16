@@ -37,7 +37,6 @@ use chess::{
     get_knight_moves, get_pawn_attacks, get_rank as get_rank_bb, get_rook_moves, BitBoard,
     BoardStatus, ChessMove as Move, Color, File, Piece, Rank, Square,
 };
-use constants::VERSION;
 use constants::bitboard::*;
 use constants::board_representation::*;
 use constants::engine_constants::*;
@@ -45,6 +44,7 @@ use constants::fen::*;
 use constants::print_style::*;
 use constants::square::*;
 use constants::types::*;
+use constants::VERSION;
 use engine::{Engine, GoCommand};
 use evaluate::*;
 use failure::Fail;
