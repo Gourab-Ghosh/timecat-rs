@@ -1,15 +1,14 @@
 use std::convert::TryInto;
 use std::io::prelude::*;
 
-use crate::nnue_rs::*;
-use crate::nnue_rs::ops::*;
-use crate::nnue_rs::layers::*;
 use super::*;
+use crate::nnue_rs::layers::*;
+use crate::nnue_rs::ops::*;
+use crate::nnue_rs::*;
 
 use binread::prelude::*;
 
-const INPUTS: usize =
-      Square::NUM //For each king position...
+const INPUTS: usize = Square::NUM //For each king position...
     * (Piece::NUM - 1) //For each non-king piece...
     * Color::NUM //For each colour piece...
     * Square::NUM; //For each square...
@@ -24,7 +23,7 @@ const OUTPUTS: usize = 1;
 #[derive(Debug, Clone)]
 pub struct SfHalfKpModel {
     pub transformer: SfHalfKpFeatureTransformer,
-    pub network: SfHalfKpNetwork
+    pub network: SfHalfKpNetwork,
 }
 
 const TRANSFORMER_ARCH: u32 = 0x5D69D7B8;
@@ -33,15 +32,19 @@ const TRANSFORMER_ARCH: u32 = 0x5D69D7B8;
 ///Due to its size, the transformer is heap allocated.
 #[derive(Debug, Clone)]
 pub struct SfHalfKpFeatureTransformer {
-    pub input_layer: Box<BitDense<i16, INPUTS, IL_OUT>>
+    pub input_layer: Box<BitDense<i16, INPUTS, IL_OUT>>,
 }
 
 impl BinRead for SfHalfKpFeatureTransformer {
     type Args = ();
 
-    fn read_options<R: Read + Seek>(reader: &mut R, options: &binread::ReadOptions, _: Self::Args) -> BinResult<Self> {
+    fn read_options<R: Read + Seek>(
+        reader: &mut R,
+        options: &binread::ReadOptions,
+        _: Self::Args,
+    ) -> BinResult<Self> {
         let mut this = Self {
-            input_layer: bytemuck::zeroed_box()
+            input_layer: bytemuck::zeroed_box(),
         };
         this.input_layer.biases = BinRead::read_options(reader, options, ())?;
         //Iterate through each block of weights for a given king position
@@ -64,20 +67,24 @@ const NETWORK_ARCH: u32 = 0x63337156;
 ///of the network after the feature transformer.
 #[derive(Debug, Clone)]
 pub struct SfHalfKpNetwork {
-    pub hidden_layer_1: Dense<i8, i32, {IL_OUT * Color::NUM}, H1_OUT>,
+    pub hidden_layer_1: Dense<i8, i32, { IL_OUT * Color::NUM }, H1_OUT>,
     pub hidden_layer_2: Dense<i8, i32, H1_OUT, H2_OUT>,
-    pub output_layer: Dense<i8, i32, H2_OUT, OUTPUTS>
+    pub output_layer: Dense<i8, i32, H2_OUT, OUTPUTS>,
 }
 
 impl BinRead for SfHalfKpNetwork {
     type Args = ();
 
-    fn read_options<R: Read + Seek>(reader: &mut R, options: &binread::ReadOptions, _: Self::Args) -> BinResult<Self> {
+    fn read_options<R: Read + Seek>(
+        reader: &mut R,
+        options: &binread::ReadOptions,
+        _: Self::Args,
+    ) -> BinResult<Self> {
         #[derive(BinRead)]
         struct SfHalfKpNetwork {
-            hidden_layer_1: SfDense<i8, i32, {IL_OUT * Color::NUM}, H1_OUT>,
+            hidden_layer_1: SfDense<i8, i32, { IL_OUT * Color::NUM }, H1_OUT>,
             hidden_layer_2: SfDense<i8, i32, H1_OUT, H2_OUT>,
-            output_layer: SfDense<i8, i32, H2_OUT, OUTPUTS>
+            output_layer: SfDense<i8, i32, H2_OUT, OUTPUTS>,
         }
         let network = SfHalfKpNetwork::read_options(reader, options, ())?;
         Ok(Self {
@@ -94,7 +101,7 @@ pub struct SfHalfKpState<'m> {
     model: &'m SfHalfKpModel,
     //Already normalized king positions
     kings: [Square; Color::NUM],
-    accumulator:  [[i16; IL_OUT]; Color::NUM]
+    accumulator: [[i16; IL_OUT]; Color::NUM],
 }
 
 impl SfHalfKpModel {
@@ -107,20 +114,26 @@ impl SfHalfKpModel {
         SfHalfKpState {
             model: self,
             kings: [white_king, black_king.rotate()],
-            accumulator
+            accumulator,
         }
     }
 }
 
 impl SfHalfKpState<'_> {
-    fn index(&self, color: Color, piece: Piece, mut piece_color: Color, mut square: Square) -> usize {
+    fn index(
+        &self,
+        color: Color,
+        piece: Piece,
+        mut piece_color: Color,
+        mut square: Square,
+    ) -> usize {
         let mut size = INPUTS;
         let mut index = 0;
         macro_rules! index {
             ($index:expr; $total:expr) => {
                 size /= $total;
                 index += size * $index;
-            }
+            };
         }
 
         //Normalize indexes. King positions come pre-normalized.
@@ -139,13 +152,19 @@ impl SfHalfKpState<'_> {
     ///Add an input feature to one half of the accumulator.
     pub fn add(&mut self, color: Color, piece: Piece, piece_color: Color, square: Square) {
         let index = self.index(color, piece, piece_color, square);
-        self.model.transformer.input_layer.add(index, &mut self.accumulator[color as usize]);
+        self.model
+            .transformer
+            .input_layer
+            .add(index, &mut self.accumulator[color as usize]);
     }
 
     ///Remove an input feature from one half of the accumulator.
     pub fn sub(&mut self, color: Color, piece: Piece, piece_color: Color, square: Square) {
         let index = self.index(color, piece, piece_color, square);
-        self.model.transformer.input_layer.sub(index, &mut self.accumulator[color as usize]);
+        self.model
+            .transformer
+            .input_layer
+            .sub(index, &mut self.accumulator[color as usize]);
     }
 
     ///Moves a king for a side to a new square. Clears the accumulator for that side.
@@ -155,7 +174,10 @@ impl SfHalfKpState<'_> {
         } else {
             square
         };
-        self.model.transformer.input_layer.empty(&mut self.accumulator[color as usize]);
+        self.model
+            .transformer
+            .input_layer
+            .empty(&mut self.accumulator[color as usize]);
     }
 
     ///Activate the network, getting an output. The output is relative to
@@ -172,21 +194,32 @@ impl SfHalfKpState<'_> {
                 &mut inputs[..IL_OUT]
             } else {
                 &mut inputs[IL_OUT..]
-            }.try_into().unwrap();
+            }
+            .try_into()
+            .unwrap();
             self.accumulator[color as usize].clipped_relu(0, RELU_MIN, RELU_MAX, input);
         }
         let mut outputs = [0; H1_OUT];
-        self.model.network.hidden_layer_1.activate(&inputs, &mut outputs);
+        self.model
+            .network
+            .hidden_layer_1
+            .activate(&inputs, &mut outputs);
 
         let mut inputs = [0; H1_OUT];
         outputs.clipped_relu(RELU_SCALE, RELU_MIN, RELU_MAX, &mut inputs);
         let mut outputs = [0; H2_OUT];
-        self.model.network.hidden_layer_2.activate(&inputs, &mut outputs);
+        self.model
+            .network
+            .hidden_layer_2
+            .activate(&inputs, &mut outputs);
 
         let mut inputs = [0; H2_OUT];
         outputs.clipped_relu(RELU_SCALE, RELU_MIN, RELU_MAX, &mut inputs);
         let mut outputs = [0; OUTPUTS];
-        self.model.network.output_layer.activate(&inputs, &mut outputs);
+        self.model
+            .network
+            .output_layer
+            .activate(&inputs, &mut outputs);
 
         outputs
     }
@@ -208,13 +241,17 @@ const ARCH: u32 = 0x3E5AA6EE;
 #[derive(Debug, Clone)]
 pub struct SfHalfKpFullModel {
     pub desc: String,
-    pub model: SfHalfKpModel
+    pub model: SfHalfKpModel,
 }
 
 impl BinRead for SfHalfKpFullModel {
     type Args = ();
 
-    fn read_options<R: Read + Seek>(reader: &mut R, options: &binread::ReadOptions, args: Self::Args) -> BinResult<Self> {        
+    fn read_options<R: Read + Seek>(
+        reader: &mut R,
+        options: &binread::ReadOptions,
+        args: Self::Args,
+    ) -> BinResult<Self> {
         #[derive(Debug, BinRead)]
         pub struct SfHalfKpModelReader {
             #[br(args(VERSION))]
@@ -229,15 +266,15 @@ impl BinRead for SfHalfKpFullModel {
             transformer: SfHalfKpFeatureTransformer,
             #[br(args(NETWORK_ARCH))]
             network_arch: Magic<u32>,
-            network: SfHalfKpNetwork
+            network: SfHalfKpNetwork,
         }
         let model = SfHalfKpModelReader::read_options(reader, options, args)?;
         Ok(SfHalfKpFullModel {
             desc: model.desc,
             model: SfHalfKpModel {
                 transformer: model.transformer,
-                network: model.network
-            }
+                network: model.network,
+            },
         })
     }
 }

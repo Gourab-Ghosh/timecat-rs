@@ -1,8 +1,8 @@
 //!# Rust NNUE inference library
 //!`nnue-rs` is an [NNUE](https://www.chessprogramming.org/NNUE) inference library written in Rust.
 
-pub mod ops;
 pub mod layers;
+pub mod ops;
 pub mod stockfish;
 
 macro_rules! simple_enum {
@@ -16,7 +16,7 @@ macro_rules! simple_enum {
         $vis enum $name {
             $($variant),*
         }
-        
+
         impl $name {
             pub const NUM: usize = [$(Self::$variant),*].len();
             pub const ALL: [Self; Self::NUM] = [$(Self::$variant),*];
@@ -78,11 +78,11 @@ impl std::ops::Not for Color {
 impl Square {
     pub fn flip(self) -> Self {
         //Flip upper 3 bits, which represent the rank
-        Self::from_index(self as usize ^ 0b111_000)
+        Self::from_index(self as usize ^ 0b111000)
     }
 
     pub fn rotate(self) -> Self {
         //Flip both rank and file bits
-        Self::from_index(self as usize ^ 0b111_111)
+        Self::from_index(self as usize ^ 0b111111)
     }
 }

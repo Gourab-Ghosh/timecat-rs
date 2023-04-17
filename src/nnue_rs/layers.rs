@@ -11,14 +11,18 @@ use bytemuck::Zeroable;
 #[derive(Debug, Clone, Zeroable)]
 pub struct Dense<W: Zeroable, B: Zeroable, const INPUTS: usize, const OUTPUTS: usize> {
     pub weights: [[W; INPUTS]; OUTPUTS],
-    pub biases: [B; OUTPUTS]
+    pub biases: [B; OUTPUTS],
 }
 
 impl<
-    W: Copy + Zeroable, B: Copy + Zeroable + AddAssign + From<<[W; INPUTS] as Dot>::Output>,
-    const INPUTS: usize,
-    const OUTPUTS: usize
-> Dense<W, B, INPUTS, OUTPUTS> where [W; INPUTS]: Dot {
+        W: Copy + Zeroable,
+        B: Copy + Zeroable + AddAssign + From<<[W; INPUTS] as Dot>::Output>,
+        const INPUTS: usize,
+        const OUTPUTS: usize,
+    > Dense<W, B, INPUTS, OUTPUTS>
+where
+    [W; INPUTS]: Dot,
+{
     pub fn activate(&self, inputs: &[W; INPUTS], outputs: &mut [B; OUTPUTS]) {
         *outputs = self.biases;
         for (o, w) in outputs.iter_mut().zip(&self.weights) {
@@ -32,16 +36,13 @@ impl<
 #[derive(Debug, Clone, Zeroable)]
 pub struct BitDense<WB: Zeroable, const INPUTS: usize, const OUTPUTS: usize> {
     pub weights: [[WB; OUTPUTS]; INPUTS],
-    pub biases: [WB; OUTPUTS]
+    pub biases: [WB; OUTPUTS],
 }
 
-impl<
-    WB: Zeroable + Clone,
-    const INPUTS: usize,
-    const OUTPUTS: usize
-> BitDense<WB, INPUTS, OUTPUTS>
+impl<WB: Zeroable + Clone, const INPUTS: usize, const OUTPUTS: usize> BitDense<WB, INPUTS, OUTPUTS>
 where
-    [WB; OUTPUTS]: VecAdd + VecSub {
+    [WB; OUTPUTS]: VecAdd + VecSub,
+{
     ///Clear an accumulator to a default state.
     pub fn empty(&self, outputs: &mut [WB; OUTPUTS]) {
         *outputs = self.biases.clone();
@@ -75,7 +76,7 @@ mod tests {
 
     #[derive(Debug, Clone, Copy)]
     struct Rng(u128);
-    
+
     impl Rng {
         fn next(&mut self) -> u64 {
             self.0 = self.0.wrapping_mul(0xDA942042E4DD58B5);
@@ -94,11 +95,11 @@ mod tests {
         for _ in 0..100 {
             let mut dense = Dense {
                 weights: [[0; INPUTS]; OUTPUTS],
-                biases: [0; OUTPUTS]
+                biases: [0; OUTPUTS],
             };
             let mut bit_dense = BitDense {
                 weights: [[0; OUTPUTS]; INPUTS],
-                biases: [0; OUTPUTS]
+                biases: [0; OUTPUTS],
             };
             for output in 0..OUTPUTS {
                 for input in 0..64 {
@@ -120,12 +121,15 @@ mod tests {
                 *sq2 = ((bit_input >> i) & 1) != 0;
                 *sq = *sq2 as i8;
             }
-            
+
             let mut dense_output = [0; OUTPUTS];
             let mut bit_dense_output = [0; OUTPUTS];
             dense.activate(&inputs, &mut dense_output);
             bit_dense.activate(&bit_dense_inputs, &mut bit_dense_output);
-            assert!(dense_output.iter().zip(&bit_dense_output).all(|(&d, &b)| d as i8 == b));
+            assert!(dense_output
+                .iter()
+                .zip(&bit_dense_output)
+                .all(|(&d, &b)| d as i8 == b));
         }
     }
 }

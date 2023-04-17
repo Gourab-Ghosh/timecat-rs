@@ -31,7 +31,7 @@ macro_rules! vec_add_sub_fallbacks {
 
 vec_add_sub_fallbacks!(u8, i8, u16, i16, u32, i32, u64, i64, u128, i128);
 
-pub trait Dot<Rhs=Self> {
+pub trait Dot<Rhs = Self> {
     type Output;
 
     fn dot(&self, other: &Self) -> Self::Output;

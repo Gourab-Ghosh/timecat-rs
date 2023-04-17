@@ -16,45 +16,42 @@ pub struct SfDense<
     W: Zeroable + BinRead<Args = ()>,
     B: Zeroable + BinRead<Args = ()>,
     const INPUTS: usize,
-    const OUTPUTS: usize
+    const OUTPUTS: usize,
 > {
     pub biases: [B; OUTPUTS],
-    pub weights: [[W; INPUTS]; OUTPUTS]
+    pub weights: [[W; INPUTS]; OUTPUTS],
 }
 
 impl<
-    W: Zeroable + BinRead<Args = ()>,
-    B: Zeroable + BinRead<Args = ()>,
-    const INPUTS: usize,
-    const OUTPUTS: usize
-> From<SfDense<W, B, INPUTS, OUTPUTS>> for Dense<W, B, INPUTS, OUTPUTS> {
+        W: Zeroable + BinRead<Args = ()>,
+        B: Zeroable + BinRead<Args = ()>,
+        const INPUTS: usize,
+        const OUTPUTS: usize,
+    > From<SfDense<W, B, INPUTS, OUTPUTS>> for Dense<W, B, INPUTS, OUTPUTS>
+{
     fn from(dense: SfDense<W, B, INPUTS, OUTPUTS>) -> Self {
         Self {
             weights: dense.weights,
-            biases: dense.biases
+            biases: dense.biases,
         }
     }
 }
 
 ///A helper struct for reading [`BitDense`] layers from Stockfish NNUE formats with [`BinRead`].
 #[derive(Debug, Zeroable, BinRead)]
-pub struct SfBitDense<
-    WB: Zeroable + BinRead<Args = ()>,
-    const INPUTS: usize,
-    const OUTPUTS: usize> {
+pub struct SfBitDense<WB: Zeroable + BinRead<Args = ()>, const INPUTS: usize, const OUTPUTS: usize>
+{
     pub biases: [WB; OUTPUTS],
-    pub weights: [[WB; OUTPUTS]; INPUTS]
+    pub weights: [[WB; OUTPUTS]; INPUTS],
 }
 
-impl<
-    WB: Zeroable + BinRead<Args = ()>,
-    const INPUTS: usize,
-    const OUTPUTS: usize
-> From<SfBitDense<WB, INPUTS, OUTPUTS>> for BitDense<WB, INPUTS, OUTPUTS> {
+impl<WB: Zeroable + BinRead<Args = ()>, const INPUTS: usize, const OUTPUTS: usize>
+    From<SfBitDense<WB, INPUTS, OUTPUTS>> for BitDense<WB, INPUTS, OUTPUTS>
+{
     fn from(dense: SfBitDense<WB, INPUTS, OUTPUTS>) -> Self {
         Self {
             weights: dense.weights,
-            biases: dense.biases
+            biases: dense.biases,
         }
     }
 }
@@ -66,12 +63,16 @@ pub(crate) struct Magic<T>(std::marker::PhantomData<T>);
 impl<T: BinRead<Args = ()> + Copy + PartialEq + Send + Sync + 'static> BinRead for Magic<T> {
     type Args = (T,);
 
-    fn read_options<R: Read + Seek>(reader: &mut R, options: &binread::ReadOptions, (magic,): Self::Args) -> BinResult<Self> {
+    fn read_options<R: Read + Seek>(
+        reader: &mut R,
+        options: &binread::ReadOptions,
+        (magic,): Self::Args,
+    ) -> BinResult<Self> {
         let read = T::read_options(reader, options, ())?;
         if read != magic {
             Err(binread::Error::BadMagic {
                 pos: reader.stream_position()?,
-                found: Box::new(read)
+                found: Box::new(read),
             })
         } else {
             Ok(Self(std::marker::PhantomData))

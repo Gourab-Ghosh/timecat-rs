@@ -93,7 +93,8 @@ impl Engine {
     }
 
     fn is_draw_move(&mut self, move_: Move) -> bool {
-        self.board.gives_threefold_repetition(move_) || self.board.gives_claimable_threefold_repetition(move_)
+        self.board.gives_threefold_repetition(move_)
+            || self.board.gives_claimable_threefold_repetition(move_)
     }
 
     fn get_sorted_root_node_moves(&mut self) -> Vec<(Move, MoveWeight)> {
