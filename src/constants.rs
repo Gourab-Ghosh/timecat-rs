@@ -191,7 +191,7 @@ pub mod square {
 pub mod board_representation {
     pub const BOARD_SKELETON: &str = r"
 
-    A   B   C   D   E   F   G   H
+      A   B   C   D   E   F   G   H
    +---+---+---+---+---+---+---+---+
  8 | O | O | O | O | O | O | O | O | 8
    +---+---+---+---+---+---+---+---+
@@ -209,7 +209,7 @@ pub mod board_representation {
    +---+---+---+---+---+---+---+---+
  1 | O | O | O | O | O | O | O | O | 1
    +---+---+---+---+---+---+---+---+
-   A   B   C   D   E   F   G   H
+     A   B   C   D   E   F   G   H
 
 ";
 
