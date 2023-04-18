@@ -202,6 +202,7 @@ impl Engine {
         // let mut reduction = (depth as f32 - 1.0).max(0.0).sqrt() + (move_index as f32 - 1.0).max(0.0).sqrt();
         if is_pv_node {
             reduction /= 3.0;
+            // reduction *= 2.0;
         }
         reduction.round() as Depth
     }
