@@ -241,7 +241,7 @@ impl MoveSorter {
             return 1293000;
         }
         let source = move_.get_source();
-        let dest = move_.get_dest();
+        // let dest = move_.get_dest();
         let mut sub_board = board.get_sub_board();
         sub_board.clone().make_move(move_, &mut sub_board);
         let checkers = *sub_board.checkers();
@@ -262,7 +262,7 @@ impl MoveSorter {
         // if threat_score != 0 {
         //     return 1289000 + threat_score;
         // }
-        if let Some(piece) = move_.get_promotion() {
+        if move_.get_promotion().is_some() {
             return 1288000;
         }
         if board.is_passed_pawn(source) {

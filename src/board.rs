@@ -716,6 +716,7 @@ impl Board {
         option_move
     }
 
+    #[allow(clippy::let_and_return)]
     pub fn pop(&mut self) -> Option<Move> {
         let option_move = self.pop_without_nnue();
         // if let Some(move_) = option_move {
@@ -886,7 +887,7 @@ impl Board {
         Ok(san)
     }
 
-    fn algebraic_and_push(
+    pub fn algebraic_and_push(
         &mut self,
         option_move: Option<Move>,
         long: bool,

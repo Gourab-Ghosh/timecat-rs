@@ -3,6 +3,7 @@ use EntryFlag::*;
 
 use super::*;
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
 pub enum EntryFlag {
     #[default]

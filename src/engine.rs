@@ -142,7 +142,7 @@ impl Engine {
         let mut max_score = score;
         let mut flag = HashAlpha;
         let is_endgame = self.board.is_endgame();
-        for (move_index, &(move_, weight)) in self.get_sorted_root_node_moves().iter().enumerate() {
+        for (move_index, &(move_, _)) in self.get_sorted_root_node_moves().iter().enumerate() {
             // let san = self.board.san(move_).unwrap();
             if !is_endgame && self.is_draw_move(move_) && max_score > -DRAW_SCORE {
                 continue;
@@ -212,8 +212,8 @@ impl Engine {
             return 0;
         }
         self.pv_length[self.ply] = self.ply;
-        let num_pieces = self.board.get_num_pieces();
-        let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
+        // let num_pieces = self.board.get_num_pieces();
+        // let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
         let not_in_check = !self.board.is_check();
         let is_pv_node = alpha != beta - 1;
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
@@ -446,7 +446,7 @@ impl Engine {
         let mut pv_string = String::new();
         for move_ in self.get_pv(ply) {
             pv_string += &(if board.is_legal(move_) {
-                board.san_and_push(Some(move_)).unwrap()
+                board.algebraic_and_push(Some(move_), long).unwrap()
             } else {
                 colorize(move_, ERROR_MESSAGE_STYLE)
             } + " ");

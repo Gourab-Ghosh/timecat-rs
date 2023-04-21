@@ -191,7 +191,7 @@ impl Set {
         Ok(())
     }
 
-    fn color(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
+    fn color(commands: &[&str]) -> Result<(), ParserError> {
         let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
         let _bool = third_command.parse()?;
         if is_colored_output() == _bool {
@@ -220,7 +220,7 @@ impl Set {
             if commands.get(3).is_some() {
                 return Err(UnknownCommand);
             }
-            return Self::color(engine, commands);
+            return Self::color(commands);
         }
         Err(UnknownCommand)
     }

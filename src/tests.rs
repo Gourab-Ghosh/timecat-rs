@@ -126,6 +126,7 @@ pub fn parse_command(engine: &mut Engine, raw_input: &str) {
         .unwrap_or_else(|err| panic!("{}", err.generate_error(Some(raw_input))))
 }
 
+#[allow(unused_variables)]
 pub fn test() {
     // open_tablebase("directory", true, true, None, Board::new());
     let could_have_probably_played_better_move = [
