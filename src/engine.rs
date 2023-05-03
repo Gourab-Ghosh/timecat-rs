@@ -389,7 +389,7 @@ impl Engine {
     }
 
     fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {
-        if self.ply == MAX_PLY || self.timer.stop_search() || self.timer.is_time_up() {
+        if self.ply == MAX_PLY || self.timer.stop_search() || self.timer.is_time_up() || self.board.is_draw() {
             return 0;
         }
         self.pv_length[self.ply] = self.ply;
