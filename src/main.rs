@@ -1,6 +1,7 @@
 // https://github.com/glinscott/nnue-pytorch
 // https://hxim.github.io/Stockfish-Evaluation-Guide/
 // https://github.com/topics/nnue
+// https://github.com/topics/chess-engine?l=rust
 // https://github.com/dsekercioglu/blackmarlin.git
 
 #![allow(dead_code)]
