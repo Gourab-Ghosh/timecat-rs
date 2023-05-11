@@ -389,7 +389,11 @@ impl Engine {
     }
 
     fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {
-        if self.ply == MAX_PLY || self.timer.stop_search() || self.timer.is_time_up() || self.board.is_draw() {
+        if self.ply == MAX_PLY
+            || self.timer.stop_search()
+            || self.timer.is_time_up()
+            || self.board.is_draw()
+        {
             return 0;
         }
         self.pv_length[self.ply] = self.ply;
@@ -401,10 +405,12 @@ impl Engine {
         if evaluation > alpha {
             alpha = evaluation;
         }
-        for weighted_move in self
-            .move_sorter
-            .get_weighted_capture_moves(self.board.generate_legal_captures(), &self.board)
-        {
+        let key = self.board.hash();
+        for weighted_move in self.move_sorter.get_weighted_capture_moves(
+            self.board.generate_legal_captures(),
+            self.transposition_table.read_best_move(key),
+            &self.board,
+        ) {
             if weighted_move.weight.is_negative() {
                 break;
             }
