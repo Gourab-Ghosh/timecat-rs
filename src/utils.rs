@@ -21,20 +21,24 @@ pub mod common_utils {
         }
     }
 
+    #[inline(always)]
     pub fn format_info<T: ToString>(desc: &str, info: T) -> String {
         format!("{}: {}", colorize(desc, INFO_STYLE), info.to_string())
     }
 
+    #[inline(always)]
     pub fn println_info<T: ToString>(desc: &str, info: T) {
         println!("{}", format_info(desc, info));
     }
 
+    #[inline(always)]
     pub fn get_upper_board_mask(rank: Rank, color: Color) -> BitBoard {
         get_item_unchecked!(UPPER_BOARD_MASK, color.to_index(), rank.to_index())
     }
 
+    #[inline(always)]
     pub fn get_lower_board_mask(rank: Rank, color: Color) -> BitBoard {
-        get_item_unchecked!(UPPER_BOARD_MASK, 1 - color.to_index(), rank.to_index())
+        get_upper_board_mask(rank, !color)
     }
 }
 

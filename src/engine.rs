@@ -212,8 +212,8 @@ impl Engine {
             return 0;
         }
         self.pv_length[self.ply] = self.ply;
-        // let num_pieces = self.board.get_num_pieces();
-        // let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
+        let num_pieces = self.board.get_num_pieces();
+        let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
         let not_in_check = !self.board.is_check();
         let is_pv_node = alpha != beta - 1;
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
@@ -315,23 +315,21 @@ impl Engine {
         for (move_index, weighted_move) in weighted_moves.enumerate() {
             let move_ = weighted_move.move_;
             let not_capture_move = !self.board.is_capture(move_);
-            let mut safe_to_apply_lmr = not_capture_move
+            let mut safe_to_apply_lmr = move_index >= FULL_DEPTH_SEARCH_LMR
+                && depth >= REDUCTION_LIMIT_LMR
+                && !DISABLE_LMR
+                && not_capture_move
                 && not_in_check
-                && depth >= 3
                 && move_.get_promotion().is_none()
                 && !self.move_sorter.is_killer_move(move_, self.ply)
-                && !self.board.is_passed_pawn(move_.get_source());
+                && !(is_endgame && self.board.is_passed_pawn(move_.get_source()));
             self.push(Some(move_));
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha);
             } else {
-                if move_index >= FULL_DEPTH_SEARCH_LMR
-                    && depth >= REDUCTION_LIMIT_LMR
-                    && safe_to_apply_lmr
-                    && !DISABLE_LMR
-                {
+                if safe_to_apply_lmr {
                     let lmr_reduction = Self::get_lmr_reduction(depth, move_index, is_pv_node);
                     if depth > lmr_reduction {
                         score = -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha);
@@ -347,6 +345,26 @@ impl Engine {
                         score = -self.alpha_beta(depth - 1, -beta, -alpha);
                     }
                 }
+
+                // let mut reduced_depth = depth;
+                // if safe_to_apply_lmr {
+                //     reduced_depth -= Self::get_lmr_reduction(depth, move_index, is_pv_node);
+                // }
+                // loop {
+                //     score = -self.alpha_beta(reduced_depth - 1, -alpha - 1, -alpha);
+                //     if score > alpha {
+                //         score = -self.alpha_beta(reduced_depth - 1, -beta, -alpha);
+                //     }
+                //     ///////////////////////////////////////////////////////////////////
+                //     // A reduced depth may bring us above alpha. This is relatively
+                //     // unusual, but if so we need the exact score so we do a full search.
+                //     ///////////////////////////////////////////////////////////////////
+                //     if reduced_depth < depth && score > alpha {
+                //         reduced_depth = depth;
+                //     } else {
+                //         break;
+                //     }
+                // }
             }
             self.pop();
             if self.timer.stop_search() {
