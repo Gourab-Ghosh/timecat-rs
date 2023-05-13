@@ -4,13 +4,10 @@ authors = ["Gourab Ghosh"]
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
-# description = "A chess engine"
+description = "A chess engine"
 readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-# [build]
-# RUSTFLAGS = "-C target-cpu=native"
 
 [profile.dev]
 opt-level = 2
@@ -24,6 +21,7 @@ overflow-checks = false
 codegen-units = 1
 lto = true
 panic = "abort"
+# rustflags = ["-C", "target-cpu=native"]
 # strip = true
 
 [dependencies]

@@ -166,7 +166,10 @@ impl MoveSorter {
         // Self::mvv_lva(move_, board)
     }
 
-    pub fn score_root_moves(board: &mut Board, move_: Move) -> MoveWeight {
+    pub fn score_root_moves(board: &mut Board, move_: Move, pv_move: Option<Move>) -> MoveWeight {
+        if Some(move_) == pv_move {
+            return 100_000;
+        }
         if board.gives_repetition(move_) {
             return -50;
         }

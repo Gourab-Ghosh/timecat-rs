@@ -110,7 +110,7 @@ impl Engine {
             .map(|wm| {
                 (
                     wm.move_,
-                    MoveSorter::score_root_moves(&mut self.board, wm.move_),
+                    MoveSorter::score_root_moves(&mut self.board, wm.move_, self.pv_table[0][0]),
                 )
             })
             .collect_vec();
@@ -212,8 +212,8 @@ impl Engine {
             return 0;
         }
         self.pv_length[self.ply] = self.ply;
-        let num_pieces = self.board.get_num_pieces();
-        let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
+        // let num_pieces = self.board.get_num_pieces();
+        // let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
         let not_in_check = !self.board.is_check();
         let is_pv_node = alpha != beta - 1;
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
@@ -321,8 +321,8 @@ impl Engine {
                 && not_capture_move
                 && not_in_check
                 && move_.get_promotion().is_none()
-                && !self.move_sorter.is_killer_move(move_, self.ply)
-                && !(is_endgame && self.board.is_passed_pawn(move_.get_source()));
+                && !self.move_sorter.is_killer_move(move_, self.ply);
+                // && !(is_endgame && self.board.is_passed_pawn(move_.get_source()));
             self.push(Some(move_));
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
@@ -345,26 +345,6 @@ impl Engine {
                         score = -self.alpha_beta(depth - 1, -beta, -alpha);
                     }
                 }
-
-                // let mut reduced_depth = depth;
-                // if safe_to_apply_lmr {
-                //     reduced_depth -= Self::get_lmr_reduction(depth, move_index, is_pv_node);
-                // }
-                // loop {
-                //     score = -self.alpha_beta(reduced_depth - 1, -alpha - 1, -alpha);
-                //     if score > alpha {
-                //         score = -self.alpha_beta(reduced_depth - 1, -beta, -alpha);
-                //     }
-                //     ///////////////////////////////////////////////////////////////////
-                //     // A reduced depth may bring us above alpha. This is relatively
-                //     // unusual, but if so we need the exact score so we do a full search.
-                //     ///////////////////////////////////////////////////////////////////
-                //     if reduced_depth < depth && score > alpha {
-                //         reduced_depth = depth;
-                //     } else {
-                //         break;
-                //     }
-                // }
             }
             self.pop();
             if self.timer.stop_search() {
@@ -494,7 +474,7 @@ impl Engine {
         self.num_nodes_searched
     }
 
-    pub fn get_best_move(&self) -> Option<Move> {
+    pub fn get_pv_move(&self) -> Option<Move> {
         self.pv_table[0][0]
     }
 
@@ -579,7 +559,7 @@ impl Engine {
             }
             current_depth += 1;
         }
-        (self.get_best_move(), self.board.score_flipped(score))
+        (self.get_pv_move(), self.board.score_flipped(score))
     }
 }
 
