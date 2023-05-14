@@ -32,7 +32,7 @@ use chess::Piece::*;
 use chess::{
     get_adjacent_files, get_bishop_moves, get_file as get_file_bb, get_king_moves,
     get_knight_moves, get_pawn_attacks, get_rank as get_rank_bb, get_rook_moves, BitBoard,
-    BoardStatus, ChessMove as Move, Color, File, Piece, Rank, Square,
+    BoardStatus, ChessMove as Move, Color, File, Piece, Rank, Square, CacheTable
 };
 use constants::bitboard::*;
 use constants::board_representation::*;

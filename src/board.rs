@@ -271,6 +271,10 @@ impl Board {
             checkers_string += &square.to_string();
             checkers_string += " ";
         }
+        let score = self.evaluator
+            .as_ref()
+            .expect("No Evaluator found!")
+            .evaluate_immutable(&self.board);
         skeleton.push_str(
             &[
                 String::new(),
@@ -280,7 +284,7 @@ impl Board {
                     "Checkers",
                     colorize(checkers_string.trim().to_uppercase(), CHECKERS_STYLE),
                 ),
-                format_info("Current Evaluation", score_to_string(self.evaluate())),
+                format_info("Current Evaluation", score_to_string(score)),
             ]
             .join("\n"),
         );
@@ -1050,16 +1054,17 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn evaluate(&self) -> Score {
+    pub fn evaluate(&mut self) -> Score {
         self.evaluator
-            .as_ref()
+            .as_mut()
             .expect("No Evaluator found!")
-            .evaluate(self)
+            .evaluate(&self.board)
     }
 
     #[inline(always)]
-    pub fn evaluate_flipped(&self) -> Score {
-        self.score_flipped(self.evaluate())
+    pub fn evaluate_flipped(&mut self) -> Score {
+        let score = self.evaluate();
+        self.score_flipped(score)
     }
 
     fn mini_perft(&mut self, depth: Depth, print_move: bool) -> usize {

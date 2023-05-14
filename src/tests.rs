@@ -198,7 +198,7 @@ pub fn test() {
     // engine.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170");
     // engine.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24");
     // parse_command(&mut engine, "go time 3000");
-    parse_command(&mut engine, "go depth 12");
+    parse_command(&mut engine, "go depth 13");
 
     // let mut board = Board::new();
     // println!("\n{board}");

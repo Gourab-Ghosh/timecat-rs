@@ -1,21 +1,26 @@
 use super::*;
 use nnue::{Network, Piece as P, StockfishNetwork};
 
-#[derive(Default, Debug)]
 pub struct Evaluator {
     network: Network,
     stockfish_network: StockfishNetwork,
     network_backup: Vec<Network>,
-    cache: HashMap<u64, Score>,
+    cache: CacheTable<Score>,
 }
 
 impl Evaluator {
     pub fn new() -> Self {
+        let entry_size = mem::size_of::<(u64, Score)>();
+        let mut size = 20; // In MB
+        size *= 2_usize.pow(20);
+        size /= entry_size;
+        size = 2_usize.pow((size as f64).log2().round() as u32);
+        println!("Cache size: {} MB", size * entry_size / 2_usize.pow(20));
         Self {
             network: Network::new(),
             stockfish_network: StockfishNetwork::new(),
             network_backup: Vec::new(),
-            cache: HashMap::default(),
+            cache: CacheTable::new(size, 0),
         }
     }
 
@@ -111,7 +116,7 @@ impl Evaluator {
         board.score_flipped(score)
     }
 
-    pub fn evaluate(&self, board: &Board) -> Score {
+    pub fn evaluate_immutable(&self, sub_board: &chess::Board) -> Score {
         // if board.is_endgame() {
         //     let mut eval = self.network.eval(board);
         //     if eval.abs() < 0 {
@@ -120,6 +125,16 @@ impl Evaluator {
         //     eval = eval +  if eval.is_positive() { self.force_king_to_center(board) } else { self.force_king_to_corner(board) } / 10;
         //     return 50 * PAWN_VALUE * eval.signum() + eval;
         // }
-        self.stockfish_network.eval(board)
+        self.stockfish_network.eval(sub_board)
+    }
+
+    pub fn evaluate(&mut self, sub_board: &chess::Board) -> Score {
+        let hash = sub_board.get_hash();
+        if let Some(score) = self.cache.get(hash) {
+            return score;
+        }
+        let score = self.evaluate_immutable(sub_board);
+        self.cache.add(hash, score);
+        score
     }
 }

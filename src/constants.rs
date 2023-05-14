@@ -250,10 +250,10 @@ pub mod engine_constants {
 
     use super::types::*;
     pub const MAX_PLY: usize = 255;
-    pub const INFINITY: Score = 30_000;
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;
     pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - MAX_PLY as Score - 1;
+    pub const INFINITY: Score = CHECKMATE_SCORE + 2 * MAX_PLY as Score;
     pub const NUM_KILLER_MOVES: usize = 3;
     pub const PAWN_VALUE: Score = 100;
 
