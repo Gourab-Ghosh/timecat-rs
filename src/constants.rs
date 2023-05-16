@@ -245,7 +245,7 @@ pub mod print_style {
 pub mod engine_constants {
     use std::time::Duration;
 
-    use crate::utils::common_utils::evaluate_piece;
+    use crate::utils::{cache_table_utils::CacheTableSize, common_utils::evaluate_piece};
     use chess::Piece::*;
 
     use super::types::*;
@@ -253,7 +253,7 @@ pub mod engine_constants {
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;
     pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - MAX_PLY as Score - 1;
-    pub const INFINITY: Score = CHECKMATE_SCORE + 2 * MAX_PLY as Score;
+    pub const INFINITY: Score = CHECKMATE_SCORE + 4 * MAX_PLY as Score;
     pub const NUM_KILLER_MOVES: usize = 3;
     pub const PAWN_VALUE: Score = 100;
 
@@ -273,6 +273,8 @@ pub mod engine_constants {
     pub const DISABLE_T_TABLE: bool = false;
     pub const MAX_MOVES_PER_POSITION: usize = 250;
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
+
+    pub static T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(64);
 
     pub const FOLLOW_PV: bool = true;
     pub const PRINT_MOVE_INFO_DURATION_THRESHOLD: Duration = Duration::from_millis(1000);

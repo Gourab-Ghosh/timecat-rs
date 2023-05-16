@@ -65,8 +65,12 @@ impl StockfishNetwork {
     pub fn get_state(&self, sub_board: &chess::Board) -> nnue_rs::stockfish::halfkp::SfHalfKpState {
         let kings_bitboatrd = sub_board.pieces(King);
         let mut state = self.model.new_state(
-            square_to_stockfish_square((kings_bitboatrd & sub_board.color_combined(White)).to_square()),
-            square_to_stockfish_square((kings_bitboatrd & sub_board.color_combined(Black)).to_square()),
+            square_to_stockfish_square(
+                (kings_bitboatrd & sub_board.color_combined(White)).to_square(),
+            ),
+            square_to_stockfish_square(
+                (kings_bitboatrd & sub_board.color_combined(Black)).to_square(),
+            ),
         );
         for square in sub_board.combined() & !kings_bitboatrd {
             let piece = Self::probe_piece(sub_board.piece_on(square).unwrap());

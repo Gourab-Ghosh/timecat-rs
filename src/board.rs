@@ -271,7 +271,8 @@ impl Board {
             checkers_string += &square.to_string();
             checkers_string += " ";
         }
-        let score = self.evaluator
+        let score = self
+            .evaluator
             .as_ref()
             .expect("No Evaluator found!")
             .evaluate_immutable(&self.board);

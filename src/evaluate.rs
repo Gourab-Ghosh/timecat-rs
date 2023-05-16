@@ -10,12 +10,11 @@ pub struct Evaluator {
 
 impl Evaluator {
     pub fn new() -> Self {
-        let entry_size = mem::size_of::<(u64, Score)>();
-        let mut size = 20; // In MB
-        size *= 2_usize.pow(20);
-        size /= entry_size;
-        size = 2_usize.pow((size as f64).log2().round() as u32);
-        println!("Cache size: {} MB", size * entry_size / 2_usize.pow(20));
+        let (size, entry_size) = CacheTableSize::Max(20).to_cache_table_and_entry_size::<Score>();
+        println!(
+            "Evaluator Cache size: {} MB",
+            size * entry_size / 2_usize.pow(20)
+        );
         Self {
             network: Network::new(),
             stockfish_network: StockfishNetwork::new(),

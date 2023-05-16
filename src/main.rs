@@ -32,7 +32,7 @@ use chess::Piece::*;
 use chess::{
     get_adjacent_files, get_bishop_moves, get_file as get_file_bb, get_king_moves,
     get_knight_moves, get_pawn_attacks, get_rank as get_rank_bb, get_rook_moves, BitBoard,
-    BoardStatus, ChessMove as Move, Color, File, Piece, Rank, Square, CacheTable
+    BoardStatus, CacheTable, ChessMove as Move, Color, File, Piece, Rank, Square,
 };
 use constants::bitboard::*;
 use constants::board_representation::*;
@@ -65,6 +65,7 @@ use timer::Timer;
 use tt::*;
 use useful_macros::*;
 use utils::bitboard_utils::*;
+use utils::cache_table_utils::*;
 use utils::classes::*;
 use utils::common_utils::*;
 use utils::square_utils::*;

@@ -321,8 +321,9 @@ impl Engine {
                 && not_capture_move
                 && not_in_check
                 && move_.get_promotion().is_none()
-                && !self.move_sorter.is_killer_move(move_, self.ply);
+                && !self.move_sorter.is_killer_move(move_, self.ply)
                 // && !(is_endgame && self.board.is_passed_pawn(move_.get_source()));
+                && !self.board.is_passed_pawn(move_.get_source());
             self.push(Some(move_));
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
@@ -546,7 +547,12 @@ impl Engine {
             }
             if score <= alpha || score >= beta {
                 if print_info {
-                    self.print_warning_message(current_depth, alpha, beta, score);
+                    self.print_warning_message(
+                        current_depth,
+                        self.board.score_flipped(alpha),
+                        self.board.score_flipped(beta),
+                        self.board.score_flipped(score),
+                    );
                 }
                 alpha = -INFINITY;
                 beta = INFINITY;

@@ -197,8 +197,9 @@ pub fn test() {
     // engine.board.push_sans("Qc6+ Kf2 Ra8 Rd1+ Ke8 Rc1 Qe4 Rxc7 Rxa7");
     // engine.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170");
     // engine.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24");
-    // parse_command(&mut engine, "go time 3000");
-    parse_command(&mut engine, "go depth 13");
+    engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170"); // check for saving mate score
+    parse_command(&mut engine, "go time 3000");
+    // parse_command(&mut engine, "go depth 12");
 
     // let mut board = Board::new();
     // println!("\n{board}");
