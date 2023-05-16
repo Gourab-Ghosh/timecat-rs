@@ -105,7 +105,7 @@ pub mod string_utils {
             mate_string += &mate_distance.to_string();
             return mate_string;
         }
-        let to_return = score as f32 / PAWN_VALUE as f32;
+        let to_return = score as f64 / PAWN_VALUE as f64;
         if to_return % 1.0 == 0.0 {
             format!("{}", to_return as i32)
         } else {
@@ -149,6 +149,11 @@ pub mod bitboard_utils {
 }
 
 pub mod cache_table_utils {
+    struct CacheTableEntry<T> {
+        hash: u64,
+        entry: T,
+    }
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum CacheTableSize {
         Max(usize),
@@ -186,9 +191,13 @@ pub mod cache_table_utils {
             }
         }
 
+        pub fn get_entry_size<T>() -> usize {
+            std::mem::size_of::<CacheTableEntry<T>>()
+        }
+
         pub fn to_cache_table_and_entry_size<T>(&self) -> (usize, usize) {
             let mut size = self.unwrap();
-            let entry_size = std::mem::size_of::<(u64, T)>();
+            let entry_size = Self::get_entry_size::<T>();
             size *= 2_usize.pow(20);
             size /= entry_size;
             let pow_f64 = (size as f64).log2();
@@ -199,6 +208,15 @@ pub mod cache_table_utils {
             } as u32;
             size = 2_usize.pow(pow);
             (size, entry_size)
+        }
+
+        pub fn to_cache_table_size<T>(&self) -> usize {
+            self.to_cache_table_and_entry_size::<T>().0
+        }
+
+        pub fn to_cache_table_memory_size<T>(&self) -> usize {
+            let (size, entry_size) = self.to_cache_table_and_entry_size::<T>();
+            size * entry_size / 2_usize.pow(20)
         }
     }
 }
@@ -272,6 +290,7 @@ pub mod unsafe_utils {
     use super::*;
 
     static mut COLORED_OUTPUT: bool = true;
+    static mut T_TABLE_SIZE: CacheTableSize = INITIAL_T_TABLE_SIZE;
 
     pub fn is_colored_output() -> bool {
         unsafe { COLORED_OUTPUT }
@@ -285,6 +304,21 @@ pub mod unsafe_utils {
             "{} {}",
             colorize("Set colored output to", SUCCESS_MESSAGE_STYLE),
             colorize(_bool, INFO_STYLE),
+        );
+    }
+
+    pub fn get_t_table_size() -> CacheTableSize {
+        unsafe { T_TABLE_SIZE }
+    }
+
+    pub fn set_t_table_size(size: CacheTableSize) {
+        unsafe {
+            T_TABLE_SIZE = size;
+        }
+        println!(
+            "{} {}",
+            colorize("Set t-table size to", SUCCESS_MESSAGE_STYLE),
+            colorize(size.to_cache_table_memory_size::<TranspositionTableEntry>(), INFO_STYLE),
         );
     }
 }

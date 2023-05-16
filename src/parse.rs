@@ -129,7 +129,7 @@ impl Go {
         );
         println!();
         println_info("Position Count", position_count);
-        println_info("Time", format!("{} s", elapsed_time.as_secs_f32()));
+        println_info("Time", format!("{} s", elapsed_time.as_secs_f64()));
         println_info("Speed", nps);
         position_count
     }
@@ -150,7 +150,7 @@ impl Go {
         println_info("Score", score_to_string(score));
         println_info("PV Line", engine.get_pv_string());
         println_info("Position Count", position_count);
-        println_info("Time", format!("{:.3} s", elapsed_time.as_secs_f32()));
+        println_info("Time", format!("{:.3} s", elapsed_time.as_secs_f64()));
         println_info("Speed", nps);
         println_info("Best Move", engine.board.san(Some(best_move)).unwrap());
         Ok(())

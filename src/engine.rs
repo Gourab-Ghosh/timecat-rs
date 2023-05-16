@@ -88,7 +88,7 @@ impl Engine {
             colorize("nodes", INFO_STYLE),
             self.num_nodes_searched,
             colorize("time", INFO_STYLE),
-            time_elapsed.as_secs_f32(),
+            time_elapsed.as_secs_f64(),
         );
     }
 
@@ -198,8 +198,8 @@ impl Engine {
 
     fn get_lmr_reduction(depth: Depth, move_index: usize, is_pv_node: bool) -> Depth {
         let mut reduction =
-            LMR_BASE_REDUCTION + (depth as f32).ln() * (move_index as f32).ln() / LMR_MOVE_DIVIDER;
-        // let mut reduction = (depth as f32 - 1.0).max(0.0).sqrt() + (move_index as f32 - 1.0).max(0.0).sqrt();
+            LMR_BASE_REDUCTION + (depth as f64).ln() * (move_index as f64).ln() / LMR_MOVE_DIVIDER;
+        // let mut reduction = (depth as f64 - 1.0).max(0.0).sqrt() + (move_index as f64 - 1.0).max(0.0).sqrt();
         if is_pv_node {
             reduction /= 3.0;
             // reduction *= 2.0;
@@ -272,7 +272,7 @@ impl Engine {
                 && static_evaluation >= beta
             {
                 let r = NULL_MOVE_MIN_REDUCTION
-                    + (depth.abs_diff(NULL_MOVE_MIN_DEPTH) as f32 / NULL_MOVE_DEPTH_DIVIDER as f32)
+                    + (depth.abs_diff(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
                         .round() as Depth;
                 if depth > r {
                     self.push(None);
@@ -492,7 +492,7 @@ impl Engine {
             score_to_string(alpha),
             score_to_string(beta),
             score_to_string(score),
-            self.timer.elapsed().as_secs_f32(),
+            self.timer.elapsed().as_secs_f64(),
         );
         println!("{}", colorize(warning_message, WARNING_MESSAGE_STYLE));
     }
@@ -510,7 +510,7 @@ impl Engine {
             colorize("nps", style),
             (self.num_nodes_searched as u128 * 10_u128.pow(9)) / time_elapsed.as_nanos(),
             colorize("time", style),
-            time_elapsed.as_secs_f32(),
+            time_elapsed.as_secs_f64(),
             colorize("pv", style),
             self.get_pv_string(),
         );

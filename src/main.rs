@@ -25,8 +25,6 @@ mod useful_macros;
 mod utils;
 
 use board::Board;
-use cached::proc_macro::cached;
-use cached::SizedCache;
 use chess::Color::*;
 use chess::Piece::*;
 use chess::{
@@ -85,7 +83,7 @@ fn main() {
         println!("{}", colorize(info_text, SUCCESS_MESSAGE_STYLE));
         Parser::main_loop();
     }
-    let elapsed_time = clock.elapsed().as_secs_f32();
+    let elapsed_time = clock.elapsed().as_secs_f64();
     let precision = 3;
     println_info("\nRun Time", format!("{:.1$} s", elapsed_time, precision));
 }

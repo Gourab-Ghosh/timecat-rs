@@ -1,15 +1,15 @@
 use super::*;
 
-fn prediction_accuracy_func(rms: f32) -> f32 {
+fn prediction_accuracy_func(rms: f64) -> f64 {
     1.0 - 1.0 / (1.0 + ((10.0 - rms) / 3.0).exp())
 }
 
-fn calculate_prediction_accuracy(rms: f32) -> f32 {
+fn calculate_prediction_accuracy(rms: f64) -> f64 {
     (prediction_accuracy_func(rms) * 100.0) / prediction_accuracy_func(0.0)
 }
 
 fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit: Option<u16>) {
-    let mut time_taken_vec: Vec<f32> = Vec::new();
+    let mut time_taken_vec: Vec<f64> = Vec::new();
     let mut max_time_taken_fen = String::new();
     let mut prediction_score_vec = Vec::new();
     println!("\n{}\n", engine.board);
@@ -25,7 +25,7 @@ fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit
         let best_move_san = engine.board.san(Some(best_move)).unwrap();
         let pv = engine.get_pv_string();
         engine.push(Some(best_move));
-        if time_elapsed.as_secs_f32()
+        if time_elapsed.as_secs_f64()
             > *time_taken_vec
                 .iter()
                 .max_by(|&x, &y| x.partial_cmp(y).unwrap())
@@ -33,8 +33,8 @@ fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit
         {
             max_time_taken_fen = engine.board.get_fen();
         }
-        time_taken_vec.push(time_elapsed.as_secs_f32());
-        prediction_score_vec.push(score as f32 / PAWN_VALUE as f32);
+        time_taken_vec.push(time_elapsed.as_secs_f64());
+        prediction_score_vec.push(score as f64 / PAWN_VALUE as f64);
         let nps =
             (engine.get_num_nodes_searched() as u128 * 10u128.pow(9)) / time_elapsed.as_nanos();
         println!("\n{}\n", engine.board);
@@ -42,15 +42,15 @@ fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit
         println_info("Score", score_to_string(score));
         println_info("Num Nodes Searched", engine.get_num_nodes_searched());
         println_info("PV Line", pv);
-        println_info("Time Taken", format!("{:.3} s", time_elapsed.as_secs_f32()));
+        println_info("Time Taken", format!("{:.3} s", time_elapsed.as_secs_f64()));
         println_info("Nodes per second", format!("{} nodes/s", nps));
     }
-    let mean = time_taken_vec.iter().sum::<f32>() / time_taken_vec.len() as f32;
+    let mean = time_taken_vec.iter().sum::<f64>() / time_taken_vec.len() as f64;
     let std_err = (time_taken_vec
         .iter()
         .map(|x| (x - mean).powi(2))
-        .sum::<f32>()
-        / time_taken_vec.len() as f32)
+        .sum::<f64>()
+        / time_taken_vec.len() as f64)
         .sqrt();
     let max_time_taken = time_taken_vec
         .iter()
@@ -70,9 +70,9 @@ fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit
         .map(|x| (x * 100.0).abs() as Score)
         .min()
         .unwrap();
-    // let prediction_accuracy = prediction_score_vec.iter().filter(|x| x.abs() < 1.5).count() as f32 / prediction_score_vec.len() as f32 * 100.0;
-    let prediction_score_rms = (prediction_score_vec.iter().map(|&x| x.powi(2)).sum::<f32>()
-        / prediction_score_vec.len() as f32)
+    // let prediction_accuracy = prediction_score_vec.iter().filter(|x| x.abs() < 1.5).count() as f64 / prediction_score_vec.len() as f64 * 100.0;
+    let prediction_score_rms = (prediction_score_vec.iter().map(|&x| x.powi(2)).sum::<f64>()
+        / prediction_score_vec.len() as f64)
         .sqrt();
     let prediction_accuracy = calculate_prediction_accuracy(prediction_score_rms);
     println!(
@@ -98,7 +98,7 @@ fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit
     } else if let GoCommand::Time(time) = go_command {
         println_info(
             "Time Searched Per Move",
-            format!("{:.3}", time.as_secs_f32()),
+            format!("{:.3}", time.as_secs_f64()),
         );
     }
     println_info(
@@ -197,9 +197,9 @@ pub fn test() {
     // engine.board.push_sans("Qc6+ Kf2 Ra8 Rd1+ Ke8 Rc1 Qe4 Rxc7 Rxa7");
     // engine.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170");
     // engine.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24");
-    engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170"); // check for saving mate score
-    parse_command(&mut engine, "go time 3000");
-    // parse_command(&mut engine, "go depth 12");
+    // engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170"); // check for saving mate score
+    // parse_command(&mut engine, "go time 3000");
+    parse_command(&mut engine, "go depth 12");
 
     // let mut board = Board::new();
     // println!("\n{board}");

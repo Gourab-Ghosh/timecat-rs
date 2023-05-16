@@ -36,7 +36,7 @@ impl TranspositionTableData {
 impl Default for TranspositionTableData {
     fn default() -> Self {
         Self {
-            depth: 0,
+            depth: -1,
             score: Default::default(),
             flag: Default::default(),
         }
@@ -44,7 +44,7 @@ impl Default for TranspositionTableData {
 }
 
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
-struct TranspositionTableEntry {
+pub struct TranspositionTableEntry {
     option_data: Option<TranspositionTableData>,
     best_move: Option<Move>,
 }
@@ -179,7 +179,7 @@ impl TranspositionTable {
 
     pub fn new() -> Self {
         Self {
-            table: Self::generate_new_table(T_TABLE_SIZE),
+            table: Self::generate_new_table(get_t_table_size()),
         }
     }
 
@@ -260,7 +260,7 @@ impl TranspositionTable {
     }
 
     pub fn clear(&mut self) {
-        self.table = Self::generate_new_table(T_TABLE_SIZE);
+        self.table = Self::generate_new_table(get_t_table_size());
     }
 }
 
