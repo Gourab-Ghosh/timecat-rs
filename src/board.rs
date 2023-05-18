@@ -574,7 +574,7 @@ impl Board {
 
     #[inline(always)]
     pub fn is_irreversible(&self, move_: Move) -> bool {
-        self.is_zeroing(move_) || self.reduces_castling_rights(move_) || self.has_legal_en_passant()
+        self.has_legal_en_passant() || self.is_zeroing(move_) || self.reduces_castling_rights(move_)
     }
 
     #[inline(always)]
@@ -605,7 +605,15 @@ impl Board {
 
     #[inline(always)]
     pub fn is_endgame(&self) -> bool {
-        self.get_num_pieces() <= ENDGAME_PIECE_THRESHOLD
+        if self.get_num_pieces() <= ENDGAME_PIECE_THRESHOLD {
+            return true;
+        }
+        match self.get_piece_mask(Queen).popcnt() {
+            0 => (self.get_piece_mask(Rook) | self.get_piece_mask(Bishop) | self.get_piece_mask(Knight)).popcnt() <= 4,
+            1 => self.get_piece_mask(Rook).popcnt() <= 2 && self.get_piece_mask(Bishop) | self.get_piece_mask(Knight) == BB_EMPTY,
+            2 => self.get_piece_mask(Rook) | self.get_piece_mask(Bishop) | self.get_piece_mask(Knight) == BB_EMPTY,
+            _ => false,
+        }
     }
 
     fn push_nnue(&mut self, move_: Move) {

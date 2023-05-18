@@ -7,3 +7,4 @@ perf*
 src/*.bak
 Cargo.lock
 temp*
+flamegraph.svg

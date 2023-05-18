@@ -212,8 +212,7 @@ impl Engine {
             return 0;
         }
         self.pv_length[self.ply] = self.ply;
-        // let num_pieces = self.board.get_num_pieces();
-        // let is_endgame = num_pieces <= ENDGAME_PIECE_THRESHOLD;
+        // let is_endgame = self.board.is_endgame();
         let not_in_check = !self.board.is_check();
         let is_pv_node = alpha != beta - 1;
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
@@ -268,8 +267,8 @@ impl Engine {
 
             // null move pruning
             if depth >= NULL_MOVE_MIN_DEPTH
-                && self.board.has_non_pawn_material()
                 && static_evaluation >= beta
+                && self.board.has_non_pawn_material()
             {
                 let r = NULL_MOVE_MIN_REDUCTION
                     + (depth.abs_diff(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
@@ -287,7 +286,8 @@ impl Engine {
                 }
             }
             // // razoring
-            // if !is_pv_node && depth <= 3 && is_endgame {
+            // let d = 4;
+            // if !is_pv_node && depth <= d && !is_endgame {
             //     let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
             //     if score < beta {
             //         if depth == 1 {
@@ -295,7 +295,7 @@ impl Engine {
             //             return new_score.max(score);
             //         }
             //         score += (7 * PAWN_VALUE) / 4;
-            //         if score < beta && depth <= 2 {
+            //         if score < beta && depth < d {
             //             let new_score = self.quiescence(alpha, beta);
             //             if new_score < beta {
             //                 return new_score.max(score);

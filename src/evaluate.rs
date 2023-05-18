@@ -124,7 +124,18 @@ impl Evaluator {
         //     eval = eval +  if eval.is_positive() { self.force_king_to_center(board) } else { self.force_king_to_corner(board) } / 10;
         //     return 50 * PAWN_VALUE * eval.signum() + eval;
         // }
-        self.stockfish_network.eval(sub_board)
+        let mut score = self.stockfish_network.eval(sub_board);
+        if sub_board.combined().popcnt() <= ENDGAME_PIECE_THRESHOLD {
+            let piece_diff_score = sub_board.combined().map(|square| {
+                let evaluation = evaluate_piece(sub_board.piece_on(square).unwrap());
+                match sub_board.color_on(square).unwrap() {
+                    White => evaluation,
+                    Black => -evaluation,
+                }
+            }).sum::<Score>();
+            score += (3*piece_diff_score) / 100;
+        }
+        score
     }
 
     pub fn evaluate(&mut self, sub_board: &chess::Board) -> Score {

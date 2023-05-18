@@ -160,7 +160,7 @@ impl MoveSorter {
     #[inline(always)]
     fn score_capture(move_: Move, best_move: Option<Move>, board: &Board) -> MoveWeight {
         if Some(move_) == best_move {
-            return 100_000;
+            return 5000;
         }
         Self::see_capture(move_.get_dest(), &mut board.get_sub_board()) as MoveWeight
         // Self::mvv_lva(move_, board)
@@ -239,12 +239,12 @@ impl MoveSorter {
     ) -> MoveWeight {
         // best move
         if best_move == Some(move_) {
-            return 1294000;
+            return 1290000;
         }
         // pv move
         if self.score_pv && pv_move == Some(move_) {
             self.score_pv = false;
-            return 1293000;
+            return 1280000;
         }
         let source = move_.get_source();
         // let dest = move_.get_dest();
@@ -254,22 +254,22 @@ impl MoveSorter {
         let moving_piece = board.piece_at(source).unwrap();
         // check
         if checkers != BB_EMPTY {
-            return 1292000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
+            return 1270000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
         if board.is_capture(move_) {
-            return 1291000 + Self::score_capture(move_, None, board);
+            return 1260000 + Self::score_capture(move_, None, board);
         }
         for (idx, &option_move) in self.killer_moves[ply].iter().enumerate() {
             if option_move == Some(move_) {
-                return 1290000 - idx as MoveWeight;
+                return 1250000 - idx as MoveWeight;
             }
         }
         // let threat_score = Self::score_threat(move_, &sub_board);
         // if threat_score != 0 {
-        //     return 1289000 + threat_score;
+        //     return 1240000 + threat_score;
         // }
         if move_.get_promotion().is_some() {
-            return 1288000;
+            return 1240000;
         }
         if board.is_passed_pawn(source) {
             let promotion_distance = board
@@ -277,8 +277,11 @@ impl MoveSorter {
                 .to_their_backrank()
                 .to_index()
                 .abs_diff(source.get_rank().to_index());
-            return 1287000 - promotion_distance as MoveWeight;
+            return 1230000 - promotion_distance as MoveWeight;
         }
+        // if board.is_irreversible(move_) {
+        //     return 1220000;
+        // }
         self.get_history_score(move_, board)
     }
 
