@@ -244,11 +244,10 @@ pub mod print_style {
 
 pub mod engine_constants {
     use std::time::Duration;
-
-    use crate::utils::{cache_table_utils::CacheTableSize, common_utils::evaluate_piece};
     use chess::Piece::*;
-
+    use crate::utils::{cache_table_utils::CacheTableSize, common_utils::evaluate_piece};
     use super::types::*;
+    
     pub const MAX_PLY: usize = 255;
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;

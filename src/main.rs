@@ -24,7 +24,7 @@ mod tt;
 mod useful_macros;
 mod utils;
 
-use board::Board;
+use board::*;
 use chess::Color::*;
 use chess::Piece::*;
 use chess::{

@@ -125,16 +125,18 @@ impl Evaluator {
         //     return 50 * PAWN_VALUE * eval.signum() + eval;
         // }
         let mut score = self.stockfish_network.eval(sub_board);
-        if sub_board.combined().popcnt() <= ENDGAME_PIECE_THRESHOLD {
-            let piece_diff_score = sub_board.combined().map(|square| {
-                let evaluation = evaluate_piece(sub_board.piece_on(square).unwrap());
-                match sub_board.color_on(square).unwrap() {
-                    White => evaluation,
-                    Black => -evaluation,
-                }
-            }).sum::<Score>();
-            score += (3*piece_diff_score) / 100;
+        let mut piece_diff_score = 0;
+        let black_occupied = sub_board.color_combined(Black);
+        for &piece in chess::ALL_PIECES[0..5].iter() {
+            let piece_mask = sub_board.pieces(piece);
+            if piece_mask == &BB_EMPTY {
+                continue;
+            }
+            piece_diff_score += (piece_mask.popcnt() as Score
+                - 2 * (piece_mask & black_occupied).popcnt() as Score)
+                * evaluate_piece(piece);
         }
+        score += piece_diff_score / 20;
         score
     }
 

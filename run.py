@@ -7,7 +7,7 @@ import requests
 from shutil import which
 
 def update_environment_variables(*flags):
-    rustflags_command = "-Ctarget-cpu=native {}".format(" ".join("-Clink-args=" + flag.strip() for flag in flags)).strip()
+    rustflags_command = "-C target-cpu=native {}".format(" ".join("-C link-args=" + flag.strip() for flag in flags)).strip()
     os.environ["RUSTFLAGS"] = rustflags_command
 
 def timed_run(func):

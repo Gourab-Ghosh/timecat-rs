@@ -241,7 +241,7 @@ impl TranspositionTable {
         // let save_score = !DISABLE_T_TABLE;
         let save_score = !DISABLE_T_TABLE && score.abs() < CHECKMATE_THRESHOLD;
         let option_data = if save_score {
-            let old_option_data = self.table.get(key).map(|entry| entry.option_data).flatten();
+            let old_option_data = self.table.get(key).and_then(|entry| entry.option_data);
             if old_option_data.map(|data| data.depth).unwrap_or(-1) < depth {
                 Some(TranspositionTableData { depth, score, flag })
             } else {

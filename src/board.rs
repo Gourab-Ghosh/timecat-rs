@@ -11,7 +11,14 @@ pub enum BoardError {
     #[fail(display = "{}", err_msg)]
     CustomError { err_msg: String },
 }
-// #[derive(Clone, PartialEq, Debug, Eq)]
+
+pub enum GameResult {
+    WhiteWins,
+    BlackWins,
+    Draw,
+    InProgress,
+}
+
 #[derive(Clone, Debug)]
 struct BoardState {
     board: chess::Board,
@@ -359,6 +366,22 @@ impl Board {
         self.board.status()
     }
 
+    pub fn result(&self) -> GameResult {
+        if self.is_other_draw() {
+            return GameResult::Draw;
+        }
+        match self.status() {
+            BoardStatus::Checkmate => {
+                match self.turn() {
+                    White => GameResult::BlackWins,
+                    Black => GameResult::WhiteWins,
+                }
+            }
+            BoardStatus::Stalemate => GameResult::Draw,
+            BoardStatus::Ongoing => GameResult::InProgress,
+        }
+    }
+
     #[inline(always)]
     pub fn get_fullmove_number(&self) -> u16 {
         self.fullmove_number
@@ -507,9 +530,10 @@ impl Board {
         if pawn_mask & self.occupied_co(self_color) & get_square_bb(square) == BB_EMPTY {
             return false;
         }
+        let file = square.get_file();
         pawn_mask
             & self.occupied_co(!self_color)
-            & get_adjacent_files(square.get_file())
+            & (get_adjacent_files(file) | get_file_bb(file))
             & get_upper_board_mask(square.get_rank(), self_color)
             == BB_EMPTY
     }
@@ -521,7 +545,7 @@ impl Board {
 
     #[inline(always)]
     pub fn is_quiet(&self, move_: Move) -> bool {
-        !self.gives_check(move_) && !self.is_capture(move_)
+        !(self.is_capture(move_) || self.gives_check(move_))
     }
 
     pub fn is_zeroing(&self, move_: Move) -> bool {
@@ -727,6 +751,10 @@ impl Board {
         self.repetition_table.remove(self.hash());
         self.restore(board_state);
         option_move
+    }
+
+    pub fn get_last_move(&self) -> Option<Move> {
+        self.stack.last().unwrap().1
     }
 
     #[allow(clippy::let_and_return)]

@@ -59,7 +59,7 @@ impl Engine {
         }
         self.move_sorter.reset_variables();
         self.timer.reset_variables();
-        self.transposition_table.clear();
+        // self.transposition_table.clear();
     }
 
     fn update_pv_table(&mut self, move_: Move) {
@@ -212,7 +212,7 @@ impl Engine {
             return 0;
         }
         self.pv_length[self.ply] = self.ply;
-        // let is_endgame = self.board.is_endgame();
+        let is_endgame = self.board.is_endgame();
         let not_in_check = !self.board.is_check();
         let is_pv_node = alpha != beta - 1;
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
@@ -322,8 +322,8 @@ impl Engine {
                 && not_in_check
                 && move_.get_promotion().is_none()
                 && !self.move_sorter.is_killer_move(move_, self.ply)
-                // && !(is_endgame && self.board.is_passed_pawn(move_.get_source()));
-                && !self.board.is_passed_pawn(move_.get_source());
+                && !(is_endgame && self.board.is_passed_pawn(move_.get_source()));
+                // && !self.board.is_passed_pawn(move_.get_source());
             self.push(Some(move_));
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;

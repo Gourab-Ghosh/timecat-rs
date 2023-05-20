@@ -171,31 +171,22 @@ pub mod cache_table_utils {
         }
 
         pub fn is_min(&self) -> bool {
-            match self {
-                Self::Min(_) => true,
-                _ => false,
-            }
+            matches!(self, Self::Min(_))
         }
 
         pub fn is_max(&self) -> bool {
-            match self {
-                Self::Max(_) => true,
-                _ => false,
-            }
+            matches!(self, Self::Max(_))
         }
 
         pub fn is_round(&self) -> bool {
-            match self {
-                Self::Round(_) => true,
-                _ => false,
-            }
+            matches!(self, Self::Round(_))
         }
 
         pub fn get_entry_size<T>() -> usize {
             std::mem::size_of::<CacheTableEntry<T>>()
         }
 
-        pub fn to_cache_table_and_entry_size<T>(&self) -> (usize, usize) {
+        pub fn to_cache_table_and_entry_size<T>(self) -> (usize, usize) {
             let mut size = self.unwrap();
             let entry_size = Self::get_entry_size::<T>();
             size *= 2_usize.pow(20);
@@ -210,11 +201,11 @@ pub mod cache_table_utils {
             (size, entry_size)
         }
 
-        pub fn to_cache_table_size<T>(&self) -> usize {
+        pub fn to_cache_table_size<T>(self) -> usize {
             self.to_cache_table_and_entry_size::<T>().0
         }
 
-        pub fn to_cache_table_memory_size<T>(&self) -> usize {
+        pub fn to_cache_table_memory_size<T>(self) -> usize {
             let (size, entry_size) = self.to_cache_table_and_entry_size::<T>();
             size * entry_size / 2_usize.pow(20)
         }
