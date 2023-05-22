@@ -13,8 +13,7 @@ pub enum BoardError {
 }
 
 pub enum GameResult {
-    WhiteWins,
-    BlackWins,
+    Win(Color),
     Draw,
     InProgress,
 }
@@ -371,12 +370,7 @@ impl Board {
             return GameResult::Draw;
         }
         match self.status() {
-            BoardStatus::Checkmate => {
-                match self.turn() {
-                    White => GameResult::BlackWins,
-                    Black => GameResult::WhiteWins,
-                }
-            }
+            BoardStatus::Checkmate => GameResult::Win(!self.turn()),
             BoardStatus::Stalemate => GameResult::Draw,
             BoardStatus::Ongoing => GameResult::InProgress,
         }
