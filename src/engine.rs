@@ -208,25 +208,21 @@ impl Engine {
     }
 
     fn alpha_beta(&mut self, mut depth: Depth, mut alpha: Score, mut beta: Score) -> Score {
-        if self.ply == MAX_PLY || self.timer.stop_search() || self.timer.is_time_up() {
+        self.pv_length[self.ply] = self.ply;
+        if self.ply == MAX_PLY || self.timer.stop_search() || self.timer.is_time_up() || self.board.is_other_draw() {
             return 0;
         }
-        self.pv_length[self.ply] = self.ply;
-        let is_endgame = self.board.is_endgame();
         let not_in_check = !self.board.is_check();
-        let is_pv_node = alpha != beta - 1;
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
         let moves_gen = self.board.generate_legal_moves();
         if moves_gen.len() == 0 {
             return if not_in_check { 0 } else { -mate_score };
         }
-        if self.board.is_other_draw() {
-            return 0;
-        }
         if !not_in_check {
             depth += 1
         }
         depth = depth.max(0);
+        let is_pv_node = alpha != beta - 1;
         let key = self.board.hash();
         let best_move = if is_pv_node {
             self.transposition_table.read_best_move(key)
@@ -245,44 +241,16 @@ impl Engine {
         if depth == 0 {
             return self.quiescence(alpha, beta);
         }
+        // let is_endgame = self.board.is_endgame();
         self.num_nodes_searched += 1;
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
             let static_evaluation = self.board.evaluate_flipped();
-
             if depth < 3 && !is_pv_node && beta.abs_diff(1) as Score > -INFINITY + PAWN_VALUE {
                 let eval_margin = ((6 * PAWN_VALUE) / 5) * depth as Score;
                 let new_score = static_evaluation - eval_margin;
                 if new_score >= beta {
                     return new_score;
-                }
-            }
-
-            // if depth <= 8 && !is_pv_node && !is_checkmate(beta) {
-            //     let eval_margin = ((6 * PAWN_VALUE) / 5) * depth as Score;
-            //     if static_evaluation - eval_margin >= beta {
-            //         return static_evaluation - eval_margin;
-            //     }
-            // }
-
-            // null move pruning
-            if depth >= NULL_MOVE_MIN_DEPTH
-                && static_evaluation >= beta
-                && self.board.has_non_pawn_material()
-            {
-                let r = NULL_MOVE_MIN_REDUCTION
-                    + (depth.abs_diff(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
-                        .round() as Depth;
-                if depth > r {
-                    self.push(None);
-                    let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1);
-                    self.pop();
-                    if self.timer.stop_search() {
-                        return 0;
-                    }
-                    if score >= beta {
-                        return beta;
-                    }
                 }
             }
             // // razoring
@@ -303,6 +271,26 @@ impl Engine {
             //         }
             //     }
             // }
+            // null move pruning
+            if depth >= NULL_MOVE_MIN_DEPTH
+                && static_evaluation >= beta
+                && self.board.has_non_pawn_material()
+            {
+                let r = NULL_MOVE_MIN_REDUCTION
+                    + (depth.abs_diff(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
+                        .round() as Depth;
+                if depth > r {
+                    self.push(None);
+                    let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1);
+                    self.pop();
+                    if self.timer.stop_search() {
+                        return 0;
+                    }
+                    if score >= beta {
+                        return beta;
+                    }
+                }
+            }
         }
         let mut flag = HashAlpha;
         let weighted_moves = self.move_sorter.get_weighted_sort_moves(
@@ -322,8 +310,8 @@ impl Engine {
                 && not_in_check
                 && move_.get_promotion().is_none()
                 && !self.move_sorter.is_killer_move(move_, self.ply)
-                && !(is_endgame && self.board.is_passed_pawn(move_.get_source()));
-                // && !self.board.is_passed_pawn(move_.get_source());
+                // && !(is_endgame && self.board.is_passed_pawn(move_.get_source()));
+                && !self.board.is_passed_pawn(move_.get_source());
             self.push(Some(move_));
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
@@ -332,10 +320,10 @@ impl Engine {
             } else {
                 if safe_to_apply_lmr {
                     let lmr_reduction = Self::get_lmr_reduction(depth, move_index, is_pv_node);
-                    if depth > lmr_reduction {
-                        score = -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha);
+                    score = if depth > lmr_reduction {
+                        -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha)
                     } else {
-                        score = alpha + 1;
+                        alpha + 1
                     }
                 } else {
                     score = alpha + 1;

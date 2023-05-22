@@ -18,6 +18,27 @@ pub enum GameResult {
     InProgress,
 }
 
+impl GameResult {
+    pub fn is_win(&self) -> bool {
+        matches!(self, GameResult::Win(_))
+    }
+
+    pub fn is_draw(&self) -> bool {
+        matches!(self, GameResult::Draw)
+    }
+
+    pub fn is_in_progress(&self) -> bool {
+        matches!(self, GameResult::InProgress)
+    }
+
+    pub fn winner(&self) -> Option<Color> {
+        match self {
+            GameResult::Win(color) => Some(*color),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 struct BoardState {
     board: chess::Board,
@@ -485,7 +506,7 @@ impl Board {
 
     #[inline(always)]
     pub fn is_other_draw(&self) -> bool {
-        self.is_threefold_repetition() || self.is_fifty_moves() || self.is_insufficient_material()
+        self.is_fifty_moves() || self.is_threefold_repetition() || self.is_insufficient_material()
     }
 
     #[inline(always)]
