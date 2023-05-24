@@ -3,6 +3,7 @@
 // https://github.com/topics/nnue
 // https://github.com/topics/chess-engine?l=rust
 // https://github.com/dsekercioglu/blackmarlin.git
+// https://github.com/zxqfl/sashimi
 
 #![allow(dead_code)]
 #![allow(unused_imports)]
