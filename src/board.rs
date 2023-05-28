@@ -648,9 +648,23 @@ impl Board {
             return true;
         }
         match self.get_piece_mask(Queen).popcnt() {
-            0 => (self.get_piece_mask(Rook) | self.get_piece_mask(Bishop) | self.get_piece_mask(Knight)).popcnt() <= 4,
-            1 => self.get_piece_mask(Rook).popcnt() <= 2 && self.get_piece_mask(Bishop) | self.get_piece_mask(Knight) == BB_EMPTY,
-            2 => self.get_piece_mask(Rook) | self.get_piece_mask(Bishop) | self.get_piece_mask(Knight) == BB_EMPTY,
+            0 => {
+                (self.get_piece_mask(Rook)
+                    | self.get_piece_mask(Bishop)
+                    | self.get_piece_mask(Knight))
+                .popcnt()
+                    <= 4
+            }
+            1 => {
+                self.get_piece_mask(Rook).popcnt() <= 2
+                    && self.get_piece_mask(Bishop) | self.get_piece_mask(Knight) == BB_EMPTY
+            }
+            2 => {
+                self.get_piece_mask(Rook)
+                    | self.get_piece_mask(Bishop)
+                    | self.get_piece_mask(Knight)
+                    == BB_EMPTY
+            }
             _ => false,
         }
     }
@@ -770,6 +784,10 @@ impl Board {
 
     pub fn get_last_move(&self) -> Option<Move> {
         self.stack.last().unwrap().1
+    }
+
+    pub fn get_ply(&self) -> usize {
+        self.stack.len()
     }
 
     #[allow(clippy::let_and_return)]

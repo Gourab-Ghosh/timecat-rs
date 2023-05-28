@@ -309,7 +309,10 @@ pub mod unsafe_utils {
         println!(
             "{} {}",
             colorize("Set t-table size to", SUCCESS_MESSAGE_STYLE),
-            colorize(size.to_cache_table_memory_size::<TranspositionTableEntry>(), INFO_STYLE),
+            colorize(
+                size.to_cache_table_memory_size::<TranspositionTableEntry>(),
+                INFO_STYLE
+            ),
         );
     }
 }

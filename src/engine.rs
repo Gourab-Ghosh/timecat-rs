@@ -124,15 +124,15 @@ impl Engine {
         mut alpha: Score,
         beta: Score,
         print_move_info: bool,
-    ) -> Score {
+    ) -> Option<Score> {
         if self.timer.stop_search() || self.timer.is_time_up() {
-            return 0;
+            return None;
         }
         if self.board.is_game_over() {
             return if self.board.is_checkmate() {
-                -CHECKMATE_SCORE
+                Some(-CHECKMATE_SCORE)
             } else {
-                0
+                Some(0)
             };
         }
         let key = self.board.hash();
@@ -143,16 +143,14 @@ impl Engine {
         let mut flag = HashAlpha;
         let is_endgame = self.board.is_endgame();
         for (move_index, &(move_, _)) in self.get_sorted_root_node_moves().iter().enumerate() {
-            // let san = self.board.san(move_).unwrap();
             if !is_endgame && self.is_draw_move(move_) && max_score > -DRAW_SCORE {
                 continue;
             }
             let clock = Instant::now();
             self.push(Some(move_));
-            if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha) > alpha {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha);
+            if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha)? > alpha {
+                score = -self.alpha_beta(depth - 1, -beta, -alpha)?;
                 max_score = max_score.max(score);
-                // println!("{} {}", san, score_to_string(score));
             }
             self.pop();
             if self.timer.stop_search() {
@@ -179,7 +177,7 @@ impl Engine {
                         HashBeta,
                         Some(move_),
                     );
-                    return beta;
+                    return Some(beta);
                 }
             }
         }
@@ -193,7 +191,7 @@ impl Engine {
                 self.pv_table[self.ply][self.ply],
             );
         }
-        max_score
+        Some(max_score)
     }
 
     fn get_lmr_reduction(depth: Depth, move_index: usize, is_pv_node: bool) -> Depth {
@@ -201,34 +199,38 @@ impl Engine {
             LMR_BASE_REDUCTION + (depth as f64).ln() * (move_index as f64).ln() / LMR_MOVE_DIVIDER;
         // let mut reduction = (depth as f64 - 1.0).max(0.0).sqrt() + (move_index as f64 - 1.0).max(0.0).sqrt();
         if is_pv_node {
-            reduction /= 3.0;
-            // reduction *= 2.0;
+            // reduction /= 3.0;
+            reduction *= 2.0 / 3.0;
         }
         reduction.round() as Depth
     }
 
-    fn alpha_beta(&mut self, mut depth: Depth, mut alpha: Score, mut beta: Score) -> Score {
-        self.pv_length[self.ply] = self.ply;
-        if self.ply == MAX_PLY || self.timer.stop_search() || self.timer.is_time_up() || self.board.is_other_draw() {
-            return 0;
+    fn alpha_beta(&mut self, mut depth: Depth, mut alpha: Score, mut beta: Score) -> Option<Score> {
+        if self.ply == MAX_PLY - 1 {
+            return Some(self.board.evaluate_flipped());
         }
-        let not_in_check = !self.board.is_check();
+        self.pv_length[self.ply] = self.ply;
+        if self.board.is_other_draw() {
+            return Some(0);
+        }
+        if self.timer.stop_search() || self.timer.is_time_up() {
+            return None;
+        }
+        let checkers = self.board.get_checkers();
+        let not_in_check = checkers == BB_EMPTY;
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
         let moves_gen = self.board.generate_legal_moves();
         if moves_gen.len() == 0 {
-            return if not_in_check { 0 } else { -mate_score };
+            return Some(if not_in_check { 0 } else { -mate_score });
         }
-        if !not_in_check {
-            depth += 1
-        }
-        depth = depth.max(0);
+        depth = (depth + checkers.popcnt() as Depth).max(0);
         let is_pv_node = alpha != beta - 1;
         let key = self.board.hash();
         let best_move = if is_pv_node {
             self.transposition_table.read_best_move(key)
         } else {
             match self.transposition_table.read(key, depth, alpha, beta) {
-                (Some(score), _) => return score,
+                (Some(score), _) => return Some(score),
                 (None, best_move) => best_move,
             }
         };
@@ -236,7 +238,7 @@ impl Engine {
         alpha = alpha.max(-mate_score);
         beta = beta.min(mate_score - 1);
         if alpha >= beta {
-            return alpha;
+            return Some(alpha);
         }
         if depth == 0 {
             return self.quiescence(alpha, beta);
@@ -250,7 +252,7 @@ impl Engine {
                 let eval_margin = ((6 * PAWN_VALUE) / 5) * depth as Score;
                 let new_score = static_evaluation - eval_margin;
                 if new_score >= beta {
-                    return new_score;
+                    return Some(new_score);
                 }
             }
             // // razoring
@@ -281,13 +283,13 @@ impl Engine {
                         .round() as Depth;
                 if depth > r {
                     self.push(None);
-                    let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1);
+                    let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1)?;
                     self.pop();
                     if self.timer.stop_search() {
-                        return 0;
+                        return None;
                     }
                     if score >= beta {
-                        return beta;
+                        return Some(beta);
                     }
                 }
             }
@@ -316,12 +318,12 @@ impl Engine {
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha);
+                score = -self.alpha_beta(depth - 1, -beta, -alpha)?;
             } else {
                 if safe_to_apply_lmr {
                     let lmr_reduction = Self::get_lmr_reduction(depth, move_index, is_pv_node);
                     score = if depth > lmr_reduction {
-                        -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha)
+                        -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha)?
                     } else {
                         alpha + 1
                     }
@@ -329,15 +331,15 @@ impl Engine {
                     score = alpha + 1;
                 }
                 if score > alpha {
-                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha);
+                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha)?;
                     if score > alpha && score < beta {
-                        score = -self.alpha_beta(depth - 1, -beta, -alpha);
+                        score = -self.alpha_beta(depth - 1, -beta, -alpha)?;
                     }
                 }
             }
             self.pop();
             if self.timer.stop_search() {
-                return 0;
+                return None;
             }
             if score > alpha {
                 flag = HashExact;
@@ -358,7 +360,7 @@ impl Engine {
                     if not_capture_move {
                         self.move_sorter.update_killer_moves(move_, self.ply);
                     }
-                    return beta;
+                    return Some(beta);
                 }
             }
         }
@@ -372,22 +374,24 @@ impl Engine {
                 self.pv_table[self.ply][self.ply],
             );
         }
-        alpha
+        Some(alpha)
     }
 
-    fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {
-        if self.ply == MAX_PLY
-            || self.timer.stop_search()
-            || self.timer.is_time_up()
-            || self.board.is_draw()
-        {
-            return 0;
+    fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Option<Score> {
+        if self.ply == MAX_PLY - 1 {
+            return Some(self.board.evaluate_flipped());
         }
         self.pv_length[self.ply] = self.ply;
+        if self.board.is_other_draw() {
+            return Some(0);
+        }
+        if self.timer.stop_search() || self.timer.is_time_up() {
+            return None;
+        }
         self.num_nodes_searched += 1;
         let evaluation = self.board.evaluate_flipped();
         if evaluation >= beta {
-            return beta;
+            return Some(beta);
         }
         if evaluation > alpha {
             alpha = evaluation;
@@ -402,20 +406,20 @@ impl Engine {
                 break;
             }
             self.push(Some(weighted_move.move_));
-            let score = -self.quiescence(-beta, -alpha);
+            let score = -self.quiescence(-beta, -alpha)?;
             self.pop();
             if self.timer.stop_search() {
-                return 0;
+                return None;
             }
             if score > alpha {
                 self.update_pv_table(weighted_move.move_);
                 alpha = score;
                 if score >= beta {
-                    return beta;
+                    return Some(beta);
                 }
             }
         }
-        alpha
+        Some(alpha)
     }
 
     fn get_pv(&self, ply: Ply) -> Vec<Move> {
@@ -518,7 +522,11 @@ impl Engine {
                 self.move_sorter.follow_pv();
             }
             let prev_score = score;
-            score = self.search(current_depth, alpha, beta, print_info);
+            let curr_board_ply = self.board.get_ply();
+            score = self.search(current_depth, alpha, beta, print_info).unwrap_or(prev_score);
+            for _ in 0..curr_board_ply.abs_diff(self.board.get_ply()) {
+                self.pop();
+            }
             let time_elapsed = self.timer.elapsed();
             if print_info {
                 self.print_search_info(
@@ -528,9 +536,6 @@ impl Engine {
                 );
             }
             if self.timer.stop_search() {
-                if score == 0 {
-                    score = prev_score;
-                }
                 break;
             }
             if score <= alpha || score >= beta {

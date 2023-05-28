@@ -202,33 +202,6 @@ impl MoveSorter {
         score
     }
 
-    fn score_threat(move_: Move, move_pushed_sub_board: &chess::Board) -> MoveWeight {
-        let attacker_piece_square = move_.get_dest();
-        let attacker_piece = move_pushed_sub_board
-            .piece_on(attacker_piece_square)
-            .unwrap();
-        let attacked_piece_mask = match attacker_piece {
-            Pawn => get_pawn_attacks(
-                attacker_piece_square,
-                !move_pushed_sub_board.side_to_move(),
-                *move_pushed_sub_board.combined(),
-            ),
-            Knight => get_knight_moves(attacker_piece_square),
-            Bishop => get_bishop_moves(attacker_piece_square, *move_pushed_sub_board.combined()),
-            Rook => get_rook_moves(attacker_piece_square, *move_pushed_sub_board.combined()),
-            Queen => get_queen_moves(attacker_piece_square, *move_pushed_sub_board.combined()),
-            King => get_king_moves(attacker_piece_square),
-        } & move_pushed_sub_board
-            .color_combined(move_pushed_sub_board.side_to_move());
-        let mut threat_score = 0;
-        for square in attacked_piece_mask {
-            let attacked_piece = move_pushed_sub_board.piece_on(square).unwrap_or(Pawn);
-            threat_score += evaluate_piece(attacked_piece) as MoveWeight
-                - evaluate_piece(attacker_piece) as MoveWeight;
-        }
-        threat_score / PAWN_VALUE as MoveWeight
-    }
-
     fn score_move(
         &mut self,
         move_: Move,
@@ -248,14 +221,6 @@ impl MoveSorter {
         }
         let source = move_.get_source();
         // let dest = move_.get_dest();
-        let mut sub_board = board.get_sub_board();
-        sub_board.clone().make_move(move_, &mut sub_board);
-        let checkers = *sub_board.checkers();
-        let moving_piece = board.piece_at(source).unwrap();
-        // check
-        if checkers != BB_EMPTY {
-            return 1270000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
-        }
         if board.is_capture(move_) {
             return 1260000 + Self::score_capture(move_, None, board);
         }
@@ -264,10 +229,6 @@ impl MoveSorter {
                 return 1250000 - idx as MoveWeight;
             }
         }
-        // let threat_score = Self::score_threat(move_, &sub_board);
-        // if threat_score != 0 {
-        //     return 1240000 + threat_score;
-        // }
         if move_.get_promotion().is_some() {
             return 1240000;
         }
@@ -279,10 +240,26 @@ impl MoveSorter {
                 .abs_diff(source.get_rank().to_index());
             return 1230000 - promotion_distance as MoveWeight;
         }
-        // if board.is_irreversible(move_) {
-        //     return 1220000;
-        // }
-        self.get_history_score(move_, board)
+        let mut move_made_sub_board = board.get_sub_board();
+        move_made_sub_board
+            .clone()
+            .make_move(move_, &mut move_made_sub_board);
+        // check
+        let checkers = *move_made_sub_board.checkers();
+        let moving_piece = board.piece_at(source).unwrap();
+        if checkers != BB_EMPTY {
+            return -1270000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
+        }
+        if board.is_irreversible(move_) {
+            return 1220000;
+        }
+        // history
+        let history_score = self.get_history_score(move_, board);
+        if history_score != 0 {
+            return 1210000 + history_score;
+        }
+        MAX_MOVES_PER_POSITION as MoveWeight
+            - chess::MoveGen::new_legal(&move_made_sub_board).len() as MoveWeight
     }
 
     // const HASH_MOVE_SCORE: MoveWeight = 25000;
@@ -334,7 +311,7 @@ impl MoveSorter {
 
     //         score += Self::mvv_lva(move_, board);
 
-    //         if Self::score_capture(move_, board).is_positive() {
+    //         if Self::score_capture(move_, None, board).is_positive() {
     //             score += Self::WINNING_CAPTURES_OFFSET;
     //         } else {
     //             score += Self::LOSING_CAPTURES_OFFSET;

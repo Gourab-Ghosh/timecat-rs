@@ -243,11 +243,13 @@ pub mod print_style {
 }
 
 pub mod engine_constants {
-    use std::time::Duration;
-    use chess::Piece::*;
-    use crate::utils::{cache_table_utils::CacheTableSize, common_utils::evaluate_piece};
     use super::types::*;
-    
+    use crate::utils::{cache_table_utils::CacheTableSize, common_utils::evaluate_piece};
+    use chess::Piece::*;
+    use std::time::Duration;
+
+    pub const NNUE_BYTES: &[u8] = include_bytes!("nnue_files/nn-62ef826d1a6d.nnue");
+
     pub const MAX_PLY: usize = 255;
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;
@@ -273,7 +275,7 @@ pub mod engine_constants {
     pub const MAX_MOVES_PER_POSITION: usize = 250;
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
 
-    pub const INITIAL_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(64);
+    pub const INITIAL_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(32);
 
     pub const FOLLOW_PV: bool = true;
     pub const PRINT_MOVE_INFO_DURATION_THRESHOLD: Duration = Duration::from_millis(1000);
