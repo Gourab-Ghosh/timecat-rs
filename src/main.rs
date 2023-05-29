@@ -8,7 +8,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 #![allow(unused_macros)]
-#![allow(clippy::extra_unused_type_parameters)]
 
 mod board;
 mod constants;

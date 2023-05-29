@@ -130,8 +130,9 @@ pub struct TranspositionTableEntry {
 //         ply: Ply,
 //         mut score: Score,
 //         flag: EntryFlag,
-//         best_move: Option<Move>,
+//         best_move: impl Into<Option<Move>>,
 //     ) {
+//         let best_move = best_move.into();
 //         if is_checkmate(score) {
 //             score += score.signum() * ply as Score;
 //         }
@@ -233,7 +234,7 @@ impl TranspositionTable {
         _ply: Ply,
         score: Score,
         flag: EntryFlag,
-        best_move: Option<Move>,
+        best_move: impl Into<Option<Move>>,
     ) {
         // if is_checkmate(score) {
         //     score += score.signum() * ply as Score;
@@ -254,7 +255,7 @@ impl TranspositionTable {
             key,
             TranspositionTableEntry {
                 option_data,
-                best_move,
+                best_move: best_move.into(),
             },
         );
     }

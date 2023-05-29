@@ -33,7 +33,7 @@ impl Engine {
         }
     }
 
-    pub fn push(&mut self, option_move: Option<Move>) {
+    pub fn push(&mut self, option_move: impl Into<Option<Move>>) {
         self.board.push(option_move);
         self.ply += 1;
     }
@@ -100,7 +100,7 @@ impl Engine {
     fn get_sorted_root_node_moves(&mut self) -> Vec<(Move, MoveWeight)> {
         let mut moves_vec_sorted = self
             .move_sorter
-            .get_weighted_sort_moves(
+            .get_weighted_moves_sorted(
                 self.board.generate_legal_moves(),
                 &self.board,
                 self.ply,
@@ -147,7 +147,7 @@ impl Engine {
                 continue;
             }
             let clock = Instant::now();
-            self.push(Some(move_));
+            self.push(move_);
             if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha)? > alpha {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha)?;
                 max_score = max_score.max(score);
@@ -175,7 +175,7 @@ impl Engine {
                         self.ply,
                         beta,
                         HashBeta,
-                        Some(move_),
+                        move_,
                     );
                     return Some(beta);
                 }
@@ -295,7 +295,7 @@ impl Engine {
             }
         }
         let mut flag = HashAlpha;
-        let weighted_moves = self.move_sorter.get_weighted_sort_moves(
+        let weighted_moves = self.move_sorter.get_weighted_moves_sorted(
             moves_gen,
             &self.board,
             self.ply,
@@ -314,7 +314,7 @@ impl Engine {
                 && !self.move_sorter.is_killer_move(move_, self.ply)
                 // && !(is_endgame && self.board.is_passed_pawn(move_.get_source()));
                 && !self.board.is_passed_pawn(move_.get_source());
-            self.push(Some(move_));
+            self.push(move_);
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
@@ -355,7 +355,7 @@ impl Engine {
                         self.ply,
                         beta,
                         HashBeta,
-                        Some(move_),
+                        move_,
                     );
                     if not_capture_move {
                         self.move_sorter.update_killer_moves(move_, self.ply);
@@ -397,7 +397,7 @@ impl Engine {
             alpha = evaluation;
         }
         let key = self.board.hash();
-        for weighted_move in self.move_sorter.get_weighted_capture_moves(
+        for weighted_move in self.move_sorter.get_weighted_capture_moves_sorted(
             self.board.generate_legal_captures(),
             self.transposition_table.read_best_move(key),
             &self.board,
@@ -443,7 +443,7 @@ impl Engine {
         let mut pv_string = String::new();
         for move_ in self.get_pv(ply) {
             pv_string += &(if board.is_legal(move_) {
-                board.algebraic_and_push(Some(move_), long).unwrap()
+                board.algebraic_and_push(move_, long).unwrap()
             } else {
                 colorize(move_, ERROR_MESSAGE_STYLE)
             } + " ");
@@ -511,7 +511,7 @@ impl Engine {
     pub fn go(&mut self, command: GoCommand, print_info: bool) -> (Option<Move>, Score) {
         self.reset_variables();
         if let GoCommand::Time(duration) = command {
-            self.timer.set_max_time(Some(duration));
+            self.timer.set_max_time(duration);
         }
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;

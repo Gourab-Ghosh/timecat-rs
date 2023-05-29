@@ -249,7 +249,7 @@ impl Push {
                     board_fen: engine.board.get_fen(),
                 });
             }
-            engine.board.push(Some(move_));
+            engine.board.push(move_);
             println!(
                 "{} {}",
                 colorize("Pushed move:", SUCCESS_MESSAGE_STYLE),

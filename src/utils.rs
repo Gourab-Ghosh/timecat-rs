@@ -267,8 +267,6 @@ pub mod classes {
 }
 
 pub mod score_utils {
-    use super::*;
-
     #[derive(Clone, Copy, Debug)]
     enum Score {
         Cp(i16),

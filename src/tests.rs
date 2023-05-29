@@ -8,13 +8,13 @@ fn calculate_prediction_accuracy(rms: f64) -> f64 {
     (prediction_accuracy_func(rms) * 100.0) / prediction_accuracy_func(0.0)
 }
 
-fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit: Option<u16>) {
+fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit: impl Into<Option<u16>> + Copy) {
     let mut time_taken_vec: Vec<f64> = Vec::new();
     let mut max_time_taken_fen = String::new();
     let mut prediction_score_vec = Vec::new();
     println!("\n{}\n", engine.board);
     while !engine.board.is_game_over()
-        && engine.board.get_fullmove_number() < move_limit.unwrap_or(u16::MAX)
+        && engine.board.get_fullmove_number() < move_limit.into().unwrap_or(u16::MAX)
     {
         let clock = Instant::now();
         if print {
@@ -175,7 +175,7 @@ pub fn test() {
     // // engine.set_fen("8/8/8/8/1K3k2/8/8/2r5 b - - 9 79"); // endgame improvement 4
     // // engine.set_fen("8/1K6/8/6R1/8/3k4/8/8 b - - 0 62"); // endgame improvement 4
     // // engine.set_fen("8/p7/2Q3pp/4Pk2/P7/2b5/Kp6/4r3 w - - 26 108"); // perpetual check
-    // // self_play(&mut engine, 16, false, Some(100));
+    // // self_play(&mut engine, 16, false, 100);
     // self_play(&mut engine, GoCommand::Time(Duration::from_secs(3)), true, None);
     // // self_play(&mut engine, GoCommand::Depth(11), true, None);
 

@@ -166,8 +166,8 @@ impl MoveSorter {
         // Self::mvv_lva(move_, board)
     }
 
-    pub fn score_root_moves(board: &mut Board, move_: Move, pv_move: Option<Move>) -> MoveWeight {
-        if Some(move_) == pv_move {
+    pub fn score_root_moves(board: &mut Board, move_: Move, pv_move: impl Into<Option<Move>>) -> MoveWeight {
+        if Some(move_) == pv_move.into() {
             return 100_000;
         }
         if board.gives_repetition(move_) {
@@ -262,77 +262,15 @@ impl MoveSorter {
             - chess::MoveGen::new_legal(&move_made_sub_board).len() as MoveWeight
     }
 
-    // const HASH_MOVE_SCORE: MoveWeight = 25000;
-    // const PV_MOVE_SCORE: MoveWeight = 24000;
-    // const WINNING_CAPTURES_OFFSET: MoveWeight = 10;
-    // const KILLER_MOVE_SCORE: MoveWeight = 2;
-    // const CASTLING_SCORE: MoveWeight = 1;
-    // const HISTORY_MOVE_OFFSET: MoveWeight = -30000;
-    // const LOSING_CAPTURES_OFFSET: MoveWeight = -30001;
-
-    // fn score_move(
-    //     &mut self,
-    //     move_: Move,
-    //     board: &Board,
-    //     ply: Ply,
-    //     best_move: Option<Move>,
-    //     pv_move: Option<Move>,
-    // ) -> MoveWeight {
-    //     if Some(move_) == best_move {
-    //         return Self::HASH_MOVE_SCORE;
-    //     }
-
-    //     if self.score_pv {
-    //         if let Some(m) = pv_move {
-    //             if m == move_ {
-    //                 self.score_pv = false;
-    //                 return Self::PV_MOVE_SCORE;
-    //             }
-    //         }
-    //     }
-
-    //     if board.is_quiet(move_) {
-    //         if self.killer_moves[ply].contains(&Some(move_)) {
-    //             return Self::KILLER_MOVE_SCORE;
-    //         }
-
-    //         if board.is_castling(move_) {
-    //             return Self::CASTLING_SCORE;
-    //         }
-
-    //         return Self::HISTORY_MOVE_OFFSET + self.get_history_score(move_, board);
-    //     }
-
-    //     let mut score = 0;
-    //     if board.is_capture(move_) {
-    //         if board.is_en_passant(move_) {
-    //             return Self::WINNING_CAPTURES_OFFSET;
-    //         }
-
-    //         score += Self::mvv_lva(move_, board);
-
-    //         if Self::score_capture(move_, None, board).is_positive() {
-    //             score += Self::WINNING_CAPTURES_OFFSET;
-    //         } else {
-    //             score += Self::LOSING_CAPTURES_OFFSET;
-    //         }
-    //     }
-
-    //     score += match move_.get_promotion() {
-    //         Some(piece) => evaluate_piece(piece),
-    //         None => 0,
-    //     } as MoveWeight;
-    //     score
-    // }
-
-    pub fn get_weighted_sort_moves<T: IntoIterator<Item = Move>>(
+    pub fn get_weighted_moves_sorted<T: IntoIterator<Item = Move>>(
         &mut self,
         moves_gen: T,
         board: &Board,
         ply: Ply,
-        best_move: Option<Move>,
-        optional_pv_move: Option<Move>,
+        best_move: impl Into<Option<Move>> + Copy,
+        optional_pv_move: impl Into<Option<Move>>,
     ) -> WeightedMoveListSorter {
+        let optional_pv_move = optional_pv_move.into();
         let moves_vec = Vec::from_iter(moves_gen.into_iter());
         if self.follow_pv {
             self.follow_pv = false;
@@ -346,23 +284,23 @@ impl MoveSorter {
         WeightedMoveListSorter::from_iter(moves_vec.into_iter().enumerate().map(|(idx, m)| {
             WeightedMove::new(
                 m,
-                1000 * self.score_move(m, board, ply, best_move, optional_pv_move)
+                1000 * self.score_move(m, board, ply, best_move.into(), optional_pv_move)
                     + MAX_MOVES_PER_POSITION as MoveWeight
                     - idx as MoveWeight,
             )
         }))
     }
 
-    pub fn get_weighted_capture_moves<T: IntoIterator<Item = Move>>(
+    pub fn get_weighted_capture_moves_sorted<T: IntoIterator<Item = Move>>(
         &self,
         moves_gen: T,
-        best_move: Option<Move>,
+        best_move: impl Into<Option<Move>> + Copy,
         board: &Board,
     ) -> WeightedMoveListSorter {
         WeightedMoveListSorter::from_iter(moves_gen.into_iter().enumerate().map(|(idx, m)| {
             WeightedMove::new(
                 m,
-                1000 * Self::score_capture(m, best_move, board)
+                1000 * Self::score_capture(m, best_move.into(), board)
                     + MAX_MOVES_PER_POSITION as MoveWeight
                     - idx as MoveWeight,
             )

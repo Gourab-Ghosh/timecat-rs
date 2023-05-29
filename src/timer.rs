@@ -26,8 +26,8 @@ impl Timer {
         self.stop_search = false;
     }
 
-    pub fn set_max_time(&mut self, duration: Option<Duration>) {
-        self.max_time = duration;
+    pub fn set_max_time(&mut self, duration: impl Into<Option<Duration>>) {
+        self.max_time = duration.into();
         self.stop_search = false;
     }
 
