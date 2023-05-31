@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::*;
 
 fn prediction_accuracy_func(rms: f64) -> f64 {
