@@ -10,7 +10,12 @@ fn calculate_prediction_accuracy(rms: f64) -> f64 {
     (prediction_accuracy_func(rms) * 100.0) / prediction_accuracy_func(0.0)
 }
 
-fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit: impl Into<Option<u16>> + Copy) {
+fn self_play(
+    engine: &mut Engine,
+    go_command: GoCommand,
+    print: bool,
+    move_limit: impl Into<Option<u16>> + Copy,
+) {
     let mut time_taken_vec: Vec<f64> = Vec::new();
     let mut max_time_taken_fen = String::new();
     let mut prediction_score_vec = Vec::new();
@@ -24,9 +29,9 @@ fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit
         }
         let (Some(best_move), score) = engine.go(go_command, print) else {panic!("No moves found")};
         let time_elapsed = clock.elapsed();
-        let best_move_san = engine.board.san(Some(best_move)).unwrap();
+        let best_move_san = engine.board.stringify_move(best_move).unwrap();
         let pv = engine.get_pv_string();
-        engine.push(Some(best_move));
+        engine.push(best_move);
         if time_elapsed.as_secs_f64()
             > *time_taken_vec
                 .iter()
@@ -125,7 +130,7 @@ fn self_play(engine: &mut Engine, go_command: GoCommand, print: bool, move_limit
 
 pub fn parse_command(engine: &mut Engine, raw_input: &str) {
     Parser::parse_command(engine, raw_input)
-        .unwrap_or_else(|err| panic!("{}", err.generate_error(Some(raw_input))))
+        .unwrap_or_else(|err| panic!("{}", err.stringify(Some(raw_input))))
 }
 
 #[allow(unused_variables)]
@@ -207,8 +212,8 @@ pub fn test() {
     // let mut board = Board::new();
     // println!("\n{board}");
     // for san in ["e4", "Nf6", "Be2", "Nxe4"] {
-    //     let move_ = board.parse_san(san).unwrap();
-    //     let move_str = board.san(move_);
+    //     let move_ = board.parse_stringify_move(san).unwrap();
+    //     let move_str = board.stringify_move(move_);
     //     println!("\nPushing move {move_str}");
     //     board.push(move_);
     //     println!("\n{board}");

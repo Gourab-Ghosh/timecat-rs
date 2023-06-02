@@ -1,3 +1,5 @@
+use std::option;
+
 use super::*;
 
 #[derive(Clone, Debug, Fail)]
@@ -63,13 +65,13 @@ pub struct Board {
 impl Board {
     pub fn new() -> Self {
         let mut board = Self {
-            board: chess::Board::from_str(STARTING_BOARD_FEN).unwrap(),
+            board: chess::Board::from_str(STARTING_FEN).unwrap(),
             stack: Vec::new(),
             ep_square: None,
             halfmove_clock: 0,
             fullmove_number: 1,
             num_repetitions: 0,
-            starting_fen: STARTING_BOARD_FEN.to_string(),
+            starting_fen: STARTING_FEN.to_string(),
             evaluator: Some(Evaluator::new()),
             repetition_table: RepetitionTable::new(),
         };
@@ -173,15 +175,15 @@ impl Board {
     }
 
     pub fn empty() -> Self {
-        Self::from_fen(EMPTY_BOARD_FEN)
+        Self::from_fen(EMPTY_FEN)
     }
 
     pub fn reset(&mut self) {
-        self.set_fen(STARTING_BOARD_FEN);
+        self.set_fen(STARTING_FEN);
     }
 
     pub fn clear(&mut self) {
-        self.set_fen(EMPTY_BOARD_FEN);
+        self.set_fen(EMPTY_FEN);
     }
 
     pub fn piece_type_at(&self, square: Square) -> usize {
@@ -996,8 +998,31 @@ impl Board {
         self.algebraic(option_move.into(), false)
     }
 
+    pub fn uci(option_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
+        let option_move = option_move.into();
+        if option_move.is_none() {
+            return Ok("0000".to_string());
+        }
+        Ok(option_move.unwrap().to_string())
+    }
+
+    pub fn stringify_move(
+        &self,
+        option_move: impl Into<Option<Move>>,
+    ) -> Result<String, BoardError> {
+        let option_move = option_move.into();
+        if is_uci_mode() {
+            Self::uci(option_move)
+        } else {
+            self.san(option_move)
+        }
+    }
+
     #[inline(always)]
-    pub fn san_and_push(&mut self, option_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
+    pub fn san_and_push(
+        &mut self,
+        option_move: impl Into<Option<Move>>,
+    ) -> Result<String, BoardError> {
         self.algebraic_and_push(option_move.into(), false)
     }
 
@@ -1009,7 +1034,10 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn lan_and_push(&mut self, option_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
+    pub fn lan_and_push(
+        &mut self,
+        option_move: impl Into<Option<Move>>,
+    ) -> Result<String, BoardError> {
         self.algebraic_and_push(option_move.into(), true)
     }
 

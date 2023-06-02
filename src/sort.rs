@@ -166,7 +166,11 @@ impl MoveSorter {
         // Self::mvv_lva(move_, board)
     }
 
-    pub fn score_root_moves(board: &mut Board, move_: Move, pv_move: impl Into<Option<Move>>) -> MoveWeight {
+    pub fn score_root_moves(
+        board: &mut Board,
+        move_: Move,
+        pv_move: impl Into<Option<Move>>,
+    ) -> MoveWeight {
         if Some(move_) == pv_move.into() {
             return 100_000;
         }

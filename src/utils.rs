@@ -92,7 +92,7 @@ pub mod string_utils {
         colored_string.to_string()
     }
 
-    pub fn score_to_string(score: Score) -> String {
+    fn score_to_string_normal(score: Score) -> String {
         if score == INFINITY {
             return "INFINITY".to_string();
         }
@@ -110,6 +110,30 @@ pub mod string_utils {
             format!("{}", to_return as i32)
         } else {
             format!("{:.2}", to_return)
+        }
+    }
+
+    fn score_to_string_uci(score: Score) -> String {
+        if score == INFINITY {
+            return "inf".to_string();
+        }
+        if score == -INFINITY {
+            return "-inf".to_string();
+        }
+        if is_checkmate(score) {
+            let mut mate_string = String::from("mate ");
+            let mate_distance = (CHECKMATE_SCORE - score.abs() + 1) / 2;
+            mate_string += &mate_distance.to_string();
+            return mate_string;
+        }
+        format!("cp {score}")
+    }
+
+    pub fn score_to_string(score: Score) -> String {
+        if is_uci_mode() {
+            score_to_string_uci(score)
+        } else {
+            score_to_string_normal(score)
         }
     }
 
@@ -279,21 +303,41 @@ pub mod unsafe_utils {
     use super::*;
 
     static mut COLORED_OUTPUT: bool = true;
+    static mut UCI_MODE: bool = false;
     static mut T_TABLE_SIZE: CacheTableSize = INITIAL_T_TABLE_SIZE;
+
+    fn print_info<T: Display>(message: &str, info: T) {
+        println!(
+            "{} {}",
+            colorize(message, SUCCESS_MESSAGE_STYLE),
+            colorize(info, INFO_STYLE),
+        );
+    }
 
     pub fn is_colored_output() -> bool {
         unsafe { COLORED_OUTPUT }
     }
 
-    pub fn set_colored_output(_bool: bool) {
+    pub fn set_colored_output(b: bool, print: bool) {
         unsafe {
-            COLORED_OUTPUT = _bool;
+            COLORED_OUTPUT = b;
         }
-        println!(
-            "{} {}",
-            colorize("Set colored output to", SUCCESS_MESSAGE_STYLE),
-            colorize(_bool, INFO_STYLE),
-        );
+        if print {
+            print_info("Colored output is set to", b);
+        }
+    }
+
+    pub fn is_uci_mode() -> bool {
+        unsafe { UCI_MODE }
+    }
+
+    pub fn set_uci_mode(b: bool, print: bool) {
+        unsafe {
+            UCI_MODE = b;
+        }
+        if print {
+            print_info("UCI mode is set to", b);
+        }
     }
 
     pub fn get_t_table_size() -> CacheTableSize {

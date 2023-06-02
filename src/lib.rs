@@ -31,7 +31,7 @@ pub use constants::fen::*;
 pub use constants::print_style::*;
 pub use constants::square::*;
 pub use constants::types::*;
-pub use constants::VERSION;
+pub use constants::*;
 pub use engine::{Engine, GoCommand};
 pub use evaluate::*;
 pub use failure::Fail;

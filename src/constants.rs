@@ -1,4 +1,6 @@
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const ENGINE_NAME: &str = "Timecat";
+pub const ENGINE_AUTHOR: &str = "Gourab Ghosh";
+pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 macro_rules! make_array_recursively {
     ($($x:expr),*) => ([$(make_array_recursively!($x)),*]);
@@ -220,8 +222,8 @@ pub mod board_representation {
 }
 
 pub mod fen {
-    pub const EMPTY_BOARD_FEN: &str = "8/8/8/8/8/8/8/8 w - - 0 1";
-    pub const STARTING_BOARD_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    pub const EMPTY_FEN: &str = "8/8/8/8/8/8/8/8 w - - 0 1";
+    pub const STARTING_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 }
 
 pub mod print_style {
@@ -279,6 +281,7 @@ pub mod engine_constants {
 
     pub const FOLLOW_PV: bool = true;
     pub const PRINT_MOVE_INFO_DURATION_THRESHOLD: Duration = Duration::from_millis(1000);
+    pub const COMMUNICATION_CHECK_INTERVAL: Duration = Duration::from_millis(100);
 
     pub const INITIAL_MATERIAL_SCORE_ABS: Score = 16 * PAWN_VALUE
         + 4 * (evaluate_piece(Knight) + evaluate_piece(Bishop) + evaluate_piece(Rook))

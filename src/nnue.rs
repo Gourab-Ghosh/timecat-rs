@@ -20,9 +20,7 @@ impl StockfishNetwork {
     pub fn new() -> Self {
         let mut reader = Cursor::new(NNUE_BYTES);
         let model = SfHalfKpFullModel::read(&mut reader).expect("Bad NNUE file!");
-        Self {
-            model: model.model,
-        }
+        Self { model: model.model }
     }
 
     // pub fn activate(&mut self, piece: Piece, square: usize) {

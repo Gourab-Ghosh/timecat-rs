@@ -11,9 +11,9 @@ pub struct Evaluator {
 impl Evaluator {
     pub fn new() -> Self {
         let (size, entry_size) = CacheTableSize::Max(20).to_cache_table_and_entry_size::<Score>();
-        println!(
-            "Evaluator Cache size: {} MB",
-            size * entry_size / 2_usize.pow(20)
+        println_info(
+            "Evaluator Cache size",
+            format!("{} MB", size * entry_size / 2_usize.pow(20)),
         );
         Self {
             network: Network::new(),

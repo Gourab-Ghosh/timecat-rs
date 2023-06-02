@@ -171,9 +171,9 @@ impl TranspositionTable {
     fn generate_new_table(memory_size: CacheTableSize) -> CacheTable<TranspositionTableEntry> {
         let (size, entry_size) =
             memory_size.to_cache_table_and_entry_size::<TranspositionTableEntry>();
-        println!(
-            "Transposition Table Cache size: {} MB",
-            size * entry_size / 2_usize.pow(20)
+        println_info(
+            "Transposition Table Cache size",
+            format!("{} MB", size * entry_size / 2_usize.pow(20)),
         );
         CacheTable::new(size, TranspositionTableEntry::default())
     }

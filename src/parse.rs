@@ -1,3 +1,5 @@
+use std::f32::consts::E;
+
 use super::*;
 use ParserError::*;
 
@@ -24,8 +26,11 @@ pub enum ParserError {
         board_fen: String,
     },
 
-    #[fail(display = "Colored output already set to {}! Try again!", _bool)]
-    ColoredOutputUnchanged { _bool: String },
+    #[fail(display = "Colored output already set to {}! Try again!", b)]
+    ColoredOutputUnchanged { b: String },
+
+    #[fail(display = "UCI mode already set to {}! Try again!", b)]
+    UCIModeUnchanged { b: String },
 
     #[fail(display = "Move Stack is enpty, pop not possible! Try again!")]
     EmptyStack,
@@ -38,7 +43,7 @@ pub enum ParserError {
 }
 
 impl ParserError {
-    pub fn generate_error(&self, raw_input_option: Option<&str>) -> String {
+    pub fn stringify(&self, raw_input_option: Option<&str>) -> String {
         match self {
             Self::UnknownCommand => match raw_input_option {
                 Some(raw_input) => {
@@ -81,7 +86,7 @@ impl From<chess::Error> for ParserError {
     }
 }
 
-const EXIT_CODES: [&str; 7] = [
+const EXIT_CODES: &[&str] = &[
     "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
 ];
 
@@ -140,24 +145,37 @@ impl Go {
         let (Some(best_move), score) = engine.go(go_command, true) else {
             return Err(BestMoveNotFound { fen: engine.board.get_fen() });
         };
-        let elapsed_time = clock.elapsed();
-        let position_count = engine.get_num_nodes_searched();
-        let nps = format!(
-            "{} Nodes/sec",
-            (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
-        );
-        println!();
-        println_info("Score", score_to_string(score));
-        println_info("PV Line", engine.get_pv_string());
-        println_info("Position Count", position_count);
-        println_info("Time", format!("{:.3} s", elapsed_time.as_secs_f64()));
-        println_info("Speed", nps);
-        println_info("Best Move", engine.board.san(Some(best_move)).unwrap());
+        if is_uci_mode() {
+            println!("{} {}", colorize("bestmove", INFO_STYLE), engine.board.stringify_move(best_move).unwrap());
+        } else {
+            let elapsed_time = clock.elapsed();
+            let position_count = engine.get_num_nodes_searched();
+            let nps = format!(
+                "{} Nodes/sec",
+                (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
+            );
+            println!();
+            println_info("Score", score_to_string(score));
+            println_info("PV Line", engine.get_pv_string());
+            println_info("Position Count", position_count);
+            println_info("Time", format!("{:.3} s", elapsed_time.as_secs_f64()));
+            println_info("Speed", nps);
+            println_info("Best Move", engine.board.stringify_move(best_move).unwrap());
+        }
         Ok(())
     }
 
     pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
+        let input = commands.join(" ");
+        let modified_input = UCIParser::parse_uci_go_input(engine, &input)?;
+        let commands = modified_input.split(" ").collect_vec();
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
+        if second_command == "infinite" {
+            if commands.get(2).is_some() {
+                return Err(UnknownCommand);
+            }
+            return Self::go_command(engine, GoCommand::Infinite);
+        }
         let depth_str = commands.get(2).ok_or(UnknownCommand)?.to_string();
         if commands.get(3).is_some() {
             return Err(UnknownCommand);
@@ -169,11 +187,11 @@ impl Go {
         } else if second_command == "depth" {
             let depth = depth_str.parse()?;
             return Self::go_command(engine, GoCommand::Depth(depth));
-        } else if second_command == "time" {
+        } else if second_command == "movetime" {
             let time = depth_str.parse()?;
             return Self::go_command(engine, GoCommand::Time(Duration::from_millis(time)));
         }
-        Err(UnknownCommand)
+        return Err(UnknownCommand);
     }
 }
 
@@ -193,19 +211,27 @@ impl Set {
 
     fn color(commands: &[&str]) -> Result<(), ParserError> {
         let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
-        let _bool = third_command.parse()?;
-        if is_colored_output() == _bool {
-            return Err(ColoredOutputUnchanged {
-                _bool: third_command,
-            });
+        let b = third_command.parse()?;
+        if is_colored_output() == b {
+            return Err(ColoredOutputUnchanged { b: third_command });
         }
-        if _bool {
+        if b {
             println!();
-            set_colored_output(_bool);
+            set_colored_output(b, true);
         } else {
-            set_colored_output(_bool);
+            set_colored_output(b, true);
             println!();
         }
+        Ok(())
+    }
+
+    fn uci(commands: &[&str]) -> Result<(), ParserError> {
+        let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
+        let b = third_command.parse()?;
+        if is_uci_mode() == b {
+            return Err(UCIModeUnchanged { b: third_command });
+        }
+        set_uci_mode(b, true);
         Ok(())
     }
 
@@ -213,7 +239,10 @@ impl Set {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if second_command == "board" {
             let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
-            if third_command == "fen" {
+            if third_command == "startpos" {
+                let commands = ["set", "board", "fen", STARTING_FEN];
+                return Self::board_fen(engine, &commands);
+            } else if third_command == "fen" {
                 return Self::board_fen(engine, commands);
             }
         } else if second_command == "color" {
@@ -221,6 +250,11 @@ impl Set {
                 return Err(UnknownCommand);
             }
             return Self::color(commands);
+        } else if second_command == "uci" {
+            if commands.get(3).is_some() {
+                return Err(UnknownCommand);
+            }
+            return Self::uci(commands);
         }
         Err(UnknownCommand)
     }
@@ -233,23 +267,22 @@ impl Push {
     fn moves(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         for move_text in commands.iter().skip(2) {
-            let move_: Move;
-            if second_command == "san" {
-                move_ = engine.board.parse_san(move_text)?;
+            let move_ = if second_command == "san" {
+                engine.board.parse_san(move_text)?
             } else if second_command == "uci" {
-                move_ = engine.board.parse_uci(move_text)?;
-            } else if second_command == "move" {
-                move_ = engine.board.parse_move(move_text)?;
+                engine.board.parse_uci(move_text)?
+            } else if ["move", "moves"].contains(&second_command.as_str()) {
+                engine.board.parse_move(move_text)?
             } else {
                 return Err(UnknownCommand);
-            }
+            };
             if !engine.board.is_legal(move_) {
                 return Err(IllegalMove {
                     move_text: move_text.to_string(),
                     board_fen: engine.board.get_fen(),
                 });
             }
-            engine.board.push(move_);
+            engine.push(move_);
             println!(
                 "{} {}",
                 colorize("Pushed move:", SUCCESS_MESSAGE_STYLE),
@@ -278,11 +311,11 @@ impl Pop {
             if engine.board.has_empty_stack() {
                 return Err(EmptyStack);
             }
-            let last_move = engine.board.pop().unwrap_or_default();
+            let last_move = engine.pop();
             println!(
                 "{} {}",
                 colorize("Popped move:", SUCCESS_MESSAGE_STYLE),
-                colorize(engine.board.san(Some(last_move)).unwrap(), INFO_STYLE),
+                colorize(engine.board.stringify_move(last_move).unwrap(), INFO_STYLE),
             );
         }
         Ok(())
@@ -297,6 +330,152 @@ impl Pop {
 enum ParserLoopState {
     Continue,
     Break,
+}
+
+macro_rules! extract_time {
+    ($commands:ident, $command:expr) => {
+        $commands
+            .iter()
+            .skip_while(|&&s| s != $command)
+            .skip(1)
+            .next()
+            .map(|s| s.parse())
+            .transpose()?
+            .map(|t| Duration::from_millis(t))
+    };
+}
+
+pub fn get_movetime(
+    engine: &Engine,
+    wtime: Option<Duration>,
+    btime: Option<Duration>,
+    winc: Option<Duration>,
+    binc: Option<Duration>,
+) -> Result<Duration, ParserError> {
+    let (time, inc) = match engine.board.turn() {
+        White => (wtime, winc),
+        Black => (btime, binc),
+    };
+    match (time, inc) {
+        (Some(time), Some(inc)) => Ok(time / 30 + inc),
+        (Some(time), None) => Ok(time / 30),
+        _ => Err(UnknownCommand),
+    }
+}
+
+struct UCIParser;
+
+impl UCIParser {
+    fn parse_uci_go_input(engine: &Engine, input: &str) -> Result<String, ParserError> {
+        let lowercased_input = input.to_lowercase();
+        let commands = lowercased_input.split_whitespace().collect_vec();
+        if commands.first() != Some(&"go")
+            || ["perft", "depth", "movetime", "infinite"]
+                .iter()
+                .filter(|s| commands.contains(&s))
+                .count()
+                > 1
+        {
+            return Err(UnknownCommand);
+        }
+        if commands.contains(&"perft") {
+            return Ok(input.to_string());
+        }
+        if commands.contains(&"infinite") {
+            return Ok("go infinite".to_string());
+        }
+        for command in ["depth", "movetime"] {
+            if commands.contains(&command) {
+                let mut new_input = format!("go {command} ");
+                new_input += commands
+                    .iter()
+                    .skip_while(|&&s| s != command)
+                    .skip(1)
+                    .next()
+                    .ok_or(UnknownCommand)?;
+                return Ok(new_input);
+            }
+        }
+        let wtime = extract_time!(commands, "wtime");
+        let btime = extract_time!(commands, "btime");
+        let winc = extract_time!(commands, "winc");
+        let binc = extract_time!(commands, "binc");
+        let movetime = get_movetime(engine, wtime, btime, winc, binc)?;
+        Ok(format!("go movetime {}", movetime.as_millis()))
+    }
+
+    fn parse_uci_position_input(input: &str) -> Result<String, ParserError> {
+        let commands = input.split_whitespace().collect_vec();
+        if commands.first() != Some(&"position") {
+            return Err(UnknownCommand);
+        }
+        let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
+        let mut new_input = String::from("set board fen ");
+        match second_command.as_str() {
+            "startpos" => {
+                new_input += STARTING_FEN;
+            }
+            "fen" => {
+                let fen = commands
+                    .iter()
+                    .skip(2)
+                    .take_while(|&&s| s == "moves")
+                    .join(" ");
+                new_input += &fen;
+            }
+            _ => return Err(UnknownCommand),
+        }
+        let moves = commands
+            .iter()
+            .skip_while(|&&s| s != "moves")
+            .skip(1)
+            .join(" ");
+        if !moves.is_empty() {
+            new_input += " && push moves ";
+            new_input += &moves;
+        }
+        Ok(new_input)
+    }
+
+    fn parse_uci_input(engine: &Engine, input: &str) -> Result<String, ParserError> {
+        let modified_input = input.trim().to_lowercase();
+        if modified_input.starts_with("go") {
+            return Self::parse_uci_go_input(engine, input);
+        } else if modified_input.starts_with("position") {
+            return Self::parse_uci_position_input(input);
+        }
+        Err(UnknownCommand)
+    }
+
+    fn run_parsed_input(engine: &mut Engine, parsed_input: &str) -> Result<(), ParserError> {
+        let user_inputs = parsed_input.split("&&").map(|s| s.trim()).collect_vec();
+        for user_input in user_inputs {
+            Parser::run_command(engine, user_input)?;
+        }
+        Ok(())
+    }
+
+    fn parse_command(engine: &mut Engine, user_input: &str) -> Result<(), ParserError> {
+        let commands = user_input.split_whitespace().collect_vec();
+        let first_command = commands.get(0).ok_or(UnknownCommand)?.to_lowercase();
+        if first_command == "uci" {
+            println!("id name {} {}", ENGINE_NAME, ENGINE_VERSION);
+            println!("id author {}", ENGINE_AUTHOR);
+            println!("uciok");
+            return Ok(());
+        } else if first_command == "isready" {
+            println!("readyok");
+            return Ok(());
+        } else if first_command == "ucinewgame" {
+            return Parser::run_command(engine, "set board fen startpos");
+        } else if first_command == "go" {
+            return Parser::run_command(engine, user_input);
+        } else if ["position"].contains(&first_command.as_str()) {
+            let parsed_input = Self::parse_uci_input(engine, user_input)?;
+            return Self::run_parsed_input(engine, &parsed_input);
+        }
+        Err(UnknownCommand)
+    }
 }
 
 #[derive(Debug)]
@@ -325,15 +504,6 @@ impl Parser {
         user_input
     }
 
-    fn split_inputs(input: &str) -> Vec<String> {
-        let inputs = input.split("&&");
-        let mut input_vec = Vec::new();
-        for input in inputs {
-            input_vec.push(input.trim().to_string());
-        }
-        input_vec
-    }
-
     fn run_command(engine: &mut Engine, user_input: &str) -> Result<(), ParserError> {
         let commands = Vec::from_iter(user_input.split(' '));
         let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
@@ -344,7 +514,7 @@ impl Parser {
         if first_command == "help" {
             return Err(NotImplemented);
         }
-        if ["go", "do"].contains(&first_command.as_str()) {
+        if first_command == "go" {
             return Go::parse_sub_command(engine, &commands);
         }
         if first_command == "set" {
@@ -360,15 +530,37 @@ impl Parser {
     }
 
     pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Result<(), ParserError> {
-        let modified_raw_str = Self::parse_raw_input(raw_input);
-        let user_inputs = Self::split_inputs(&modified_raw_str);
+        let modified_raw_input = Self::parse_raw_input(raw_input);
+        let first_command = modified_raw_input
+            .split_whitespace()
+            .next()
+            .unwrap_or_default()
+            .to_lowercase();
+        if ["uci", "ucinewgame", "isready", "position"].contains(&first_command.as_str()) {
+            set_colored_output(false, false);
+            set_uci_mode(true, false);
+        }
+        if is_uci_mode() {
+            let message = format!(
+                "Unknown UCI command: {}, Trying to find command within default commands!",
+                raw_input.trim()
+            );
+            match UCIParser::parse_command(engine, &modified_raw_input) {
+                Err(UnknownCommand) => println!("{}", colorize(message, WARNING_MESSAGE_STYLE)),
+                anything_else => return anything_else,
+            }
+        }
+        let user_inputs = modified_raw_input
+            .split("&&")
+            .map(|s| s.trim())
+            .collect_vec();
         let mut first_loop = true;
         for user_input in user_inputs {
             if !first_loop {
                 println!();
             }
             first_loop = false;
-            let response = Parser::run_command(engine, &user_input);
+            let response = Parser::run_command(engine, user_input);
             response?;
         }
         Ok(())
@@ -391,7 +583,7 @@ impl Parser {
             return ParserLoopState::Continue;
         }
         if let Err(parser_error) = Self::parse_command(engine, raw_input) {
-            let error_message = parser_error.generate_error(Some(raw_input));
+            let error_message = parser_error.stringify(Some(raw_input));
             println!("{}", colorize(error_message, ERROR_MESSAGE_STYLE));
         }
         ParserLoopState::Continue

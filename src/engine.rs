@@ -78,9 +78,10 @@ impl Engine {
         time_elapsed: Duration,
     ) {
         println!(
-            "{} {} {} {} {} {} {} {} {} {:.3} s",
+            "{} {} {} {} {} {} {} {} {} {} {:.3} s",
+            colorize("info", INFO_STYLE),
             colorize("curr move", INFO_STYLE),
-            self.board.san(Some(curr_move)).unwrap(),
+            self.board.stringify_move(curr_move).unwrap(),
             colorize("depth", INFO_STYLE),
             depth,
             colorize("score", INFO_STYLE),
@@ -125,7 +126,7 @@ impl Engine {
         beta: Score,
         print_move_info: bool,
     ) -> Option<Score> {
-        if self.timer.stop_search() || self.timer.is_time_up() {
+        if self.timer.stop_search() || self.timer.check_stop() {
             return None;
         }
         if self.board.is_game_over() {
@@ -169,14 +170,8 @@ impl Engine {
                     self.update_pv_table(move_);
                 }
                 if score >= beta {
-                    self.transposition_table.write(
-                        key,
-                        depth,
-                        self.ply,
-                        beta,
-                        HashBeta,
-                        move_,
-                    );
+                    self.transposition_table
+                        .write(key, depth, self.ply, beta, HashBeta, move_);
                     return Some(beta);
                 }
             }
@@ -213,7 +208,7 @@ impl Engine {
         if self.board.is_other_draw() {
             return Some(0);
         }
-        if self.timer.stop_search() || self.timer.is_time_up() {
+        if self.timer.stop_search() || self.timer.check_stop() {
             return None;
         }
         let checkers = self.board.get_checkers();
@@ -349,14 +344,8 @@ impl Engine {
                     self.move_sorter.add_history_move(move_, &self.board, depth);
                 }
                 if score >= beta {
-                    self.transposition_table.write(
-                        key,
-                        depth,
-                        self.ply,
-                        beta,
-                        HashBeta,
-                        move_,
-                    );
+                    self.transposition_table
+                        .write(key, depth, self.ply, beta, HashBeta, move_);
                     if not_capture_move {
                         self.move_sorter.update_killer_moves(move_, self.ply);
                     }
@@ -385,7 +374,7 @@ impl Engine {
         if self.board.is_other_draw() {
             return Some(0);
         }
-        if self.timer.stop_search() || self.timer.is_time_up() {
+        if self.timer.stop_search() || self.timer.check_stop() {
             return None;
         }
         self.num_nodes_searched += 1;
@@ -460,7 +449,11 @@ impl Engine {
     }
 
     pub fn get_pv_string(&self) -> String {
-        self.get_pv_as_san(0)
+        if is_uci_mode() {
+            self.get_pv_as_uci(0)
+        } else {
+            self.get_pv_as_san(0)
+        }
     }
 
     pub fn get_num_nodes_searched(&self) -> usize {
@@ -492,9 +485,11 @@ impl Engine {
     pub fn print_search_info(&self, current_depth: Depth, score: Score, time_elapsed: Duration) {
         let style = SUCCESS_MESSAGE_STYLE;
         println!(
-            "{} {} {} {} {} {} {} {} {} {:.3} {} {}",
+            "{} {} {} {} {} {} {} {} {} {} {} {:.3} {} {}",
             colorize("info depth", style),
             current_depth,
+            colorize("multipv", style),
+            1,
             colorize("score", style),
             score_to_string(score),
             colorize("nodes", style),
@@ -510,8 +505,10 @@ impl Engine {
 
     pub fn go(&mut self, command: GoCommand, print_info: bool) -> (Option<Move>, Score) {
         self.reset_variables();
-        if let GoCommand::Time(duration) = command {
-            self.timer.set_max_time(duration);
+        match command {
+            GoCommand::Time(duration) => self.timer.set_max_time(duration),
+            GoCommand::Infinite => self.timer.start_communication_check(),
+            _ => {}
         }
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
@@ -523,7 +520,9 @@ impl Engine {
             }
             let prev_score = score;
             let curr_board_ply = self.board.get_ply();
-            score = self.search(current_depth, alpha, beta, print_info).unwrap_or(prev_score);
+            score = self
+                .search(current_depth, alpha, beta, print_info)
+                .unwrap_or(prev_score);
             for _ in 0..curr_board_ply.abs_diff(self.board.get_ply()) {
                 self.pop();
             }
