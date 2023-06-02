@@ -13,11 +13,11 @@ use timecat::*;
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
-    if ["windows"].contains(&env::consts::OS) {
-        set_colored_output(false, false);
-    }
     let clock = Instant::now();
     let args = env::args().collect_vec();
+    if args.contains(&"--no-color".to_string()) {
+        set_colored_output(false, false);
+    }
     if args.contains(&"--uci".to_string()) {
         set_uci_mode(true, false);
         set_colored_output(false, false);

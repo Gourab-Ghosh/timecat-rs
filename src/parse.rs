@@ -419,7 +419,7 @@ impl UCIParser {
                 let fen = commands
                     .iter()
                     .skip(2)
-                    .take_while(|&&s| s == "moves")
+                    .take_while(|&&s| s != "moves")
                     .join(" ");
                 new_input += &fen;
             }
