@@ -146,7 +146,11 @@ impl Go {
             return Err(BestMoveNotFound { fen: engine.board.get_fen() });
         };
         if is_uci_mode() {
-            println!("{} {}", colorize("bestmove", INFO_STYLE), engine.board.stringify_move(best_move).unwrap());
+            println!(
+                "{} {}",
+                colorize("bestmove", INFO_STYLE),
+                engine.board.stringify_move(best_move).unwrap()
+            );
         } else {
             let elapsed_time = clock.elapsed();
             let position_count = engine.get_num_nodes_searched();
@@ -336,7 +340,7 @@ enum ParserLoopState {
     Break,
 }
 
-macro_rules! extract_time {
+macro_rules! extract_value {
     ($commands:ident, $command:expr) => {
         $commands
             .iter()
@@ -345,29 +349,13 @@ macro_rules! extract_time {
             .next()
             .map(|s| s.parse())
             .transpose()?
-            .map(|t| Duration::from_millis(t))
     };
 }
 
-pub fn get_movetime(
-    engine: &Engine,
-    wtime: Option<Duration>,
-    btime: Option<Duration>,
-    winc: Option<Duration>,
-    binc: Option<Duration>,
-    _movestogo: Option<u32>,
-) -> Result<Duration, ParserError> {
-    let (time, inc) = match engine.board.turn() {
-        White => (wtime, winc),
-        Black => (btime, binc),
+macro_rules! extract_time {
+    ($commands:ident, $command:expr) => {
+        extract_value!($commands, $command).map(|t| Duration::from_secs(t))
     };
-    let search_time = match (time, inc) {
-        (Some(time), Some(inc)) => time / 30 + inc / 2,
-        (Some(time), None) => time / 30,
-        _ => return Err(UnknownCommand),
-    }.checked_sub(Duration::from_millis(100)).unwrap_or(Duration::from_millis(0));
-    let search_time = search_time / match_interpolate!(10, 1, 32, 2, engine.board.get_num_pieces()) as u32;
-    Ok(search_time)
 }
 
 struct UCIParser;
@@ -403,18 +391,15 @@ impl UCIParser {
                 return Ok(new_input);
             }
         }
-        let wtime = extract_time!(commands, "wtime");
-        let btime = extract_time!(commands, "btime");
-        let winc = extract_time!(commands, "winc");
-        let binc = extract_time!(commands, "binc");
-        let movestogo = commands
-            .iter()
-            .skip_while(|&&s| s != "movestogo")
-            .skip(1)
-            .next()
-            .map(|s| s.parse())
-            .transpose()?;
-        let movetime = get_movetime(engine, wtime, btime, winc, binc, movestogo)?;
+        let movetime = engine
+            .get_movetime(
+                extract_time!(commands, "wtime"),
+                extract_time!(commands, "btime"),
+                extract_time!(commands, "winc"),
+                extract_time!(commands, "binc"),
+                extract_value!(commands, "movestogo"),
+            )
+            .ok_or(UnknownCommand)?;
         Ok(format!("go movetime {}", movetime.as_millis()))
     }
 

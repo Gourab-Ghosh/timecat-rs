@@ -559,6 +559,31 @@ impl Engine {
         self.timer.stop_communication_check();
         (self.get_pv_move(), self.board.score_flipped(score))
     }
+
+    pub fn get_movetime(
+        &self,
+        wtime: Option<Duration>,
+        btime: Option<Duration>,
+        winc: Option<Duration>,
+        binc: Option<Duration>,
+        movestogo: Option<u32>,
+    ) -> Option<Duration> {
+        let (time, inc) = match self.board.turn() {
+            White => (wtime, winc),
+            Black => (btime, binc),
+        };
+        let divider = movestogo.unwrap_or(30);
+        let search_time = match (time, inc) {
+            (Some(time), Some(inc)) => time / divider + inc / 2,
+            (Some(time), None) => time / divider,
+            _ => return None,
+        }
+        .checked_sub(Duration::from_millis(100))
+        .unwrap_or(Duration::from_millis(1));
+        let multiplier = match_interpolate!(0.5, 1, 32, 2, self.board.get_num_pieces());
+        let search_time = Duration::from_secs_f64(search_time.as_secs_f64() * multiplier);
+        Some(search_time)
+    }
 }
 
 impl Default for Engine {
