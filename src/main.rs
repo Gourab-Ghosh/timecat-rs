@@ -19,8 +19,7 @@ fn main() {
         set_colored_output(false, false);
     }
     if args.contains(&"--uci".to_string()) {
-        set_uci_mode(true, false);
-        set_colored_output(false, false);
+        enable_uci_and_disable_color()
     }
     if args.contains(&"--test".to_string()) {
         test();

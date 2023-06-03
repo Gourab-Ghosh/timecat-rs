@@ -551,8 +551,7 @@ impl Parser {
             .unwrap_or_default()
             .to_lowercase();
         if ["uci", "ucinewgame", "isready", "position"].contains(&first_command.as_str()) {
-            set_colored_output(false, false);
-            set_uci_mode(true, false);
+            enable_uci_and_disable_color();
         }
         if is_uci_mode() {
             let message = format!(
@@ -619,5 +618,10 @@ impl Parser {
                 ParserLoopState::Continue => continue,
             }
         }
+    }
+
+    pub fn uci_loop() {
+        enable_uci_and_disable_color();
+        Self::main_loop();
     }
 }

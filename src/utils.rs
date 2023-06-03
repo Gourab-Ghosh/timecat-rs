@@ -340,6 +340,11 @@ pub mod unsafe_utils {
         }
     }
 
+    pub fn enable_uci_and_disable_color() {
+        set_colored_output(false, false);
+        set_uci_mode(true, false);
+    }
+
     pub fn get_t_table_size() -> CacheTableSize {
         unsafe { T_TABLE_SIZE }
     }
