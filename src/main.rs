@@ -8,6 +8,7 @@
 
 mod tests;
 
+use std::io::IsTerminal;
 use tests::test;
 use timecat::*;
 
@@ -15,11 +16,11 @@ fn main() {
     env::set_var("RUST_BACKTRACE", "1");
     let clock = Instant::now();
     let args = env::args().collect_vec();
-    if args.contains(&"--no-color".to_string()) {
+    if !io::stdout().is_terminal() || args.contains(&"--no-color".to_string()) {
         set_colored_output(false, false);
     }
     if args.contains(&"--uci".to_string()) {
-        enable_uci_and_disable_color()
+        set_uci_mode(true, false);
     }
     if args.contains(&"--test".to_string()) {
         test();
