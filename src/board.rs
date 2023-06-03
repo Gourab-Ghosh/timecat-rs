@@ -806,11 +806,14 @@ impl Board {
         self.stack.is_empty()
     }
 
-    pub fn parse_san(&self, san: &str) -> Result<Move, chess::Error> {
+    pub fn parse_san(&self, san: &str) -> Result<Option<Move>, chess::Error> {
+        if san == "--" {
+            return Ok(None);
+        }
         let san = san.replace('0', "O");
         for move_ in self.generate_legal_moves() {
             if self.san(move_).unwrap() == san {
-                return Ok(move_);
+                return Ok(Some(move_));
             }
         }
         Err(chess::Error::InvalidSanMove)
@@ -818,11 +821,14 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn parse_uci(&self, uci: &str) -> Result<Move, chess::Error> {
-        Move::from_str(uci)
+    pub fn parse_uci(&self, uci: &str) -> Result<Option<Move>, chess::Error> {
+        if uci == "0000" {
+            return Ok(None);
+        }
+        Ok(Some(Move::from_str(uci)?))
     }
 
-    pub fn parse_move(&self, move_text: &str) -> Result<Move, chess::Error> {
+    pub fn parse_move(&self, move_text: &str) -> Result<Option<Move>, chess::Error> {
         let possible_move = self.parse_san(move_text);
         if possible_move.is_err() {
             return self.parse_uci(move_text);
@@ -830,7 +836,7 @@ impl Board {
         possible_move
     }
 
-    pub fn push_san(&mut self, san: &str) -> Move {
+    pub fn push_san(&mut self, san: &str) -> Option<Move> {
         let move_ = self.parse_san(san).unwrap_or_else(|err| panic!("{}", err));
         self.push(move_);
         move_
@@ -842,7 +848,7 @@ impl Board {
         }
     }
 
-    pub fn push_uci(&mut self, uci: &str) -> Move {
+    pub fn push_uci(&mut self, uci: &str) -> Option<Move> {
         let move_ = self
             .parse_uci(uci)
             .unwrap_or_else(|_| panic!("Bad uci: {uci}"));
@@ -999,11 +1005,11 @@ impl Board {
     }
 
     pub fn uci(option_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
-        let option_move = option_move.into();
-        if option_move.is_none() {
-            return Ok("0000".to_string());
+        if let Some(move_) = option_move.into() {
+            Ok(move_.to_string())
+        } else {
+            Ok("0000".to_string())
         }
-        Ok(option_move.unwrap().to_string())
     }
 
     pub fn stringify_move(

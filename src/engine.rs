@@ -505,10 +505,9 @@ impl Engine {
 
     pub fn go(&mut self, command: GoCommand, print_info: bool) -> (Option<Move>, Score) {
         self.reset_variables();
-        match command {
-            GoCommand::Time(duration) => self.timer.set_max_time(duration),
-            GoCommand::Infinite => self.timer.start_communication_check(),
-            _ => {}
+        self.timer.start_communication_check();
+        if let GoCommand::Time(duration) = command {
+            self.timer.set_max_time(duration);
         }
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
@@ -557,6 +556,7 @@ impl Engine {
             }
             current_depth += 1;
         }
+        self.timer.stop_communication_check();
         (self.get_pv_move(), self.board.score_flipped(score))
     }
 }

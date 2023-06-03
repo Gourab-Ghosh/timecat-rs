@@ -267,7 +267,7 @@ impl Push {
     fn moves(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         for move_text in commands.iter().skip(2) {
-            let move_ = if second_command == "san" {
+            let option_move = if second_command == "san" {
                 engine.board.parse_san(move_text)?
             } else if second_command == "uci" {
                 engine.board.parse_uci(move_text)?
@@ -276,13 +276,17 @@ impl Push {
             } else {
                 return Err(UnknownCommand);
             };
-            if !engine.board.is_legal(move_) {
-                return Err(IllegalMove {
-                    move_text: move_text.to_string(),
-                    board_fen: engine.board.get_fen(),
-                });
+            if let Some(move_) = option_move {
+                if !engine.board.is_legal(move_) {
+                    return Err(IllegalMove {
+                        move_text: move_text.to_string(),
+                        board_fen: engine.board.get_fen(),
+                    });
+                }
+                engine.push(move_);
+            } else {
+                engine.push(None);
             }
-            engine.push(move_);
             println!(
                 "{} {}",
                 colorize("Pushed move:", SUCCESS_MESSAGE_STYLE),
@@ -351,16 +355,19 @@ pub fn get_movetime(
     btime: Option<Duration>,
     winc: Option<Duration>,
     binc: Option<Duration>,
+    _movestogo: Option<u32>,
 ) -> Result<Duration, ParserError> {
     let (time, inc) = match engine.board.turn() {
         White => (wtime, winc),
         Black => (btime, binc),
     };
-    match (time, inc) {
-        (Some(time), Some(inc)) => Ok(time / 30 + inc),
-        (Some(time), None) => Ok(time / 30),
-        _ => Err(UnknownCommand),
-    }
+    let search_time = match (time, inc) {
+        (Some(time), Some(inc)) => time / 30 + inc / 2,
+        (Some(time), None) => time / 30,
+        _ => return Err(UnknownCommand),
+    }.checked_sub(Duration::from_millis(100)).unwrap_or(Duration::from_millis(0));
+    let search_time = search_time / match_interpolate!(10, 1, 32, 2, engine.board.get_num_pieces()) as u32;
+    Ok(search_time)
 }
 
 struct UCIParser;
@@ -400,7 +407,14 @@ impl UCIParser {
         let btime = extract_time!(commands, "btime");
         let winc = extract_time!(commands, "winc");
         let binc = extract_time!(commands, "binc");
-        let movetime = get_movetime(engine, wtime, btime, winc, binc)?;
+        let movestogo = commands
+            .iter()
+            .skip_while(|&&s| s != "movestogo")
+            .skip(1)
+            .next()
+            .map(|s| s.parse())
+            .transpose()?;
+        let movetime = get_movetime(engine, wtime, btime, winc, binc, movestogo)?;
         Ok(format!("go movetime {}", movetime.as_millis()))
     }
 
