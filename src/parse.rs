@@ -225,7 +225,7 @@ impl Set {
         Ok(())
     }
 
-    fn uci(commands: &[&str]) -> Result<(), ParserError> {
+    fn ucimode(commands: &[&str]) -> Result<(), ParserError> {
         let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
         let b = third_command.parse()?;
         if is_uci_mode() == b {
@@ -250,11 +250,11 @@ impl Set {
                 return Err(UnknownCommand);
             }
             return Self::color(commands);
-        } else if second_command == "uci" {
+        } else if second_command == "ucimode" {
             if commands.get(3).is_some() {
                 return Err(UnknownCommand);
             }
-            return Self::uci(commands);
+            return Self::ucimode(commands);
         }
         Err(UnknownCommand)
     }
@@ -607,7 +607,7 @@ impl Parser {
         let mut engine = Engine::default();
         loop {
             let raw_input: String;
-            if is_colored_output() {
+            if !is_uci_mode() {
                 println!();
                 raw_input = Self::get_input(colorize("Enter Command: ", INPUT_MESSAGE_STYLE));
                 println!();
