@@ -23,10 +23,6 @@ impl Evaluator {
         }
     }
 
-    pub fn default() -> Self {
-        Self::new()
-    }
-
     fn convert_piece_to_p_piece(&self, piece: Piece, color: Color) -> P {
         match color {
             Color::White => match piece {
@@ -148,5 +144,11 @@ impl Evaluator {
         let score = self.evaluate_immutable(sub_board);
         self.cache.add(hash, score);
         score
+    }
+}
+
+impl Default for Evaluator {
+    fn default() -> Self {
+        Self::new()
     }
 }

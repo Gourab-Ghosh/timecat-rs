@@ -1,6 +1,8 @@
 //!# Rust NNUE inference library
 //!`nnue-rs` is an [NNUE](https://www.chessprogramming.org/NNUE) inference library written in Rust.
 
+#![allow(clippy::extra_unused_type_parameters)]
+
 pub mod layers;
 pub mod ops;
 pub mod stockfish;

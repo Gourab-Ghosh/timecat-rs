@@ -101,3 +101,9 @@ impl Timer {
         self.is_time_up() || self.check_communication()
     }
 }
+
+impl Default for Timer {
+    fn default() -> Self {
+        Self::new()
+    }
+}

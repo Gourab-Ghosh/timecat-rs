@@ -172,7 +172,7 @@ impl Go {
     pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
         let input = commands.join(" ");
         let modified_input = UCIParser::parse_uci_go_input(engine, &input)?;
-        let commands = modified_input.split(" ").collect_vec();
+        let commands = modified_input.split(' ').collect_vec();
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if second_command == "infinite" {
             if commands.get(2).is_some() {
@@ -195,7 +195,7 @@ impl Go {
             let time = depth_str.parse()?;
             return Self::go_command(engine, GoCommand::Time(Duration::from_millis(time)));
         }
-        return Err(UnknownCommand);
+        Err(UnknownCommand)
     }
 }
 
@@ -208,7 +208,7 @@ impl Set {
         if !Board::is_good_fen(&fen) {
             return Err(BadFen { fen });
         };
-        engine.set_fen(&fen);
+        engine.set_fen(&fen)?;
         println!("{}", engine.board);
         Ok(())
     }
@@ -367,7 +367,7 @@ impl UCIParser {
         if commands.first() != Some(&"go")
             || ["perft", "depth", "movetime", "infinite"]
                 .iter()
-                .filter(|s| commands.contains(&s))
+                .filter(|s| commands.contains(s))
                 .count()
                 > 1
         {
@@ -384,9 +384,7 @@ impl UCIParser {
                 let mut new_input = format!("go {command} ");
                 new_input += commands
                     .iter()
-                    .skip_while(|&&s| s != command)
-                    .skip(1)
-                    .next()
+                    .skip_while(|&&s| s != command).nth(1)
                     .ok_or(UnknownCommand)?;
                 return Ok(new_input);
             }
@@ -456,7 +454,7 @@ impl UCIParser {
 
     fn parse_command(engine: &mut Engine, user_input: &str) -> Result<(), ParserError> {
         let commands = user_input.split_whitespace().collect_vec();
-        let first_command = commands.get(0).ok_or(UnknownCommand)?.to_lowercase();
+        let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
         if first_command == "uci" {
             println!("id name {} {}", ENGINE_NAME, ENGINE_VERSION);
             println!("id author {}", ENGINE_AUTHOR);

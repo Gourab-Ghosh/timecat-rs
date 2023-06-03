@@ -1,5 +1,3 @@
-use std::option;
-
 use super::*;
 
 #[derive(Clone, Debug, Fail)]
@@ -90,9 +88,9 @@ impl Board {
         board
     }
 
-    pub fn set_fen(&mut self, fen: &str) {
+    pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
         if !Self::is_good_fen(fen) {
-            panic!("Invalid FEN");
+            return Err(chess::Error::InvalidFen {fen: fen.to_string()});
         }
         for square in *self.occupied() {
             let piece = self.piece_at(square).unwrap();
@@ -122,21 +120,14 @@ impl Board {
                 .expect("No Evaluator found!")
                 .activate_nnue(piece, color, square);
         }
+        Ok(())
     }
 
-    pub fn from_fen(fen: &str) -> Self {
+    pub fn from_fen(fen: &str) -> Result<Self, chess::Error> {
         let fen = simplify_fen(fen);
         let mut board = Self::new();
-        board.set_fen(&fen);
-        board
-    }
-
-    pub fn from_str(s: &str) -> Self {
-        Self::from_fen(s)
-    }
-
-    pub fn from(board: &Self) -> Self {
-        Self::from_fen(&board.get_fen())
+        board.set_fen(&fen)?;
+        Ok(board)
     }
 
     pub fn get_fen(&self) -> String {
@@ -175,15 +166,15 @@ impl Board {
     }
 
     pub fn empty() -> Self {
-        Self::from_fen(EMPTY_FEN)
+        Self::from_fen(EMPTY_FEN).unwrap()
     }
 
     pub fn reset(&mut self) {
-        self.set_fen(STARTING_FEN);
+        self.set_fen(STARTING_FEN).unwrap();
     }
 
     pub fn clear(&mut self) {
-        self.set_fen(EMPTY_FEN);
+        self.set_fen(EMPTY_FEN).unwrap();
     }
 
     pub fn piece_type_at(&self, square: Square) -> usize {
@@ -1085,7 +1076,7 @@ impl Board {
     /// The result of the game is included in the tags.
     pub fn get_pgn(&self) -> String {
         self.variation_san(
-            &Self::from_fen(&self.starting_fen),
+            &Self::from_fen(&self.starting_fen).unwrap(),
             Vec::from_iter(self.stack.clone().into_iter().map(|(_, option_m)| option_m)),
         )
     }
@@ -1226,5 +1217,13 @@ impl Clone for Board {
 impl Default for Board {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl FromStr for Board {
+    type Err = chess::Error;
+
+    fn from_str(fen: &str) -> Result<Self, Self::Err> {
+        Self::from_fen(fen)
     }
 }

@@ -43,9 +43,10 @@ impl Engine {
         self.board.pop()
     }
 
-    pub fn set_fen(&mut self, fen: &str) {
-        self.board.set_fen(fen);
-        self.reset_variables()
+    pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
+        self.board.set_fen(fen)?;
+        self.reset_variables();
+        Ok(())
     }
 
     fn reset_variables(&mut self) {
