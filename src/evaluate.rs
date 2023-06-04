@@ -111,7 +111,7 @@ impl Evaluator {
         board.score_flipped(score)
     }
 
-    pub fn evaluate_immutable(&self, sub_board: &chess::Board) -> Score {
+    pub fn evaluate_immutable(&self, board: &Board) -> Score {
         // if board.is_endgame() {
         //     let mut eval = self.network.eval(board);
         //     if eval.abs() < 0 {
@@ -120,30 +120,23 @@ impl Evaluator {
         //     eval = eval +  if eval.is_positive() { self.force_king_to_center(board) } else { self.force_king_to_corner(board) } / 10;
         //     return 50 * PAWN_VALUE * eval.signum() + eval;
         // }
-        let mut score = self.stockfish_network.eval(sub_board);
-        let mut piece_diff_score = 0;
-        let black_occupied = sub_board.color_combined(Black);
-        for &piece in chess::ALL_PIECES[0..5].iter() {
-            let piece_mask = sub_board.pieces(piece);
-            if piece_mask == &BB_EMPTY {
-                continue;
-            }
-            piece_diff_score += (piece_mask.popcnt() as Score
-                - 2 * (piece_mask & black_occupied).popcnt() as Score)
-                * evaluate_piece(piece);
-        }
-        score += piece_diff_score / 20;
+        let mut score = self.stockfish_network.eval(&board.get_sub_board());
+        score += board.get_material_score() / 20;
         score
     }
 
-    pub fn evaluate(&mut self, sub_board: &chess::Board) -> Score {
-        let hash = sub_board.get_hash();
+    pub fn evaluate(&mut self, board: &Board) -> Score {
+        let hash = board.hash();
         if let Some(score) = self.cache.get(hash) {
             return score;
         }
-        let score = self.evaluate_immutable(sub_board);
+        let score = self.evaluate_immutable(board);
         self.cache.add(hash, score);
         score
+    }
+
+    pub fn evaluate_flipped(&mut self, board: &Board) -> Score {
+        board.score_flipped(self.evaluate(board))
     }
 }
 

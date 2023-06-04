@@ -168,6 +168,7 @@ impl MoveSorter {
 
     pub fn score_root_moves(
         board: &mut Board,
+        evaluator: &mut Evaluator,
         move_: Move,
         pv_move: impl Into<Option<Move>>,
     ) -> MoveWeight {
@@ -182,7 +183,7 @@ impl MoveSorter {
             return -40;
         }
         let mut score = 0;
-        let mut evaluation = board.evaluate_flipped() as MoveWeight;
+        let mut evaluation = evaluator.evaluate_flipped(board) as MoveWeight;
         if evaluation == 0 {
             evaluation = 1;
         }

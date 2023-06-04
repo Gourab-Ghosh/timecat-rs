@@ -24,6 +24,7 @@ impl GoCommand {
 
 pub struct Engine {
     pub board: Board,
+    evaluator: Evaluator,
     num_nodes_searched: usize,
     ply: Ply,
     pv_length: [usize; MAX_PLY],
@@ -35,8 +36,15 @@ pub struct Engine {
 
 impl Engine {
     pub fn new(board: Board) -> Self {
+        let mut evaluator = Evaluator::new();
+        for square in *board.occupied() {
+            let piece = board.piece_at(square).unwrap();
+            let color = board.color_at(square).unwrap();
+            evaluator.activate_nnue(piece, color, square);
+        }
         Self {
             board,
+            evaluator,
             num_nodes_searched: 0,
             ply: 0,
             pv_length: [0; MAX_PLY],
@@ -47,20 +55,85 @@ impl Engine {
         }
     }
 
+    pub fn evaluate(&mut self) -> Score {
+        self.evaluator.evaluate(&self.board)
+    }
+
+    pub fn evaluate_flipped(&mut self) -> Score {
+        self.evaluator.evaluate_flipped(&self.board)
+    }
+
+    fn push_nnue(&mut self, move_: Move) {
+        self.evaluator.backup();
+        let self_color = self.board.turn();
+        let source = move_.get_source();
+        let dest = move_.get_dest();
+        let self_piece = self.board.piece_at(source).unwrap();
+        self.evaluator.deactivate_nnue(self_piece, self_color, source);
+        if self.board.is_capture(move_) {
+            let remove_piece_square = if self.board.is_en_passant(move_) {
+                dest.backward(self_color).unwrap()
+            } else {
+                dest
+            };
+            let piece = self.board.piece_at(remove_piece_square).unwrap();
+            self.evaluator.deactivate_nnue(piece, !self_color, remove_piece_square);
+        } else if self.board.is_castling(move_) {
+            let (rook_source, rook_dest) = if move_.get_dest().get_file().to_index()
+                > move_.get_source().get_file().to_index()
+            {
+                match self_color {
+                    White => (Square::H1, Square::F1),
+                    Black => (Square::H8, Square::F8),
+                }
+            } else {
+                match self_color {
+                    White => (Square::A1, Square::D1),
+                    Black => (Square::A8, Square::D8),
+                }
+            };
+            self.evaluator.deactivate_nnue(Rook, self_color, rook_source);
+            self.evaluator.activate_nnue(Rook, self_color, rook_dest);
+        }
+        self.evaluator.activate_nnue(
+                move_.get_promotion().unwrap_or(self_piece),
+                self_color,
+                dest,
+            );
+    }
+
     pub fn push(&mut self, option_move: impl Into<Option<Move>>) {
+        // if let Some(move_) = option_move {
+        //     self.push_nnue(move_);
+        // }
         self.board.push(option_move);
         self.ply += 1;
     }
 
+    #[allow(clippy::let_and_return)]
     pub fn pop(&mut self) -> Option<Move> {
+        let option_move = self.board.pop();
         self.ply -= 1;
-        self.board.pop()
+        // if let Some(move_) = option_move {
+        //     self.pop_nnue();
+        // }
+        option_move
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
-        self.board.set_fen(fen)?;
+        for square in *self.board.occupied() {
+            let piece = self.board.piece_at(square).unwrap();
+            let color = self.board.color_at(square).unwrap();
+            self.evaluator.deactivate_nnue(piece, color, square);
+        }
+        let result = self.board.set_fen(fen);
+        for square in *self.board.occupied() {
+            let piece = self.board.piece_at(square).unwrap();
+            let color = self.board.color_at(square).unwrap();
+            self.evaluator.activate_nnue(piece, color, square);
+        }
         self.reset_variables();
-        Ok(())
+        result
     }
 
     fn reset_variables(&mut self) {
@@ -126,7 +199,7 @@ impl Engine {
             .map(|wm| {
                 (
                     wm.move_,
-                    MoveSorter::score_root_moves(&mut self.board, wm.move_, self.pv_table[0][0]),
+                    MoveSorter::score_root_moves(&mut self.board, &mut self.evaluator, wm.move_, self.pv_table[0][0]),
                 )
             })
             .collect_vec();
@@ -217,7 +290,7 @@ impl Engine {
 
     fn alpha_beta(&mut self, mut depth: Depth, mut alpha: Score, mut beta: Score) -> Option<Score> {
         if self.ply == MAX_PLY - 1 {
-            return Some(self.board.evaluate_flipped());
+            return Some(self.evaluate_flipped());
         }
         self.pv_length[self.ply] = self.ply;
         if self.board.is_other_draw() {
@@ -257,7 +330,7 @@ impl Engine {
         self.num_nodes_searched += 1;
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
-            let static_evaluation = self.board.evaluate_flipped();
+            let static_evaluation = self.evaluate_flipped();
             if depth < 3 && !is_pv_node && beta.abs_diff(1) as Score > -INFINITY + PAWN_VALUE {
                 let eval_margin = ((6 * PAWN_VALUE) / 5) * depth as Score;
                 let new_score = static_evaluation - eval_margin;
@@ -383,7 +456,7 @@ impl Engine {
 
     fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Option<Score> {
         if self.ply == MAX_PLY - 1 {
-            return Some(self.board.evaluate_flipped());
+            return Some(self.evaluate_flipped());
         }
         self.pv_length[self.ply] = self.ply;
         if self.board.is_other_draw() {
@@ -393,7 +466,7 @@ impl Engine {
             return None;
         }
         self.num_nodes_searched += 1;
-        let evaluation = self.board.evaluate_flipped();
+        let evaluation = self.evaluate_flipped();
         if evaluation >= beta {
             return Some(beta);
         }
@@ -539,7 +612,7 @@ impl Engine {
                 .unwrap_or(prev_score);
             for _ in 0..curr_board_ply.abs_diff(self.board.get_ply()) {
                 if command.is_depth() {
-                    panic!("Something went wrong with the search");
+                    panic!("Something went wrong with the search!");
                 }
                 self.pop();
             }

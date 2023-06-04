@@ -241,7 +241,7 @@ pub mod classes {
     // use std::collections::hash_map::DefaultHasher;
     // use std::hash::{Hash, Hasher};
 
-    #[derive(Default, Clone, Debug)]
+    #[derive(Default, Debug)]
     pub struct RepetitionTable {
         count: Arc<Mutex<HashMap<u64, usize>>>,
     }
@@ -287,6 +287,15 @@ pub mod classes {
         //     t.hash(&mut s);
         //     s.finish()
         // }
+    }
+
+    impl Clone for RepetitionTable {
+        fn clone(&self) -> Self {
+            let hashmap = self.count.lock().unwrap().clone();
+            Self {
+                count: Arc::new(Mutex::new(hashmap)),
+            }
+        }
     }
 }
 

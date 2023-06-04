@@ -48,6 +48,7 @@ struct BoardState {
     num_repetitions: u8,
 }
 
+#[derive(Clone, Debug)]
 pub struct Board {
     board: chess::Board,
     stack: Vec<(BoardState, Option<Move>)>,
@@ -56,7 +57,6 @@ pub struct Board {
     fullmove_number: u16,
     num_repetitions: u8,
     starting_fen: String,
-    pub evaluator: Option<Evaluator>,
     repetition_table: RepetitionTable,
 }
 
@@ -70,35 +70,17 @@ impl Board {
             fullmove_number: 1,
             num_repetitions: 0,
             starting_fen: STARTING_FEN.to_string(),
-            evaluator: Some(Evaluator::new()),
             repetition_table: RepetitionTable::new(),
         };
         board.num_repetitions = board
             .repetition_table
             .insert_and_get_repetition(board.hash());
-        for square in *board.occupied() {
-            let piece = board.piece_at(square).unwrap();
-            let color = board.color_at(square).unwrap();
-            board
-                .evaluator
-                .as_mut()
-                .expect("No Evaluator found!")
-                .activate_nnue(piece, color, square);
-        }
         board
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
         if !Self::is_good_fen(fen) {
             return Err(chess::Error::InvalidFen {fen: fen.to_string()});
-        }
-        for square in *self.occupied() {
-            let piece = self.piece_at(square).unwrap();
-            let color = self.color_at(square).unwrap();
-            self.evaluator
-                .as_mut()
-                .expect("No Evaluator found!")
-                .deactivate_nnue(piece, color, square);
         }
         let fen = simplify_fen(fen);
         self.board = chess::Board::from_str(&fen).expect("FEN not parsed properly!");
@@ -112,14 +94,6 @@ impl Board {
         self.repetition_table.clear();
         self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
         self.starting_fen = self.get_fen();
-        for square in *self.occupied() {
-            let piece = self.piece_at(square).unwrap();
-            let color = self.color_at(square).unwrap();
-            self.evaluator
-                .as_mut()
-                .expect("No Evaluator found!")
-                .activate_nnue(piece, color, square);
-        }
         Ok(())
     }
 
@@ -291,11 +265,7 @@ impl Board {
             checkers_string += &square.to_string();
             checkers_string += " ";
         }
-        let score = self
-            .evaluator
-            .as_ref()
-            .expect("No Evaluator found!")
-            .evaluate_immutable(&self.board);
+        let score = Evaluator::new().evaluate_immutable(&self);
         skeleton.push_str(
             &[
                 String::new(),
@@ -423,19 +393,19 @@ impl Board {
     }
 
     pub fn gives_claimable_threefold_repetition(&mut self, move_: Move) -> bool {
-        self.push_without_nnue(Some(move_));
+        self.push(Some(move_));
         if self.is_threefold_repetition() {
-            self.pop_without_nnue();
+            self.pop();
             return true;
         }
         if self
             .generate_legal_moves()
             .any(|m| self.gives_threefold_repetition(m))
         {
-            self.pop_without_nnue();
+            self.pop();
             return true;
         }
-        self.pop_without_nnue();
+        self.pop();
         false
     }
 
@@ -662,64 +632,8 @@ impl Board {
         }
     }
 
-    fn push_nnue(&mut self, move_: Move) {
-        self.evaluator
-            .as_mut()
-            .expect("No Evaluator found!")
-            .backup();
-        let self_color = self.turn();
-        let source = move_.get_source();
-        let dest = move_.get_dest();
-        let self_piece = self.piece_at(source).unwrap();
-        self.evaluator
-            .as_mut()
-            .expect("No Evaluator found!")
-            .deactivate_nnue(self_piece, self_color, source);
-        if self.is_capture(move_) {
-            let remove_piece_square = if self.is_en_passant(move_) {
-                dest.backward(self_color).unwrap()
-            } else {
-                dest
-            };
-            let piece = self.piece_at(remove_piece_square).unwrap();
-            self.evaluator
-                .as_mut()
-                .expect("No Evaluator found!")
-                .deactivate_nnue(piece, !self_color, remove_piece_square);
-        } else if self.is_castling(move_) {
-            let (rook_source, rook_dest) = if move_.get_dest().get_file().to_index()
-                > move_.get_source().get_file().to_index()
-            {
-                match self_color {
-                    White => (Square::H1, Square::F1),
-                    Black => (Square::H8, Square::F8),
-                }
-            } else {
-                match self_color {
-                    White => (Square::A1, Square::D1),
-                    Black => (Square::A8, Square::D8),
-                }
-            };
-            self.evaluator
-                .as_mut()
-                .expect("No Evaluator found!")
-                .deactivate_nnue(Rook, self_color, rook_source);
-            self.evaluator
-                .as_mut()
-                .expect("No Evaluator found!")
-                .activate_nnue(Rook, self_color, rook_dest);
-        }
-        self.evaluator
-            .as_mut()
-            .expect("No Evaluator found!")
-            .activate_nnue(
-                move_.get_promotion().unwrap_or(self_piece),
-                self_color,
-                dest,
-            );
-    }
-
-    fn push_without_nnue(&mut self, option_move: Option<Move>) {
+    pub fn push(&mut self, option_move: impl Into<Option<Move>>) {
+        let option_move = option_move.into();
         let board_state = self.get_board_state();
         if self.turn() == Black {
             self.fullmove_number += 1;
@@ -746,13 +660,6 @@ impl Board {
         self.stack.push((board_state, option_move));
     }
 
-    pub fn push(&mut self, option_move: impl Into<Option<Move>>) {
-        // if let Some(move_) = option_move {
-        //     self.push_nnue(move_);
-        // }
-        self.push_without_nnue(option_move.into());
-    }
-
     fn restore(&mut self, board_state: BoardState) {
         self.board = board_state.board;
         self.halfmove_clock = board_state.halfmove_clock;
@@ -761,14 +668,7 @@ impl Board {
         self.ep_square = board_state.ep_square;
     }
 
-    fn pop_nnue(&mut self) {
-        self.evaluator
-            .as_mut()
-            .expect("No Evaluator found!")
-            .restore();
-    }
-
-    pub fn pop_without_nnue(&mut self) -> Option<Move> {
+    pub fn pop(&mut self) -> Option<Move> {
         let (board_state, option_move) = self.stack.pop().unwrap();
         self.repetition_table.remove(self.hash());
         self.restore(board_state);
@@ -781,15 +681,6 @@ impl Board {
 
     pub fn get_ply(&self) -> usize {
         self.stack.len()
-    }
-
-    #[allow(clippy::let_and_return)]
-    pub fn pop(&mut self) -> Option<Move> {
-        let option_move = self.pop_without_nnue();
-        // if let Some(move_) = option_move {
-        //     self.pop_nnue();
-        // }
-        option_move
     }
 
     #[inline(always)]
@@ -969,7 +860,7 @@ impl Board {
         let san = self.algebraic_without_suffix(option_move, long)?;
 
         // Look ahead for check or checkmate.
-        self.push_without_nnue(option_move);
+        self.push(option_move);
         let is_check = self.is_check();
         let is_checkmate = is_check && self.is_checkmate();
 
@@ -1165,28 +1056,13 @@ impl Board {
             .sum()
     }
 
-    #[inline(always)]
-    pub fn evaluate(&mut self) -> Score {
-        self.evaluator
-            .as_mut()
-            .expect("No Evaluator found!")
-            .evaluate(&self.board)
-    }
-
-    #[inline(always)]
-    pub fn evaluate_flipped(&mut self) -> Score {
-        let score = self.evaluate();
-        self.score_flipped(score)
-    }
-
     fn mini_perft(&mut self, depth: Depth, print_move: bool) -> usize {
-        let _moves = self.generate_legal_moves();
-        // if depth == 0 {return 1;}
+        let moves = self.generate_legal_moves();
         if depth == 1 {
-            return _moves.len();
+            return moves.len();
         }
         let mut count: usize = 0;
-        for move_ in _moves {
+        for move_ in moves {
             self.push(move_);
             let c_count = self.mini_perft(depth - 1, false);
             self.pop();
@@ -1211,22 +1087,6 @@ impl Board {
 impl Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_board_string(false))
-    }
-}
-
-impl Clone for Board {
-    fn clone(&self) -> Self {
-        Self {
-            board: self.board,
-            ep_square: self.ep_square,
-            halfmove_clock: self.halfmove_clock,
-            fullmove_number: self.fullmove_number,
-            stack: self.stack.clone(),
-            evaluator: None,
-            repetition_table: RepetitionTable::default(),
-            num_repetitions: 1,
-            starting_fen: self.starting_fen.clone(),
-        }
     }
 }
 
