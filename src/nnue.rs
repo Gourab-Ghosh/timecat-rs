@@ -23,16 +23,6 @@ impl StockfishNetwork {
         Self { model: model.model }
     }
 
-    // pub fn activate(&mut self, piece: Piece, square: usize) {
-    //     // self.network.model.
-    //     // self.network.activate(piece, square);
-    // }
-
-    // pub fn deactivate(&mut self, piece: Piece, square: usize) {
-    //     todo!();
-    //     // self.network.deactivate(piece, square);
-    // }
-
     fn probe_piece(piece: chess::Piece) -> nnue_rs::Piece {
         match piece {
             Pawn => nnue_rs::Piece::Pawn,
