@@ -46,15 +46,19 @@ if which("cargo") is None:
 is_error_free = True if "--disable-check" in sys.argv else not os.system("cargo check")
 
 if is_error_free:
-    update_environment_variables()
-    # update_environment_variables("-Ofast", "-mavx2", "-funroll-loops")
-    # update_environment_variables("-mavx2", "-funroll-loops")
-    if not os.system("cargo build --release"):
+    build_command = "cargo build"
+    is_release = "--debug" not in sys.argv
+    if is_release:
+        build_command += " --release"
+        update_environment_variables()
+        # update_environment_variables("-Ofast", "-mavx2", "-funroll-loops")
+        # update_environment_variables("-mavx2", "-funroll-loops")
+    if not os.system(build_command):
         executable = "timecat.exe" if sys.platform == "win32" else "timecat"
-        release_file = "\"" + os.path.join(current_path, "target", "release", executable) + "\""
+        file_to_run = "\"" + os.path.join(current_path, "target", "release" if is_release else "debug", executable) + "\""
         need_to_run = True
         if which("perf") is not None:
-            need_to_run = bool(timed_run(lambda: os.system(f"perf record {release_file} --test")))
+            need_to_run = bool(timed_run(lambda: os.system(f"perf record {file_to_run} --test")))
         if need_to_run:
             print("Running without using perf")
-            timed_run(lambda: os.system(release_file + " --test"))
+            timed_run(lambda: os.system(file_to_run + " --test"))

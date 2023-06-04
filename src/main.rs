@@ -13,20 +13,23 @@ use tests::test;
 use timecat::*;
 
 fn main() {
-    env::set_var("RUST_BACKTRACE", "1");
     let clock = Instant::now();
     let args = env::args().collect_vec();
-    if !io::stdout().is_terminal() || args.contains(&"--no-color".to_string()) {
-        set_colored_output(false, false);
+    let args = args.iter().map(|s| s.as_str()).collect_vec();
+    if !args.contains(&"--disable-backtrace") {
+        env::set_var("RUST_BACKTRACE", "1");
     }
-    if args.contains(&"--uci".to_string()) {
+    if !io::stdin().is_terminal() || args.contains(&"--uci") {
         set_uci_mode(true, false);
     }
-    if args.contains(&"--test".to_string()) {
+    if !io::stdout().is_terminal() || args.contains(&"--no-color") {
+        set_colored_output(false, false);
+    }
+    if args.contains(&"--test") {
         test();
-    } else if args.contains(&"-c".to_string()) || args.contains(&"--command".to_string()) {
-        let index = args.iter().position(|s| s == "-c").unwrap_or(0)
-            + args.iter().position(|s| s == "--command").unwrap_or(0)
+    } else if args.contains(&"-c") || args.contains(&"--command") {
+        let index = args.iter().position(|&s| s == "-c").unwrap_or(0)
+            + args.iter().position(|&s| s == "--command").unwrap_or(0)
             + 1;
         let command = args[index..].join(" ");
         let mut engine = Engine::default();

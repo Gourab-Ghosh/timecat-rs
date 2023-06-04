@@ -1008,7 +1008,7 @@ impl Board {
         option_move: impl Into<Option<Move>>,
     ) -> Result<String, BoardError> {
         let option_move = option_move.into();
-        if is_uci_mode() {
+        if is_in_uci_mode() {
             Self::uci(option_move)
         } else {
             self.san(option_move)
@@ -1124,7 +1124,7 @@ impl Board {
     pub fn get_material_score(&self) -> Score {
         let mut score = 0;
         let black_occupied = self.black_occupied();
-        for &piece in chess::ALL_PIECES[0..5].iter() {
+        for &piece in chess::ALL_PIECES[..5].iter() {
             let piece_mask = self.get_piece_mask(piece);
             if piece_mask == &BB_EMPTY {
                 continue;
@@ -1142,8 +1142,24 @@ impl Board {
     }
 
     #[inline(always)]
+    pub fn get_masked_material_score_abs(&self, mask: &BitBoard) -> Score {
+        chess::ALL_PIECES[..5]
+            .iter()
+            .map(|&piece| evaluate_piece(piece) * (self.get_piece_mask(piece) & mask).popcnt() as Score)
+            .sum()
+    }
+
+    #[inline(always)]
     pub fn get_material_score_abs(&self) -> Score {
-        chess::ALL_PIECES[0..5]
+        chess::ALL_PIECES[..5]
+            .iter()
+            .map(|&piece| evaluate_piece(piece) * self.get_piece_mask(piece).popcnt() as Score)
+            .sum()
+    }
+
+    #[inline(always)]
+    pub fn get_non_pawn_material_score_abs(&self) -> Score {
+        chess::ALL_PIECES[1..5]
             .iter()
             .map(|&piece| evaluate_piece(piece) * self.get_piece_mask(piece).popcnt() as Score)
             .sum()

@@ -102,7 +102,7 @@ fn self_play(
     );
     if let GoCommand::Depth(depth) = go_command {
         println_info("Depth Searched", format!("{}", depth));
-    } else if let GoCommand::Time(time) = go_command {
+    } else if let GoCommand::Movetime(time) = go_command {
         println_info(
             "Time Searched Per Move",
             format!("{:.3}", time.as_secs_f64()),

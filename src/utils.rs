@@ -130,7 +130,7 @@ pub mod string_utils {
     }
 
     pub fn score_to_string(score: Score) -> String {
-        if is_uci_mode() {
+        if is_in_uci_mode() {
             score_to_string_uci(score)
         } else {
             score_to_string_normal(score)
@@ -327,7 +327,7 @@ pub mod unsafe_utils {
         }
     }
 
-    pub fn is_uci_mode() -> bool {
+    pub fn is_in_uci_mode() -> bool {
         unsafe { UCI_MODE }
     }
 

@@ -4,8 +4,22 @@ use EntryFlag::*;
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum GoCommand {
     Infinite,
-    Time(Duration),
+    Movetime(Duration),
     Depth(Depth),
+}
+
+impl GoCommand {
+    pub fn is_infinite(&self) -> bool {
+        self == &Self::Infinite
+    }
+
+    pub fn is_movetime(&self) -> bool {
+        matches!(self, Self::Movetime(_))
+    }
+
+    pub fn is_depth(&self) -> bool {
+        matches!(self, Self::Depth(_))
+    }
 }
 
 pub struct Engine {
@@ -450,7 +464,7 @@ impl Engine {
     }
 
     pub fn get_pv_string(&self) -> String {
-        if is_uci_mode() {
+        if is_in_uci_mode() {
             self.get_pv_as_uci(0)
         } else {
             self.get_pv_as_san(0)
@@ -507,7 +521,7 @@ impl Engine {
     pub fn go(&mut self, command: GoCommand, print_info: bool) -> (Option<Move>, Score) {
         self.reset_variables();
         self.timer.start_communication_check();
-        if let GoCommand::Time(duration) = command {
+        if let GoCommand::Movetime(duration) = command {
             self.timer.set_max_time(duration);
         }
         let mut alpha = -INFINITY;
@@ -524,6 +538,9 @@ impl Engine {
                 .search(current_depth, alpha, beta, print_info)
                 .unwrap_or(prev_score);
             for _ in 0..curr_board_ply.abs_diff(self.board.get_ply()) {
+                if command.is_depth() {
+                    panic!("Something went wrong with the search");
+                }
                 self.pop();
             }
             let time_elapsed = self.timer.elapsed();

@@ -38,6 +38,12 @@ pub enum ParserError {
     #[fail(display = "Best move not found in position {}! Try again!", fen)]
     BestMoveNotFound { fen: String },
 
+    #[fail(
+        display = "Cannot apply null move in position {}, as king is in check! Try again!",
+        fen
+    )]
+    NullMoveInCheck { fen: String },
+
     #[fail(display = "{}", err_msg)]
     CustomError { err_msg: String },
 }
@@ -145,7 +151,7 @@ impl Go {
         let (Some(best_move), score) = engine.go(go_command, true) else {
             return Err(BestMoveNotFound { fen: engine.board.get_fen() });
         };
-        if is_uci_mode() {
+        if is_in_uci_mode() {
             println!(
                 "{} {}",
                 colorize("bestmove", INFO_STYLE),
@@ -193,7 +199,7 @@ impl Go {
             return Self::go_command(engine, GoCommand::Depth(depth));
         } else if second_command == "movetime" {
             let time = depth_str.parse()?;
-            return Self::go_command(engine, GoCommand::Time(Duration::from_millis(time)));
+            return Self::go_command(engine, GoCommand::Movetime(Duration::from_millis(time)));
         }
         Err(UnknownCommand)
     }
@@ -232,7 +238,7 @@ impl Set {
     fn ucimode(commands: &[&str]) -> Result<(), ParserError> {
         let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
         let b = third_command.parse()?;
-        if is_uci_mode() == b {
+        if is_in_uci_mode() == b {
             return Err(UCIModeUnchanged { b: third_command });
         }
         set_uci_mode(b, true);
@@ -289,6 +295,11 @@ impl Push {
                 }
                 engine.push(move_);
             } else {
+                if engine.board.is_check() {
+                    return Err(NullMoveInCheck {
+                        fen: engine.board.get_fen(),
+                    });
+                }
                 engine.push(None);
             }
             println!(
@@ -384,7 +395,8 @@ impl UCIParser {
                 let mut new_input = format!("go {command} ");
                 new_input += commands
                     .iter()
-                    .skip_while(|&&s| s != command).nth(1)
+                    .skip_while(|&&s| s != command)
+                    .nth(1)
                     .ok_or(UnknownCommand)?;
                 return Ok(new_input);
             }
@@ -536,7 +548,7 @@ impl Parser {
         if ["uci", "ucinewgame", "isready", "position"].contains(&first_command.as_str()) {
             enable_uci_and_disable_color();
         }
-        if is_uci_mode() {
+        if is_in_uci_mode() {
             let message = format!(
                 "Unknown UCI command: {}, Trying to find command within default commands!",
                 raw_input.trim()
@@ -589,7 +601,7 @@ impl Parser {
         let mut engine = Engine::default();
         loop {
             let raw_input: String;
-            if !is_uci_mode() {
+            if !is_in_uci_mode() {
                 println!();
                 raw_input = Self::get_input(colorize("Enter Command: ", INPUT_MESSAGE_STYLE));
                 println!();
