@@ -265,7 +265,7 @@ impl Board {
             checkers_string += &square.to_string();
             checkers_string += " ";
         }
-        let score = Evaluator::new().evaluate_immutable(&self);
+        let score = Evaluator::new().evaluate_immutable(self);
         skeleton.push_str(
             &[
                 String::new(),

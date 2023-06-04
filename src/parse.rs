@@ -545,7 +545,10 @@ impl Parser {
             .next()
             .unwrap_or_default()
             .to_lowercase();
-        if ["uci", "ucinewgame", "isready", "position"].contains(&first_command.as_str()) {
+        if ["uci", "ucinewgame"].contains(&first_command.as_str()) {
+            if modified_raw_input.split_whitespace().nth(1).is_some() {
+                return Err(UnknownCommand);
+            }
             enable_uci_and_disable_color();
         }
         if is_in_uci_mode() {
