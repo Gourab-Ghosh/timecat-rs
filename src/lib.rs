@@ -8,9 +8,9 @@ mod engine;
 mod evaluate;
 mod nnue;
 mod nnue_rs;
-mod nnue_weights;
 mod parse;
 mod sort;
+mod tablebase;
 mod timer;
 mod tt;
 mod useful_macros;
@@ -22,7 +22,7 @@ pub use chess::Piece::*;
 pub use chess::{
     get_adjacent_files, get_bishop_moves, get_file as get_file_bb, get_king_moves,
     get_knight_moves, get_pawn_attacks, get_rank as get_rank_bb, get_rook_moves, BitBoard,
-    BoardStatus, CacheTable, ChessMove as Move, Color, File, Piece, Rank, Square,
+    BoardStatus, ChessMove as Move, Color, File, Piece, Rank, Square,
 };
 pub use constants::bitboard::*;
 pub use constants::board_representation::*;
@@ -35,7 +35,7 @@ pub use constants::*;
 pub use engine::{Engine, GoCommand};
 pub use evaluate::*;
 pub use failure::Fail;
-pub use fxhash::FxHashMap as HashMap;
+pub use fxhash::{hash64, FxHashMap as HashMap};
 pub use itertools::Itertools;
 pub use parse::*;
 pub use sort::*;
@@ -50,6 +50,7 @@ pub use std::str::FromStr;
 pub use std::str::ParseBoolError;
 pub use std::sync::{Arc, Mutex};
 pub use std::time::{Duration, Instant};
+pub use tablebase::*;
 pub use timer::Timer;
 pub use tt::*;
 pub use useful_macros::*;

@@ -11,6 +11,7 @@ pub mod common_utils {
 
     #[inline(always)]
     pub const fn evaluate_piece(piece: Piece) -> i16 {
+        // never set knight and bishop values as same for knight bishop endgame
         match piece {
             Pawn => PAWN_VALUE,
             Knight => (32 * PAWN_VALUE) / 10,
@@ -92,7 +93,7 @@ pub mod string_utils {
         colored_string.to_string()
     }
 
-    fn score_to_string_normal(score: Score) -> String {
+    pub fn score_to_string_normal(score: Score) -> String {
         if score == INFINITY {
             return "INFINITY".to_string();
         }
@@ -113,7 +114,7 @@ pub mod string_utils {
         }
     }
 
-    fn score_to_string_uci(score: Score) -> String {
+    pub fn score_to_string_uci(score: Score) -> String {
         if score == INFINITY {
             return "inf".to_string();
         }
@@ -173,10 +174,7 @@ pub mod bitboard_utils {
 }
 
 pub mod cache_table_utils {
-    struct CacheTableEntry<T> {
-        hash: u64,
-        entry: T,
-    }
+    use super::CacheTableEntry;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum CacheTableSize {
@@ -206,11 +204,13 @@ pub mod cache_table_utils {
             matches!(self, Self::Round(_))
         }
 
-        pub fn get_entry_size<T>() -> usize {
+        pub fn get_entry_size<T: Copy + Clone + PartialEq + PartialOrd>() -> usize {
             std::mem::size_of::<CacheTableEntry<T>>()
         }
 
-        pub fn to_cache_table_and_entry_size<T>(self) -> (usize, usize) {
+        pub fn to_cache_table_and_entry_size<T: Copy + Clone + PartialEq + PartialOrd>(
+            self,
+        ) -> (usize, usize) {
             let mut size = self.unwrap();
             let entry_size = Self::get_entry_size::<T>();
             size *= 2_usize.pow(20);
@@ -225,11 +225,11 @@ pub mod cache_table_utils {
             (size, entry_size)
         }
 
-        pub fn to_cache_table_size<T>(self) -> usize {
+        pub fn to_cache_table_size<T: Copy + Clone + PartialEq + PartialOrd>(self) -> usize {
             self.to_cache_table_and_entry_size::<T>().0
         }
 
-        pub fn to_cache_table_memory_size<T>(self) -> usize {
+        pub fn to_cache_table_memory_size<T: Copy + Clone + PartialEq + PartialOrd>(self) -> usize {
             let (size, entry_size) = self.to_cache_table_and_entry_size::<T>();
             size * entry_size / 2_usize.pow(20)
         }

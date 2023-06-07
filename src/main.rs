@@ -10,7 +10,7 @@ mod tests;
 
 use std::io::IsTerminal;
 use tests::test;
-use timecat::*;
+pub use timecat::*;
 
 fn main() {
     let clock = Instant::now();
@@ -39,7 +39,7 @@ fn main() {
             println!("\n{}", colorize(err_msg, ERROR_MESSAGE_STYLE));
         }
     } else {
-        let info_text = format!("{} {}", ENGINE_NAME, ENGINE_VERSION);
+        let info_text = format!("{} v{}", ENGINE_NAME, ENGINE_VERSION);
         println!("{}\n", colorize(info_text, SUCCESS_MESSAGE_STYLE));
         Parser::main_loop();
     }

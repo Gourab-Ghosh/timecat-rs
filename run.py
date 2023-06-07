@@ -20,7 +20,8 @@ def timed_run(func):
 
 root_url = "https://media.githubusercontent.com/media/Gourab-Ghosh/timecat-rs/master/"
 current_path = os.path.dirname(__file__)
-files = ["src/nnue_weights.rs"]
+# files = ["src/nnue_weights.rs"]
+files = []
 
 for file in files:
     file_path = os.path.join(current_path, file)

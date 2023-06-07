@@ -1,7 +1,115 @@
+use super::*;
 use std::collections::hash_map::Entry;
 use EntryFlag::*;
 
-use super::*;
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
+pub struct CacheTableEntry<T: Copy + Clone + PartialEq + PartialOrd> {
+    hash: u64,
+    entry: T,
+}
+
+impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTableEntry<T> {
+    #[inline]
+    pub fn new(hash: u64, entry: T) -> CacheTableEntry<T> {
+        CacheTableEntry { hash, entry }
+    }
+
+    #[inline]
+    pub fn get_hash(&self) -> u64 {
+        self.hash
+    }
+
+    #[inline]
+    pub fn get_entry(&self) -> T {
+        self.entry
+    }
+}
+
+pub struct CacheTable<T: Copy + Clone + PartialEq + PartialOrd> {
+    table: Box<[CacheTableEntry<T>]>,
+    mask: usize,
+    num_collisions: usize,
+}
+
+impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
+    #[inline]
+    pub fn new(size: usize, default: T) -> CacheTable<T> {
+        if size.count_ones() != 1 {
+            panic!("You cannot create a CacheTable with a non-binary number.");
+        }
+        let values = vec![
+            CacheTableEntry {
+                hash: 0,
+                entry: default
+            };
+            size
+        ];
+        CacheTable {
+            table: values.into_boxed_slice(),
+            mask: size - 1,
+            num_collisions: 0,
+        }
+    }
+
+    #[inline]
+    fn get_index(&self, hash: u64) -> usize {
+        // (hash ^ hash.rotate_left(32)) as usize & self.mask
+        hash as usize & self.mask
+    }
+
+    #[inline]
+    pub fn get(&self, hash: u64) -> Option<T> {
+        let entry = unsafe { *self.table.get_unchecked(self.get_index(hash)) };
+        if entry.hash == hash {
+            Some(entry.entry)
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub fn add(&mut self, hash: u64, entry: T) {
+        let e = unsafe { self.table.get_unchecked_mut(self.get_index(hash)) };
+        if e.hash != 0 && e.hash != hash {
+            self.num_collisions += 1;
+        }
+        *e = CacheTableEntry { hash, entry };
+    }
+
+    #[inline(always)]
+    pub fn replace_if<F: Fn(T) -> bool>(&mut self, hash: u64, entry: T, replace: F) {
+        let e = unsafe { self.table.get_unchecked_mut(self.get_index(hash)) };
+        if replace(e.entry) {
+            if e.hash != 0 && e.hash != hash {
+                self.num_collisions += 1;
+            }
+            *e = CacheTableEntry { hash, entry };
+        }
+    }
+
+    pub fn clear(&mut self) {
+        for &mut mut e in self.table.iter_mut() {
+            e.hash = 0;
+        }
+        self.num_collisions = 0;
+    }
+
+    #[inline]
+    pub fn get_num_collisions(&self) -> usize {
+        self.num_collisions
+    }
+
+    #[inline]
+    pub fn reset_num_collisions(&mut self) {
+        self.num_collisions = 0;
+    }
+
+    #[inline]
+    pub fn get_hash_full(&self) -> f64 {
+        (self.table.iter().filter(|&&e| e.hash != 0).count() as f64 / self.table.len() as f64)
+            * 100.0
+    }
+}
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
@@ -48,120 +156,6 @@ pub struct TranspositionTableEntry {
     option_data: Option<TranspositionTableData>,
     best_move: Option<Move>,
 }
-
-// pub struct TranspositionTable {
-//     table: Arc<Mutex<HashMap<u64, TranspositionTableEntry>>>,
-// }
-
-// impl TranspositionTable {
-//     pub fn new() -> Self {
-//         Self {
-//             table: Arc::new(Mutex::new(HashMap::default())),
-//         }
-//     }
-
-//     pub fn read(
-//         &self,
-//         key: u64,
-//         depth: Depth,
-//         alpha: Score,
-//         beta: Score,
-//     ) -> (Option<Score>, Option<Move>) {
-//         let tt_entry = match self.table.lock().unwrap().get(&key) {
-//             Some(entry) => *entry,
-//             None => return (None, None),
-//         };
-//         let best_move = tt_entry.best_move;
-//         if DISABLE_T_TABLE || tt_entry.option_data.is_none() {
-//             return (None, best_move);
-//         }
-//         let data = tt_entry.option_data.unwrap();
-//         if data.depth < depth {
-//             return (None, best_move);
-//         }
-//         let score = data.score;
-//         match data.flag {
-//             HashExact => (Some(score), best_move),
-//             HashAlpha => {
-//                 if score <= alpha {
-//                     (Some(score), best_move)
-//                 } else {
-//                     (None, best_move)
-//                 }
-//             }
-//             HashBeta => {
-//                 if score >= beta {
-//                     (Some(score), best_move)
-//                 } else {
-//                     (None, best_move)
-//                 }
-//             }
-//         }
-//     }
-
-//     pub fn read_best_move(&self, key: u64) -> Option<Move> {
-//         self.table.lock().unwrap().get(&key)?.best_move
-//     }
-
-//     fn update_tt_entry(
-//         tt_entry: &mut TranspositionTableEntry,
-//         option_data: Option<TranspositionTableData>,
-//         best_move: Option<Move>,
-//     ) {
-//         tt_entry.best_move = best_move;
-
-//         if let Some(data) = tt_entry.option_data {
-//             if let Some(curr_data) = option_data {
-//                 if data.depth < curr_data.depth {
-//                     tt_entry.option_data = option_data;
-//                 }
-//             }
-//         } else {
-//             tt_entry.option_data = option_data;
-//         }
-
-//         // tt_entry.option_data = option_data;
-//     }
-
-//     pub fn write(
-//         &self,
-//         key: u64,
-//         depth: Depth,
-//         ply: Ply,
-//         mut score: Score,
-//         flag: EntryFlag,
-//         best_move: impl Into<Option<Move>>,
-//     ) {
-//         let best_move = best_move.into();
-//         if is_checkmate(score) {
-//             score += score.signum() * ply as Score;
-//         }
-//         let save_score = !DISABLE_T_TABLE;
-//         let option_data = if save_score {
-//             Some(TranspositionTableData { depth, score, flag })
-//         } else {
-//             None
-//         };
-//         let mut table_entry = self.table.lock().unwrap();
-//         match table_entry.entry(key) {
-//             Entry::Occupied(tt_entry) => {
-//                 let tt_entry = tt_entry.into_mut();
-//                 Self::update_tt_entry(tt_entry, option_data, best_move);
-//             }
-//             Entry::Vacant(tt_entry) => {
-//                 tt_entry.insert(TranspositionTableEntry {
-//                     option_data,
-//                     best_move,
-//                 });
-//             }
-//         }
-//     }
-
-//     pub fn clear(&mut self) {
-//         self.table.lock().unwrap().clear();
-//         // self.table = Arc::new(Mutex::new(HashMap::default()));
-//     }
-// }
 
 pub struct TranspositionTable {
     table: CacheTable<TranspositionTableEntry>,
@@ -240,7 +234,7 @@ impl TranspositionTable {
         //     score += score.signum() * ply as Score;
         // }
         // let save_score = !DISABLE_T_TABLE;
-        let save_score = !DISABLE_T_TABLE && score.abs() < CHECKMATE_THRESHOLD;
+        let save_score = !DISABLE_T_TABLE && !is_checkmate(score);
         let option_data = if save_score {
             let old_option_data = self.table.get(key).and_then(|entry| entry.option_data);
             if old_option_data.map(|data| data.depth).unwrap_or(-1) < depth {
@@ -261,7 +255,26 @@ impl TranspositionTable {
     }
 
     pub fn clear(&mut self) {
-        self.table = Self::generate_new_table(get_t_table_size());
+        self.table.clear();
+    }
+
+    pub fn clear_best_moves(&mut self) {
+        for &mut mut e in self.table.table.iter_mut() {
+            e.entry.best_move = None;
+        }
+    }
+
+    pub fn get_num_collisions(&self) -> usize {
+        self.table.get_num_collisions()
+    }
+
+    pub fn get_hash_full(&self) -> f64 {
+        self.table.get_hash_full()
+    }
+
+    pub fn reset_variables(&mut self) {
+        self.table.reset_num_collisions();
+        self.clear_best_moves();
     }
 }
 

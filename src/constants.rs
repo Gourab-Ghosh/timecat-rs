@@ -24,7 +24,7 @@ pub mod types {
     pub type Ply = usize;
     pub type Depth = i8;
     pub type Score = i16;
-    pub type MoveWeight = i32;
+    pub type MoveWeight = i64;
 }
 
 pub mod bitboard {
@@ -250,7 +250,7 @@ pub mod engine_constants {
     use chess::Piece::*;
     use std::time::Duration;
 
-    pub const NNUE_BYTES: &[u8] = include_bytes!("nnue_files/nn-62ef826d1a6d.nnue");
+    pub const NNUE_BYTES: &[u8] = include_bytes!(concat!("nnue_files/", "nn-62ef826d1a6d.nnue"));
 
     pub const MAX_PLY: usize = 255;
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
@@ -286,6 +286,7 @@ pub mod engine_constants {
     pub const INITIAL_MATERIAL_SCORE_ABS: Score = 16 * PAWN_VALUE
         + 4 * (evaluate_piece(Knight) + evaluate_piece(Bishop) + evaluate_piece(Rook))
         + 2 * evaluate_piece(Queen);
+    pub const MAX_MATERIAL_SCORE: Score = INITIAL_MATERIAL_SCORE_ABS / 2;
 
     #[rustfmt::skip]
     pub const MVV_LVA: [[MoveWeight; 6]; 6] = [

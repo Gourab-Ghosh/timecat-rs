@@ -176,9 +176,6 @@ impl Go {
     }
 
     pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
-        let input = commands.join(" ");
-        let modified_input = UCIParser::parse_uci_go_input(engine, &input)?;
-        let commands = modified_input.split(' ').collect_vec();
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if second_command == "infinite" {
             if commands.get(2).is_some() {
@@ -534,6 +531,10 @@ impl Parser {
         }
         if first_command == "pop" {
             return Pop::parse_sub_command(engine, &commands);
+        }
+        if first_command == "eval" {
+            println_info("Current Score", score_to_string(engine.evaluate()));
+            return Ok(());
         }
         Err(UnknownCommand)
     }

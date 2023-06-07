@@ -26,6 +26,7 @@ pub struct Engine {
     pub board: Board,
     evaluator: Evaluator,
     num_nodes_searched: usize,
+    selective_depth: Ply,
     ply: Ply,
     pv_length: [usize; MAX_PLY],
     pv_table: [[Option<Move>; MAX_PLY]; MAX_PLY],
@@ -46,6 +47,7 @@ impl Engine {
             board,
             evaluator,
             num_nodes_searched: 0,
+            selective_depth: 0,
             ply: 0,
             pv_length: [0; MAX_PLY],
             pv_table: [[None; MAX_PLY]; MAX_PLY],
@@ -69,7 +71,8 @@ impl Engine {
         let source = move_.get_source();
         let dest = move_.get_dest();
         let self_piece = self.board.piece_at(source).unwrap();
-        self.evaluator.deactivate_nnue(self_piece, self_color, source);
+        self.evaluator
+            .deactivate_nnue(self_piece, self_color, source);
         if self.board.is_capture(move_) {
             let remove_piece_square = if self.board.is_en_passant(move_) {
                 dest.backward(self_color).unwrap()
@@ -77,7 +80,8 @@ impl Engine {
                 dest
             };
             let piece = self.board.piece_at(remove_piece_square).unwrap();
-            self.evaluator.deactivate_nnue(piece, !self_color, remove_piece_square);
+            self.evaluator
+                .deactivate_nnue(piece, !self_color, remove_piece_square);
         } else if self.board.is_castling(move_) {
             let (rook_source, rook_dest) = if move_.get_dest().get_file().to_index()
                 > move_.get_source().get_file().to_index()
@@ -92,14 +96,15 @@ impl Engine {
                     Black => (Square::A8, Square::D8),
                 }
             };
-            self.evaluator.deactivate_nnue(Rook, self_color, rook_source);
+            self.evaluator
+                .deactivate_nnue(Rook, self_color, rook_source);
             self.evaluator.activate_nnue(Rook, self_color, rook_dest);
         }
         self.evaluator.activate_nnue(
-                move_.get_promotion().unwrap_or(self_piece),
-                self_color,
-                dest,
-            );
+            move_.get_promotion().unwrap_or(self_piece),
+            self_color,
+            dest,
+        );
     }
 
     pub fn push(&mut self, option_move: impl Into<Option<Move>>) {
@@ -108,6 +113,10 @@ impl Engine {
         // }
         self.board.push(option_move);
         self.ply += 1;
+    }
+
+    fn pop_nnue(&mut self) {
+        self.evaluator.restore();
     }
 
     #[allow(clippy::let_and_return)]
@@ -147,6 +156,7 @@ impl Engine {
         }
         self.move_sorter.reset_variables();
         self.timer.reset_variables();
+        self.transposition_table.reset_variables();
         // self.transposition_table.clear();
     }
 
@@ -195,11 +205,17 @@ impl Engine {
                 self.ply,
                 self.transposition_table.read_best_move(self.board.hash()),
                 self.pv_table[0][self.ply],
+                Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
             )
             .map(|wm| {
                 (
                     wm.move_,
-                    MoveSorter::score_root_moves(&mut self.board, &mut self.evaluator, wm.move_, self.pv_table[0][0]),
+                    MoveSorter::score_root_moves(
+                        &mut self.board,
+                        &mut self.evaluator,
+                        wm.move_,
+                        self.pv_table[0][0],
+                    ),
                 )
             })
             .collect_vec();
@@ -214,6 +230,7 @@ impl Engine {
         beta: Score,
         print_move_info: bool,
     ) -> Option<Score> {
+        self.selective_depth = 0;
         if self.timer.stop_search() || self.timer.check_stop() {
             return None;
         }
@@ -328,6 +345,8 @@ impl Engine {
         }
         // let is_endgame = self.board.is_endgame();
         self.num_nodes_searched += 1;
+        let is_easily_winning_position =
+            Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score());
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
             let static_evaluation = self.evaluate_flipped();
@@ -338,24 +357,6 @@ impl Engine {
                     return Some(new_score);
                 }
             }
-            // // razoring
-            // let d = 4;
-            // if !is_pv_node && depth <= d && !is_endgame {
-            //     let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
-            //     if score < beta {
-            //         if depth == 1 {
-            //             let new_score = self.quiescence(alpha, beta);
-            //             return new_score.max(score);
-            //         }
-            //         score += (7 * PAWN_VALUE) / 4;
-            //         if score < beta && depth < d {
-            //             let new_score = self.quiescence(alpha, beta);
-            //             if new_score < beta {
-            //                 return new_score.max(score);
-            //             }
-            //         }
-            //     }
-            // }
             // null move pruning
             if depth >= NULL_MOVE_MIN_DEPTH
                 && static_evaluation >= beta
@@ -376,6 +377,24 @@ impl Engine {
                     }
                 }
             }
+            // razoring
+            let d = 3;
+            if !is_pv_node && depth <= d && !self.board.is_endgame() {
+                let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
+                if score < beta {
+                    if depth == 1 {
+                        let new_score = self.quiescence(alpha, beta)?;
+                        return Some(new_score.max(score));
+                    }
+                    score += (7 * PAWN_VALUE) / 4;
+                    if score < beta && depth < d {
+                        let new_score = self.quiescence(alpha, beta)?;
+                        if new_score < beta {
+                            return Some(new_score.max(score));
+                        }
+                    }
+                }
+            }
         }
         let mut flag = HashAlpha;
         let weighted_moves = self.move_sorter.get_weighted_moves_sorted(
@@ -384,6 +403,7 @@ impl Engine {
             self.ply,
             best_move,
             self.pv_table[0][self.ply],
+            is_easily_winning_position,
         );
         for (move_index, weighted_move) in weighted_moves.enumerate() {
             let move_ = weighted_move.move_;
@@ -395,7 +415,6 @@ impl Engine {
                 && not_in_check
                 && move_.get_promotion().is_none()
                 && !self.move_sorter.is_killer_move(move_, self.ply)
-                // && !(is_endgame && self.board.is_passed_pawn(move_.get_source()));
                 && !self.board.is_passed_pawn(move_.get_source());
             self.push(move_);
             safe_to_apply_lmr &= !self.board.is_check();
@@ -462,6 +481,7 @@ impl Engine {
         if self.board.is_other_draw() {
             return Some(0);
         }
+        self.selective_depth = self.ply.max(self.selective_depth);
         if self.timer.stop_search() || self.timer.check_stop() {
             return None;
         }
@@ -573,17 +593,21 @@ impl Engine {
     pub fn print_search_info(&self, current_depth: Depth, score: Score, time_elapsed: Duration) {
         let style = SUCCESS_MESSAGE_STYLE;
         println!(
-            "{} {} {} {} {} {} {} {} {} {} {} {:.3} {} {}",
+            "{} {} {} {} {} {} {} {} {} {} {} {:.1} {} {} {} {:.3} {} {}",
             colorize("info depth", style),
             current_depth,
-            colorize("multipv", style),
-            1,
+            colorize("seldepth", style),
+            self.selective_depth,
             colorize("score", style),
             score_to_string(score),
             colorize("nodes", style),
             self.num_nodes_searched,
             colorize("nps", style),
             (self.num_nodes_searched as u128 * 10_u128.pow(9)) / time_elapsed.as_nanos(),
+            colorize("hashfull", style),
+            self.transposition_table.get_hash_full(),
+            colorize("collisions", style),
+            self.transposition_table.get_num_collisions(),
             colorize("time", style),
             time_elapsed.as_secs_f64(),
             colorize("pv", style),
@@ -665,14 +689,19 @@ impl Engine {
         };
         let divider = movestogo.unwrap_or(30);
         let search_time = match (time, inc) {
-            (Some(time), Some(inc)) => time / divider + inc / 2,
+            (Some(time), Some(inc)) => {
+                time / divider
+                    + inc
+                        .checked_sub(Duration::from_millis(500))
+                        .unwrap_or(Duration::from_millis(1))
+            }
             (Some(time), None) => time / divider,
             _ => return None,
         }
         .checked_sub(Duration::from_millis(100))
         .unwrap_or(Duration::from_millis(1));
-        let multiplier = match_interpolate!(0.5, 1, 32, 2, self.board.get_num_pieces());
-        let search_time = Duration::from_secs_f64(search_time.as_secs_f64() * multiplier);
+        // let multiplier = match_interpolate!(0.5, 1, 32, 2, self.board.get_num_pieces());
+        // let search_time = Duration::from_secs_f64(search_time.as_secs_f64() * multiplier);
         Some(search_time)
     }
 }

@@ -80,7 +80,9 @@ impl Board {
 
     pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
         if !Self::is_good_fen(fen) {
-            return Err(chess::Error::InvalidFen {fen: fen.to_string()});
+            return Err(chess::Error::InvalidFen {
+                fen: fen.to_string(),
+            });
         }
         let fen = simplify_fen(fen);
         self.board = chess::Board::from_str(&fen).expect("FEN not parsed properly!");
@@ -265,7 +267,7 @@ impl Board {
             checkers_string += &square.to_string();
             checkers_string += " ";
         }
-        let score = Evaluator::new().evaluate_immutable(self);
+        let score = Evaluator::new().evaluate_raw(self);
         skeleton.push_str(
             &[
                 String::new(),
@@ -455,8 +457,7 @@ impl Board {
                     && self.get_piece_mask(Knight) == &BB_EMPTY
                     && self.get_piece_mask(Queen) == &BB_EMPTY
                     && self.get_piece_mask(Pawn) == &BB_EMPTY
-                    && [0, 2]
-                        .contains(&(self.white_occupied() & self.get_piece_mask(Bishop)).popcnt())
+                    && [0, 2].contains(&(BB_LIGHT_SQUARES & self.get_piece_mask(Bishop)).popcnt())
             }
             _ => false,
         }
@@ -644,7 +645,7 @@ impl Board {
             } else {
                 self.halfmove_clock += 1;
             }
-            self.board.clone().make_move(move_, &mut self.board);
+            self.board = self.board.make_move_new(move_);
         } else {
             self.halfmove_clock += 1;
             self.board = self
@@ -966,10 +967,18 @@ impl Board {
     /// Returns a string representing the game in Portable Game Notation (PGN).
     /// The result of the game is included in the tags.
     pub fn get_pgn(&self) -> String {
-        self.variation_san(
+        let mut pgn = String::new();
+        if self.starting_fen != STARTING_FEN {
+            pgn += &format!(
+                "[Variant \"From Position\"]\n[FEN \"{}\"]\n",
+                self.starting_fen
+            );
+        }
+        pgn += &self.variation_san(
             &Self::from_fen(&self.starting_fen).unwrap(),
             Vec::from_iter(self.stack.clone().into_iter().map(|(_, option_m)| option_m)),
-        )
+        );
+        pgn
     }
 
     #[inline(always)]
@@ -1036,7 +1045,9 @@ impl Board {
     pub fn get_masked_material_score_abs(&self, mask: &BitBoard) -> Score {
         chess::ALL_PIECES[..5]
             .iter()
-            .map(|&piece| evaluate_piece(piece) * (self.get_piece_mask(piece) & mask).popcnt() as Score)
+            .map(|&piece| {
+                evaluate_piece(piece) * (self.get_piece_mask(piece) & mask).popcnt() as Score
+            })
             .sum()
     }
 
