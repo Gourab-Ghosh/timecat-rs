@@ -277,7 +277,8 @@ pub mod engine_constants {
     pub const MAX_MOVES_PER_POSITION: usize = 250;
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
 
-    pub const INITIAL_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(64);
+    pub const INITIAL_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(20);
+    pub const EVALUATOR_SIZE: CacheTableSize = CacheTableSize::Round(30);
 
     pub const FOLLOW_PV: bool = true;
     pub const PRINT_MOVE_INFO_DURATION_THRESHOLD: Duration = Duration::from_millis(1000);

@@ -37,7 +37,7 @@ pub struct Engine {
 
 impl Engine {
     pub fn new(board: Board) -> Self {
-        let mut evaluator = Evaluator::new();
+        let mut evaluator = Evaluator::default();
         for square in *board.occupied() {
             let piece = board.piece_at(square).unwrap();
             let color = board.color_at(square).unwrap();
@@ -157,7 +157,7 @@ impl Engine {
         self.move_sorter.reset_variables();
         self.timer.reset_variables();
         self.transposition_table.reset_variables();
-        // self.transposition_table.clear();
+        // self.evaluator.reset_variables();
     }
 
     fn update_pv_table(&mut self, move_: Move) {
@@ -345,8 +345,6 @@ impl Engine {
         }
         // let is_endgame = self.board.is_endgame();
         self.num_nodes_searched += 1;
-        let is_easily_winning_position =
-            Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score());
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
             let static_evaluation = self.evaluate_flipped();
@@ -403,7 +401,7 @@ impl Engine {
             self.ply,
             best_move,
             self.pv_table[0][self.ply],
-            is_easily_winning_position,
+            Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
         );
         for (move_index, weighted_move) in weighted_moves.enumerate() {
             let move_ = weighted_move.move_;

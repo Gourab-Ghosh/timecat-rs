@@ -1,5 +1,4 @@
 use super::*;
-use std::collections::hash_map::Entry;
 use EntryFlag::*;
 
 #[derive(Copy, Clone, PartialEq, PartialOrd)]
@@ -9,17 +8,17 @@ pub struct CacheTableEntry<T: Copy + Clone + PartialEq + PartialOrd> {
 }
 
 impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTableEntry<T> {
-    #[inline]
+    #[inline(always)]
     pub fn new(hash: u64, entry: T) -> CacheTableEntry<T> {
         CacheTableEntry { hash, entry }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_hash(&self) -> u64 {
         self.hash
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_entry(&self) -> T {
         self.entry
     }
@@ -32,7 +31,7 @@ pub struct CacheTable<T: Copy + Clone + PartialEq + PartialOrd> {
 }
 
 impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
-    #[inline]
+    #[inline(always)]
     pub fn new(size: usize, default: T) -> CacheTable<T> {
         if size.count_ones() != 1 {
             panic!("You cannot create a CacheTable with a non-binary number.");
@@ -51,13 +50,13 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn get_index(&self, hash: u64) -> usize {
         // (hash ^ hash.rotate_left(32)) as usize & self.mask
         hash as usize & self.mask
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get(&self, hash: u64) -> Option<T> {
         let entry = unsafe { *self.table.get_unchecked(self.get_index(hash)) };
         if entry.hash == hash {
@@ -67,7 +66,7 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn add(&mut self, hash: u64, entry: T) {
         let e = unsafe { self.table.get_unchecked_mut(self.get_index(hash)) };
         if e.hash != 0 && e.hash != hash {
@@ -88,23 +87,28 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
     }
 
     pub fn clear(&mut self) {
-        for &mut mut e in self.table.iter_mut() {
+        for e in self.table.iter_mut() {
             e.hash = 0;
         }
         self.num_collisions = 0;
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_num_collisions(&self) -> usize {
         self.num_collisions
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn reset_num_collisions(&mut self) {
         self.num_collisions = 0;
     }
 
-    #[inline]
+    pub fn reset_variables(&mut self) {
+        self.reset_num_collisions();
+        self.clear()
+    }
+
+    #[inline(always)]
     pub fn get_hash_full(&self) -> f64 {
         (self.table.iter().filter(|&&e| e.hash != 0).count() as f64 / self.table.len() as f64)
             * 100.0
@@ -162,14 +166,18 @@ pub struct TranspositionTable {
 }
 
 impl TranspositionTable {
-    fn generate_new_table(memory_size: CacheTableSize) -> CacheTable<TranspositionTableEntry> {
-        let (size, entry_size) =
-            memory_size.to_cache_table_and_entry_size::<TranspositionTableEntry>();
+    fn generate_new_table(cache_table_size: CacheTableSize) -> CacheTable<TranspositionTableEntry> {
         println_info(
             "Transposition Table Cache size",
-            format!("{} MB", size * entry_size / 2_usize.pow(20)),
+            format!(
+                "{} MB",
+                cache_table_size.to_cache_table_memory_size::<TranspositionTableEntry>()
+            ),
         );
-        CacheTable::new(size, TranspositionTableEntry::default())
+        CacheTable::new(
+            cache_table_size.to_cache_table_size::<TranspositionTableEntry>(),
+            TranspositionTableEntry::default(),
+        )
     }
 
     pub fn new() -> Self {
@@ -259,7 +267,7 @@ impl TranspositionTable {
     }
 
     pub fn clear_best_moves(&mut self) {
-        for &mut mut e in self.table.table.iter_mut() {
+        for e in self.table.table.iter_mut() {
             e.entry.best_move = None;
         }
     }
@@ -273,8 +281,7 @@ impl TranspositionTable {
     }
 
     pub fn reset_variables(&mut self) {
-        self.table.reset_num_collisions();
-        self.clear_best_moves();
+        self.table.reset_variables();
     }
 }
 

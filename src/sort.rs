@@ -194,21 +194,23 @@ impl MoveSorter {
         }
         // move pieces towards the king
         let source = move_.get_source();
-        let dest = move_.get_dest();
-        let moving_piece = board.piece_at(source).unwrap();
-        if is_easily_winning_position && ![Pawn, King].contains(&moving_piece) {
-            let opponent_king_square = board.get_king_square(!board.turn());
-            let source_distance = square_distance(source, opponent_king_square);
-            let dest_distance = square_distance(dest, opponent_king_square);
-            if dest_distance < source_distance {
-                return 124000000 - 10 * dest_distance as MoveWeight
-                    + match moving_piece {
-                        Knight => 1,
-                        Queen => 2,
-                        Rook => 3,
-                        Bishop => 4,
-                        _ => unreachable!(),
-                    };
+        if is_easily_winning_position {
+            let dest = move_.get_dest();
+            let moving_piece = board.piece_at(source).unwrap();
+            if ![Pawn, King].contains(&moving_piece) {
+                let opponent_king_square = board.get_king_square(!board.turn());
+                let source_distance = square_distance(source, opponent_king_square);
+                let dest_distance = square_distance(dest, opponent_king_square);
+                if dest_distance < source_distance {
+                    return 124000000 - 10 * dest_distance as MoveWeight
+                        + match moving_piece {
+                            Knight => 1,
+                            Queen => 2,
+                            Rook => 3,
+                            Bishop => 4,
+                            _ => unreachable!(),
+                        };
+                }
             }
         }
         if move_.get_promotion().is_some() {
@@ -240,69 +242,6 @@ impl MoveSorter {
         MAX_MOVES_PER_POSITION as MoveWeight
             - chess::MoveGen::new_legal(&move_made_sub_board).len() as MoveWeight
     }
-
-    // fn score_winning_position_move(
-    //     &mut self,
-    //     move_: Move,
-    //     board: &Board,
-    //     ply: Ply,
-    //     best_move: Option<Move>,
-    //     pv_move: Option<Move>,
-    // ) -> MoveWeight {
-    //     // best move
-    //     if best_move == Some(move_) {
-    //         return 129000000;
-    //     }
-    //     // pv move
-    //     if self.score_pv && pv_move == Some(move_) {
-    //         self.score_pv = false;
-    //         return 128000000;
-    //     }
-    //     if board.is_capture(move_) {
-    //         return 126000000 + Self::mvv_lva(move_, board);
-    //     }
-    //     // move pieces towards the king
-    //     let source = move_.get_source();
-    //     let dest = move_.get_dest();
-    //     if ![Pawn, King].contains(&board.piece_at(source).unwrap()) {
-    //         let opponent_king_square = board.get_king_square(!board.turn());
-    //         let source_distance = square_distance(source, opponent_king_square);
-    //         let dest_distance = square_distance(dest, opponent_king_square);
-    //         if dest_distance < source_distance {
-    //             return 125000000 + source_distance as MoveWeight;
-    //         }
-    //     }
-    //     for (idx, &option_move) in self.killer_moves[ply].iter().enumerate() {
-    //         if option_move == Some(move_) {
-    //             return 124000000 - idx as MoveWeight;
-    //         }
-    //     }
-    //     if move_.get_promotion().is_some() {
-    //         return 123000000;
-    //     }
-    //     if board.is_passed_pawn(source) {
-    //         let promotion_distance = board
-    //             .turn()
-    //             .to_their_backrank()
-    //             .to_index()
-    //             .abs_diff(source.get_rank().to_index());
-    //         return 122000000 - promotion_distance as MoveWeight;
-    //     }
-    //     // check
-    //     let move_made_sub_board = board.get_sub_board().make_move_new(move_);
-    //     let checkers = *move_made_sub_board.checkers();
-    //     let moving_piece = board.piece_at(source).unwrap();
-    //     if checkers != BB_EMPTY {
-    //         return -127000000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
-    //     }
-    //     // history
-    //     let history_score = self.get_history_score(move_, board);
-    //     if history_score != 0 {
-    //         return 120000000 + history_score;
-    //     }
-    //     MAX_MOVES_PER_POSITION as MoveWeight
-    //         - chess::MoveGen::new_legal(&move_made_sub_board).len() as MoveWeight
-    // }
 
     pub fn get_weighted_moves_sorted<T: IntoIterator<Item = Move>>(
         &mut self,

@@ -44,6 +44,9 @@ pub enum ParserError {
     )]
     NullMoveInCheck { fen: String },
 
+    #[fail(display = "Game is already over! Please start a game from another position!")]
+    GameAlreadyOver,
+
     #[fail(display = "{}", err_msg)]
     CustomError { err_msg: String },
 }
@@ -175,30 +178,37 @@ impl Go {
         Ok(())
     }
 
-    pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
+    pub fn extract_go_command(commands: &[&str]) -> Result<GoCommand, ParserError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if second_command == "infinite" {
             if commands.get(2).is_some() {
                 return Err(UnknownCommand);
             }
-            return Self::go_command(engine, GoCommand::Infinite);
+            return Ok(GoCommand::Infinite);
         }
-        let depth_str = commands.get(2).ok_or(UnknownCommand)?.to_string();
+        let int_str = commands.get(2).ok_or(UnknownCommand)?.to_string();
         if commands.get(3).is_some() {
             return Err(UnknownCommand);
         }
-        if second_command == "perft" {
-            let depth = depth_str.parse()?;
-            Self::perft(engine, depth);
-            return Ok(());
-        } else if second_command == "depth" {
-            let depth = depth_str.parse()?;
-            return Self::go_command(engine, GoCommand::Depth(depth));
+        if second_command == "depth" {
+            let depth = int_str.parse()?;
+            return Ok(GoCommand::Depth(depth));
         } else if second_command == "movetime" {
-            let time = depth_str.parse()?;
-            return Self::go_command(engine, GoCommand::Movetime(Duration::from_millis(time)));
+            let time = int_str.parse()?;
+            return Ok(GoCommand::Movetime(Duration::from_millis(time)));
         }
         Err(UnknownCommand)
+    }
+
+    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
+        let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
+        if second_command == "perft" {
+            let depth = commands.get(2).ok_or(UnknownCommand)?.to_string().parse()?;
+            Self::perft(engine, depth);
+            return Ok(());
+        } else {
+            return Self::go_command(engine, Self::extract_go_command(commands)?);
+        }
     }
 }
 
@@ -242,7 +252,7 @@ impl Set {
         Ok(())
     }
 
-    pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
+    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if second_command == "board" {
             let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
@@ -308,7 +318,7 @@ impl Push {
         Ok(())
     }
 
-    pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
+    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
         Self::moves(engine, commands)
     }
 }
@@ -337,7 +347,7 @@ impl Pop {
         Ok(())
     }
 
-    pub fn parse_sub_command(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
+    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
         Self::n_times(engine, commands)
     }
 }
@@ -473,14 +483,25 @@ impl UCIParser {
             println!("readyok");
             return Ok(());
         } else if first_command == "ucinewgame" {
-            return Parser::run_command(engine, "set board fen startpos");
-        } else if first_command == "go" {
-            return Parser::run_command(engine, user_input);
-        } else if ["position"].contains(&first_command.as_str()) {
+            return Parser::run_command(engine, &format!("set board fen {}", STARTING_FEN));
+        } else if ["position", "go"].contains(&first_command.as_str()) {
             let parsed_input = Self::parse_uci_input(engine, user_input)?;
             return Self::run_parsed_input(engine, &parsed_input);
         }
         Err(UnknownCommand)
+    }
+}
+
+struct SelfPlay;
+
+impl SelfPlay {
+    fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), ParserError> {
+        let go_command = if commands.get(1).is_some() {
+            Go::extract_go_command(commands)?
+        } else {
+            GoCommand::Movetime(Duration::from_secs(3))
+        };
+        return self_play(engine, go_command, true, None);
     }
 }
 
@@ -521,20 +542,27 @@ impl Parser {
             return Err(NotImplemented);
         }
         if first_command == "go" {
-            return Go::parse_sub_command(engine, &commands);
+            return Go::parse_sub_commands(engine, &commands);
         }
         if first_command == "set" {
-            return Set::parse_sub_command(engine, &commands);
+            return Set::parse_sub_commands(engine, &commands);
         }
         if first_command == "push" {
-            return Push::parse_sub_command(engine, &commands);
+            return Push::parse_sub_commands(engine, &commands);
         }
         if first_command == "pop" {
-            return Pop::parse_sub_command(engine, &commands);
+            return Pop::parse_sub_commands(engine, &commands);
         }
-        if first_command == "eval" {
+        if user_input == "eval" {
             println_info("Current Score", score_to_string(engine.evaluate()));
             return Ok(());
+        }
+        if user_input == "reset board" {
+            engine.set_fen(STARTING_FEN)?;
+            return Ok(());
+        }
+        if first_command == "selfplay" {
+            return SelfPlay::parse_sub_commands(engine, &commands);
         }
         Err(UnknownCommand)
     }

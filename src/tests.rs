@@ -2,139 +2,6 @@
 
 use super::*;
 
-fn prediction_accuracy_func(rms: f64) -> f64 {
-    1.0 - 1.0 / (1.0 + ((10.0 - rms) / 3.0).exp())
-}
-
-fn calculate_prediction_accuracy(rms: f64) -> f64 {
-    (prediction_accuracy_func(rms) * 100.0) / prediction_accuracy_func(0.0)
-}
-
-fn self_play(
-    engine: &mut Engine,
-    go_command: GoCommand,
-    print: bool,
-    move_limit: impl Into<Option<u16>> + Copy,
-) {
-    let mut time_taken_vec: Vec<f64> = Vec::new();
-    let mut max_time_taken_fen = String::new();
-    let mut prediction_score_vec = Vec::new();
-    println!("\n{}\n", engine.board);
-    while !engine.board.is_game_over()
-        && engine.board.get_fullmove_number() < move_limit.into().unwrap_or(u16::MAX)
-    {
-        let clock = Instant::now();
-        if print {
-            println!();
-        }
-        let (Some(best_move), score) = engine.go(go_command, print) else {panic!("No moves found")};
-        let time_elapsed = clock.elapsed();
-        let best_move_san = engine.board.stringify_move(best_move).unwrap();
-        let pv = engine.get_pv_string();
-        engine.push(best_move);
-        if time_elapsed.as_secs_f64()
-            > *time_taken_vec
-                .iter()
-                .max_by(|&x, &y| x.partial_cmp(y).unwrap())
-                .unwrap_or(&0.0)
-        {
-            max_time_taken_fen = engine.board.get_fen();
-        }
-        time_taken_vec.push(time_elapsed.as_secs_f64());
-        prediction_score_vec.push(score);
-        let nps =
-            (engine.get_num_nodes_searched() as u128 * 10u128.pow(9)) / time_elapsed.as_nanos();
-        println!("\n{}\n", engine.board);
-        println_info("Best Move", best_move_san);
-        println_info("Score", score_to_string(score));
-        println_info("Num Nodes Searched", engine.get_num_nodes_searched());
-        println_info("PV Line", pv);
-        println_info("Time Taken", format!("{:.3} s", time_elapsed.as_secs_f64()));
-        println_info("Nodes per second", format!("{} nodes/s", nps));
-    }
-    let mean = time_taken_vec.iter().sum::<f64>() / time_taken_vec.len() as f64;
-    let std_err = (time_taken_vec
-        .iter()
-        .map(|x| (x - mean).powi(2))
-        .sum::<f64>()
-        / time_taken_vec.len() as f64)
-        .sqrt();
-    let max_time_taken = time_taken_vec
-        .iter()
-        .max_by(|a, b| a.partial_cmp(b).unwrap())
-        .unwrap_or(&f64::NAN);
-    let min_time_taken = time_taken_vec
-        .iter()
-        .min_by(|a, b| a.partial_cmp(b).unwrap())
-        .unwrap_or(&f64::NAN);
-    let max_abs_score = *prediction_score_vec.iter().max().unwrap_or(&0);
-    let min_abs_score = *prediction_score_vec.iter().min().unwrap_or(&0);
-    let prediction_score_rms = (prediction_score_vec
-        .iter()
-        .map(|&x| (x as f64).powi(2))
-        .sum::<f64>()
-        / prediction_score_vec.len() as f64)
-        .sqrt();
-    let prediction_accuracy = calculate_prediction_accuracy(prediction_score_rms);
-    println!(
-        "\n{}:\n\n{}",
-        colorize("Game PGN", INFO_STYLE),
-        engine.board.get_pgn(),
-    );
-    println!(
-        "\n{}:\n\n{:?}",
-        colorize("Time taken for all moves", INFO_STYLE),
-        time_taken_vec
-            .iter()
-            .map(|x| (x * 1000.0).round() / 1000.0)
-            .collect_vec(),
-    );
-    println!(
-        "\n{}:\n\n{:?}\n",
-        colorize("Pediction Scores", INFO_STYLE),
-        format!(
-            "{:?}",
-            prediction_score_vec
-                .iter()
-                .map(|&score| score_to_string(score))
-                .collect_vec()
-        )
-        .replace("\"", ""),
-    );
-    if let GoCommand::Depth(depth) = go_command {
-        println_info("Depth Searched", format!("{}", depth));
-    } else if let GoCommand::Movetime(time) = go_command {
-        println_info(
-            "Time Searched Per Move",
-            format!("{:.3}", time.as_secs_f64()),
-        );
-    }
-    println_info(
-        "Time taken per move",
-        format!("{:.3} \u{00B1} {:.3} s", mean, std_err),
-    );
-    println_info("Coefficient of Variation", format!("{:.3}", std_err / mean));
-    println_info(
-        "Prediction Score RMS",
-        format!("{:.3}", prediction_score_rms),
-    );
-    println_info(
-        "Prediction Accuracy",
-        format!("{:.1} %", prediction_accuracy),
-    );
-    println_info("Max time taken", format!("{:.3} s", max_time_taken));
-    println_info("Min time taken", format!("{:.3} s", min_time_taken));
-    println_info("Max time taken by fen", max_time_taken_fen);
-    println_info(
-        "Max prediction magnitude",
-        score_to_string_normal(max_abs_score),
-    );
-    println_info(
-        "Min prediction magnitude",
-        score_to_string_normal(min_abs_score),
-    );
-}
-
 pub fn parse_command(engine: &mut Engine, raw_input: &str) {
     Parser::parse_command(engine, raw_input)
         .unwrap_or_else(|err| panic!("{}", err.stringify(Some(raw_input))))
@@ -171,56 +38,56 @@ pub fn test() {
         "r1bqr1k1/p1p2pp1/1b5p/3n4/2Q1N3/5N1P/PPP2PP1/R1B2RK1 b - - 2 16", // Taking really long to best move at depth 12
     ];
 
-    let mut engine = Engine::default();
-    // engine.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96").unwrap();
-    // engine.set_fen("7K/8/8/8/3k4/8/8/R7 w - - 15 57").unwrap();
-    // engine.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1").unwrap(); // test endgame
-    // engine.set_fen("2kr1br1/p1pn1p2/2N1q2p/1PpQP3/5p1P/P6R/5PP1/2R3K1 w - - 2 30").unwrap(); // check for repetitions
-    // engine.board.push_sans("e4 e5"); // e4 opwning
-    // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
-    // engine.board.push_sans("d4 d5 c4"); // queens gambit
-    // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
-    // engine.board.push_sans("e4 c5"); // sicilian defense
-    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
-    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
-    // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7"); // traxer counter attack with Nxf7
-    // engine.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59").unwrap(); // endgame improvement 1
-    // engine.set_fen("8/7R/8/8/8/7K/k7/8 w - - 0 1").unwrap(); // endgame improvement 2
-    // engine.set_fen("8/2p5/2k5/8/2K5/8/8/7n b - - 16 8").unwrap(); // endgame improvement 2
-    engine.set_fen("k6B/8/8/8/8/8/8/K6N w - - 0 1").unwrap(); // knight bishop endgame
-    // engine.set_fen("k6N/8/8/8/8/8/8/K6N w - - 0 1").unwrap(); // 2 knights endgame
-    // engine.set_fen("k6N/8/8/8/4N3/8/8/K6N w - - 0 1").unwrap(); // 3 knights endgame
-    // engine.set_fen("8/8/8/8/8/8/6KP/3kr3 w - - 0 82").unwrap(); // endgame improvement 3
-    // engine.set_fen("4k3/R7/8/3KP3/8/6r1/8/8 b - - 0 1").unwrap(); // endgame improvement 3
-    // engine.set_fen("8/p7/2Q3pp/4Pk2/P7/2b5/Kp6/4r3 w - - 26 108").unwrap(); // perpetual check
-    // self_play(&mut engine, 16, false, 100);
-    self_play(&mut engine, GoCommand::Movetime(Duration::from_secs(3)), true, None);
-    // self_play(&mut engine, GoCommand::Depth(11), true, None);
+    // let mut engine = Engine::default();
+    // // engine.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96").unwrap();
+    // // engine.set_fen("7K/8/8/8/3k4/8/8/R7 w - - 15 57").unwrap();
+    // // engine.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1").unwrap(); // test endgame
+    // // engine.set_fen("2kr1br1/p1pn1p2/2N1q2p/1PpQP3/5p1P/P6R/5PP1/2R3K1 w - - 2 30").unwrap(); // check for repetitions
+    // // engine.board.push_sans("e4 e5"); // e4 opwning
+    // // engine.board.push_sans("e4 e6 d4 d5"); // caro cann defense
+    // // engine.board.push_sans("d4 d5 c4"); // queens gambit
+    // // engine.board.push_sans("d4 d5 c4 dxc4"); // queens gambit accepted
+    // // engine.board.push_sans("e4 c5"); // sicilian defense
+    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5"); // fried liver attack
+    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5"); // traxer counter attack
+    // // engine.board.push_sans("e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7"); // traxer counter attack with Nxf7
+    // // engine.set_fen("8/6k1/3r4/7p/7P/4R1P1/5P1K/8 w - - 3 59").unwrap(); // endgame improvement 1
+    // // engine.set_fen("8/7R/8/8/8/7K/k7/8 w - - 0 1").unwrap(); // endgame improvement 2
+    // // engine.set_fen("8/2p5/2k5/8/2K5/8/8/7n b - - 16 8").unwrap(); // endgame improvement 2
+    // engine.set_fen("k6B/8/8/8/8/8/8/K6N w - - 0 1").unwrap(); // knight bishop endgame
+    // // engine.set_fen("k6N/8/8/8/8/8/8/K6N w - - 0 1").unwrap(); // 2 knights endgame
+    // // engine.set_fen("k6N/8/8/8/4N3/8/8/K6N w - - 0 1").unwrap(); // 3 knights endgame
+    // // engine.set_fen("8/8/8/8/8/8/6KP/3kr3 w - - 0 82").unwrap(); // endgame improvement 3
+    // // engine.set_fen("4k3/R7/8/3KP3/8/6r1/8/8 b - - 0 1").unwrap(); // endgame improvement 3
+    // // engine.set_fen("8/p7/2Q3pp/4Pk2/P7/2b5/Kp6/4r3 w - - 26 108").unwrap(); // perpetual check
+    // // self_play(&mut engine, 16, false, 100);
+    // self_play(&mut engine, GoCommand::Movetime(Duration::from_secs(3)), true, None);
+    // // self_play(&mut engine, GoCommand::Depth(11), true, None);
 
     // println!("{}", Board::from_fen("8/8/8/8/7R/7K/k7/8 b - - 1 1").unwrap());
 
     // parse_command(&mut Engine::default(), "go perft 7");
 
-    // let mut engine = Engine::default();
-    // // engine.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88").unwrap(); // test if engine can find mate in 3
-    // // engine.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111").unwrap(); // test t_table -> nodes initially: 3203606
-    // // engine.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105").unwrap(); // gives incomplete pv line
-    // // engine.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1").unwrap(); // test endgame
-    // // engine.set_fen("4k2r/Q7/3b4/Q7/8/2N5/5PPP/5RK1 b - - 0 1").unwrap(); // test draw by repetition
-    // // engine.set_fen(time_consuming_fens[7]).unwrap();
-    // // engine.set_fen(could_have_probably_played_better_move[2]).unwrap();
-    // // engine.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54").unwrap(); // incomplete pv line in 3 secs in my pc
-    // // engine.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47").unwrap(); // weird results in 3 secs in my pc
-    // // engine.set_fen("8/3k2P1/1p2Q3/3P4/4p3/2P1P3/6K1/q7 b - - 1 56").unwrap(); // weird mating results in 3 secs in my pc
-    // // engine.set_fen("8/R1pk3p/8/4B2p/p1r5/8/6PK/8 w - - 0 41").unwrap(); // weird mating results in 3 secs in my pc
-    // // engine.set_fen(could_have_probably_played_better_move[6]).unwrap();
-    // // engine.board.push_sans("Qc6+ Kf2 Ra8 Rd1+ Ke8 Rc1 Qe4 Rxc7 Rxa7").unwrap();
-    // // engine.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170").unwrap();
-    // // engine.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24").unwrap();
-    // // engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170").unwrap(); // check for saving mate score
-    // // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12").unwrap(); // weird results in 3 secs in my pc
-    // // parse_command(&mut engine, "go time 3000");
-    // parse_command(&mut engine, "go depth 13");
+    let mut engine = Engine::default();
+    // engine.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88").unwrap(); // test if engine can find mate in 3
+    // engine.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111").unwrap(); // test t_table -> nodes initially: 3203606
+    // engine.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105").unwrap(); // gives incomplete pv line
+    // engine.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1").unwrap(); // test endgame
+    // engine.set_fen("4k2r/Q7/3b4/Q7/8/2N5/5PPP/5RK1 b - - 0 1").unwrap(); // test draw by repetition
+    // engine.set_fen(time_consuming_fens[7]).unwrap();
+    // engine.set_fen(could_have_probably_played_better_move[2]).unwrap();
+    // engine.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54").unwrap(); // incomplete pv line in 3 secs in my pc
+    // engine.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47").unwrap(); // weird results in 3 secs in my pc
+    // engine.set_fen("8/3k2P1/1p2Q3/3P4/4p3/2P1P3/6K1/q7 b - - 1 56").unwrap(); // weird mating results in 3 secs in my pc
+    // engine.set_fen("8/R1pk3p/8/4B2p/p1r5/8/6PK/8 w - - 0 41").unwrap(); // weird mating results in 3 secs in my pc
+    // engine.set_fen(could_have_probably_played_better_move[6]).unwrap();
+    // engine.board.push_sans("Qc6+ Kf2 Ra8 Rd1+ Ke8 Rc1 Qe4 Rxc7 Rxa7").unwrap();
+    // engine.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170").unwrap();
+    // engine.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24").unwrap();
+    // engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170").unwrap(); // check for saving mate score
+    // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12").unwrap(); // weird results in 3 secs in my pc
+    // parse_command(&mut engine, "go time 3000");
+    parse_command(&mut engine, "go depth 13");
 
     // let mut board = Board::new();
     // println!("\n{board}");

@@ -7,15 +7,19 @@ pub struct Evaluator {
 }
 
 impl Evaluator {
-    pub fn new() -> Self {
-        let (size, entry_size) = CacheTableSize::Max(20).to_cache_table_and_entry_size::<Score>();
-        println_info(
-            "Evaluator Cache size",
-            format!("{} MB", size * entry_size / 2_usize.pow(20)),
-        );
+    pub fn new(print: bool) -> Self {
+        if print {
+            println_info(
+                "Evaluator Cache size",
+                format!(
+                    "{} MB",
+                    EVALUATOR_SIZE.to_cache_table_memory_size::<Score>()
+                ),
+            );
+        }
         Self {
             stockfish_network: StockfishNetwork::new(),
-            cache: CacheTable::new(size, 0),
+            cache: CacheTable::new(EVALUATOR_SIZE.to_cache_table_size::<Score>(), 0),
         }
     }
 
@@ -199,10 +203,14 @@ impl Evaluator {
     pub fn evaluate_flipped(&mut self, board: &Board) -> Score {
         board.score_flipped(self.evaluate(board))
     }
+
+    pub fn reset_variables(&mut self) {
+        self.cache.reset_variables();
+    }
 }
 
 impl Default for Evaluator {
     fn default() -> Self {
-        Self::new()
+        Self::new(true)
     }
 }

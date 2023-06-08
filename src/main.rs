@@ -10,7 +10,7 @@ mod tests;
 
 use std::io::IsTerminal;
 use tests::test;
-pub use timecat::*;
+use timecat::*;
 
 fn main() {
     let clock = Instant::now();
@@ -28,10 +28,12 @@ fn main() {
     if args.contains(&"--test") {
         test();
     } else if args.contains(&"-c") || args.contains(&"--command") {
-        let index = args.iter().position(|&s| s == "-c").unwrap_or(0)
-            + args.iter().position(|&s| s == "--command").unwrap_or(0)
-            + 1;
-        let command = args[index..].join(" ");
+        let command = args
+            .iter()
+            .skip_while(|&arg| !["-c", "--command"].contains(arg))
+            .skip(1)
+            .take_while(|&&arg| !arg.starts_with("--"))
+            .join(" ");
         let mut engine = Engine::default();
         println!();
         if let Err(err) = Parser::parse_command(&mut engine, &command) {
