@@ -187,8 +187,8 @@ impl MoveSorter {
         if board.is_capture(move_) {
             return 126000000 + Self::score_capture(move_, None, board);
         }
-        for (idx, &option_move) in self.killer_moves[ply].iter().enumerate() {
-            if option_move == Some(move_) {
+        for (idx, &optional_move) in self.killer_moves[ply].iter().enumerate() {
+            if optional_move == Some(move_) {
                 return 125000000 - idx as MoveWeight;
             }
         }
@@ -262,6 +262,11 @@ impl MoveSorter {
                     self.score_pv = true;
                 }
             }
+        }
+        if moves_vec.len() < 2 {
+            return WeightedMoveListSorter::from_iter(
+                moves_vec.iter().map(|&move_| WeightedMove::new(move_, 0)),
+            );
         }
         WeightedMoveListSorter::from_iter(moves_vec.into_iter().enumerate().map(|(idx, m)| {
             WeightedMove::new(

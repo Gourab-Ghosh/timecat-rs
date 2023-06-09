@@ -26,7 +26,7 @@ fn main() {
         set_colored_output(false, false);
     }
     if args.contains(&"--test") {
-        test();
+        test().unwrap();
     } else if args.contains(&"-c") || args.contains(&"--command") {
         let command = args
             .iter()

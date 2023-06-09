@@ -165,6 +165,109 @@ pub mod square_utils {
     }
 }
 
+pub mod engine_error {
+    use super::*;
+    use EngineError::*;
+
+    #[derive(Clone, Debug, Fail)]
+    pub enum EngineError {
+        #[fail(display = "")]
+        UnknownCommand,
+
+        #[fail(display = "Sorry, this command is not implemented yet :(")]
+        NotImplemented,
+
+        #[fail(display = "Bad FEN string: {}! Try Again!", fen)]
+        BadFen { fen: String },
+
+        #[fail(display = "Invalid depth {}! Try again!", depth)]
+        InvalidDepth { depth: String },
+
+        #[fail(
+            display = "Illegal move {} in position {}! Try again!",
+            move_text, board_fen
+        )]
+        IllegalMove {
+            move_text: String,
+            board_fen: String,
+        },
+
+        #[fail(display = "Colored output already set to {}! Try again!", b)]
+        ColoredOutputUnchanged { b: String },
+
+        #[fail(display = "UCI mode already set to {}! Try again!", b)]
+        UCIModeUnchanged { b: String },
+
+        #[fail(display = "Move Stack is enpty, pop not possible! Try again!")]
+        EmptyStack,
+
+        #[fail(display = "Best move not found in position {}! Try again!", fen)]
+        BestMoveNotFound { fen: String },
+
+        #[fail(
+            display = "Cannot apply null move in position {}, as king is in check! Try again!",
+            fen
+        )]
+        NullMoveInCheck { fen: String },
+
+        #[fail(display = "You didn't mention wtime! Try again!")]
+        WTimeNotMentioned,
+
+        #[fail(display = "You didn't mention btime! Try again!")]
+        BTimeNotMentioned,
+
+        #[fail(display = "Game is already over! Please start a game from another position!")]
+        GameAlreadyOver,
+
+        #[fail(display = "{}", err_msg)]
+        CustomError { err_msg: String },
+    }
+
+    impl EngineError {
+        pub fn stringify(&self, raw_input_option: Option<&str>) -> String {
+            match self {
+                Self::UnknownCommand => match raw_input_option {
+                    Some(raw_input) => {
+                        format!("Unknown command: {}\nPlease try again!", raw_input.trim())
+                    }
+                    None => String::from("Unknown command!\nPlease try again!"),
+                },
+                other_err => format!("{}", other_err),
+            }
+        }
+    }
+
+    impl From<&Self> for EngineError {
+        fn from(error: &Self) -> Self {
+            error.clone()
+        }
+    }
+
+    impl From<ParseBoolError> for EngineError {
+        fn from(error: ParseBoolError) -> Self {
+            CustomError {
+                err_msg: format!("Failed to parse bool, {}! Try again!", error),
+            }
+        }
+    }
+
+    impl From<ParseIntError> for EngineError {
+        fn from(error: ParseIntError) -> Self {
+            CustomError {
+                err_msg: format!("Failed to parse integer, {}! Try again!", error),
+            }
+        }
+    }
+
+    impl From<chess::Error> for EngineError {
+        fn from(error: chess::Error) -> Self {
+            CustomError {
+                err_msg: format!("{}! Try again!", error),
+            }
+        }
+    }
+}
+
 pub mod bitboard_utils {
     use super::*;
 

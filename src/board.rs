@@ -633,13 +633,13 @@ impl Board {
         }
     }
 
-    pub fn push(&mut self, option_move: impl Into<Option<Move>>) {
-        let option_move = option_move.into();
+    pub fn push(&mut self, optional_move: impl Into<Option<Move>>) {
+        let optional_move = optional_move.into();
         let board_state = self.get_board_state();
         if self.turn() == Black {
             self.fullmove_number += 1;
         }
-        if let Some(move_) = option_move {
+        if let Some(move_) = optional_move {
             if self.is_zeroing(move_) {
                 self.halfmove_clock = 0;
             } else {
@@ -658,7 +658,7 @@ impl Board {
             .en_passant()
             .map(|ep_square| ep_square.forward(self.turn()).unwrap());
         self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
-        self.stack.push((board_state, option_move));
+        self.stack.push((board_state, optional_move));
     }
 
     fn restore(&mut self, board_state: BoardState) {
@@ -670,10 +670,10 @@ impl Board {
     }
 
     pub fn pop(&mut self) -> Option<Move> {
-        let (board_state, option_move) = self.stack.pop().unwrap();
+        let (board_state, optional_move) = self.stack.pop().unwrap();
         self.repetition_table.remove(self.hash());
         self.restore(board_state);
-        option_move
+        optional_move
     }
 
     pub fn get_last_move(&self) -> Option<Move> {
@@ -752,15 +752,15 @@ impl Board {
 
     fn algebraic_without_suffix(
         &self,
-        option_move: Option<Move>,
+        optional_move: Option<Move>,
         long: bool,
     ) -> Result<String, BoardError> {
         // Null move.
-        if option_move.is_none() {
+        if optional_move.is_none() {
             return Ok("--".to_string());
         }
 
-        let move_ = option_move.unwrap();
+        let move_ = optional_move.unwrap();
 
         // Castling.
         if self.is_castling(move_) {
@@ -854,21 +854,21 @@ impl Board {
 
     pub fn algebraic_and_push(
         &mut self,
-        option_move: impl Into<Option<Move>>,
+        optional_move: impl Into<Option<Move>>,
         long: bool,
     ) -> Result<String, BoardError> {
-        let option_move = option_move.into();
-        let san = self.algebraic_without_suffix(option_move, long)?;
+        let optional_move = optional_move.into();
+        let san = self.algebraic_without_suffix(optional_move, long)?;
 
         // Look ahead for check or checkmate.
-        self.push(option_move);
+        self.push(optional_move);
         let is_check = self.is_check();
         let is_checkmate = is_check && self.is_checkmate();
 
         // Add check or checkmate suffix.
-        if is_checkmate && option_move.is_some() {
+        if is_checkmate && optional_move.is_some() {
             Ok(san + "#")
-        } else if is_check && option_move.is_some() {
+        } else if is_check && optional_move.is_some() {
             Ok(san + "+")
         } else {
             Ok(san)
@@ -876,19 +876,19 @@ impl Board {
     }
 
     #[inline(always)]
-    fn algebraic(&self, option_move: Option<Move>, long: bool) -> Result<String, BoardError> {
-        self.clone().algebraic_and_push(option_move, long)
+    fn algebraic(&self, optional_move: Option<Move>, long: bool) -> Result<String, BoardError> {
+        self.clone().algebraic_and_push(optional_move, long)
     }
 
     /// Gets the standard algebraic notation of the given move in the context
     /// of the current position.
     #[inline(always)]
-    pub fn san(&self, option_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
-        self.algebraic(option_move.into(), false)
+    pub fn san(&self, optional_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
+        self.algebraic(optional_move.into(), false)
     }
 
-    pub fn uci(option_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
-        if let Some(move_) = option_move.into() {
+    pub fn uci(optional_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
+        if let Some(move_) = optional_move.into() {
             Ok(move_.to_string())
         } else {
             Ok("0000".to_string())
@@ -897,37 +897,37 @@ impl Board {
 
     pub fn stringify_move(
         &self,
-        option_move: impl Into<Option<Move>>,
+        optional_move: impl Into<Option<Move>>,
     ) -> Result<String, BoardError> {
-        let option_move = option_move.into();
+        let optional_move = optional_move.into();
         if is_in_uci_mode() {
-            Self::uci(option_move)
+            Self::uci(optional_move)
         } else {
-            self.san(option_move)
+            self.san(optional_move)
         }
     }
 
     #[inline(always)]
     pub fn san_and_push(
         &mut self,
-        option_move: impl Into<Option<Move>>,
+        optional_move: impl Into<Option<Move>>,
     ) -> Result<String, BoardError> {
-        self.algebraic_and_push(option_move.into(), false)
+        self.algebraic_and_push(optional_move.into(), false)
     }
 
     /// Gets the long algebraic notation of the given move in the context of
     /// the current position.
     #[inline(always)]
-    pub fn lan(&self, option_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
-        self.algebraic(option_move.into(), true)
+    pub fn lan(&self, optional_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
+        self.algebraic(optional_move.into(), true)
     }
 
     #[inline(always)]
     pub fn lan_and_push(
         &mut self,
-        option_move: impl Into<Option<Move>>,
+        optional_move: impl Into<Option<Move>>,
     ) -> Result<String, BoardError> {
-        self.algebraic_and_push(option_move.into(), true)
+        self.algebraic_and_push(optional_move.into(), true)
     }
 
     /// Given a sequence of moves, returns a string representing the sequence
@@ -940,21 +940,21 @@ impl Board {
     fn variation_san(&self, board: &Board, variation: Vec<Option<Move>>) -> String {
         let mut board = board.clone();
         let mut san = Vec::new();
-        for option_move in variation {
-            if let Some(move_) = option_move {
+        for optional_move in variation {
+            if let Some(move_) = optional_move {
                 if !board.is_legal(move_) {
                     panic!("illegal move {move_} in position {}", board.get_fen());
                 }
             }
 
             if board.turn() == White {
-                let san_str = board.san_and_push(option_move);
+                let san_str = board.san_and_push(optional_move);
                 san.push(format!("{}. {}", board.fullmove_number, san_str.unwrap()));
             } else if san.is_empty() {
-                let san_str = board.san_and_push(option_move);
+                let san_str = board.san_and_push(optional_move);
                 san.push(format!("{}...{}", board.fullmove_number, san_str.unwrap()));
             } else {
-                san.push(board.san_and_push(option_move).unwrap().to_string());
+                san.push(board.san_and_push(optional_move).unwrap().to_string());
             }
         }
         let mut san_string = String::new();
@@ -976,7 +976,7 @@ impl Board {
         }
         pgn += &self.variation_san(
             &Self::from_fen(&self.starting_fen).unwrap(),
-            Vec::from_iter(self.stack.clone().into_iter().map(|(_, option_m)| option_m)),
+            Vec::from_iter(self.stack.clone().into_iter().map(|(_, optional_m)| optional_m)),
         );
         pgn
     }

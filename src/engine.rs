@@ -4,8 +4,19 @@ use EntryFlag::*;
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum GoCommand {
     Infinite,
-    Movetime(Duration),
+    MoveTime(Duration),
     Depth(Depth),
+    // Nodes(usize),
+    // Mate(usize),
+    // Ponder,
+    // SearchMoves(Vec<Move>),
+    Timed {
+        wtime: Duration,
+        btime: Duration,
+        winc: Duration,
+        binc: Duration,
+        movestogo: Option<u32>,
+    },
 }
 
 impl GoCommand {
@@ -14,11 +25,15 @@ impl GoCommand {
     }
 
     pub fn is_movetime(&self) -> bool {
-        matches!(self, Self::Movetime(_))
+        matches!(self, Self::MoveTime(_))
     }
 
     pub fn is_depth(&self) -> bool {
         matches!(self, Self::Depth(_))
+    }
+
+    pub fn is_timed(&self) -> bool {
+        matches!(self, Self::Timed { .. })
     }
 }
 
@@ -107,11 +122,11 @@ impl Engine {
         );
     }
 
-    pub fn push(&mut self, option_move: impl Into<Option<Move>>) {
-        // if let Some(move_) = option_move {
+    pub fn push(&mut self, optional_move: impl Into<Option<Move>>) {
+        // if let Some(move_) = optional_move {
         //     self.push_nnue(move_);
         // }
-        self.board.push(option_move);
+        self.board.push(optional_move);
         self.ply += 1;
     }
 
@@ -121,12 +136,12 @@ impl Engine {
 
     #[allow(clippy::let_and_return)]
     pub fn pop(&mut self) -> Option<Move> {
-        let option_move = self.board.pop();
+        let optional_move = self.board.pop();
         self.ply -= 1;
-        // if let Some(move_) = option_move {
+        // if let Some(move_) = optional_move {
         //     self.pop_nnue();
         // }
-        option_move
+        optional_move
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
@@ -207,13 +222,13 @@ impl Engine {
                 self.pv_table[0][self.ply],
                 Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
             )
-            .map(|wm| {
+            .map(|WeightedMove { move_, .. }| {
                 (
-                    wm.move_,
+                    move_,
                     MoveSorter::score_root_moves(
                         &mut self.board,
                         &mut self.evaluator,
-                        wm.move_,
+                        move_,
                         self.pv_table[0][0],
                     ),
                 )
@@ -231,7 +246,8 @@ impl Engine {
         print_move_info: bool,
     ) -> Option<Score> {
         self.selective_depth = 0;
-        if self.timer.stop_search() || self.timer.check_stop() {
+        let enable_timer = depth > 1;
+        if self.timer.check_stop(enable_timer) {
             return None;
         }
         if self.board.is_game_over() {
@@ -254,12 +270,14 @@ impl Engine {
             }
             let clock = Instant::now();
             self.push(move_);
-            if move_index == 0 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha)? > alpha {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha)?;
+            if move_index == 0
+                || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, enable_timer)? > alpha
+            {
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, enable_timer)?;
                 max_score = max_score.max(score);
             }
             self.pop();
-            if self.timer.stop_search() {
+            if self.timer.check_stop(enable_timer) {
                 break;
             }
             if print_move_info {
@@ -281,7 +299,7 @@ impl Engine {
                 }
             }
         }
-        if !self.timer.stop_search() {
+        if !self.timer.check_stop(enable_timer) {
             self.transposition_table.write(
                 key,
                 depth,
@@ -305,7 +323,13 @@ impl Engine {
         reduction.round() as Depth
     }
 
-    fn alpha_beta(&mut self, mut depth: Depth, mut alpha: Score, mut beta: Score) -> Option<Score> {
+    fn alpha_beta(
+        &mut self,
+        mut depth: Depth,
+        mut alpha: Score,
+        mut beta: Score,
+        mut enable_timer: bool,
+    ) -> Option<Score> {
         if self.ply == MAX_PLY - 1 {
             return Some(self.evaluate_flipped());
         }
@@ -313,16 +337,11 @@ impl Engine {
         if self.board.is_other_draw() {
             return Some(0);
         }
-        if self.timer.stop_search() || self.timer.check_stop() {
+        enable_timer &= depth > 3;
+        if self.timer.check_stop(enable_timer) {
             return None;
         }
         let checkers = self.board.get_checkers();
-        let not_in_check = checkers == BB_EMPTY;
-        let mate_score = CHECKMATE_SCORE - self.ply as Score;
-        let moves_gen = self.board.generate_legal_moves();
-        if moves_gen.len() == 0 {
-            return Some(if not_in_check { 0 } else { -mate_score });
-        }
         depth = (depth + checkers.popcnt() as Depth).max(0);
         let is_pv_node = alpha != beta - 1;
         let key = self.board.hash();
@@ -334,6 +353,7 @@ impl Engine {
                 (None, best_move) => best_move,
             }
         };
+        let mate_score = CHECKMATE_SCORE - self.ply as Score;
         // mate distance pruning
         alpha = alpha.max(-mate_score);
         beta = beta.min(mate_score - 1);
@@ -341,14 +361,15 @@ impl Engine {
             return Some(alpha);
         }
         if depth == 0 {
-            return self.quiescence(alpha, beta);
+            return Some(self.quiescence(alpha, beta));
         }
         // let is_endgame = self.board.is_endgame();
         self.num_nodes_searched += 1;
+        let not_in_check = checkers == BB_EMPTY;
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
             let static_evaluation = self.evaluate_flipped();
-            if depth < 3 && !is_pv_node && beta.abs_diff(1) as Score > -INFINITY + PAWN_VALUE {
+            if depth < 3 && !is_pv_node && !is_checkmate(beta) {
                 let eval_margin = ((6 * PAWN_VALUE) / 5) * depth as Score;
                 let new_score = static_evaluation - eval_margin;
                 if new_score >= beta {
@@ -365,9 +386,9 @@ impl Engine {
                         .round() as Depth;
                 if depth > r {
                     self.push(None);
-                    let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1)?;
+                    let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1, enable_timer)?;
                     self.pop();
-                    if self.timer.stop_search() {
+                    if self.timer.check_stop(enable_timer) {
                         return None;
                     }
                     if score >= beta {
@@ -381,12 +402,12 @@ impl Engine {
                 let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
                 if score < beta {
                     if depth == 1 {
-                        let new_score = self.quiescence(alpha, beta)?;
+                        let new_score = self.quiescence(alpha, beta);
                         return Some(new_score.max(score));
                     }
                     score += (7 * PAWN_VALUE) / 4;
                     if score < beta && depth < d {
-                        let new_score = self.quiescence(alpha, beta)?;
+                        let new_score = self.quiescence(alpha, beta);
                         if new_score < beta {
                             return Some(new_score.max(score));
                         }
@@ -395,6 +416,7 @@ impl Engine {
             }
         }
         let mut flag = HashAlpha;
+        let moves_gen = self.board.generate_legal_moves();
         let weighted_moves = self.move_sorter.get_weighted_moves_sorted(
             moves_gen,
             &self.board,
@@ -403,8 +425,8 @@ impl Engine {
             self.pv_table[0][self.ply],
             Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
         );
-        for (move_index, weighted_move) in weighted_moves.enumerate() {
-            let move_ = weighted_move.move_;
+        let mut move_index = 0;
+        for WeightedMove { move_, .. } in weighted_moves {
             let not_capture_move = !self.board.is_capture(move_);
             let mut safe_to_apply_lmr = move_index >= FULL_DEPTH_SEARCH_LMR
                 && depth >= REDUCTION_LIMIT_LMR
@@ -418,12 +440,17 @@ impl Engine {
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha)?;
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, enable_timer)?;
             } else {
                 if safe_to_apply_lmr {
                     let lmr_reduction = Self::get_lmr_reduction(depth, move_index, is_pv_node);
                     score = if depth > lmr_reduction {
-                        -self.alpha_beta(depth - 1 - lmr_reduction, -alpha - 1, -alpha)?
+                        -self.alpha_beta(
+                            depth - 1 - lmr_reduction,
+                            -alpha - 1,
+                            -alpha,
+                            enable_timer,
+                        )?
                     } else {
                         alpha + 1
                     }
@@ -431,14 +458,14 @@ impl Engine {
                     score = alpha + 1;
                 }
                 if score > alpha {
-                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha)?;
+                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha, enable_timer)?;
                     if score > alpha && score < beta {
-                        score = -self.alpha_beta(depth - 1, -beta, -alpha)?;
+                        score = -self.alpha_beta(depth - 1, -beta, -alpha, enable_timer)?;
                     }
                 }
             }
             self.pop();
-            if self.timer.stop_search() {
+            if self.timer.check_stop(enable_timer) {
                 return None;
             }
             if score > alpha {
@@ -457,8 +484,12 @@ impl Engine {
                     return Some(beta);
                 }
             }
+            move_index += 1;
         }
-        if !self.timer.stop_search() {
+        if move_index == 0 {
+            return Some(if not_in_check { 0 } else { -mate_score });
+        }
+        if !self.timer.check_stop(false) {
             self.transposition_table.write(
                 key,
                 depth,
@@ -471,56 +502,50 @@ impl Engine {
         Some(alpha)
     }
 
-    fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Option<Score> {
+    fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {
         if self.ply == MAX_PLY - 1 {
-            return Some(self.evaluate_flipped());
+            return self.evaluate_flipped();
         }
         self.pv_length[self.ply] = self.ply;
         if self.board.is_other_draw() {
-            return Some(0);
+            return 0;
         }
         self.selective_depth = self.ply.max(self.selective_depth);
-        if self.timer.stop_search() || self.timer.check_stop() {
-            return None;
-        }
         self.num_nodes_searched += 1;
         let evaluation = self.evaluate_flipped();
         if evaluation >= beta {
-            return Some(beta);
+            return beta;
         }
         if evaluation > alpha {
             alpha = evaluation;
         }
         let key = self.board.hash();
-        for weighted_move in self.move_sorter.get_weighted_capture_moves_sorted(
+        for WeightedMove { move_, weight } in self.move_sorter.get_weighted_capture_moves_sorted(
             self.board.generate_legal_captures(),
             self.transposition_table.read_best_move(key),
             &self.board,
         ) {
-            if weighted_move.weight.is_negative() {
+            if weight.is_negative() {
                 break;
             }
-            self.push(Some(weighted_move.move_));
-            let score = -self.quiescence(-beta, -alpha)?;
+            self.push(Some(move_));
+            let score = -self.quiescence(-beta, -alpha);
             self.pop();
-            if self.timer.stop_search() {
-                return None;
-            }
             if score > alpha {
-                self.update_pv_table(weighted_move.move_);
+                self.update_pv_table(move_);
                 alpha = score;
                 if score >= beta {
-                    return Some(beta);
+                    return beta;
                 }
             }
         }
-        Some(alpha)
+        alpha
     }
 
     fn get_pv(&self, ply: Ply) -> Vec<Move> {
         self.pv_table[ply][0..self.pv_length[ply]]
             .iter()
-            .map(|option_move| option_move.unwrap_or_default())
+            .map(|optional_move| optional_move.unwrap_or_default())
             .collect_vec()
     }
 
@@ -566,8 +591,12 @@ impl Engine {
         self.num_nodes_searched
     }
 
-    pub fn get_pv_move(&self) -> Option<Move> {
+    pub fn get_best_move(&self) -> Option<Move> {
         self.pv_table[0][0]
+    }
+
+    pub fn get_ponder_move(&self) -> Option<Move> {
+        self.pv_table[0][1]
     }
 
     pub fn print_warning_message(
@@ -591,7 +620,7 @@ impl Engine {
     pub fn print_search_info(&self, current_depth: Depth, score: Score, time_elapsed: Duration) {
         let style = SUCCESS_MESSAGE_STYLE;
         println!(
-            "{} {} {} {} {} {} {} {} {} {} {} {:.1} {} {} {} {:.3} {} {}",
+            "{} {} {} {} {} {} {} {} {} {} {} {:.2} {} {} {} {:.3} {} {}",
             colorize("info depth", style),
             current_depth,
             colorize("seldepth", style),
@@ -613,10 +642,13 @@ impl Engine {
         );
     }
 
-    pub fn go(&mut self, command: GoCommand, print_info: bool) -> (Option<Move>, Score) {
+    pub fn go(&mut self, mut command: GoCommand, print_info: bool) -> (Option<Move>, Score) {
         self.reset_variables();
         self.timer.start_communication_check();
-        if let GoCommand::Movetime(duration) = command {
+        if command.is_timed() {
+            command = self.parse_timed_command(command);
+        }
+        if let GoCommand::MoveTime(duration) = command {
             self.timer.set_max_time(duration);
         }
         let mut alpha = -INFINITY;
@@ -646,7 +678,7 @@ impl Engine {
                     time_elapsed,
                 );
             }
-            if self.timer.stop_search() {
+            if self.timer.check_stop(true) {
                 break;
             }
             if score <= alpha || score >= beta {
@@ -662,45 +694,48 @@ impl Engine {
                 beta = INFINITY;
                 continue;
             }
-            alpha = score - ASPIRATION_WINDOW_CUTOFF;
-            beta = score + ASPIRATION_WINDOW_CUTOFF;
+            let cutoff = if is_checkmate(score) {
+                10
+            } else {
+                ASPIRATION_WINDOW_CUTOFF
+            };
+            alpha = score - cutoff;
+            beta = score + cutoff;
             if command == GoCommand::Depth(current_depth) {
                 break;
             }
             current_depth += 1;
         }
         self.timer.stop_communication_check();
-        (self.get_pv_move(), self.board.score_flipped(score))
+        (self.get_best_move(), self.board.score_flipped(score))
     }
 
-    pub fn get_movetime(
-        &self,
-        wtime: Option<Duration>,
-        btime: Option<Duration>,
-        winc: Option<Duration>,
-        binc: Option<Duration>,
-        movestogo: Option<u32>,
-    ) -> Option<Duration> {
-        let (time, inc) = match self.board.turn() {
-            White => (wtime, winc),
-            Black => (btime, binc),
-        };
-        let divider = movestogo.unwrap_or(30);
-        let search_time = match (time, inc) {
-            (Some(time), Some(inc)) => {
-                time / divider
-                    + inc
-                        .checked_sub(Duration::from_millis(500))
-                        .unwrap_or(Duration::from_millis(1))
-            }
-            (Some(time), None) => time / divider,
-            _ => return None,
+    pub fn parse_timed_command(&self, command: GoCommand) -> GoCommand {
+        if let GoCommand::Timed {
+            wtime,
+            btime,
+            winc,
+            binc,
+            movestogo,
+        } = command
+        {
+            let (time, inc) = match self.board.turn() {
+                White => (wtime, winc),
+                Black => (btime, binc),
+            };
+            let divider = movestogo.unwrap_or(30);
+            let new_inc = inc
+                .checked_sub(Duration::from_millis(500))
+                .unwrap_or(Duration::from_millis(0));
+            let search_time = (time / divider + new_inc)
+                .checked_sub(Duration::from_millis(100))
+                .unwrap_or(Duration::from_millis(0));
+            // let multiplier = match_interpolate!(0.5, 1, 32, 2, self.board.get_num_pieces());
+            // let search_time = Duration::from_secs_f64(search_time.as_secs_f64() * multiplier);
+            GoCommand::MoveTime(search_time)
+        } else {
+            panic!("Expected Timed Command!")
         }
-        .checked_sub(Duration::from_millis(100))
-        .unwrap_or(Duration::from_millis(1));
-        // let multiplier = match_interpolate!(0.5, 1, 32, 2, self.board.get_num_pieces());
-        // let search_time = Duration::from_secs_f64(search_time.as_secs_f64() * multiplier);
-        Some(search_time)
     }
 }
 

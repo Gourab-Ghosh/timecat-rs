@@ -61,10 +61,6 @@ impl Timer {
         self.max_time
     }
 
-    pub fn stop_search(&self) -> bool {
-        self.stop_search
-    }
-
     pub fn is_time_up(&mut self) -> bool {
         if let Some(max_time) = self.max_time {
             self.stop_search = self.elapsed() >= max_time;
@@ -97,7 +93,13 @@ impl Timer {
         false
     }
 
-    pub fn check_stop(&mut self) -> bool {
+    pub fn check_stop(&mut self, enable_timer: bool) -> bool {
+        if !enable_timer {
+            return false;
+        }
+        if self.stop_search {
+            return true;
+        }
         self.is_time_up() || self.check_communication()
     }
 }

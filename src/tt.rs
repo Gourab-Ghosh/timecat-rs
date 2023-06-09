@@ -157,7 +157,7 @@ impl Default for TranspositionTableData {
 
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
 pub struct TranspositionTableEntry {
-    option_data: Option<TranspositionTableData>,
+    optional_data: Option<TranspositionTableData>,
     best_move: Option<Move>,
 }
 
@@ -172,6 +172,13 @@ impl TranspositionTable {
             format!(
                 "{} MB",
                 cache_table_size.to_cache_table_memory_size::<TranspositionTableEntry>()
+            ),
+        );
+        println_info(
+            "Transposition Table Cells Count",
+            format!(
+                "{} MB",
+                cache_table_size.to_cache_table_size::<TranspositionTableEntry>()
             ),
         );
         CacheTable::new(
@@ -198,10 +205,10 @@ impl TranspositionTable {
             None => return (None, None),
         };
         let best_move = tt_entry.best_move;
-        if DISABLE_T_TABLE || tt_entry.option_data.is_none() {
+        if DISABLE_T_TABLE || tt_entry.optional_data.is_none() {
             return (None, best_move);
         }
-        let data = tt_entry.option_data.unwrap();
+        let data = tt_entry.optional_data.unwrap();
         if data.depth < depth {
             return (None, best_move);
         }
@@ -239,16 +246,18 @@ impl TranspositionTable {
         best_move: impl Into<Option<Move>>,
     ) {
         // if is_checkmate(score) {
-        //     score += score.signum() * ply as Score;
+        //     let mate_ply = CHECKMATE_SCORE.abs_diff(score.abs()).abs_diff(ply.try_into().unwrap()) as Score;
+        //     let mate_score = CHECKMATE_SCORE - mate_ply;
+        //     score = if score.is_positive() { mate_score } else { -mate_score };
         // }
         // let save_score = !DISABLE_T_TABLE;
-        let save_score = !DISABLE_T_TABLE && !is_checkmate(score);
-        let option_data = if save_score {
-            let old_option_data = self.table.get(key).and_then(|entry| entry.option_data);
-            if old_option_data.map(|data| data.depth).unwrap_or(-1) < depth {
+        let save_score = !DISABLE_T_TABLE || !is_checkmate(score);
+        let optional_data = if save_score {
+            let old_optional_data = self.table.get(key).and_then(|entry| entry.optional_data);
+            if old_optional_data.map(|data| data.depth).unwrap_or(-1) < depth {
                 Some(TranspositionTableData { depth, score, flag })
             } else {
-                old_option_data
+                old_optional_data
             }
         } else {
             None
@@ -256,7 +265,7 @@ impl TranspositionTable {
         self.table.add(
             key,
             TranspositionTableEntry {
-                option_data,
+                optional_data,
                 best_move: best_move.into(),
             },
         );

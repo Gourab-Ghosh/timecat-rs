@@ -16,6 +16,13 @@ impl Evaluator {
                     EVALUATOR_SIZE.to_cache_table_memory_size::<Score>()
                 ),
             );
+            println_info(
+                "Evaluator Cells Count",
+                format!(
+                    "{} MB",
+                    EVALUATOR_SIZE.to_cache_table_size::<TranspositionTableEntry>()
+                ),
+            );
         }
         Self {
             stockfish_network: StockfishNetwork::new(),
@@ -75,19 +82,24 @@ impl Evaluator {
         }
         let king_distance_score =
             7 - square_distance(winning_side_king_square, losing_side_king_square) as Score;
-        let losing_king_rank_distance_score = 15
+        let losing_king_rank_distance_score = 10
             - losing_side_king_square
                 .get_rank()
                 .to_index()
                 .abs_diff(least_distant_corner.get_rank().to_index()) as Score;
-        let losing_king_file_distance_score = 15
+        let losing_king_file_distance_score = 10
             - losing_side_king_square
                 .get_file()
                 .to_index()
                 .abs_diff(least_distant_corner.get_file().to_index()) as Score;
         let losing_king_corner_score =
             losing_king_rank_distance_score.pow(2) + losing_king_file_distance_score.pow(2);
-        king_distance_score + losing_king_corner_score
+        let losing_king_opponent_pieces_score = board
+            .occupied_co(winning_side)
+            .map(|square| 7 - square_distance(square, losing_side_king_square))
+            .sum::<u8>() as Score;
+        10 * (king_distance_score + 2 * losing_king_corner_score)
+            + losing_king_opponent_pieces_score
     }
 
     fn force_passed_pawn_push(&self, board: &Board) -> Score {
@@ -105,7 +117,7 @@ impl Evaluator {
         let signum = material_score.signum();
         let king_forcing_score =
             self.force_opponent_king_to_corner(board, winning_side, is_bishop_knight_endgame);
-        (70 * PAWN_VALUE + king_forcing_score) * signum + 2 * material_score
+        (50 * PAWN_VALUE + king_forcing_score) * signum + 2 * material_score
     }
 
     pub fn is_easily_winning_position(board: &Board, material_score: Score) -> bool {
@@ -144,10 +156,9 @@ impl Evaluator {
                     if num_pieces == 3 {
                         let non_king_pieces: (Piece, Piece) = (bb & !board.get_piece_mask(King))
                             .map(|s| board.piece_at(s).unwrap())
-                            .sorted()
                             .collect_tuple()
                             .unwrap();
-                        if [(Knight, Knight), (Knight, Bishop)].contains(&non_king_pieces) {
+                        if non_king_pieces == (Knight, Knight) {
                             return false;
                         }
                     }

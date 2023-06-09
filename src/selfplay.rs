@@ -15,14 +15,14 @@ pub fn self_play(
     go_command: GoCommand,
     print: bool,
     move_limit: impl Into<Option<u16>> + Copy,
-) -> Result<(), ParserError> {
+) -> Result<(), EngineError> {
     let stating_fen = engine.board.get_fen();
     let mut time_taken_vec: Vec<f64> = Vec::new();
     let mut max_time_taken_fen = String::new();
     let mut prediction_score_vec = Vec::new();
     println!("{}", engine.board);
     if engine.board.is_game_over() {
-        return Err(ParserError::GameAlreadyOver);
+        return Err(EngineError::GameAlreadyOver);
     }
     while !engine.board.is_game_over()
         && engine.board.get_fullmove_number() < move_limit.into().unwrap_or(u16::MAX)
@@ -94,7 +94,7 @@ pub fn self_play(
             .collect_vec(),
     );
     println!(
-        "\n{}:\n\n{:?}\n",
+        "\n{}:\n\n{}\n",
         colorize("Prediction Scores", INFO_STYLE),
         format!(
             "{:?}",
@@ -103,12 +103,11 @@ pub fn self_play(
                 .map(|&score| score_to_string(score))
                 .collect_vec()
         )
-        .replace("\"", "")
-        .trim_matches('\"'),
+        .replace("\"", ""),
     );
     if let GoCommand::Depth(depth) = go_command {
         println_info("Depth Searched", format!("{}", depth));
-    } else if let GoCommand::Movetime(time) = go_command {
+    } else if let GoCommand::MoveTime(time) = go_command {
         println_info(
             "Time Searched Per Move",
             format!("{:.3}", time.as_secs_f64()),

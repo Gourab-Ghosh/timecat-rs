@@ -261,6 +261,8 @@ pub mod engine_constants {
     pub const PAWN_VALUE: Score = 100;
 
     pub const DISABLE_ALL_PRUNINGS: bool = false;
+    pub const DISABLE_LMR: bool = false || DISABLE_ALL_PRUNINGS;
+    pub const DISABLE_T_TABLE: bool = false;
 
     pub const NULL_MOVE_MIN_DEPTH: Depth = 2;
     pub const NULL_MOVE_MIN_REDUCTION: Depth = 2;
@@ -270,15 +272,13 @@ pub mod engine_constants {
     pub const REDUCTION_LIMIT_LMR: Depth = 3;
     pub const LMR_BASE_REDUCTION: f64 = 0.75;
     pub const LMR_MOVE_DIVIDER: f64 = 2.25;
-    pub const DISABLE_LMR: bool = false || DISABLE_ALL_PRUNINGS;
 
     pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;
-    pub const DISABLE_T_TABLE: bool = false;
     pub const MAX_MOVES_PER_POSITION: usize = 250;
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
 
     pub const INITIAL_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(20);
-    pub const EVALUATOR_SIZE: CacheTableSize = CacheTableSize::Round(30);
+    pub const EVALUATOR_SIZE: CacheTableSize = CacheTableSize::Max(20);
 
     pub const FOLLOW_PV: bool = true;
     pub const PRINT_MOVE_INFO_DURATION_THRESHOLD: Duration = Duration::from_millis(1000);
