@@ -166,10 +166,12 @@ pub mod square_utils {
 }
 
 pub mod engine_error {
+    use std::fmt::Debug;
+
     use super::*;
     use EngineError::*;
 
-    #[derive(Clone, Debug, Fail)]
+    #[derive(Clone, Fail)]
     pub enum EngineError {
         #[fail(display = "")]
         UnknownCommand,
@@ -234,6 +236,18 @@ pub mod engine_error {
                 },
                 other_err => format!("{}", other_err),
             }
+        }
+    }
+
+    impl Debug for EngineError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.stringify(None))
+        }
+    }
+
+    impl From<EngineError> for String {
+        fn from(error: EngineError) -> Self {
+            error.stringify(None)
         }
     }
 

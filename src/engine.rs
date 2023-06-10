@@ -144,6 +144,21 @@ impl Engine {
         optional_move
     }
 
+    fn reset_variables(&mut self) {
+        self.ply = 0;
+        self.num_nodes_searched = 0;
+        for i in 0..MAX_PLY {
+            self.pv_length[i] = 0;
+            for j in 0..MAX_PLY {
+                self.pv_table[i][j] = None;
+            }
+        }
+        self.move_sorter.reset_variables();
+        self.timer.reset_variables();
+        self.transposition_table.reset_variables();
+        // self.evaluator.reset_variables();
+    }
+
     pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
         for square in *self.board.occupied() {
             let piece = self.board.piece_at(square).unwrap();
@@ -160,19 +175,8 @@ impl Engine {
         result
     }
 
-    fn reset_variables(&mut self) {
-        self.ply = 0;
-        self.num_nodes_searched = 0;
-        for i in 0..MAX_PLY {
-            self.pv_length[i] = 0;
-            for j in 0..MAX_PLY {
-                self.pv_table[i][j] = None;
-            }
-        }
-        self.move_sorter.reset_variables();
-        self.timer.reset_variables();
-        self.transposition_table.reset_variables();
-        // self.evaluator.reset_variables();
+    pub fn from_fen(fen: &str) -> Result<Self, chess::Error> {
+        Ok(Engine::new(Board::from_fen(fen)?))
     }
 
     fn update_pv_table(&mut self, move_: Move) {
@@ -289,9 +293,10 @@ impl Engine {
             if score > alpha {
                 flag = HashExact;
                 alpha = score;
-                if initial_alpha < score && score < initial_beta {
+                if (initial_alpha < score && score < initial_beta) || is_checkmate(score) {
                     self.update_pv_table(move_);
                 }
+                // self.update_pv_table(move_);
                 if score >= beta {
                     self.transposition_table
                         .write(key, depth, self.ply, beta, HashBeta, move_);
@@ -330,35 +335,50 @@ impl Engine {
         mut beta: Score,
         mut enable_timer: bool,
     ) -> Option<Score> {
-        if self.ply == MAX_PLY - 1 {
-            return Some(self.evaluate_flipped());
-        }
         self.pv_length[self.ply] = self.ply;
         if self.board.is_other_draw() {
             return Some(0);
         }
-        enable_timer &= depth > 3;
-        if self.timer.check_stop(enable_timer) {
-            return None;
+        let mate_score = CHECKMATE_SCORE - self.ply as Score;
+        // // mate distance pruning
+        // alpha = alpha.max(-mate_score);
+        // beta = beta.min(mate_score - 1);
+        // if alpha >= beta {
+        //     return Some(alpha);
+        // }
+        // mate distance pruning
+        if mate_score < beta {
+            beta = mate_score;
+            if alpha >= mate_score {
+                return Some(mate_score);
+            }
         }
         let checkers = self.board.get_checkers();
-        depth = (depth + checkers.popcnt() as Depth).max(0);
+        let min_depth = if self.move_sorter.is_following_pv() {
+            1
+        } else {
+            0
+        };
+        depth = (depth + checkers.popcnt() as Depth).max(min_depth);
         let is_pv_node = alpha != beta - 1;
         let key = self.board.hash();
         let best_move = if is_pv_node {
             self.transposition_table.read_best_move(key)
         } else {
-            match self.transposition_table.read(key, depth, alpha, beta) {
+            match self
+                .transposition_table
+                .read(key, depth, self.ply, alpha, beta)
+            {
                 (Some(score), _) => return Some(score),
                 (None, best_move) => best_move,
             }
         };
-        let mate_score = CHECKMATE_SCORE - self.ply as Score;
-        // mate distance pruning
-        alpha = alpha.max(-mate_score);
-        beta = beta.min(mate_score - 1);
-        if alpha >= beta {
-            return Some(alpha);
+        if self.ply == MAX_PLY - 1 {
+            return Some(self.evaluate_flipped());
+        }
+        enable_timer &= depth > 3;
+        if self.timer.check_stop(enable_timer) {
+            return None;
         }
         if depth == 0 {
             return Some(self.quiescence(alpha, beta));

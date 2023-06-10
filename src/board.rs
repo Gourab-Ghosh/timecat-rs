@@ -363,13 +363,18 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn get_fullmove_number(&self) -> u16 {
-        self.fullmove_number
+    pub fn get_num_moves(&self) -> usize {
+        self.stack.len()
     }
 
     #[inline(always)]
     pub fn get_halfmove_clock(&self) -> u8 {
         self.halfmove_clock
+    }
+
+    #[inline(always)]
+    pub fn get_fullmove_number(&self) -> u16 {
+        self.fullmove_number
     }
 
     #[inline(always)]
@@ -976,7 +981,12 @@ impl Board {
         }
         pgn += &self.variation_san(
             &Self::from_fen(&self.starting_fen).unwrap(),
-            Vec::from_iter(self.stack.clone().into_iter().map(|(_, optional_m)| optional_m)),
+            Vec::from_iter(
+                self.stack
+                    .clone()
+                    .into_iter()
+                    .map(|(_, optional_m)| optional_m),
+            ),
         );
         pgn
     }
@@ -1034,6 +1044,18 @@ impl Board {
                 * evaluate_piece(piece);
         }
         score
+    }
+
+    #[inline(always)]
+    pub fn get_winning_side(&self) -> Option<Color> {
+        let material_score = self.get_material_score();
+        if material_score.is_positive() {
+            Some(White)
+        } else if material_score.is_negative() {
+            Some(Black)
+        } else {
+            None
+        }
     }
 
     #[inline(always)]

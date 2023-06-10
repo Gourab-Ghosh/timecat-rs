@@ -262,7 +262,7 @@ pub mod engine_constants {
 
     pub const DISABLE_ALL_PRUNINGS: bool = false;
     pub const DISABLE_LMR: bool = false || DISABLE_ALL_PRUNINGS;
-    pub const DISABLE_T_TABLE: bool = false;
+    pub const DISABLE_T_TABLE: bool = false || DISABLE_ALL_PRUNINGS;
 
     pub const NULL_MOVE_MIN_DEPTH: Depth = 2;
     pub const NULL_MOVE_MIN_REDUCTION: Depth = 2;

@@ -166,6 +166,36 @@ impl MoveSorter {
         // Self::mvv_lva(move_, board)
     }
 
+    fn score_easily_winning_position_moves(
+        board: &Board,
+        source: Square,
+        dest: Square,
+    ) -> Option<MoveWeight> {
+        let moving_piece = board.piece_at(source).unwrap();
+        if moving_piece != Pawn {
+            let losing_color = !board.get_winning_side().unwrap_or(White);
+            let losing_king_square = board.get_king_square(losing_color);
+            if losing_king_square == source {
+                return Some(-100 * square_distance(source, Square::E4) as MoveWeight);
+            }
+            let source_distance = square_distance(source, losing_king_square);
+            let dest_distance = square_distance(dest, losing_king_square);
+            if dest_distance < source_distance {
+                return Some(
+                    50 * match moving_piece {
+                        King => 5,
+                        Knight => 4,
+                        Queen => 3,
+                        Rook => 2,
+                        Bishop => 1,
+                        _ => unreachable!(),
+                    } - dest_distance as MoveWeight,
+                );
+            }
+        }
+        None
+    }
+
     fn score_move(
         &mut self,
         move_: Move,
@@ -175,13 +205,13 @@ impl MoveSorter {
         pv_move: Option<Move>,
         is_easily_winning_position: bool,
     ) -> MoveWeight {
-        // best move
-        if best_move == Some(move_) {
-            return 129000000;
-        }
         // pv move
         if self.score_pv && pv_move == Some(move_) {
             self.score_pv = false;
+            return 129000000;
+        }
+        // best move
+        if best_move == Some(move_) {
             return 128000000;
         }
         if board.is_capture(move_) {
@@ -194,23 +224,10 @@ impl MoveSorter {
         }
         // move pieces towards the king
         let source = move_.get_source();
+        let dest = move_.get_dest();
         if is_easily_winning_position {
-            let dest = move_.get_dest();
-            let moving_piece = board.piece_at(source).unwrap();
-            if ![Pawn, King].contains(&moving_piece) {
-                let opponent_king_square = board.get_king_square(!board.turn());
-                let source_distance = square_distance(source, opponent_king_square);
-                let dest_distance = square_distance(dest, opponent_king_square);
-                if dest_distance < source_distance {
-                    return 124000000 - 10 * dest_distance as MoveWeight
-                        + match moving_piece {
-                            Knight => 1,
-                            Queen => 2,
-                            Rook => 3,
-                            Bishop => 4,
-                            _ => unreachable!(),
-                        };
-                }
+            if let Some(score) = Self::score_easily_winning_position_moves(board, source, dest) {
+                return 124000000 + score;
             }
         }
         if move_.get_promotion().is_some() {
@@ -343,6 +360,10 @@ impl MoveSorter {
 
     pub fn follow_pv(&mut self) {
         self.follow_pv = true;
+    }
+
+    pub fn is_following_pv(&self) -> bool {
+        self.follow_pv
     }
 }
 

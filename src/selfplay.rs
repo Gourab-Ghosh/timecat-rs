@@ -14,8 +14,12 @@ pub fn self_play(
     engine: &mut Engine,
     go_command: GoCommand,
     print: bool,
-    move_limit: impl Into<Option<u16>> + Copy,
+    move_limit: impl Into<Option<usize>> + Copy,
 ) -> Result<(), EngineError> {
+    let move_limit = move_limit.into().unwrap_or(usize::MAX);
+    if move_limit == 0 {
+        return Ok(());
+    }
     let stating_fen = engine.board.get_fen();
     let mut time_taken_vec: Vec<f64> = Vec::new();
     let mut max_time_taken_fen = String::new();
@@ -24,14 +28,15 @@ pub fn self_play(
     if engine.board.is_game_over() {
         return Err(EngineError::GameAlreadyOver);
     }
+    let initial_num_moves = engine.board.get_num_moves();
     while !engine.board.is_game_over()
-        && engine.board.get_fullmove_number() < move_limit.into().unwrap_or(u16::MAX)
+        && engine.board.get_num_moves() < initial_num_moves + move_limit
     {
         let clock = Instant::now();
         if print {
             println!();
         }
-        let (Some(best_move), score) = engine.go(go_command, print) else {panic!("No moves found")};
+        let (Some(best_move), score) = engine.go(go_command, print) else {return Err(EngineError::BestMoveNotFound { fen: engine.board.get_fen() })};
         let time_elapsed = clock.elapsed();
         let best_move_san = engine.board.stringify_move(best_move).unwrap();
         let pv = engine.get_pv_string();

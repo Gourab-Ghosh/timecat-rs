@@ -177,7 +177,7 @@ impl TranspositionTable {
         println_info(
             "Transposition Table Cells Count",
             format!(
-                "{} MB",
+                "{} cells",
                 cache_table_size.to_cache_table_size::<TranspositionTableEntry>()
             ),
         );
@@ -197,6 +197,7 @@ impl TranspositionTable {
         &self,
         key: u64,
         depth: Depth,
+        ply: Ply,
         alpha: Score,
         beta: Score,
     ) -> (Option<Score>, Option<Move>) {
@@ -212,23 +213,18 @@ impl TranspositionTable {
         if data.depth < depth {
             return (None, best_move);
         }
-        let score = data.score;
+        let mut score = data.score;
+        if is_checkmate(score) {
+            score -= if score.is_positive() {
+                ply as Score
+            } else {
+                -(ply as Score)
+            };
+        }
         match data.flag {
             HashExact => (Some(score), best_move),
-            HashAlpha => {
-                if score <= alpha {
-                    (Some(score), best_move)
-                } else {
-                    (None, best_move)
-                }
-            }
-            HashBeta => {
-                if score >= beta {
-                    (Some(score), best_move)
-                } else {
-                    (None, best_move)
-                }
-            }
+            HashAlpha => (if score <= alpha { Some(score) } else { None }, best_move),
+            HashBeta => (if score >= beta { Some(score) } else { None }, best_move),
         }
     }
 
@@ -240,20 +236,26 @@ impl TranspositionTable {
         &mut self,
         key: u64,
         depth: Depth,
-        _ply: Ply,
-        score: Score,
+        ply: Ply,
+        mut score: Score,
         flag: EntryFlag,
         best_move: impl Into<Option<Move>>,
     ) {
-        // if is_checkmate(score) {
-        //     let mate_ply = CHECKMATE_SCORE.abs_diff(score.abs()).abs_diff(ply.try_into().unwrap()) as Score;
-        //     let mate_score = CHECKMATE_SCORE - mate_ply;
-        //     score = if score.is_positive() { mate_score } else { -mate_score };
-        // }
-        // let save_score = !DISABLE_T_TABLE;
-        let save_score = !DISABLE_T_TABLE || !is_checkmate(score);
+        let save_score = !DISABLE_T_TABLE;
+        if save_score && is_checkmate(score) {
+            let mate_distance = CHECKMATE_SCORE
+                .abs_diff(score.abs())
+                .abs_diff(ply.try_into().unwrap()) as Score;
+            let mate_score = CHECKMATE_SCORE - mate_distance;
+            score = if score.is_positive() {
+                mate_score
+            } else {
+                -mate_score
+            };
+        }
+        let old_entry = self.table.get(key);
         let optional_data = if save_score {
-            let old_optional_data = self.table.get(key).and_then(|entry| entry.optional_data);
+            let old_optional_data = old_entry.and_then(|entry| entry.optional_data);
             if old_optional_data.map(|data| data.depth).unwrap_or(-1) < depth {
                 Some(TranspositionTableData { depth, score, flag })
             } else {
@@ -266,7 +268,9 @@ impl TranspositionTable {
             key,
             TranspositionTableEntry {
                 optional_data,
-                best_move: best_move.into(),
+                best_move: best_move
+                    .into()
+                    .or(old_entry.and_then(|entry| entry.best_move)),
             },
         );
     }

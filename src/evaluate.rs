@@ -19,7 +19,7 @@ impl Evaluator {
             println_info(
                 "Evaluator Cells Count",
                 format!(
-                    "{} MB",
+                    "{} cells",
                     EVALUATOR_SIZE.to_cache_table_size::<TranspositionTableEntry>()
                 ),
             );
@@ -82,12 +82,12 @@ impl Evaluator {
         }
         let king_distance_score =
             7 - square_distance(winning_side_king_square, losing_side_king_square) as Score;
-        let losing_king_rank_distance_score = 10
+        let losing_king_rank_distance_score = 15
             - losing_side_king_square
                 .get_rank()
                 .to_index()
                 .abs_diff(least_distant_corner.get_rank().to_index()) as Score;
-        let losing_king_file_distance_score = 10
+        let losing_king_file_distance_score = 15
             - losing_side_king_square
                 .get_file()
                 .to_index()
@@ -98,7 +98,7 @@ impl Evaluator {
             .occupied_co(winning_side)
             .map(|square| 7 - square_distance(square, losing_side_king_square))
             .sum::<u8>() as Score;
-        10 * (king_distance_score + 2 * losing_king_corner_score)
+        10 * (10 * king_distance_score + 2 * losing_king_corner_score)
             + losing_king_opponent_pieces_score
     }
 
@@ -117,7 +117,7 @@ impl Evaluator {
         let signum = material_score.signum();
         let king_forcing_score =
             self.force_opponent_king_to_corner(board, winning_side, is_bishop_knight_endgame);
-        (50 * PAWN_VALUE + king_forcing_score) * signum + 2 * material_score
+        (50 * PAWN_VALUE + king_forcing_score / 2) * signum + 2 * material_score
     }
 
     pub fn is_easily_winning_position(board: &Board, material_score: Score) -> bool {
