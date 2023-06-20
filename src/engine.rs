@@ -404,16 +404,14 @@ impl Engine {
                 let r = NULL_MOVE_MIN_REDUCTION
                     + (depth.abs_diff(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
                         .round() as Depth;
-                if depth > r {
-                    self.push(None);
-                    let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1, enable_timer)?;
-                    self.pop();
-                    if self.timer.check_stop(enable_timer) {
-                        return None;
-                    }
-                    if score >= beta {
-                        return Some(beta);
-                    }
+                self.push(None);
+                let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1, enable_timer)?;
+                self.pop();
+                if self.timer.check_stop(enable_timer) {
+                    return None;
+                }
+                if score >= beta {
+                    return Some(beta);
                 }
             }
             // razoring
@@ -551,12 +549,20 @@ impl Engine {
             self.push(Some(move_));
             let score = -self.quiescence(-beta, -alpha);
             self.pop();
+            if score >= beta {
+                return beta;
+            }
+            // delta pruning
+            let mut delta = evaluate_piece(Queen);
+            if let Some(piece) = move_.get_promotion() {
+                delta += evaluate_piece(piece) - PAWN_VALUE;
+            }
+            if score + delta < alpha {
+                return alpha;
+            }
             if score > alpha {
                 self.update_pv_table(move_);
                 alpha = score;
-                if score >= beta {
-                    return beta;
-                }
             }
         }
         alpha
@@ -622,10 +628,15 @@ impl Engine {
     pub fn print_warning_message(
         &self,
         current_depth: Depth,
-        alpha: Score,
-        beta: Score,
-        score: Score,
+        mut alpha: Score,
+        mut beta: Score,
+        mut score: Score,
     ) {
+        if !is_in_uci_mode() {
+            alpha = self.board.score_flipped(alpha);
+            beta = self.board.score_flipped(beta);
+            score = self.board.score_flipped(score);
+        }
         let warning_message = format!(
             "Resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {}, beta {} and score {} with time {:.3} s",
             current_depth,
@@ -637,7 +648,15 @@ impl Engine {
         println!("{}", colorize(warning_message, WARNING_MESSAGE_STYLE));
     }
 
-    pub fn print_search_info(&self, current_depth: Depth, score: Score, time_elapsed: Duration) {
+    pub fn print_search_info(
+        &self,
+        current_depth: Depth,
+        mut score: Score,
+        time_elapsed: Duration,
+    ) {
+        if !is_in_uci_mode() {
+            score = self.board.score_flipped(score);
+        }
         let style = SUCCESS_MESSAGE_STYLE;
         println!(
             "{} {} {} {} {} {} {} {} {} {} {} {:.2} {} {} {} {:.3} {} {}",
@@ -692,23 +711,14 @@ impl Engine {
             }
             let time_elapsed = self.timer.elapsed();
             if print_info {
-                self.print_search_info(
-                    current_depth,
-                    self.board.score_flipped(score),
-                    time_elapsed,
-                );
+                self.print_search_info(current_depth, score, time_elapsed);
             }
             if self.timer.check_stop(true) {
                 break;
             }
             if score <= alpha || score >= beta {
                 if print_info {
-                    self.print_warning_message(
-                        current_depth,
-                        self.board.score_flipped(alpha),
-                        self.board.score_flipped(beta),
-                        self.board.score_flipped(score),
-                    );
+                    self.print_warning_message(current_depth, alpha, beta, score);
                 }
                 alpha = -INFINITY;
                 beta = INFINITY;
@@ -745,10 +755,10 @@ impl Engine {
             };
             let divider = movestogo.unwrap_or(30);
             let new_inc = inc
-                .checked_sub(Duration::from_millis(500))
+                .checked_sub(Duration::from_millis(1000))
                 .unwrap_or(Duration::from_millis(0));
             let search_time = (time / divider + new_inc)
-                .checked_sub(Duration::from_millis(100))
+                .checked_sub(Duration::from_millis(2000))
                 .unwrap_or(Duration::from_millis(0));
             // let multiplier = match_interpolate!(0.5, 1, 32, 2, self.board.get_num_pieces());
             // let search_time = Duration::from_secs_f64(search_time.as_secs_f64() * multiplier);

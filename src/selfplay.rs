@@ -14,9 +14,9 @@ pub fn self_play(
     engine: &mut Engine,
     go_command: GoCommand,
     print: bool,
-    move_limit: impl Into<Option<usize>> + Copy,
+    move_limit: impl Into<Option<NumMoves>> + Copy,
 ) -> Result<(), EngineError> {
-    let move_limit = move_limit.into().unwrap_or(usize::MAX);
+    let move_limit = move_limit.into().unwrap_or(NumMoves::MAX);
     if move_limit == 0 {
         return Ok(());
     }

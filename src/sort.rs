@@ -152,7 +152,10 @@ impl MoveSorter {
         evaluate_piece(capture_piece) - Self::see(square, board)
     }
 
-    fn mvv_lva(move_: Move, board: &Board) -> MoveWeight {
+    fn mvv_lva(move_: Move, best_move: Option<Move>, board: &Board) -> MoveWeight {
+        if best_move == Some(move_) {
+            return 10000;
+        }
         MVV_LVA[board.piece_at(move_.get_source()).unwrap().to_index()]
             [board.piece_at(move_.get_dest()).unwrap_or(Pawn).to_index()]
     }
@@ -160,7 +163,7 @@ impl MoveSorter {
     #[inline(always)]
     fn score_capture(move_: Move, best_move: Option<Move>, board: &Board) -> MoveWeight {
         if Some(move_) == best_move {
-            return 5000;
+            return 10000;
         }
         Self::see_capture(move_.get_dest(), &mut board.get_sub_board()) as MoveWeight
         // Self::mvv_lva(move_, board)

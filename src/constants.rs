@@ -25,6 +25,7 @@ pub mod types {
     pub type Depth = i8;
     pub type Score = i16;
     pub type MoveWeight = i64;
+    pub type NumMoves = u16;
 }
 
 pub mod bitboard {

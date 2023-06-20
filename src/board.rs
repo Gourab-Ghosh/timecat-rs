@@ -44,7 +44,7 @@ struct BoardState {
     board: chess::Board,
     ep_square: Option<Square>,
     halfmove_clock: u8,
-    fullmove_number: u16,
+    fullmove_number: NumMoves,
     num_repetitions: u8,
 }
 
@@ -54,7 +54,7 @@ pub struct Board {
     stack: Vec<(BoardState, Option<Move>)>,
     ep_square: Option<Square>,
     halfmove_clock: u8,
-    fullmove_number: u16,
+    fullmove_number: NumMoves,
     num_repetitions: u8,
     starting_fen: String,
     repetition_table: RepetitionTable,
@@ -363,8 +363,8 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn get_num_moves(&self) -> usize {
-        self.stack.len()
+    pub fn get_num_moves(&self) -> NumMoves {
+        self.stack.len() as NumMoves
     }
 
     #[inline(always)]
@@ -373,7 +373,7 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn get_fullmove_number(&self) -> u16 {
+    pub fn get_fullmove_number(&self) -> NumMoves {
         self.fullmove_number
     }
 
@@ -681,8 +681,16 @@ impl Board {
         optional_move
     }
 
+    pub fn get_all_moves(&self) -> Vec<Option<Move>> {
+        self.stack.iter().map(|(_, m)| *m).collect_vec()
+    }
+
     pub fn get_last_move(&self) -> Option<Move> {
         self.stack.last().unwrap().1
+    }
+
+    pub fn contains_null_move(&self) -> bool {
+        self.stack.iter().any(|(_, m)| m.is_none())
     }
 
     pub fn get_ply(&self) -> usize {
@@ -974,10 +982,7 @@ impl Board {
     pub fn get_pgn(&self) -> String {
         let mut pgn = String::new();
         if self.starting_fen != STARTING_FEN {
-            pgn += &format!(
-                "[Variant \"From Position\"]\n[FEN \"{}\"]\n",
-                self.starting_fen
-            );
+            pgn += &format!("[FEN \"{}\"]", self.starting_fen);
         }
         pgn += &self.variation_san(
             &Self::from_fen(&self.starting_fen).unwrap(),

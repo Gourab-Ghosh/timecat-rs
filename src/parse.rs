@@ -1,39 +1,29 @@
-use std::f32::consts::E;
-
 use super::*;
 use EngineError::*;
+// use Command::*;
 
 const EXIT_CODES: &[&str] = &[
     "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
 ];
 
-// enum Command {
-//     Go,
-//     Perft,
-//     Depth,
-//     SetFen,
-//     SetPrint,
-//     SetHashSize,
-//     SetThreads,
-//     SetTime,
-//     SetDepth,
-//     SetInfinite,
-//     SetPonder,
-//     SetMoveTime,
-//     SetNodes,
-//     SetMate,
-//     SetMovestogo,
-//     SetMultiPV,
-//     SetUCI,
-//     SetUciAnalyseMode,
-//     SetUCIChess960,
-//     SetUCIEngineAbout,
-//     SetUCIEngineName,
-//     SetUCIEngineAuthor,
-//     SetUCILimitStrength,
-//     SetUCIOpponent,
-//     SetUCIShowCurrLine,
-//     SetUCIShowRefutations
+// enum Command<'a> {
+//     Go(GoCommand),
+//     MakeMove(&'a [Move]),
+//     UndoMove(u16),
+//     SetFen(String),
+//     SetColor(bool),
+//     SetUCIMode(bool),
+//     SetHashSize(u64),
+//     SetThreads(u8),
+//     SetMultiPV(u8),
+//     SetUCIElo(u16),
+//     SetEngineMode(EngineMode),
+//     // SetPrint,
+//     // SetUciAnalyseMode,
+//     // SetUCIChess960,
+//     // SetUCIOpponent,
+//     // SetUCIShowCurrLine,
+//     // SetUCIShowRefutations
 // }
 
 macro_rules! extract_value {
@@ -265,11 +255,13 @@ impl Push {
                 }
                 engine.push(None);
             }
-            println!(
-                "{} {}",
-                colorize("Pushed move:", SUCCESS_MESSAGE_STYLE),
-                colorize(move_text, INFO_STYLE),
-            );
+            if !is_in_uci_mode() {
+                println!(
+                    "{} {}",
+                    colorize("Pushed move:", SUCCESS_MESSAGE_STYLE),
+                    colorize(move_text, INFO_STYLE),
+                );
+            }
         }
         Ok(())
     }
@@ -294,11 +286,13 @@ impl Pop {
                 return Err(EmptyStack);
             }
             let last_move = engine.pop();
-            println!(
-                "{} {}",
-                colorize("Popped move:", SUCCESS_MESSAGE_STYLE),
-                colorize(engine.board.stringify_move(last_move).unwrap(), INFO_STYLE),
-            );
+            if !is_in_uci_mode() {
+                println!(
+                    "{} {}",
+                    colorize("Popped move:", SUCCESS_MESSAGE_STYLE),
+                    colorize(engine.board.stringify_move(last_move).unwrap(), INFO_STYLE),
+                );
+            }
         }
         Ok(())
     }
@@ -352,6 +346,9 @@ impl UCIParser {
 
     fn parse_uci_input(input: &str) -> Result<String, EngineError> {
         let modified_input = input.trim().to_lowercase();
+        if modified_input.starts_with("go") {
+            return Ok(modified_input);
+        }
         if modified_input.starts_with("position") {
             return Self::parse_uci_position_input(input);
         }
@@ -379,7 +376,7 @@ impl UCIParser {
             return Ok(());
         } else if first_command == "ucinewgame" {
             return Parser::run_command(engine, &format!("set board fen {}", STARTING_FEN));
-        } else if ["position"].contains(&first_command.as_str()) {
+        } else if ["position", "go"].contains(&first_command.as_str()) {
             let parsed_input = Self::parse_uci_input(user_input)?;
             return Self::run_parsed_input(engine, &parsed_input);
         }
@@ -527,14 +524,10 @@ impl Parser {
     pub fn main_loop() {
         let mut engine = Engine::default();
         loop {
-            let raw_input: String;
-            if !is_in_uci_mode() {
-                println!();
-                raw_input = Self::get_input(colorize("Enter Command: ", INPUT_MESSAGE_STYLE));
-                println!();
-            } else {
-                raw_input = Self::get_input("");
-            }
+            println!();
+            let message = colorize("Enter Command: ", INPUT_MESSAGE_STYLE);
+            let raw_input = Self::get_input(if is_in_uci_mode() { "" } else { &message });
+            println!();
             match Self::run_raw_input_checked(&mut engine, &raw_input) {
                 ParserLoopState::Break => break,
                 ParserLoopState::Continue => continue,
