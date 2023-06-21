@@ -15,7 +15,7 @@ pub enum GoCommand {
         btime: Duration,
         winc: Duration,
         binc: Duration,
-        movestogo: Option<u32>,
+        moves_to_go: Option<u32>,
     },
 }
 
@@ -24,7 +24,7 @@ impl GoCommand {
         self == &Self::Infinite
     }
 
-    pub fn is_movetime(&self) -> bool {
+    pub fn is_move_time(&self) -> bool {
         matches!(self, Self::MoveTime(_))
     }
 
@@ -39,7 +39,7 @@ impl GoCommand {
 
 pub struct Engine {
     pub board: Board,
-    evaluator: Evaluator,
+    evaluator: Arc<Mutex<Evaluator>>,
     num_nodes_searched: usize,
     selective_depth: Ply,
     ply: Ply,
@@ -51,12 +51,11 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(board: Board) -> Self {
-        let mut evaluator = Evaluator::default();
+    pub fn new(board: Board, evaluator: Arc<Mutex<Evaluator>>,) -> Self {
         for square in *board.occupied() {
             let piece = board.piece_at(square).unwrap();
             let color = board.color_at(square).unwrap();
-            evaluator.activate_nnue(piece, color, square);
+            evaluator.lock().unwrap().activate_nnue(piece, color, square);
         }
         Self {
             board,
@@ -68,25 +67,17 @@ impl Engine {
             pv_table: [[None; MAX_PLY]; MAX_PLY],
             move_sorter: MoveSorter::default(),
             transposition_table: TranspositionTable::default(),
-            timer: Timer::new(),
+            timer: Timer::default(),
         }
     }
 
-    pub fn evaluate(&mut self) -> Score {
-        self.evaluator.evaluate(&self.board)
-    }
-
-    pub fn evaluate_flipped(&mut self) -> Score {
-        self.evaluator.evaluate_flipped(&self.board)
-    }
-
     fn push_nnue(&mut self, move_: Move) {
-        self.evaluator.backup();
+        self.evaluator.lock().unwrap().backup();
         let self_color = self.board.turn();
         let source = move_.get_source();
         let dest = move_.get_dest();
         let self_piece = self.board.piece_at(source).unwrap();
-        self.evaluator
+        self.evaluator.lock().unwrap()
             .deactivate_nnue(self_piece, self_color, source);
         if self.board.is_capture(move_) {
             let remove_piece_square = if self.board.is_en_passant(move_) {
@@ -95,7 +86,7 @@ impl Engine {
                 dest
             };
             let piece = self.board.piece_at(remove_piece_square).unwrap();
-            self.evaluator
+            self.evaluator.lock().unwrap()
                 .deactivate_nnue(piece, !self_color, remove_piece_square);
         } else if self.board.is_castling(move_) {
             let (rook_source, rook_dest) = if move_.get_dest().get_file().to_index()
@@ -111,11 +102,11 @@ impl Engine {
                     Black => (Square::A8, Square::D8),
                 }
             };
-            self.evaluator
+            self.evaluator.lock().unwrap()
                 .deactivate_nnue(Rook, self_color, rook_source);
-            self.evaluator.activate_nnue(Rook, self_color, rook_dest);
+            self.evaluator.lock().unwrap().activate_nnue(Rook, self_color, rook_dest);
         }
-        self.evaluator.activate_nnue(
+        self.evaluator.lock().unwrap().activate_nnue(
             move_.get_promotion().unwrap_or(self_piece),
             self_color,
             dest,
@@ -131,7 +122,7 @@ impl Engine {
     }
 
     fn pop_nnue(&mut self) {
-        self.evaluator.restore();
+        self.evaluator.lock().unwrap().restore();
     }
 
     #[allow(clippy::let_and_return)]
@@ -156,27 +147,27 @@ impl Engine {
         self.move_sorter.reset_variables();
         self.timer.reset_variables();
         self.transposition_table.reset_variables();
-        // self.evaluator.reset_variables();
+        // self.evaluator.lock().unwrap().reset_variables();
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
         for square in *self.board.occupied() {
             let piece = self.board.piece_at(square).unwrap();
             let color = self.board.color_at(square).unwrap();
-            self.evaluator.deactivate_nnue(piece, color, square);
+            self.evaluator.lock().unwrap().deactivate_nnue(piece, color, square);
         }
         let result = self.board.set_fen(fen);
         for square in *self.board.occupied() {
             let piece = self.board.piece_at(square).unwrap();
             let color = self.board.color_at(square).unwrap();
-            self.evaluator.activate_nnue(piece, color, square);
+            self.evaluator.lock().unwrap().activate_nnue(piece, color, square);
         }
         self.reset_variables();
         result
     }
 
     pub fn from_fen(fen: &str) -> Result<Self, chess::Error> {
-        Ok(Engine::new(Board::from_fen(fen)?))
+        Ok(Engine::new(Board::from_fen(fen)?, Arc::new(Mutex::new(Evaluator::default()))))
     }
 
     fn update_pv_table(&mut self, move_: Move) {
@@ -231,7 +222,7 @@ impl Engine {
                     move_,
                     MoveSorter::score_root_moves(
                         &mut self.board,
-                        &mut self.evaluator,
+                        &mut self.evaluator.lock().unwrap(),
                         move_,
                         self.pv_table[0][0],
                     ),
@@ -374,7 +365,7 @@ impl Engine {
             }
         };
         if self.ply == MAX_PLY - 1 {
-            return Some(self.evaluate_flipped());
+            return Some(self.board.evaluate_flipped());
         }
         enable_timer &= depth > 3;
         if self.timer.check_stop(enable_timer) {
@@ -388,7 +379,7 @@ impl Engine {
         let not_in_check = checkers == BB_EMPTY;
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
-            let static_evaluation = self.evaluate_flipped();
+            let static_evaluation = self.board.evaluate_flipped();
             if depth < 3 && !is_pv_node && !is_checkmate(beta) {
                 let eval_margin = ((6 * PAWN_VALUE) / 5) * depth as Score;
                 let new_score = static_evaluation - eval_margin;
@@ -522,7 +513,7 @@ impl Engine {
 
     fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {
         if self.ply == MAX_PLY - 1 {
-            return self.evaluate_flipped();
+            return self.board.evaluate_flipped();
         }
         self.pv_length[self.ply] = self.ply;
         if self.board.is_other_draw() {
@@ -530,7 +521,7 @@ impl Engine {
         }
         self.selective_depth = self.ply.max(self.selective_depth);
         self.num_nodes_searched += 1;
-        let evaluation = self.evaluate_flipped();
+        let evaluation = self.board.evaluate_flipped();
         if evaluation >= beta {
             return beta;
         }
@@ -746,14 +737,14 @@ impl Engine {
             btime,
             winc,
             binc,
-            movestogo,
+            moves_to_go,
         } = command
         {
             let (time, inc) = match self.board.turn() {
                 White => (wtime, winc),
                 Black => (btime, binc),
             };
-            let divider = movestogo.unwrap_or(30);
+            let divider = moves_to_go.unwrap_or(30);
             let new_inc = inc
                 .checked_sub(Duration::from_millis(1000))
                 .unwrap_or(Duration::from_millis(0));
@@ -771,6 +762,7 @@ impl Engine {
 
 impl Default for Engine {
     fn default() -> Self {
-        Self::new(Board::new())
+        let evaluator = Arc::new(Mutex::new(Evaluator::default()));
+        Self::new(Board::new(evaluator.clone()), evaluator)
     }
 }

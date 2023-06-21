@@ -100,7 +100,7 @@ impl Go {
             btime: extract_time!(commands, "btime").ok_or(BTimeNotMentioned)?,
             winc: extract_time!(commands, "winc").unwrap_or(Duration::new(0, 0)),
             binc: extract_time!(commands, "binc").unwrap_or(Duration::new(0, 0)),
-            movestogo: extract_value!(commands, "movestogo"),
+            moves_to_go: extract_value!(commands, "movestogo"),
         });
     }
 
@@ -446,7 +446,7 @@ impl Parser {
             return Pop::parse_sub_commands(engine, &commands);
         }
         if user_input == "eval" {
-            println_info("Current Score", score_to_string(engine.evaluate()));
+            println_info("Current Score", score_to_string(engine.board.evaluate()));
             return Ok(());
         }
         if user_input == "reset board" {

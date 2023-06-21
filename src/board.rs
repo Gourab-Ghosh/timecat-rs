@@ -48,9 +48,10 @@ struct BoardState {
     num_repetitions: u8,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Board {
     board: chess::Board,
+    evaluator: Arc<Mutex<Evaluator>>,
     stack: Vec<(BoardState, Option<Move>)>,
     ep_square: Option<Square>,
     halfmove_clock: u8,
@@ -61,9 +62,10 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn new() -> Self {
+    pub fn new(evaluator: Arc<Mutex<Evaluator>>) -> Self {
         let mut board = Self {
             board: chess::Board::from_str(STARTING_FEN).unwrap(),
+            evaluator,
             stack: Vec::new(),
             ep_square: None,
             halfmove_clock: 0,
@@ -85,11 +87,15 @@ impl Board {
             });
         }
         let fen = simplify_fen(fen);
+        if fen == self.get_fen() {
+            self.starting_fen = self.get_fen();
+            return Ok(());
+        }
         self.board = chess::Board::from_str(&fen).expect("FEN not parsed properly!");
         let mut splitted_fen = fen.split(' ');
         self.ep_square = match splitted_fen.nth(3).unwrap_or("-") {
             "-" => None,
-            square => Some(Square::from_str(square).expect("Invalid enpassant square!")),
+            square => Some(Square::from_str(square).expect("Invalid en_passant square!")),
         };
         self.halfmove_clock = splitted_fen.next().unwrap_or("0").parse().unwrap();
         self.fullmove_number = splitted_fen.next().unwrap_or("1").parse().unwrap();
@@ -101,9 +107,17 @@ impl Board {
 
     pub fn from_fen(fen: &str) -> Result<Self, chess::Error> {
         let fen = simplify_fen(fen);
-        let mut board = Self::new();
+        let mut board = Self::new(Arc::new(Mutex::new(Evaluator::default())));
         board.set_fen(&fen)?;
         Ok(board)
+    }
+
+    pub fn get_evaluator(&self) -> Arc<Mutex<Evaluator>> {
+        self.evaluator.clone()
+    }
+
+    pub fn set_evaluator(&mut self, evaluator: Arc<Mutex<Evaluator>>) {
+        self.evaluator = evaluator;
     }
 
     pub fn get_fen(&self) -> String {
@@ -195,10 +209,6 @@ impl Board {
         EMPTY_SPACE_UNICODE_SYMBOL.to_string()
     }
 
-    pub fn repr(&self) -> String {
-        stringify!(self.board).to_string()
-    }
-
     fn get_skeleton(&self) -> String {
         let skeleton = String::from(BOARD_SKELETON.trim_matches('\n'));
         let mut colored_skeleton = String::new();
@@ -267,7 +277,7 @@ impl Board {
             checkers_string += &square.to_string();
             checkers_string += " ";
         }
-        let score = Evaluator::new(false).evaluate_raw(self);
+        let score = self.evaluator.lock().unwrap().evaluate(self);
         skeleton.push_str(
             &[
                 String::new(),
@@ -539,29 +549,29 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn get_enpassant_square(&self) -> Option<Square> {
+    pub fn get_en_passant_square(&self) -> Option<Square> {
         self.board.en_passant()
     }
 
     #[inline(always)]
     pub fn has_legal_en_passant(&self) -> bool {
-        self.get_enpassant_square().is_some()
+        self.get_en_passant_square().is_some()
     }
 
     pub fn clean_castling_rights(&self) -> BitBoard {
-        let white_castling_righrs = match self.board.castle_rights(White) {
+        let white_castling_rights = match self.board.castle_rights(White) {
             chess::CastleRights::Both => BB_A1 | BB_H1,
             chess::CastleRights::KingSide => BB_H1,
             chess::CastleRights::QueenSide => BB_A1,
             chess::CastleRights::NoRights => BB_EMPTY,
         };
-        let black_castling_righrs = match self.board.castle_rights(Black) {
+        let black_castling_rights = match self.board.castle_rights(Black) {
             chess::CastleRights::Both => BB_A8 | BB_H8,
             chess::CastleRights::KingSide => BB_H8,
             chess::CastleRights::QueenSide => BB_A8,
             chess::CastleRights::NoRights => BB_EMPTY,
         };
-        white_castling_righrs | black_castling_righrs
+        white_castling_rights | black_castling_rights
     }
 
     #[inline(always)]
@@ -757,8 +767,8 @@ impl Board {
         self.push_uci(s);
     }
 
-    pub fn push_ucis(&mut self, ucis: &str) {
-        for uci in remove_double_spaces(ucis).split(' ') {
+    pub fn push_uci_moves(&mut self, uci_moves: &str) {
+        for uci in remove_double_spaces(uci_moves).split(' ') {
             self.push_uci(uci);
         }
     }
@@ -1094,6 +1104,16 @@ impl Board {
             .sum()
     }
 
+    #[inline(always)]
+    pub fn evaluate(&self) -> Score {
+        self.evaluator.lock().unwrap().evaluate(self)
+    }
+
+    #[inline(always)]
+    pub fn evaluate_flipped(&self) -> Score {
+        self.score_flipped(self.evaluator.lock().unwrap().evaluate(self))
+    }
+
     fn mini_perft(&mut self, depth: Depth, print_move: bool) -> usize {
         let moves = self.generate_legal_moves();
         if depth == 1 {
@@ -1130,7 +1150,7 @@ impl Display for Board {
 
 impl Default for Board {
     fn default() -> Self {
-        Self::new()
+        Self::from_fen(STARTING_FEN).unwrap()
     }
 }
 
