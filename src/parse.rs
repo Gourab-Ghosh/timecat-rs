@@ -95,13 +95,13 @@ impl Go {
             let time = int_str.parse()?;
             return Ok(GoCommand::MoveTime(Duration::from_millis(time)));
         }
-        return Ok(GoCommand::Timed {
+        Ok(GoCommand::Timed {
             wtime: extract_time!(commands, "wtime").ok_or(WTimeNotMentioned)?,
             btime: extract_time!(commands, "btime").ok_or(BTimeNotMentioned)?,
             winc: extract_time!(commands, "winc").unwrap_or(Duration::new(0, 0)),
             binc: extract_time!(commands, "binc").unwrap_or(Duration::new(0, 0)),
             moves_to_go: extract_value!(commands, "movestogo"),
-        });
+        })
     }
 
     fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<(), EngineError> {
@@ -151,9 +151,9 @@ impl Go {
         if second_command == "perft" {
             let depth = commands.get(2).ok_or(UnknownCommand)?.to_string().parse()?;
             Self::perft(engine, depth);
-            return Ok(());
+            Ok(())
         } else {
-            return Self::go_command(engine, Self::extract_go_command(commands)?);
+            Self::go_command(engine, Self::extract_go_command(commands)?)
         }
     }
 }
@@ -393,7 +393,7 @@ impl SelfPlay {
         } else {
             GoCommand::MoveTime(Duration::from_secs(3))
         };
-        return self_play(engine, go_command, true, None);
+        self_play(engine, go_command, true, None)
     }
 }
 

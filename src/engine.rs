@@ -51,11 +51,14 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(board: Board, evaluator: Arc<Mutex<Evaluator>>,) -> Self {
+    pub fn new(board: Board, evaluator: Arc<Mutex<Evaluator>>) -> Self {
         for square in *board.occupied() {
             let piece = board.piece_at(square).unwrap();
             let color = board.color_at(square).unwrap();
-            evaluator.lock().unwrap().activate_nnue(piece, color, square);
+            evaluator
+                .lock()
+                .unwrap()
+                .activate_nnue(piece, color, square);
         }
         Self {
             board,
@@ -77,7 +80,9 @@ impl Engine {
         let source = move_.get_source();
         let dest = move_.get_dest();
         let self_piece = self.board.piece_at(source).unwrap();
-        self.evaluator.lock().unwrap()
+        self.evaluator
+            .lock()
+            .unwrap()
             .deactivate_nnue(self_piece, self_color, source);
         if self.board.is_capture(move_) {
             let remove_piece_square = if self.board.is_en_passant(move_) {
@@ -86,7 +91,9 @@ impl Engine {
                 dest
             };
             let piece = self.board.piece_at(remove_piece_square).unwrap();
-            self.evaluator.lock().unwrap()
+            self.evaluator
+                .lock()
+                .unwrap()
                 .deactivate_nnue(piece, !self_color, remove_piece_square);
         } else if self.board.is_castling(move_) {
             let (rook_source, rook_dest) = if move_.get_dest().get_file().to_index()
@@ -102,9 +109,14 @@ impl Engine {
                     Black => (Square::A8, Square::D8),
                 }
             };
-            self.evaluator.lock().unwrap()
+            self.evaluator
+                .lock()
+                .unwrap()
                 .deactivate_nnue(Rook, self_color, rook_source);
-            self.evaluator.lock().unwrap().activate_nnue(Rook, self_color, rook_dest);
+            self.evaluator
+                .lock()
+                .unwrap()
+                .activate_nnue(Rook, self_color, rook_dest);
         }
         self.evaluator.lock().unwrap().activate_nnue(
             move_.get_promotion().unwrap_or(self_piece),
@@ -154,20 +166,29 @@ impl Engine {
         for square in *self.board.occupied() {
             let piece = self.board.piece_at(square).unwrap();
             let color = self.board.color_at(square).unwrap();
-            self.evaluator.lock().unwrap().deactivate_nnue(piece, color, square);
+            self.evaluator
+                .lock()
+                .unwrap()
+                .deactivate_nnue(piece, color, square);
         }
         let result = self.board.set_fen(fen);
         for square in *self.board.occupied() {
             let piece = self.board.piece_at(square).unwrap();
             let color = self.board.color_at(square).unwrap();
-            self.evaluator.lock().unwrap().activate_nnue(piece, color, square);
+            self.evaluator
+                .lock()
+                .unwrap()
+                .activate_nnue(piece, color, square);
         }
         self.reset_variables();
         result
     }
 
     pub fn from_fen(fen: &str) -> Result<Self, chess::Error> {
-        Ok(Engine::new(Board::from_fen(fen)?, Arc::new(Mutex::new(Evaluator::default()))))
+        Ok(Engine::new(
+            Board::from_fen(fen)?,
+            Arc::new(Mutex::new(Evaluator::default())),
+        ))
     }
 
     fn update_pv_table(&mut self, move_: Move) {

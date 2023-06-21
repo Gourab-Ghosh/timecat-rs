@@ -108,7 +108,7 @@ pub fn self_play(
                 .map(|&score| score_to_string(score))
                 .collect_vec()
         )
-        .replace("\"", ""),
+        .replace('\"', ""),
     );
     if let GoCommand::Depth(depth) = go_command {
         println_info("Depth Searched", format!("{}", depth));
