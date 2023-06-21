@@ -107,7 +107,7 @@ impl Board {
 
     pub fn from_fen(fen: &str) -> Result<Self, chess::Error> {
         let fen = simplify_fen(fen);
-        let mut board = Self::new(Arc::new(Mutex::new(Evaluator::default())));
+        let mut board = Self::new(Default::default());
         board.set_fen(&fen)?;
         Ok(board)
     }
@@ -277,7 +277,6 @@ impl Board {
             checkers_string += &square.to_string();
             checkers_string += " ";
         }
-        let score = self.evaluator.lock().unwrap().evaluate(self);
         skeleton.push_str(
             &[
                 String::new(),
@@ -287,7 +286,7 @@ impl Board {
                     "Checkers",
                     colorize(checkers_string.trim().to_uppercase(), CHECKERS_STYLE),
                 ),
-                format_info("Current Evaluation", score_to_string(score)),
+                format_info("Current Evaluation", score_to_string(self.evaluate())),
             ]
             .join("\n"),
         );
@@ -1111,7 +1110,7 @@ impl Board {
 
     #[inline(always)]
     pub fn evaluate_flipped(&self) -> Score {
-        self.score_flipped(self.evaluator.lock().unwrap().evaluate(self))
+        self.score_flipped(self.evaluate())
     }
 
     fn mini_perft(&mut self, depth: Depth, print_move: bool) -> usize {
@@ -1150,7 +1149,7 @@ impl Display for Board {
 
 impl Default for Board {
     fn default() -> Self {
-        Self::from_fen(STARTING_FEN).unwrap()
+        STARTING_FEN.into()
     }
 }
 
@@ -1159,5 +1158,11 @@ impl FromStr for Board {
 
     fn from_str(fen: &str) -> Result<Self, Self::Err> {
         Self::from_fen(fen)
+    }
+}
+
+impl From<&str> for Board {
+    fn from(fen: &str) -> Self {
+        Self::from_fen(fen).unwrap()
     }
 }

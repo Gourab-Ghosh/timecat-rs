@@ -200,7 +200,7 @@ pub mod engine_error {
         #[fail(display = "UCI mode already set to {}! Try again!", b)]
         UCIModeUnchanged { b: String },
 
-        #[fail(display = "Move Stack is enpty, pop not possible! Try again!")]
+        #[fail(display = "Move Stack is empty, pop not possible! Try again!")]
         EmptyStack,
 
         #[fail(display = "Best move not found in position {}! Try again!", fen)]
@@ -358,32 +358,30 @@ pub mod classes {
     // use std::collections::hash_map::DefaultHasher;
     // use std::hash::{Hash, Hasher};
 
-    #[derive(Default, Debug)]
+    #[derive(Default, Debug, Clone)]
     pub struct RepetitionTable {
-        count: Arc<Mutex<HashMap<u64, usize>>>,
+        count_map: HashMap<u64, usize>,
     }
 
     impl RepetitionTable {
         pub fn new() -> Self {
             Self {
-                count: Arc::new(Mutex::new(HashMap::default())),
+                count_map: HashMap::default(),
             }
         }
 
         pub fn get_repetition(&self, key: u64) -> u8 {
-            *self.count.lock().unwrap().get(&key).unwrap_or(&0) as u8
+            *self.count_map.get(&key).unwrap_or(&0) as u8
         }
 
-        pub fn insert_and_get_repetition(&self, key: u64) -> u8 {
-            let mut count_map = self.count.lock().unwrap();
-            let count_entry = count_map.entry(key).or_insert(0);
+        pub fn insert_and_get_repetition(&mut self, key: u64) -> u8 {
+            let count_entry = self.count_map.entry(key).or_insert(0);
             *count_entry += 1;
             *count_entry as u8
         }
 
-        pub fn remove(&self, key: u64) {
-            let mut count_map = self.count.lock().unwrap();
-            let count_entry = count_map.get_mut(&key).unwrap_or_else(|| {
+        pub fn remove(&mut self, key: u64) {
+            let count_entry = self.count_map.get_mut(&key).unwrap_or_else(|| {
                 panic!(
                     "Tried to remove the key {} that doesn't exist!",
                     hash_to_string(key)
@@ -391,12 +389,12 @@ pub mod classes {
             });
             *count_entry -= 1;
             if *count_entry == 0 {
-                count_map.remove(&key);
+                self.count_map.remove(&key);
             }
         }
 
-        pub fn clear(&self) {
-            self.count.lock().unwrap().clear();
+        pub fn clear(&mut self) {
+            self.count_map.clear();
         }
 
         // fn hash<T: Hash>(t: &T) -> u64 {
@@ -404,15 +402,6 @@ pub mod classes {
         //     t.hash(&mut s);
         //     s.finish()
         // }
-    }
-
-    impl Clone for RepetitionTable {
-        fn clone(&self) -> Self {
-            let hashmap = self.count.lock().unwrap().clone();
-            Self {
-                count: Arc::new(Mutex::new(hashmap)),
-            }
-        }
     }
 }
 

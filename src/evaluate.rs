@@ -3,7 +3,7 @@ use nnue::StockfishNetwork;
 
 pub struct Evaluator {
     stockfish_network: StockfishNetwork,
-    cache: CacheTable<Score>,
+    score_cache: CacheTable<Score>,
 }
 
 impl Evaluator {
@@ -24,7 +24,7 @@ impl Evaluator {
         );
         Self {
             stockfish_network: StockfishNetwork::new(),
-            cache: CacheTable::new(EVALUATOR_SIZE.to_cache_table_size::<Score>(), 0),
+            score_cache: CacheTable::new(EVALUATOR_SIZE.to_cache_table_size::<Score>(), 0),
         }
     }
 
@@ -37,12 +37,6 @@ impl Evaluator {
     pub fn deactivate_nnue(&mut self, piece: Piece, color: Color, square: Square) {
         // self.stockfish_network.activate();
     }
-
-    #[allow(unused_variables)]
-    pub fn backup(&mut self) {}
-
-    #[allow(unused_variables)]
-    pub fn restore(&mut self) {}
 
     fn force_opponent_king_to_corner(
         &self,
@@ -175,33 +169,16 @@ impl Evaluator {
         if Self::is_easily_winning_position(board, material_score) {
             return self.king_corner_forcing_evaluation(board, material_score);
         }
-        // let material_score = material_score as f64 / MAX_MATERIAL_SCORE as f64 * PAWN_VALUE as f64;
-        // let mut score = self.stockfish_network.eval(&board.get_sub_board());
-        // let winning_side = if score.is_positive() { White } else { Black };
-        // let king_forcing_score = score.signum() as f64
-        //     * self.force_opponent_king_to_corner(board, winning_side) as f64
-        //     / 13.2;
-        // let mut endgame_evaluation = 10.0 * king_forcing_score + 5.0 * material_score;
-        // endgame_evaluation *= match_interpolate!(
-        //     0,
-        //     1,
-        //     INITIAL_MATERIAL_SCORE_ABS,
-        //     0,
-        //     board.get_material_score_abs()
-        // );
-        // score += endgame_evaluation.round() as Score;
-        // score
-        // self.stockfish_network.eval(&board.get_sub_board()) + material_score / (MAX_MATERIAL_SCORE / 20)
         self.stockfish_network.eval(&board.get_sub_board())
     }
 
     fn hashed_evaluate(&mut self, board: &Board) -> Score {
         let hash = board.hash();
-        if let Some(score) = self.cache.get(hash) {
+        if let Some(score) = self.score_cache.get(hash) {
             return score;
         }
         let score = self.evaluate_raw(board);
-        self.cache.add(hash, score);
+        self.score_cache.add(hash, score);
         score
     }
 
@@ -209,12 +186,8 @@ impl Evaluator {
         self.hashed_evaluate(board)
     }
 
-    pub fn evaluate_flipped(&mut self, board: &Board) -> Score {
-        board.score_flipped(self.evaluate(board))
-    }
-
     pub fn reset_variables(&mut self) {
-        self.cache.reset_variables();
+        self.score_cache.reset_variables();
     }
 }
 
