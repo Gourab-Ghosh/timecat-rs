@@ -18,18 +18,7 @@ def timed_run(func):
     print(f"Run time: {round(time.time() - start, 3)} seconds")
     return 0
 
-root_url = "https://media.githubusercontent.com/media/Gourab-Ghosh/timecat-rs/master/"
 current_path = os.path.dirname(__file__)
-# files = ["src/nnue_weights.rs"]
-files = []
-
-for file in files:
-    file_path = os.path.join(current_path, file)
-    if os.stat(file_path).st_size <= 1024:
-        full_url = root_url + file
-        print(f"Downloading {file} from url {full_url}...")
-        with open(file_path, "w") as f:
-            f.write(requests.get(full_url).text)
 
 if sys.platform == "linux":
     home_dir = os.path.expanduser("~")

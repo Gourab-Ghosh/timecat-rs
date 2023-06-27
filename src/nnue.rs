@@ -5,6 +5,8 @@ use nnue_rs::stockfish::halfkp::{SfHalfKpFullModel, SfHalfKpModel};
 use nnue_rs::Square as StockfishSquare;
 use std::io::Cursor;
 
+pub const NNUE_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/nnue_dir/nn.nnue"));
+
 fn square_to_stockfish_square(square: Square) -> StockfishSquare {
     StockfishSquare::from_index(square.to_index())
 }

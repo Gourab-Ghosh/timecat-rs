@@ -151,11 +151,7 @@ impl Engine {
             .map(|WeightedMove { move_, .. }| {
                 (
                     move_,
-                    MoveSorter::score_root_moves(
-                        &mut self.board,
-                        move_,
-                        self.pv_table[0][0],
-                    ),
+                    MoveSorter::score_root_moves(&mut self.board, move_, self.pv_table[0][0]),
                 )
             })
             .collect_vec();

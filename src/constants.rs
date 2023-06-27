@@ -251,8 +251,6 @@ pub mod engine_constants {
     use chess::Piece::*;
     use std::time::Duration;
 
-    pub const NNUE_BYTES: &[u8] = include_bytes!(concat!("nnue_files/", "nn-62ef826d1a6d.nnue"));
-
     pub const MAX_PLY: usize = 255;
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;

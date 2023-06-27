@@ -2,7 +2,6 @@
 /build
 /.vscode
 **/__pycache__/
-/src/nnue_files
 perf*
 src/*.bak
 Cargo.lock
