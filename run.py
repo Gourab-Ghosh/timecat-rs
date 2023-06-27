@@ -3,7 +3,6 @@
 import os
 import sys
 import time
-import requests
 from shutil import which
 
 def update_environment_variables(*flags):

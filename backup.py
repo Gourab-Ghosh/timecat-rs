@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os, subprocess
-from python_scripts.utils import install_package
 from inquirer.shortcuts import confirm
 
 add_command = "git add ."
