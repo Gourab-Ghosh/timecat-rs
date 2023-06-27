@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 
 import os, subprocess
-from inquirer.shortcuts import confirm
+
+def confirm(message, default = False):
+    message += " [Y/n]" if default else " [y/N]"
+    response = ""
+    while response not in ("y", "n"):
+        response = input(message).strip().lower()
+        if response == "":
+            return default
+    return response == "y"
 
 add_command = "git add ."
 status_command = "git status"
