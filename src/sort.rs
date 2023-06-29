@@ -74,7 +74,7 @@ impl FromIterator<WeightedMove> for WeightedMoveListSorter {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MoveSorter {
     killer_moves: [[Option<Move>; NUM_KILLER_MOVES]; MAX_PLY],
     history_move_scores: [[[MoveWeight; 64]; 2]; 6],
@@ -321,7 +321,7 @@ impl MoveSorter {
     }
 
     pub fn score_root_moves(
-        board: &mut Board,
+        board: &Board,
         move_: Move,
         pv_move: impl Into<Option<Move>>,
     ) -> MoveWeight {

@@ -162,7 +162,7 @@ pub struct TranspositionTableEntry {
 }
 
 pub struct TranspositionTable {
-    table: CacheTable<TranspositionTableEntry>,
+    table: Mutex<CacheTable<TranspositionTableEntry>>,
 }
 
 impl TranspositionTable {
@@ -189,7 +189,7 @@ impl TranspositionTable {
 
     pub fn new() -> Self {
         Self {
-            table: Self::generate_new_table(get_t_table_size()),
+            table: Mutex::new(Self::generate_new_table(get_t_table_size())),
         }
     }
 
@@ -201,7 +201,7 @@ impl TranspositionTable {
         alpha: Score,
         beta: Score,
     ) -> (Option<Score>, Option<Move>) {
-        let tt_entry = match self.table.get(key) {
+        let tt_entry = match self.table.lock().unwrap().get(key) {
             Some(entry) => entry,
             None => return (None, None),
         };
@@ -229,7 +229,7 @@ impl TranspositionTable {
     }
 
     pub fn read_best_move(&self, key: u64) -> Option<Move> {
-        self.table.get(key)?.best_move
+        self.table.lock().unwrap().get(key)?.best_move
     }
 
     pub fn write(
@@ -253,7 +253,7 @@ impl TranspositionTable {
                 -mate_score
             };
         }
-        let old_entry = self.table.get(key);
+        let old_entry = self.table.lock().unwrap().get(key);
         let optional_data = if save_score {
             let old_optional_data = old_entry.and_then(|entry| entry.optional_data);
             if old_optional_data.map(|data| data.depth).unwrap_or(-1) < depth {
@@ -264,7 +264,7 @@ impl TranspositionTable {
         } else {
             None
         };
-        self.table.add(
+        self.table.lock().unwrap().add(
             key,
             TranspositionTableEntry {
                 optional_data,
@@ -276,25 +276,25 @@ impl TranspositionTable {
     }
 
     pub fn clear(&mut self) {
-        self.table.clear();
+        self.table.lock().unwrap().clear();
     }
 
     pub fn clear_best_moves(&mut self) {
-        for e in self.table.table.iter_mut() {
+        for e in self.table.lock().unwrap().table.iter_mut() {
             e.entry.best_move = None;
         }
     }
 
     pub fn get_num_collisions(&self) -> usize {
-        self.table.get_num_collisions()
+        self.table.lock().unwrap().get_num_collisions()
     }
 
     pub fn get_hash_full(&self) -> f64 {
-        self.table.get_hash_full()
+        self.table.lock().unwrap().get_hash_full()
     }
 
     pub fn reset_variables(&mut self) {
-        self.table.reset_variables();
+        self.table.lock().unwrap().reset_variables();
     }
 }
 

@@ -1,3 +1,5 @@
+use chess::MoveGen;
+
 use super::*;
 
 #[derive(Clone, Debug, Fail)]
@@ -281,12 +283,12 @@ impl Board {
             &[
                 String::new(),
                 format_info("Fen", self.get_fen()),
-                format_info("Transposition Key", hash_to_string(self.hash())),
+                format_info("Transposition Key", self.hash().stringify_hash()),
                 format_info(
                     "Checkers",
                     colorize(checkers_string.trim().to_uppercase(), CHECKERS_STYLE),
                 ),
-                format_info("Current Evaluation", score_to_string(self.evaluate())),
+                format_info("Current Evaluation", self.evaluate().stringify_score()),
             ]
             .join("\n"),
         );
@@ -403,27 +405,35 @@ impl Board {
     }
 
     pub fn gives_threefold_repetition(&self, move_: Move) -> bool {
-        let mut new_board = self.get_sub_board();
-        new_board.clone().make_move(move_, &mut new_board);
+        let new_board = self.board.make_move_new(move_);
         self.repetition_table.get_repetition(new_board.get_hash()) == 2
     }
 
-    pub fn gives_claimable_threefold_repetition(&mut self, move_: Move) -> bool {
-        self.push(Some(move_));
-        if self.is_threefold_repetition() {
-            self.pop();
-            return true;
-        }
-        if self
-            .generate_legal_moves()
-            .any(|m| self.gives_threefold_repetition(m))
-        {
-            self.pop();
-            return true;
-        }
-        self.pop();
-        false
+    pub fn gives_claimable_threefold_repetition(&self, move_: Move) -> bool {
+        //TODO: check if this is correct
+        let new_board = self.board.make_move_new(move_);
+        MoveGen::new_legal(&new_board).any(|m| {
+            let hash = new_board.make_move_new(m).get_hash();
+            self.repetition_table.get_repetition(hash) == 2
+        })
     }
+
+    // pub fn gives_claimable_threefold_repetition(&mut self, move_: Move) -> bool {
+    //     self.push(Some(move_));
+    //     if self.is_threefold_repetition() {
+    //         self.pop();
+    //         return true;
+    //     }
+    //     if self
+    //         .generate_legal_moves()
+    //         .any(|m| self.gives_threefold_repetition(m))
+    //     {
+    //         self.pop();
+    //         return true;
+    //     }
+    //     self.pop();
+    //     false
+    // }
 
     #[inline(always)]
     pub fn is_threefold_repetition(&self) -> bool {
@@ -717,7 +727,7 @@ impl Board {
         }
         let san = san.replace('0', "O");
         for move_ in self.generate_legal_moves() {
-            if self.san(move_).unwrap() == san {
+            if move_.san(self).unwrap() == san {
                 return Ok(Some(move_));
             }
         }
@@ -898,50 +908,11 @@ impl Board {
     }
 
     #[inline(always)]
-    fn algebraic(&self, optional_move: Option<Move>, long: bool) -> Result<String, BoardError> {
-        self.clone().algebraic_and_push(optional_move, long)
-    }
-
-    /// Gets the standard algebraic notation of the given move in the context
-    /// of the current position.
-    #[inline(always)]
-    pub fn san(&self, optional_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
-        self.algebraic(optional_move.into(), false)
-    }
-
-    pub fn uci(optional_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
-        if let Some(move_) = optional_move.into() {
-            Ok(move_.to_string())
-        } else {
-            Ok("0000".to_string())
-        }
-    }
-
-    pub fn stringify_move(
-        &self,
-        optional_move: impl Into<Option<Move>>,
-    ) -> Result<String, BoardError> {
-        let optional_move = optional_move.into();
-        if is_in_uci_mode() {
-            Self::uci(optional_move)
-        } else {
-            self.san(optional_move)
-        }
-    }
-
-    #[inline(always)]
     pub fn san_and_push(
         &mut self,
         optional_move: impl Into<Option<Move>>,
     ) -> Result<String, BoardError> {
         self.algebraic_and_push(optional_move.into(), false)
-    }
-
-    /// Gets the long algebraic notation of the given move in the context of
-    /// the current position.
-    #[inline(always)]
-    pub fn lan(&self, optional_move: impl Into<Option<Move>>) -> Result<String, BoardError> {
-        self.algebraic(optional_move.into(), true)
     }
 
     #[inline(always)]

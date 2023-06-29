@@ -1,6 +1,8 @@
-pub const ENGINE_NAME: &str = "Timecat";
-pub const ENGINE_AUTHOR: &str = "Gourab Ghosh";
-pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub mod description {
+    pub const ENGINE_NAME: &str = "Timecat";
+    pub const ENGINE_AUTHOR: &str = "Gourab Ghosh";
+    pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
+}
 
 macro_rules! make_array_recursively {
     ($($x:expr),*) => ([$(make_array_recursively!($x)),*]);
@@ -299,4 +301,8 @@ pub mod engine_constants {
     ];
 
     pub const LMR_TABLE: [[Depth; 64]; 64] = [[0; 64]; 64];
+}
+
+pub mod atomic {
+    pub const MEMORY_ORDER: std::sync::atomic::Ordering = std::sync::atomic::Ordering::Relaxed;
 }

@@ -93,53 +93,114 @@ pub mod string_utils {
         colored_string.to_string()
     }
 
-    pub fn score_to_string_normal(score: Score) -> String {
-        if score == INFINITY {
-            return "INFINITY".to_string();
+    pub trait StringifyScore {
+        fn stringify_score_normal(self) -> String;
+        fn stringify_score_uci(self) -> String;
+        fn stringify_score(self) -> String;
+    }
+
+    impl StringifyScore for Score {
+        fn stringify_score_normal(self) -> String {
+            if self == INFINITY {
+                return "INFINITY".to_string();
+            }
+            if self == -INFINITY {
+                return "-INFINITY".to_string();
+            }
+            if is_checkmate(self) {
+                let mut mate_string = String::from(if self.is_positive() { "M" } else { "-M" });
+                let mate_distance = (CHECKMATE_SCORE - self.abs() + 1) / 2;
+                mate_string += &mate_distance.to_string();
+                return mate_string;
+            }
+            let to_return = self as f64 / PAWN_VALUE as f64;
+            if to_return % 1.0 == 0.0 {
+                format!("{}", to_return as i32)
+            } else {
+                format!("{:.2}", to_return)
+            }
         }
-        if score == -INFINITY {
-            return "-INFINITY".to_string();
+
+        fn stringify_score_uci(self) -> String {
+            if self == INFINITY {
+                return "inf".to_string();
+            }
+            if self == -INFINITY {
+                return "-inf".to_string();
+            }
+            if is_checkmate(self) {
+                let mut mate_string = String::from("mate ");
+                let mate_distance = (CHECKMATE_SCORE - self.abs() + 1) / 2;
+                mate_string += &mate_distance.to_string();
+                return mate_string;
+            }
+            format!("cp {}", (self as i32 * 100) / PAWN_VALUE as i32)
         }
-        if is_checkmate(score) {
-            let mut mate_string = String::from(if score.is_positive() { "M" } else { "-M" });
-            let mate_distance = (CHECKMATE_SCORE - score.abs() + 1) / 2;
-            mate_string += &mate_distance.to_string();
-            return mate_string;
-        }
-        let to_return = score as f64 / PAWN_VALUE as f64;
-        if to_return % 1.0 == 0.0 {
-            format!("{}", to_return as i32)
-        } else {
-            format!("{:.2}", to_return)
+
+        fn stringify_score(self) -> String {
+            if is_in_uci_mode() {
+                self.stringify_score_uci()
+            } else {
+                self.stringify_score_normal()
+            }
         }
     }
 
-    pub fn score_to_string_uci(score: Score) -> String {
-        if score == INFINITY {
-            return "inf".to_string();
+    pub trait StringifyMove {
+        fn uci(&self) -> String;
+        fn algebraic(&self, board: &Board, long: bool) -> Result<String, BoardError>;
+        fn san(&self, board: &Board) -> Result<String, BoardError> {
+            self.algebraic(board, false)
         }
-        if score == -INFINITY {
-            return "-inf".to_string();
+        fn lan(&self, board: &Board) -> Result<String, BoardError> {
+            self.algebraic(board, true)
         }
-        if is_checkmate(score) {
-            let mut mate_string = String::from("mate ");
-            let mate_distance = (CHECKMATE_SCORE - score.abs() + 1) / 2;
-            mate_string += &mate_distance.to_string();
-            return mate_string;
-        }
-        format!("cp {score}")
+        fn stringify_move(&self, board: &Board) -> Result<String, BoardError>;
     }
 
-    pub fn score_to_string(score: Score) -> String {
-        if is_in_uci_mode() {
-            score_to_string_uci(score)
-        } else {
-            score_to_string_normal(score)
+    impl StringifyMove for Option<Move> {
+        fn uci(&self) -> String {
+            match self {
+                Some(m) => m.to_string(),
+                None => String::from("0000"),
+            }
+        }
+
+        fn algebraic(&self, board: &Board, long: bool) -> Result<String, BoardError> {
+            board.clone().algebraic_and_push(*self, long)
+        }
+
+        fn stringify_move(&self, board: &Board) -> Result<String, BoardError> {
+            if is_in_uci_mode() {
+                Ok(self.uci())
+            } else {
+                self.algebraic(board, use_long_algebraic_notation())
+            }
         }
     }
 
-    pub fn hash_to_string(hash: u64) -> String {
-        format!("{:x}", hash).to_uppercase()
+    impl StringifyMove for Move {
+        fn uci(&self) -> String {
+            Some(*self).uci()
+        }
+
+        fn algebraic(&self, board: &Board, long: bool) -> Result<String, BoardError> {
+            Some(*self).algebraic(board, long)
+        }
+
+        fn stringify_move(&self, board: &Board) -> Result<String, BoardError> {
+            Some(*self).stringify_move(board)
+        }
+    }
+
+    pub trait StringifyHash {
+        fn stringify_hash(self) -> String;
+    }
+
+    impl StringifyHash for u64 {
+        fn stringify_hash(self) -> String {
+            format!("{:x}", self).to_uppercase()
+        }
     }
 }
 
@@ -384,7 +445,7 @@ pub mod classes {
             let count_entry = self.count_map.get_mut(&key).unwrap_or_else(|| {
                 panic!(
                     "Tried to remove the key {} that doesn't exist!",
-                    hash_to_string(key)
+                    key.stringify_hash()
                 )
             });
             *count_entry -= 1;
@@ -414,12 +475,13 @@ pub mod score_utils {
     }
 }
 
-pub mod unsafe_utils {
+pub mod global_utils {
     use super::*;
 
     static mut COLORED_OUTPUT: bool = true;
     static mut UCI_MODE: bool = false;
     static mut T_TABLE_SIZE: CacheTableSize = INITIAL_T_TABLE_SIZE;
+    static mut LONG_ALGEBRAIC_NOTATION: bool = false;
 
     fn print_info<T: Display>(message: &str, info: T) {
         println!(
@@ -468,13 +530,17 @@ pub mod unsafe_utils {
         unsafe {
             T_TABLE_SIZE = size;
         }
-        println!(
-            "{} {}",
-            colorize("Set t-table size to", SUCCESS_MESSAGE_STYLE),
-            colorize(
-                size.to_cache_table_memory_size::<TranspositionTableEntry>(),
-                INFO_STYLE
-            ),
-        );
+        print_info("Set t-table size to", size.to_cache_table_memory_size::<TranspositionTableEntry>());
+    }
+
+    pub fn use_long_algebraic_notation() -> bool {
+        unsafe { LONG_ALGEBRAIC_NOTATION }
+    }
+
+    pub fn set_long_algebraic_notation(b: bool) {
+        unsafe {
+            LONG_ALGEBRAIC_NOTATION = b;
+        }
+        print_info("Set long algebraic notation size to", b);
     }
 }

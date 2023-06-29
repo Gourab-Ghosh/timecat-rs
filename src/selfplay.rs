@@ -1,5 +1,7 @@
 use std::f32::consts::E;
 
+use crate::engine::SearchInfo;
+
 use super::*;
 
 fn prediction_accuracy_func(rms: f64) -> f64 {
@@ -38,9 +40,9 @@ pub fn self_play(
         }
         let (Some(best_move), score) = engine.go(go_command, print) else {return Err(EngineError::BestMoveNotFound { fen: engine.board.get_fen() })};
         let time_elapsed = clock.elapsed();
-        let best_move_san = engine.board.stringify_move(best_move).unwrap();
-        let pv = engine.get_pv_string();
-        engine.push(best_move);
+        let best_move_san = best_move.stringify_move(&engine.board).unwrap();
+        let pv = SearchInfo::get_pv_string(&engine.board, &engine.get_pv());
+        engine.board.push(best_move);
         if time_elapsed.as_secs_f64()
             > *time_taken_vec
                 .iter()
@@ -55,7 +57,7 @@ pub fn self_play(
             (engine.get_num_nodes_searched() as u128 * 10u128.pow(9)) / time_elapsed.as_nanos();
         println!("\n{}\n", engine.board);
         println_info("Best Move", best_move_san);
-        println_info("Score", score_to_string(score));
+        println_info("Score", score.stringify_score());
         println_info("Num Nodes Searched", engine.get_num_nodes_searched());
         println_info("PV Line", pv);
         println_info("Time Taken", format!("{:.3} s", time_elapsed.as_secs_f64()));
@@ -105,7 +107,7 @@ pub fn self_play(
             "{:?}",
             prediction_score_vec
                 .iter()
-                .map(|&score| score_to_string(score))
+                .map(|&score| score.stringify_score())
                 .collect_vec()
         )
         .replace('\"', ""),
@@ -136,11 +138,11 @@ pub fn self_play(
     println_info("Max time taken by fen", max_time_taken_fen);
     println_info(
         "Max prediction magnitude",
-        score_to_string_normal(max_abs_score),
+        max_abs_score.stringify_score_normal(),
     );
     println_info(
         "Min prediction magnitude",
-        score_to_string_normal(min_abs_score),
+        min_abs_score.stringify_score_normal(),
     );
     engine.set_fen(&stating_fen)?;
     Ok(())

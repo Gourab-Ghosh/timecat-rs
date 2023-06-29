@@ -25,14 +25,15 @@ pub use chess::{
     get_knight_moves, get_pawn_attacks, get_rank as get_rank_bb, get_rook_moves, BitBoard,
     BoardStatus, ChessMove as Move, Color, File, Piece, Rank, Square,
 };
+pub use constants::atomic::*;
 pub use constants::bitboard::*;
 pub use constants::board_representation::*;
+pub use constants::description::*;
 pub use constants::engine_constants::*;
 pub use constants::fen::*;
 pub use constants::print_style::*;
 pub use constants::square::*;
 pub use constants::types::*;
-pub use constants::*;
 pub use engine::{Engine, GoCommand};
 pub use evaluate::*;
 pub use failure::Fail;
@@ -49,6 +50,7 @@ pub use std::io::{self, Write};
 pub use std::mem;
 pub use std::num::ParseIntError;
 pub use std::str::{FromStr, ParseBoolError};
+pub use std::sync::atomic::{AtomicBool, AtomicUsize};
 pub use std::sync::{Arc, Mutex};
 pub use std::time::{Duration, Instant};
 pub use tablebase::*;
@@ -60,6 +62,6 @@ pub use utils::cache_table_utils::*;
 pub use utils::classes::*;
 pub use utils::common_utils::*;
 pub use utils::engine_error::*;
+pub use utils::global_utils::*;
 pub use utils::square_utils::*;
 pub use utils::string_utils::*;
-pub use utils::unsafe_utils::*;

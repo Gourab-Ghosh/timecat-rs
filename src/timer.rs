@@ -53,6 +53,10 @@ impl Timer {
         self.stop_search = false;
     }
 
+    pub fn get_clock(&self) -> Instant {
+        self.start_instant
+    }
+
     pub fn elapsed(&self) -> Duration {
         self.start_instant.elapsed()
     }

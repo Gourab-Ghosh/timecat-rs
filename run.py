@@ -32,11 +32,16 @@ if which("cargo") is None:
         print(f"Installing Rust...")
         os.system("curl --proto '=https' -sSf https://sh.rustup.rs | sh")
 
-is_error_free = True if "--disable-check" in sys.argv else not os.system("cargo check")
+args = set(sys.argv)
+
+if "--update" in args:
+    os.system("cargo update")
+
+is_error_free = True if {"--disable-check", "--no-check"}.intersection(args) else not os.system("cargo check")
 
 if is_error_free:
     build_command = "cargo build"
-    is_release = "--debug" not in sys.argv
+    is_release = "--debug" not in args
     if is_release:
         build_command += " --release"
         update_environment_variables()

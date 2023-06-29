@@ -1,3 +1,5 @@
+use crate::engine::SearchInfo;
+
 use super::*;
 use EngineError::*;
 // use Command::*;
@@ -116,14 +118,14 @@ impl Go {
             let best_move_text = format!(
                 "{} {}",
                 colorize("bestmove", INFO_STYLE),
-                engine.board.stringify_move(best_move).unwrap()
+                best_move.stringify_move(&engine.board).unwrap()
             );
             let to_print = if let Some(ponder_move) = ponder_move {
                 format!(
                     "{} {} {}",
                     best_move_text,
                     colorize("ponder", INFO_STYLE),
-                    engine.board.stringify_move(ponder_move).unwrap()
+                    ponder_move.stringify_move(&engine.board).unwrap()
                 )
             } else {
                 best_move_text
@@ -136,12 +138,16 @@ impl Go {
                 "{} Nodes/sec",
                 (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
             );
-            println_info("Score", score_to_string(score));
-            println_info("PV Line", engine.get_pv_string());
+            let pv_string = SearchInfo::get_pv_string(&engine.board, &engine.get_pv());
+            println_info("Score", score.stringify_score());
+            println_info("PV Line", pv_string);
             println_info("Position Count", position_count);
             println_info("Time", format!("{:.3} s", elapsed_time.as_secs_f64()));
             println_info("Speed", nps);
-            println_info("Best Move", engine.board.stringify_move(best_move).unwrap());
+            println_info(
+                "Best Move",
+                best_move.stringify_move(&engine.board).unwrap(),
+            );
         }
         Ok(())
     }
@@ -246,14 +252,14 @@ impl Push {
                         board_fen: engine.board.get_fen(),
                     });
                 }
-                engine.push(move_);
+                engine.board.push(move_);
             } else {
                 if engine.board.is_check() {
                     return Err(NullMoveInCheck {
                         fen: engine.board.get_fen(),
                     });
                 }
-                engine.push(None);
+                engine.board.push(None);
             }
             if !is_in_uci_mode() {
                 println!(
@@ -285,12 +291,12 @@ impl Pop {
             if engine.board.has_empty_stack() {
                 return Err(EmptyStack);
             }
-            let last_move = engine.pop();
+            let last_move = engine.board.pop();
             if !is_in_uci_mode() {
                 println!(
                     "{} {}",
                     colorize("Popped move:", SUCCESS_MESSAGE_STYLE),
-                    colorize(engine.board.stringify_move(last_move).unwrap(), INFO_STYLE),
+                    colorize(last_move.stringify_move(&engine.board).unwrap(), INFO_STYLE),
                 );
             }
         }
@@ -446,7 +452,7 @@ impl Parser {
             return Pop::parse_sub_commands(engine, &commands);
         }
         if user_input == "eval" {
-            println_info("Current Score", score_to_string(engine.board.evaluate()));
+            println_info("Current Score", engine.board.evaluate().stringify_score());
             return Ok(());
         }
         if user_input == "reset board" {
