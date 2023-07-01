@@ -282,14 +282,22 @@ pub mod engine_error {
         #[fail(display = "Game is already over! Please start a game from another position!")]
         GameAlreadyOver,
 
+        #[fail(display = "Cannot set number of threads to 0! Please try again!")]
+        ZeroThreads,
+
+        #[fail(
+            display = "Cannot exceed number of threads limit! Please choose a value up to {MAX_THREADS}!"
+        )]
+        MaxThreadsExceeded,
+
         #[fail(display = "{}", err_msg)]
         CustomError { err_msg: String },
     }
 
     impl EngineError {
-        pub fn stringify(&self, raw_input_option: Option<&str>) -> String {
+        pub fn stringify(&self, optional_raw_input: Option<&str>) -> String {
             match self {
-                Self::UnknownCommand => match raw_input_option {
+                Self::UnknownCommand => match optional_raw_input {
                     Some(raw_input) => {
                         format!("Unknown command: {}\nPlease try again!", raw_input.trim())
                     }
@@ -482,13 +490,16 @@ pub mod global_utils {
     static mut UCI_MODE: bool = false;
     static mut T_TABLE_SIZE: CacheTableSize = INITIAL_T_TABLE_SIZE;
     static mut LONG_ALGEBRAIC_NOTATION: bool = false;
+    static mut NUM_THREADS: usize = 1;
 
     fn print_info<T: Display>(message: &str, info: T) {
-        println!(
-            "{} {}",
-            colorize(message, SUCCESS_MESSAGE_STYLE),
-            colorize(info, INFO_STYLE),
-        );
+        if !is_in_uci_mode() {
+            println!(
+                "{} {}",
+                colorize(message, SUCCESS_MESSAGE_STYLE),
+                colorize(info, INFO_STYLE),
+            );
+        }
     }
 
     pub fn is_colored_output() -> bool {
@@ -530,7 +541,10 @@ pub mod global_utils {
         unsafe {
             T_TABLE_SIZE = size;
         }
-        print_info("Set t-table size to", size.to_cache_table_memory_size::<TranspositionTableEntry>());
+        print_info(
+            "Set t-table size to",
+            size.to_cache_table_memory_size::<TranspositionTableEntry>(),
+        );
     }
 
     pub fn use_long_algebraic_notation() -> bool {
@@ -541,6 +555,19 @@ pub mod global_utils {
         unsafe {
             LONG_ALGEBRAIC_NOTATION = b;
         }
-        print_info("Set long algebraic notation size to", b);
+        print_info("Set long algebraic notation to", b);
+    }
+
+    pub fn get_num_threads() -> usize {
+        unsafe { NUM_THREADS }
+    }
+
+    pub fn set_num_threads(num_threads: usize, print: bool) {
+        unsafe {
+            NUM_THREADS = num_threads;
+        }
+        if print {
+            print_info("Number of threads set to", num_threads);
+        }
     }
 }

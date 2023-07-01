@@ -53,7 +53,7 @@ struct BoardState {
 #[derive(Clone)]
 pub struct Board {
     board: chess::Board,
-    evaluator: Arc<Mutex<Evaluator>>,
+    evaluator: Arc<Evaluator>,
     stack: Vec<(BoardState, Option<Move>)>,
     ep_square: Option<Square>,
     halfmove_clock: u8,
@@ -64,7 +64,7 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn new(evaluator: Arc<Mutex<Evaluator>>) -> Self {
+    pub fn new(evaluator: Arc<Evaluator>) -> Self {
         let mut board = Self {
             board: chess::Board::from_str(STARTING_FEN).unwrap(),
             evaluator,
@@ -114,11 +114,11 @@ impl Board {
         Ok(board)
     }
 
-    pub fn get_evaluator(&self) -> Arc<Mutex<Evaluator>> {
+    pub fn get_evaluator(&self) -> Arc<Evaluator> {
         self.evaluator.clone()
     }
 
-    pub fn set_evaluator(&mut self, evaluator: Arc<Mutex<Evaluator>>) {
+    pub fn set_evaluator(&mut self, evaluator: Arc<Evaluator>) {
         self.evaluator = evaluator;
     }
 
@@ -1076,7 +1076,7 @@ impl Board {
 
     #[inline(always)]
     pub fn evaluate(&self) -> Score {
-        self.evaluator.lock().unwrap().evaluate(self)
+        self.evaluator.evaluate(self)
     }
 
     #[inline(always)]

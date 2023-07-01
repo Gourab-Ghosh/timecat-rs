@@ -6,10 +6,7 @@
 // https://github.com/zxqfl/sashimi
 // https://backscattering.de/chess/uci/
 
-mod tests;
-
 use std::io::IsTerminal;
-use tests::test;
 use timecat::*;
 
 fn main() {
@@ -19,32 +16,13 @@ fn main() {
     if !args.contains(&"--disable-backtrace") {
         env::set_var("RUST_BACKTRACE", "1");
     }
-    if !io::stdin().is_terminal() || args.contains(&"--uci") {
+    if !io::stdin().is_terminal() {
         set_uci_mode(true, false);
     }
-    if !io::stdout().is_terminal() || args.contains(&"--no-color") {
+    if !io::stdout().is_terminal() {
         set_colored_output(false, false);
     }
-    if args.contains(&"--test") {
-        test().unwrap();
-    } else if args.contains(&"-c") || args.contains(&"--command") {
-        let command = args
-            .iter()
-            .skip_while(|&arg| !["-c", "--command"].contains(arg))
-            .skip(1)
-            .take_while(|&&arg| !arg.starts_with("--"))
-            .join(" ");
-        let mut engine = Engine::default();
-        println!();
-        if let Err(err) = Parser::parse_command(&mut engine, &command) {
-            let err_msg = err.stringify(Some(command.as_str()));
-            println!("\n{}", colorize(err_msg, ERROR_MESSAGE_STYLE));
-        }
-    } else {
-        let info_text = format!("{} v{}", ENGINE_NAME, ENGINE_VERSION);
-        println!("{}\n", colorize(info_text, SUCCESS_MESSAGE_STYLE));
-        Parser::main_loop();
-    }
+    Parser::parse_args_and_run_main_loop(&args);
     let elapsed_time = clock.elapsed().as_secs_f64();
     let precision = 3;
     println_info("\nRun Time", format!("{:.1$} s", elapsed_time, precision));

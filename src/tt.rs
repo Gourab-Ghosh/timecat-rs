@@ -233,7 +233,7 @@ impl TranspositionTable {
     }
 
     pub fn write(
-        &mut self,
+        &self,
         key: u64,
         depth: Depth,
         ply: Ply,
@@ -253,7 +253,8 @@ impl TranspositionTable {
                 -mate_score
             };
         }
-        let old_entry = self.table.lock().unwrap().get(key);
+        let mut table = self.table.lock().unwrap();
+        let old_entry = table.get(key);
         let optional_data = if save_score {
             let old_optional_data = old_entry.and_then(|entry| entry.optional_data);
             if old_optional_data.map(|data| data.depth).unwrap_or(-1) < depth {
@@ -264,7 +265,7 @@ impl TranspositionTable {
         } else {
             None
         };
-        self.table.lock().unwrap().add(
+        table.add(
             key,
             TranspositionTableEntry {
                 optional_data,
@@ -275,11 +276,11 @@ impl TranspositionTable {
         );
     }
 
-    pub fn clear(&mut self) {
+    pub fn clear(&self) {
         self.table.lock().unwrap().clear();
     }
 
-    pub fn clear_best_moves(&mut self) {
+    pub fn clear_best_moves(&self) {
         for e in self.table.lock().unwrap().table.iter_mut() {
             e.entry.best_move = None;
         }
@@ -293,7 +294,7 @@ impl TranspositionTable {
         self.table.lock().unwrap().get_hash_full()
     }
 
-    pub fn reset_variables(&mut self) {
+    pub fn reset_variables(&self) {
         self.table.lock().unwrap().reset_variables();
     }
 }

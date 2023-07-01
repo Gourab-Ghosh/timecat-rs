@@ -83,6 +83,10 @@ pub struct MoveSorter {
 }
 
 impl MoveSorter {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
     pub fn reset_variables(&mut self) {
         for ply in 0..MAX_PLY {
             for idx in 0..NUM_KILLER_MOVES {

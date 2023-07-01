@@ -2,6 +2,7 @@ pub mod description {
     pub const ENGINE_NAME: &str = "Timecat";
     pub const ENGINE_AUTHOR: &str = "Gourab Ghosh";
     pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
+    pub const INFO_TEXT: &str = concat!("Timecat v", env!("CARGO_PKG_VERSION"));
 }
 
 macro_rules! make_array_recursively {
@@ -252,6 +253,8 @@ pub mod engine_constants {
     use crate::utils::{cache_table_utils::CacheTableSize, common_utils::evaluate_piece};
     use chess::Piece::*;
     use std::time::Duration;
+
+    pub const MAX_THREADS: usize = 8;
 
     pub const MAX_PLY: usize = 255;
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;

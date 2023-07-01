@@ -3,7 +3,7 @@ use nnue::StockfishNetwork;
 
 pub struct Evaluator {
     stockfish_network: StockfishNetwork,
-    score_cache: CacheTable<Score>,
+    score_cache: Mutex<CacheTable<Score>>,
 }
 
 impl Evaluator {
@@ -24,7 +24,10 @@ impl Evaluator {
         );
         Self {
             stockfish_network: StockfishNetwork::new(),
-            score_cache: CacheTable::new(EVALUATOR_SIZE.to_cache_table_size::<Score>(), 0),
+            score_cache: Mutex::new(CacheTable::new(
+                EVALUATOR_SIZE.to_cache_table_size::<Score>(),
+                0,
+            )),
         }
     }
 
@@ -172,22 +175,22 @@ impl Evaluator {
         self.stockfish_network.eval(&board.get_sub_board())
     }
 
-    fn hashed_evaluate(&mut self, board: &Board) -> Score {
+    fn hashed_evaluate(&self, board: &Board) -> Score {
         let hash = board.hash();
-        if let Some(score) = self.score_cache.get(hash) {
+        if let Some(score) = self.score_cache.lock().unwrap().get(hash) {
             return score;
         }
         let score = self.evaluate_raw(board);
-        self.score_cache.add(hash, score);
+        self.score_cache.lock().unwrap().add(hash, score);
         score
     }
 
-    pub fn evaluate(&mut self, board: &Board) -> Score {
+    pub fn evaluate(&self, board: &Board) -> Score {
         self.hashed_evaluate(board)
     }
 
-    pub fn reset_variables(&mut self) {
-        self.score_cache.reset_variables();
+    pub fn reset_variables(&self) {
+        self.score_cache.lock().unwrap().reset_variables();
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::engine::SearchInfo;
+use std::char::MAX;
 
 use super::*;
 use EngineError::*;
@@ -21,7 +21,7 @@ const EXIT_CODES: &[&str] = &[
 //     SetUCIElo(u16),
 //     SetEngineMode(EngineMode),
 //     // SetPrint,
-//     // SetUciAnalyseMode,
+//     // SetUciAnalyzeMode,
 //     // SetUCIChess960,
 //     // SetUCIOpponent,
 //     // SetUCIShowCurrLine,
@@ -160,6 +160,56 @@ impl Go {
             Ok(())
         } else {
             Self::go_command(engine, Self::extract_go_command(commands)?)
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct SetOption;
+
+impl SetOption {
+    fn threads(commands: &[&str]) -> Result<(), EngineError> {
+        if commands.get(3).ok_or(UnknownCommand)?.to_lowercase() != "value" {
+            return Err(UnknownCommand);
+        }
+        let threads = commands.get(4).ok_or(UnknownCommand)?.to_string().parse()?;
+        if threads == 0 {
+            return Err(ZeroThreads);
+        }
+        if threads > MAX_THREADS {
+            return Err(MaxThreadsExceeded);
+        }
+        set_num_threads(threads, true);
+        Ok(())
+    }
+
+    fn parse_sub_commands(commands: &[&str]) -> Result<(), EngineError> {
+        // setoption name NAME value VALUE
+        if commands.get(1).ok_or(UnknownCommand)?.to_lowercase() != "name" {
+            return Err(UnknownCommand);
+        }
+        let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
+        if ["thread", "threads"].contains(&third_command.as_str()) {
+            return Self::threads(commands);
+        }
+        if ["hash"].contains(&third_command.as_str()) {
+            return Err(NotImplemented);
+        }
+        Err(UnknownCommand)
+    }
+
+    fn parse_commands(commands: &[&str]) -> Result<(), EngineError> {
+        if commands.get(0).ok_or(UnknownCommand)?.to_lowercase() != "setoption" {
+            return Err(UnknownCommand);
+        }
+        Self::parse_sub_commands(&commands)
+    }
+
+    fn parse_input(input: &str) {
+        let sanitized_input = Parser::sanitize_string(input);
+        let commands: Vec<&str> = sanitized_input.split_ascii_whitespace().collect_vec();
+        if let Err(error) = Self::parse_commands(&commands) {
+            Parser::parse_error(error, Some(input));
         }
     }
 }
@@ -419,7 +469,7 @@ impl Parser {
         user_input
     }
 
-    fn parse_raw_input(user_input: &str) -> String {
+    fn sanitize_string(user_input: &str) -> String {
         let user_input = user_input.trim();
         let mut user_input = user_input.to_string();
         for _char in [",", ":"] {
@@ -445,6 +495,9 @@ impl Parser {
         if first_command == "set" {
             return Set::parse_sub_commands(engine, &commands);
         }
+        if first_command == "setoption" {
+            return SetOption::parse_sub_commands(&commands);
+        }
         if first_command == "push" {
             return Push::parse_sub_commands(engine, &commands);
         }
@@ -466,14 +519,14 @@ impl Parser {
     }
 
     pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Result<(), EngineError> {
-        let modified_raw_input = Self::parse_raw_input(raw_input);
-        let first_command = modified_raw_input
+        let sanitized_input = Self::sanitize_string(raw_input);
+        let first_command = sanitized_input
             .split_whitespace()
             .next()
             .unwrap_or_default()
             .to_lowercase();
         if ["uci", "ucinewgame"].contains(&first_command.as_str()) {
-            if modified_raw_input.split_whitespace().nth(1).is_some() {
+            if sanitized_input.split_whitespace().nth(1).is_some() {
                 return Err(UnknownCommand);
             }
             enable_uci_and_disable_color();
@@ -483,25 +536,27 @@ impl Parser {
                 "Unknown UCI command: {}, Trying to find command within default commands!",
                 raw_input.trim()
             );
-            match UCIParser::parse_command(engine, &modified_raw_input) {
+            match UCIParser::parse_command(engine, &sanitized_input) {
                 Err(UnknownCommand) => println!("{}", colorize(message, WARNING_MESSAGE_STYLE)),
                 anything_else => return anything_else,
             }
         }
-        let user_inputs = modified_raw_input
-            .split("&&")
-            .map(|s| s.trim())
-            .collect_vec();
+        let user_inputs = sanitized_input.split("&&").map(|s| s.trim()).collect_vec();
         let mut first_loop = true;
         for user_input in user_inputs {
             if !first_loop {
                 println!();
             }
             first_loop = false;
-            let response = Parser::run_command(engine, user_input);
+            let response = Self::run_command(engine, user_input);
             response?;
         }
         Ok(())
+    }
+
+    fn parse_error(error: EngineError, optional_raw_input: Option<&str>) {
+        let error_message = error.stringify(optional_raw_input);
+        println!("{}", colorize(error_message, ERROR_MESSAGE_STYLE));
     }
 
     fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) -> ParserLoopState {
@@ -520,9 +575,8 @@ impl Parser {
             println!("{error_message}");
             return ParserLoopState::Continue;
         }
-        if let Err(parser_error) = Self::parse_command(engine, raw_input) {
-            let error_message = parser_error.stringify(Some(raw_input));
-            println!("{}", colorize(error_message, ERROR_MESSAGE_STYLE));
+        if let Err(engine_error) = Self::parse_command(engine, raw_input) {
+            Self::parse_error(engine_error, Some(raw_input));
         }
         ParserLoopState::Continue
     }
@@ -544,5 +598,53 @@ impl Parser {
     pub fn uci_loop() {
         enable_uci_and_disable_color();
         Self::main_loop();
+    }
+
+    pub fn parse_args_and_run_main_loop(args: &[&str]) {
+        if args.contains(&"--uci") {
+            set_uci_mode(true, false);
+        }
+        if args.contains(&"--no-color") {
+            set_colored_output(false, false);
+        }
+        if args.contains(&"--threads") {
+            let num_threads = args
+                .iter()
+                .skip_while(|&arg| !arg.starts_with("--threads"))
+                .skip(1)
+                .next()
+                .unwrap_or(&"1")
+                .parse()
+                .unwrap_or(1);
+            set_num_threads(num_threads, false);
+        }
+        if args.contains(&"--help") {
+            println!("{}", Self::get_help_text());
+        }
+        if args.contains(&"--version") {
+            println!("{}", INFO_TEXT);
+        }
+        if args.contains(&"--test") {
+            test().unwrap();
+            return;
+        }
+        if args.contains(&"-c") || args.contains(&"--command") {
+            let command = args
+                .iter()
+                .skip_while(|&arg| !["-c", "--command"].contains(arg))
+                .skip(1)
+                .take_while(|&&arg| !arg.starts_with("--"))
+                .join(" ");
+            let mut engine = Engine::default();
+            println!();
+            Self::run_raw_input_checked(&mut engine, &command);
+            return;
+        }
+        println!("{}\n", colorize(INFO_TEXT, SUCCESS_MESSAGE_STYLE));
+        Self::main_loop();
+    }
+
+    pub fn get_help_text() -> String {
+        String::new()
     }
 }

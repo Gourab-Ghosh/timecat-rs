@@ -1,7 +1,3 @@
-use std::f32::consts::E;
-
-use crate::engine::SearchInfo;
-
 use super::*;
 
 fn prediction_accuracy_func(rms: f64) -> f64 {
