@@ -24,9 +24,24 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTableEntry<T> {
     }
 }
 
+macro_rules! update_overwrites_and_collisions {
+    ($self: ident, $e_hash: ident, $e_entry: ident, $hash: ident, $entry: ident) => {
+        if $e_hash != 0 {
+            if $e_hash == $hash {
+                if $e_entry != $entry {
+                    $self.num_overwrites += 1;
+                }
+            } else {
+                $self.num_collisions += 1;
+            }
+        }
+    };
+}
+
 pub struct CacheTable<T: Copy + Clone + PartialEq + PartialOrd> {
     table: Box<[CacheTableEntry<T>]>,
     mask: usize,
+    num_overwrites: usize,
     num_collisions: usize,
 }
 
@@ -46,6 +61,7 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
         CacheTable {
             table: values.into_boxed_slice(),
             mask: size - 1,
+            num_overwrites: 0,
             num_collisions: 0,
         }
     }
@@ -69,28 +85,30 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
     #[inline(always)]
     pub fn add(&mut self, hash: u64, entry: T) {
         let e = unsafe { self.table.get_unchecked_mut(self.get_index(hash)) };
-        if e.hash != 0 && e.hash != hash {
-            self.num_collisions += 1;
-        }
+        let e_hash = e.get_hash();
+        let e_entry = e.get_entry();
         *e = CacheTableEntry { hash, entry };
+        update_overwrites_and_collisions!(self, e_hash, e_entry, hash, entry);
     }
 
     #[inline(always)]
     pub fn replace_if<F: Fn(T) -> bool>(&mut self, hash: u64, entry: T, replace: F) {
         let e = unsafe { self.table.get_unchecked_mut(self.get_index(hash)) };
         if replace(e.entry) {
-            if e.hash != 0 && e.hash != hash {
-                self.num_collisions += 1;
-            }
+            let e_hash = e.get_hash();
+            let e_entry = e.get_entry();
             *e = CacheTableEntry { hash, entry };
+            update_overwrites_and_collisions!(self, e_hash, e_entry, hash, entry);
         }
     }
 
     pub fn clear(&mut self) {
-        for e in self.table.iter_mut() {
-            e.hash = 0;
-        }
-        self.num_collisions = 0;
+        self.table.iter_mut().for_each(|e| e.hash = 0);
+    }
+
+    #[inline(always)]
+    pub fn get_num_overwrites(&self) -> usize {
+        self.num_overwrites
     }
 
     #[inline(always)]
@@ -99,11 +117,17 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
     }
 
     #[inline(always)]
+    pub fn reset_num_overwrites(&mut self) {
+        self.num_overwrites = 0;
+    }
+
+    #[inline(always)]
     pub fn reset_num_collisions(&mut self) {
         self.num_collisions = 0;
     }
 
     pub fn reset_variables(&mut self) {
+        self.reset_num_overwrites();
         self.reset_num_collisions();
         self.clear()
     }
@@ -167,20 +191,22 @@ pub struct TranspositionTable {
 
 impl TranspositionTable {
     fn generate_new_table(cache_table_size: CacheTableSize) -> CacheTable<TranspositionTableEntry> {
-        println_info(
-            "Transposition Table Cache size",
-            format!(
-                "{} MB",
-                cache_table_size.to_cache_table_memory_size::<TranspositionTableEntry>()
-            ),
-        );
-        println_info(
-            "Transposition Table Cells Count",
-            format!(
-                "{} cells",
-                cache_table_size.to_cache_table_size::<TranspositionTableEntry>()
-            ),
-        );
+        if !is_in_uci_mode() {
+            println_info(
+                "Transposition Table Cache size",
+                format!(
+                    "{} MB",
+                    cache_table_size.to_cache_table_memory_size::<TranspositionTableEntry>()
+                ),
+            );
+            println_info(
+                "Transposition Table Cells Count",
+                format!(
+                    "{} cells",
+                    cache_table_size.to_cache_table_size::<TranspositionTableEntry>()
+                ),
+            );
+        }
         CacheTable::new(
             cache_table_size.to_cache_table_size::<TranspositionTableEntry>(),
             TranspositionTableEntry::default(),
@@ -284,6 +310,10 @@ impl TranspositionTable {
         for e in self.table.lock().unwrap().table.iter_mut() {
             e.entry.best_move = None;
         }
+    }
+
+    pub fn get_num_overwrites(&self) -> usize {
+        self.table.lock().unwrap().get_num_overwrites()
     }
 
     pub fn get_num_collisions(&self) -> usize {

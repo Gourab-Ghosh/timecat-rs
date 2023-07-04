@@ -7,3 +7,5 @@ src/*.bak
 Cargo.lock
 temp*
 flamegraph.svg
+*.log
+engine_paths.py

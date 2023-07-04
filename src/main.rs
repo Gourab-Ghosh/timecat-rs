@@ -23,7 +23,5 @@ fn main() {
         set_colored_output(false, false);
     }
     Parser::parse_args_and_run_main_loop(&args);
-    let elapsed_time = clock.elapsed().as_secs_f64();
-    let precision = 3;
-    println_info("\nRun Time", format!("{:.1$} s", elapsed_time, precision));
+    println_info("\nRun Time", clock.elapsed().stringify());
 }

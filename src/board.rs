@@ -50,7 +50,6 @@ struct BoardState {
     num_repetitions: u8,
 }
 
-#[derive(Clone)]
 pub struct Board {
     board: chess::Board,
     evaluator: Arc<Evaluator>,
@@ -274,21 +273,16 @@ impl Board {
             skeleton = skeleton.replacen('O', &colorize(symbol, &style), 1);
         }
         skeleton.push('\n');
-        let mut checkers_string = String::new();
-        for square in checkers {
-            checkers_string += &square.to_string();
-            checkers_string += " ";
-        }
         skeleton.push_str(
             &[
                 String::new(),
                 format_info("Fen", self.get_fen()),
-                format_info("Transposition Key", self.hash().stringify_hash()),
+                format_info("Transposition Key", self.hash().stringify()),
                 format_info(
                     "Checkers",
-                    colorize(checkers_string.trim().to_uppercase(), CHECKERS_STYLE),
+                    colorize(checkers.stringify(), CHECKERS_STYLE),
                 ),
-                format_info("Current Evaluation", self.evaluate().stringify_score()),
+                format_info("Current Evaluation", self.evaluate().stringify()),
             ]
             .join("\n"),
         );
@@ -401,19 +395,19 @@ impl Board {
     pub fn gives_repetition(&self, move_: Move) -> bool {
         let mut new_board = self.get_sub_board();
         new_board.clone().make_move(move_, &mut new_board);
-        self.repetition_table.get_repetition(new_board.get_hash()) != 0
+        self.repetition_table.get_repetition(new_board.hash()) != 0
     }
 
     pub fn gives_threefold_repetition(&self, move_: Move) -> bool {
         let new_board = self.board.make_move_new(move_);
-        self.repetition_table.get_repetition(new_board.get_hash()) == 2
+        self.repetition_table.get_repetition(new_board.hash()) == 2
     }
 
     pub fn gives_claimable_threefold_repetition(&self, move_: Move) -> bool {
         //TODO: check if this is correct
         let new_board = self.board.make_move_new(move_);
         MoveGen::new_legal(&new_board).any(|m| {
-            let hash = new_board.make_move_new(m).get_hash();
+            let hash = new_board.make_move_new(m).hash();
             self.repetition_table.get_repetition(hash) == 2
         })
     }
@@ -744,11 +738,7 @@ impl Board {
     }
 
     pub fn parse_move(&self, move_text: &str) -> Result<Option<Move>, chess::Error> {
-        let possible_move = self.parse_san(move_text);
-        if possible_move.is_err() {
-            return self.parse_uci(move_text);
-        }
-        possible_move
+        self.parse_uci(move_text).or(self.parse_san(move_text))
     }
 
     pub fn push_san(&mut self, san: &str) -> Option<Move> {
@@ -758,7 +748,7 @@ impl Board {
     }
 
     pub fn push_sans(&mut self, sans: &str) {
-        for san in remove_double_spaces(sans).split(' ') {
+        for san in remove_double_spaces_and_trim(sans).split(' ') {
             self.push_san(san);
         }
     }
@@ -777,7 +767,7 @@ impl Board {
     }
 
     pub fn push_uci_moves(&mut self, uci_moves: &str) {
-        for uci in remove_double_spaces(uci_moves).split(' ') {
+        for uci in remove_double_spaces_and_trim(uci_moves).split(' ') {
             self.push_uci(uci);
         }
     }
@@ -999,7 +989,7 @@ impl Board {
 
     #[inline(always)]
     pub fn hash(&self) -> u64 {
-        self.board.get_hash()
+        self.board.hash()
     }
 
     #[inline(always)]
@@ -1121,6 +1111,22 @@ impl Display for Board {
 impl Default for Board {
     fn default() -> Self {
         STARTING_FEN.into()
+    }
+}
+
+impl Clone for Board {
+    fn clone(&self) -> Self {
+        Self {
+            board: self.board,
+            evaluator: self.evaluator.clone(),
+            stack: Vec::new(),
+            ep_square: self.ep_square,
+            halfmove_clock: self.halfmove_clock,
+            fullmove_number: self.fullmove_number,
+            num_repetitions: self.num_repetitions,
+            starting_fen: STARTING_FEN.to_string(),
+            repetition_table: self.repetition_table.clone(),
+        }
     }
 }
 

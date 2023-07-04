@@ -8,20 +8,22 @@ pub struct Evaluator {
 
 impl Evaluator {
     pub fn new() -> Self {
-        println_info(
-            "Evaluator Cache size",
-            format!(
-                "{} MB",
-                EVALUATOR_SIZE.to_cache_table_memory_size::<Score>()
-            ),
-        );
-        println_info(
-            "Evaluator Cells Count",
-            format!(
-                "{} cells",
-                EVALUATOR_SIZE.to_cache_table_size::<TranspositionTableEntry>()
-            ),
-        );
+        if !is_in_uci_mode() {
+            println_info(
+                "Evaluator Cache size",
+                format!(
+                    "{} MB",
+                    EVALUATOR_SIZE.to_cache_table_memory_size::<Score>()
+                ),
+            );
+            println_info(
+                "Evaluator Cells Count",
+                format!(
+                    "{} cells",
+                    EVALUATOR_SIZE.to_cache_table_size::<TranspositionTableEntry>()
+                ),
+            );
+        }
         Self {
             stockfish_network: StockfishNetwork::new(),
             score_cache: Mutex::new(CacheTable::new(

@@ -53,10 +53,10 @@ pub fn self_play(
             (engine.get_num_nodes_searched() as u128 * 10u128.pow(9)) / time_elapsed.as_nanos();
         println!("\n{}\n", engine.board);
         println_info("Best Move", best_move_san);
-        println_info("Score", score.stringify_score());
+        println_info("Score", score.stringify());
         println_info("Num Nodes Searched", engine.get_num_nodes_searched());
         println_info("PV Line", pv);
-        println_info("Time Taken", format!("{:.3} s", time_elapsed.as_secs_f64()));
+        println_info("Time Taken", time_elapsed.stringify());
         println_info("Nodes per second", format!("{} nodes/s", nps));
     }
     let mean = time_taken_vec.iter().sum::<f64>() / time_taken_vec.len() as f64;
@@ -103,7 +103,7 @@ pub fn self_play(
             "{:?}",
             prediction_score_vec
                 .iter()
-                .map(|&score| score.stringify_score())
+                .map(|&score| score.stringify())
                 .collect_vec()
         )
         .replace('\"', ""),
@@ -113,7 +113,7 @@ pub fn self_play(
     } else if let GoCommand::MoveTime(time) = go_command {
         println_info(
             "Time Searched Per Move",
-            format!("{:.3}", time.as_secs_f64()),
+            time.stringify(),
         );
     }
     println_info(

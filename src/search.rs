@@ -9,6 +9,7 @@ pub struct SearchInfo {
     pub score: Score,
     pub nodes: usize,
     pub hash_full: f64,
+    overwrites: usize,
     pub collisions: usize,
     pub clock: Instant,
     pub pv: Vec<Option<Move>>,
@@ -23,6 +24,7 @@ impl SearchInfo {
             score: searcher.get_score(),
             nodes: searcher.get_num_nodes_searched(),
             hash_full: searcher.get_hash_full(),
+            overwrites: searcher.get_num_overwrites(),
             collisions: searcher.get_num_collisions(),
             clock: searcher.timer.get_clock(),
             pv: searcher.get_pv().to_vec(),
@@ -80,25 +82,28 @@ impl SearchInfo {
         if !is_in_uci_mode() {
             score = self.board.score_flipped(score);
         }
+        let hashfull_string = if is_in_uci_mode() { (self.hash_full.round() as u8).to_string() } else { format!("{:.2}", self.hash_full) };
         let style = SUCCESS_MESSAGE_STYLE;
         println!(
-            "{} {} {} {} {} {} {} {} {} {} {} {:.2} {} {} {} {:.3} {} {}",
+            "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
             colorize("info depth", style),
             self.depth,
             colorize("seldepth", style),
             self.seldepth,
             colorize("score", style),
-            score.stringify_score(),
+            score.stringify(),
             colorize("nodes", style),
             self.nodes,
             colorize("nps", style),
             (self.nodes as u128 * 10_u128.pow(9)) / self.get_time_elapsed().as_nanos(),
             colorize("hashfull", style),
-            self.hash_full,
+            hashfull_string,
+            colorize("overwrites", style),
+            self.overwrites,
             colorize("collisions", style),
             self.collisions,
             colorize("time", style),
-            self.get_time_elapsed().as_secs_f64(),
+            self.get_time_elapsed().stringify(),
             colorize("pv", style),
             Self::get_pv_string(&self.board, &self.pv),
         );
@@ -112,12 +117,12 @@ impl SearchInfo {
             score = self.board.score_flipped(score);
         }
         let warning_message = format!(
-            "Resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {}, beta {} and score {} with time {:.3} s",
+            "info string Resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {}, beta {} and score {} with time {}",
             self.depth,
-            alpha.stringify_score(),
-            beta.stringify_score(),
-            score.stringify_score(),
-            self.get_time_elapsed().as_secs_f64(),
+            alpha.stringify(),
+            beta.stringify(),
+            score.stringify(),
+            self.get_time_elapsed().stringify(),
         );
         println!("{}", colorize(warning_message, WARNING_MESSAGE_STYLE));
     }
@@ -223,18 +228,18 @@ impl Searcher {
         time_elapsed: Duration,
     ) {
         println!(
-            "{} {} {} {} {} {} {} {} {} {} {:.3} s",
+            "{} {} {} {} {} {} {} {} {} {} {}",
             colorize("info", INFO_STYLE),
             colorize("curr move", INFO_STYLE),
             curr_move.stringify_move(board).unwrap(),
             colorize("depth", INFO_STYLE),
             depth,
             colorize("score", INFO_STYLE),
-            board.score_flipped(score).stringify_score(),
+            board.score_flipped(score).stringify(),
             colorize("nodes", INFO_STYLE),
             self.get_num_nodes_searched(),
             colorize("time", INFO_STYLE),
-            time_elapsed.as_secs_f64(),
+            time_elapsed.stringify(),
         );
     }
 
@@ -290,8 +295,6 @@ impl Searcher {
             };
         }
         let key = self.board.hash();
-        let initial_alpha = alpha;
-        let initial_beta = beta;
         let mut score = -CHECKMATE_SCORE;
         let mut max_score = score;
         let mut flag = HashAlpha;
@@ -304,13 +307,21 @@ impl Searcher {
             let clock = Instant::now();
             self.push(move_);
             if move_index == 0
-                || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, enable_timer)? > alpha
+                || -self
+                    .alpha_beta(depth - 1, -alpha - 1, -alpha, enable_timer)
+                    .unwrap_or(alpha)
+                    > alpha
             {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, enable_timer)?;
+                score = -self
+                    .alpha_beta(depth - 1, -beta, -alpha, enable_timer)
+                    .unwrap_or(-score);
                 max_score = max_score.max(score);
             }
             self.pop();
             if self.timer.check_stop(enable_timer) {
+                if max_score == -CHECKMATE_SCORE {
+                    return None;
+                }
                 break;
             }
             if print_move_info && self.is_main_threaded() {
@@ -322,10 +333,7 @@ impl Searcher {
             if score > alpha {
                 flag = HashExact;
                 alpha = score;
-                if (initial_alpha < score && score < initial_beta) || is_checkmate(score) {
-                    self.pv_table.update_table(self.ply, move_);
-                }
-                // self.pv_table.update_table(self.ply, move_);
+                self.pv_table.update_table(self.ply, move_);
                 if score >= beta {
                     self.transposition_table
                         .write(key, depth, self.ply, beta, HashBeta, move_);
@@ -506,9 +514,6 @@ impl Searcher {
                 }
             }
             self.pop();
-            if self.timer.check_stop(enable_timer) {
-                return None;
-            }
             if score > alpha {
                 flag = HashExact;
                 self.pv_table.update_table(self.ply, move_);
@@ -530,7 +535,7 @@ impl Searcher {
         if move_index == 0 {
             return Some(if not_in_check { 0 } else { -mate_score });
         }
-        if !self.timer.check_stop(false) {
+        if !self.timer.check_stop(enable_timer) {
             self.transposition_table.write(
                 key,
                 depth,
@@ -605,6 +610,10 @@ impl Searcher {
         self.transposition_table.get_hash_full()
     }
 
+    pub fn get_num_overwrites(&self) -> usize {
+        self.transposition_table.get_num_overwrites()
+    }
+
     pub fn get_num_collisions(&self) -> usize {
         self.transposition_table.get_num_collisions()
     }
@@ -631,6 +640,34 @@ impl Searcher {
 
     pub fn get_search_info(&self, depth: Depth) -> SearchInfo {
         SearchInfo::new(self, depth)
+    }
+
+    fn parse_timed_command(&self, command: GoCommand) -> GoCommand {
+        if let GoCommand::Timed {
+            wtime,
+            btime,
+            winc,
+            binc,
+            moves_to_go,
+        } = command
+        {
+            let (time, inc) = match self.board.turn() {
+                White => (wtime, winc),
+                Black => (btime, binc),
+            };
+            let divider = moves_to_go.unwrap_or(30);
+            let new_inc = inc
+                .checked_sub(Duration::from_millis(1000))
+                .unwrap_or(Duration::from_millis(0));
+            let search_time = (time / divider + new_inc)
+                .checked_sub(Duration::from_millis(2000))
+                .unwrap_or(Duration::from_millis(0));
+            // let multiplier = match_interpolate!(0.5, 1, 32, 2, self.board.get_num_pieces());
+            // let search_time = Duration::from_secs_f64(search_time.as_secs_f64() * multiplier);
+            GoCommand::MoveTime(search_time)
+        } else {
+            panic!("Expected Timed Command!")
+        }
     }
 
     pub fn go(&mut self, mut command: GoCommand, print_info: bool) {
@@ -673,34 +710,6 @@ impl Searcher {
                 break;
             }
             current_depth += 1;
-        }
-    }
-
-    fn parse_timed_command(&self, command: GoCommand) -> GoCommand {
-        if let GoCommand::Timed {
-            wtime,
-            btime,
-            winc,
-            binc,
-            moves_to_go,
-        } = command
-        {
-            let (time, inc) = match self.board.turn() {
-                White => (wtime, winc),
-                Black => (btime, binc),
-            };
-            let divider = moves_to_go.unwrap_or(30);
-            let new_inc = inc
-                .checked_sub(Duration::from_millis(1000))
-                .unwrap_or(Duration::from_millis(0));
-            let search_time = (time / divider + new_inc)
-                .checked_sub(Duration::from_millis(2000))
-                .unwrap_or(Duration::from_millis(0));
-            // let multiplier = match_interpolate!(0.5, 1, 32, 2, self.board.get_num_pieces());
-            // let search_time = Duration::from_secs_f64(search_time.as_secs_f64() * multiplier);
-            GoCommand::MoveTime(search_time)
-        } else {
-            panic!("Expected Timed Command!")
         }
     }
 }

@@ -254,7 +254,12 @@ pub mod engine_constants {
     use chess::Piece::*;
     use std::time::Duration;
 
-    pub const MAX_THREADS: usize = 8;
+    pub const INITIAL_NUM_THREADS: usize = 1;
+    pub const MIN_NUM_THREADS: usize = 1;
+    pub const MAX_NUM_THREADS: usize = 8;
+    pub const INITIAL_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(20);
+    pub const MIN_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(1);
+    pub const MAX_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(1024);
 
     pub const MAX_PLY: usize = 255;
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
@@ -281,7 +286,6 @@ pub mod engine_constants {
     pub const MAX_MOVES_PER_POSITION: usize = 250;
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
 
-    pub const INITIAL_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(20);
     pub const EVALUATOR_SIZE: CacheTableSize = CacheTableSize::Max(20);
 
     pub const FOLLOW_PV: bool = true;

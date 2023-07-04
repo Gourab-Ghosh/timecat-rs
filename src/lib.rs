@@ -68,5 +68,6 @@ pub use utils::classes::*;
 pub use utils::common_utils::*;
 pub use utils::engine_error::*;
 pub use utils::global_utils::*;
+pub use utils::hash_utils::*;
 pub use utils::square_utils::*;
 pub use utils::string_utils::*;

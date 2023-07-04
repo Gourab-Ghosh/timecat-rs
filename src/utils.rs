@@ -47,16 +47,18 @@ pub mod string_utils {
     use super::*;
     use colored::{ColoredString, Colorize};
 
-    pub fn remove_double_spaces(s: &str) -> String {
-        let mut s = s.to_owned();
-        while s.contains("  ") {
-            s = s.replace("  ", " ");
+    pub fn remove_double_spaces_and_trim(s: &str) -> String {
+        let mut string = String::new();
+        for chr in s.trim().chars() {
+            if !(chr == ' ' && string.ends_with(' ')) {
+                string.push(chr);
+            }
         }
-        return s.trim().to_string();
+        return string;
     }
 
     pub fn simplify_fen(fen: &str) -> String {
-        remove_double_spaces(fen).trim().to_string()
+        remove_double_spaces_and_trim(fen).to_string()
     }
 
     fn colorize_string(s: ColoredString, color: &str) -> ColoredString {
@@ -81,22 +83,25 @@ pub mod string_utils {
         if !is_colored_output() {
             return s;
         }
-        let styles = remove_double_spaces(styles);
+        let styles = remove_double_spaces_and_trim(styles);
         let styles = styles.trim();
         if styles.is_empty() {
             return s;
         }
         let mut colored_string = ColoredString::from(s.as_str());
-        for style in remove_double_spaces(styles).split(' ') {
+        for style in remove_double_spaces_and_trim(styles).split(' ') {
             colored_string = colorize_string(colored_string, style);
         }
         colored_string.to_string()
     }
 
+    pub trait Stringify {
+        fn stringify(&self) -> String;
+    }
+
     pub trait StringifyScore {
         fn stringify_score_normal(self) -> String;
         fn stringify_score_uci(self) -> String;
-        fn stringify_score(self) -> String;
     }
 
     impl StringifyScore for Score {
@@ -136,8 +141,10 @@ pub mod string_utils {
             }
             format!("cp {}", (self as i32 * 100) / PAWN_VALUE as i32)
         }
+    }
 
-        fn stringify_score(self) -> String {
+    impl Stringify for Score {
+        fn stringify(&self) -> String {
             if is_in_uci_mode() {
                 self.stringify_score_uci()
             } else {
@@ -193,13 +200,69 @@ pub mod string_utils {
         }
     }
 
-    pub trait StringifyHash {
-        fn stringify_hash(self) -> String;
+    impl Stringify for u64 {
+        fn stringify(&self) -> String {
+            format!("{:x}", self).to_uppercase()
+        }
     }
 
-    impl StringifyHash for u64 {
-        fn stringify_hash(self) -> String {
-            format!("{:x}", self).to_uppercase()
+    impl Stringify for BitBoard {
+        fn stringify(&self) -> String {
+            let mut checkers_string = String::new();
+            for square in *self {
+                checkers_string += &(square.to_string() + " ");
+            }
+            checkers_string.trim().to_uppercase()
+        }
+    }
+
+    impl Stringify for Duration {
+        fn stringify(&self) -> String {
+            if is_in_uci_mode() {
+                return self.as_millis().to_string();
+            }
+            if self < &Duration::from_secs(1) {
+                return self.as_millis().to_string() + " ms";
+            }
+            let precision = 3;
+            let total_secs = self.as_secs_f64();
+            for (threshold, unit) in [
+                (86400.0, "days"),
+                (3600.0, "hr"),
+                (60.0, "min"),
+            ] {
+                if total_secs >= threshold {
+                    let time_unit = total_secs as u128 / threshold as u128;
+                    let secs = total_secs % threshold;
+                    let mut string = format!("{} {}", time_unit, unit);
+                    if time_unit > 1 {
+                        string += "s";
+                    }
+                    if secs >= 10.0_f64.powi(-(precision as i32)) {
+                        string += " ";
+                        string += &Duration::from_secs_f64(secs).stringify();
+                    }
+                    return string;
+                }
+            }
+            let mut string = format!("{:.1$} sec", total_secs, precision);
+            if total_secs > 1.0 {
+                string += "s";
+            }
+            string
+        }
+    }
+}
+
+pub mod hash_utils {
+    pub trait CustomHash {
+        fn hash(&self) -> u64;
+    }
+
+    impl CustomHash for chess::Board {
+        #[inline(always)]
+        fn hash(&self) -> u64 {
+            self.get_hash().max(1)
         }
     }
 }
@@ -286,7 +349,7 @@ pub mod engine_error {
         ZeroThreads,
 
         #[fail(
-            display = "Cannot exceed number of threads limit! Please choose a value up to {MAX_THREADS}!"
+            display = "Cannot exceed number of threads limit! Please choose a value up to {MAX_NUM_THREADS}!"
         )]
         MaxThreadsExceeded,
 
@@ -453,7 +516,7 @@ pub mod classes {
             let count_entry = self.count_map.get_mut(&key).unwrap_or_else(|| {
                 panic!(
                     "Tried to remove the key {} that doesn't exist!",
-                    key.stringify_hash()
+                    key.stringify()
                 )
             });
             *count_entry -= 1;
@@ -490,7 +553,7 @@ pub mod global_utils {
     static mut UCI_MODE: bool = false;
     static mut T_TABLE_SIZE: CacheTableSize = INITIAL_T_TABLE_SIZE;
     static mut LONG_ALGEBRAIC_NOTATION: bool = false;
-    static mut NUM_THREADS: usize = 1;
+    static mut NUM_THREADS: usize = INITIAL_NUM_THREADS;
 
     fn print_info<T: Display>(message: &str, info: T) {
         if !is_in_uci_mode() {
@@ -502,6 +565,7 @@ pub mod global_utils {
         }
     }
 
+    #[inline(always)]
     pub fn is_colored_output() -> bool {
         unsafe { COLORED_OUTPUT }
     }
@@ -515,6 +579,7 @@ pub mod global_utils {
         }
     }
 
+    #[inline(always)]
     pub fn is_in_uci_mode() -> bool {
         unsafe { UCI_MODE }
     }
@@ -533,6 +598,7 @@ pub mod global_utils {
         set_uci_mode(true, false);
     }
 
+    #[inline(always)]
     pub fn get_t_table_size() -> CacheTableSize {
         unsafe { T_TABLE_SIZE }
     }
@@ -547,6 +613,7 @@ pub mod global_utils {
         );
     }
 
+    #[inline(always)]
     pub fn use_long_algebraic_notation() -> bool {
         unsafe { LONG_ALGEBRAIC_NOTATION }
     }
@@ -558,6 +625,7 @@ pub mod global_utils {
         print_info("Set long algebraic notation to", b);
     }
 
+    #[inline(always)]
     pub fn get_num_threads() -> usize {
         unsafe { NUM_THREADS }
     }

@@ -51,7 +51,9 @@ struct Go;
 
 impl Go {
     fn perft(engine: &mut Engine, depth: Depth) -> usize {
-        println!("{}\n", engine.board);
+        if !is_in_uci_mode() {
+            println!("{}\n", engine.board);
+        }
         let clock = Instant::now();
         let position_count = engine.board.perft(depth);
         let elapsed_time = clock.elapsed();
@@ -61,7 +63,7 @@ impl Go {
         );
         println!();
         println_info("Position Count", position_count);
-        println_info("Time", format!("{} s", elapsed_time.as_secs_f64()));
+        println_info("Time", elapsed_time.stringify());
         println_info("Speed", nps);
         position_count
     }
@@ -107,13 +109,14 @@ impl Go {
     }
 
     fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<(), EngineError> {
-        println!("{}\n", engine.board);
+        if !is_in_uci_mode() {
+            println!("{}\n", engine.board);
+        }
         let clock = Instant::now();
         let (Some(best_move), score) = engine.go(go_command, true) else {
             return Err(BestMoveNotFound { fen: engine.board.get_fen() });
         };
         let ponder_move = engine.get_ponder_move();
-        println!();
         if is_in_uci_mode() {
             let best_move_text = format!(
                 "{} {}",
@@ -132,6 +135,7 @@ impl Go {
             };
             println!("{}", to_print);
         } else {
+            println!();
             let elapsed_time = clock.elapsed();
             let position_count = engine.get_num_nodes_searched();
             let nps = format!(
@@ -139,10 +143,10 @@ impl Go {
                 (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
             );
             let pv_string = SearchInfo::get_pv_string(&engine.board, &engine.get_pv());
-            println_info("Score", score.stringify_score());
+            println_info("Score", score.stringify());
             println_info("PV Line", pv_string);
             println_info("Position Count", position_count);
-            println_info("Time", format!("{:.3} s", elapsed_time.as_secs_f64()));
+            println_info("Time", elapsed_time.stringify());
             println_info("Speed", nps);
             println_info(
                 "Best Move",
@@ -169,17 +173,26 @@ pub struct SetOption;
 
 impl SetOption {
     fn threads(commands: &[&str]) -> Result<(), EngineError> {
-        if commands.get(3).ok_or(UnknownCommand)?.to_lowercase() != "value" {
-            return Err(UnknownCommand);
-        }
-        let threads = commands.get(4).ok_or(UnknownCommand)?.to_string().parse()?;
+        let threads = commands.iter().skip_while(|&&s| s == "value").skip(1).next().ok_or(UnknownCommand)?.parse()?;
         if threads == 0 {
             return Err(ZeroThreads);
         }
-        if threads > MAX_THREADS {
+        if threads > MAX_NUM_THREADS {
             return Err(MaxThreadsExceeded);
         }
         set_num_threads(threads, true);
+        Ok(())
+    }
+
+    fn hash(commands: &[&str]) -> Result<(), EngineError> {
+        let hash = commands.iter().skip_while(|&&s| s == "value").skip(1).next().ok_or(UnknownCommand)?.parse()?;
+        if hash == 0 {
+            return Err(ZeroThreads);
+        }
+        if hash > MAX_NUM_THREADS {
+            return Err(MaxThreadsExceeded);
+        }
+        set_num_threads(hash, true);
         Ok(())
     }
 
@@ -192,7 +205,10 @@ impl SetOption {
         if ["thread", "threads"].contains(&third_command.as_str()) {
             return Self::threads(commands);
         }
-        if ["hash"].contains(&third_command.as_str()) {
+        if third_command == "hash" {
+            return Err(NotImplemented);
+        }
+        if ["MultiPV"].contains(&third_command.as_str()) {
             return Err(NotImplemented);
         }
         Err(UnknownCommand)
@@ -224,7 +240,9 @@ impl Set {
             return Err(BadFen { fen });
         };
         engine.set_fen(&fen)?;
-        println!("{}", engine.board);
+        if !is_in_uci_mode() {
+            println!("{}", engine.board);
+        }
         Ok(())
     }
 
@@ -419,13 +437,26 @@ impl UCIParser {
         Ok(())
     }
 
+    fn print_info() {
+        println!("id name {}", INFO_TEXT);
+        println!("id author {}", ENGINE_AUTHOR);
+        println!(
+            "option name Threads type spin default {} min 1 max {}",
+            INITIAL_NUM_THREADS, MAX_NUM_THREADS
+        );
+        // println!(
+        //     "option name Hash type spin default {} min 1 max {}",
+        //     INITIAL_T_TABLE_SIZE.to_cache_table_memory_size::<TranspositionTableEntry>(),
+        //     MAX_T_TABLE_SIZE.to_cache_table_memory_size::<TranspositionTableEntry>(),
+        // );
+        println!("uciok");
+    }
+
     fn parse_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
         let commands = user_input.split_whitespace().collect_vec();
         let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
         if first_command == "uci" {
-            println!("id name {} {}", ENGINE_NAME, ENGINE_VERSION);
-            println!("id author {}", ENGINE_AUTHOR);
-            println!("uciok");
+            Self::print_info();
             return Ok(());
         } else if first_command == "isready" {
             println!("readyok");
@@ -475,7 +506,7 @@ impl Parser {
         for _char in [",", ":"] {
             user_input = user_input.replace(_char, " ")
         }
-        user_input = remove_double_spaces(&user_input);
+        user_input = remove_double_spaces_and_trim(&user_input);
         user_input
     }
 
@@ -505,7 +536,7 @@ impl Parser {
             return Pop::parse_sub_commands(engine, &commands);
         }
         if user_input == "eval" {
-            println_info("Current Score", engine.board.evaluate().stringify_score());
+            println_info("Current Score", engine.board.evaluate().stringify());
             return Ok(());
         }
         if user_input == "reset board" {
@@ -546,10 +577,9 @@ impl Parser {
         for user_input in user_inputs {
             if !first_loop {
                 println!();
+                first_loop = false;
             }
-            first_loop = false;
-            let response = Self::run_command(engine, user_input);
-            response?;
+            Self::run_command(engine, user_input)?;
         }
         Ok(())
     }
@@ -561,7 +591,7 @@ impl Parser {
 
     fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) -> ParserLoopState {
         if raw_input.is_empty() || EXIT_CODES.contains(&raw_input.to_lowercase().trim()) {
-            if raw_input.is_empty() && is_colored_output() {
+            if raw_input.is_empty() && is_colored_output() && !is_in_uci_mode() {
                 println!();
             }
             println!(
@@ -584,10 +614,15 @@ impl Parser {
     pub fn main_loop() {
         let mut engine = Engine::default();
         loop {
-            println!();
-            let message = colorize("Enter Command: ", INPUT_MESSAGE_STYLE);
-            let raw_input = Self::get_input(if is_in_uci_mode() { "" } else { &message });
-            println!();
+            let raw_input = if is_in_uci_mode() {
+                Self::get_input("")
+            } else {
+                println!();
+                let message = colorize("Enter Command: ", INPUT_MESSAGE_STYLE);
+                let raw_input = Self::get_input(if is_in_uci_mode() { "" } else { &message });
+                println!();
+                raw_input
+            };
             match Self::run_raw_input_checked(&mut engine, &raw_input) {
                 ParserLoopState::Break => break,
                 ParserLoopState::Continue => continue,

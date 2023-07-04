@@ -54,9 +54,6 @@ impl Timer {
     }
 
     pub fn check_stop(&mut self, enable_timer: bool) -> bool {
-        if self.max_time.is_none() {
-            return false;
-        }
         if !enable_timer {
             return false;
         }
