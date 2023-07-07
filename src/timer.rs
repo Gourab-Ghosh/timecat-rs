@@ -4,22 +4,32 @@ use std::io::{stdin, BufRead};
 #[derive(Clone, Debug)]
 pub struct Timer {
     start_instant: Instant,
-    max_time: Option<Duration>,
+    max_time: Duration,
     stop_search: bool,
+    stopper: Arc<AtomicBool>,
+    is_dummy: bool,
 }
 
 impl Timer {
-    pub fn new() -> Self {
+    pub fn new(stopper: Arc<AtomicBool>) -> Self {
         Self {
             start_instant: Instant::now(),
-            max_time: None,
+            max_time: Duration::MAX,
             stop_search: false,
+            stopper,
+            is_dummy: false,
         }
+    }
+
+    pub fn new_dummy() -> Self {
+        let mut timer = Timer::default();
+        timer.is_dummy = true;
+        timer
     }
 
     pub fn reset_variables(&mut self) {
         self.start_instant = Instant::now();
-        self.max_time = None;
+        self.max_time = Duration::MAX;
         self.stop_search = false;
     }
 
@@ -28,8 +38,8 @@ impl Timer {
         self.stop_search = false;
     }
 
-    pub fn set_max_time(&mut self, duration: impl Into<Option<Duration>>) {
-        self.max_time = duration.into();
+    pub fn set_max_time(&mut self, duration: Duration) {
+        self.max_time = duration;
         self.stop_search = false;
     }
 
@@ -37,24 +47,27 @@ impl Timer {
         self.start_instant
     }
 
-    pub fn elapsed(&self) -> Duration {
+    pub fn time_elapsed(&self) -> Duration {
         self.start_instant.elapsed()
     }
 
-    pub fn max_time(&self) -> Option<Duration> {
+    pub fn max_time(&self) -> Duration {
         self.max_time
     }
 
     pub fn is_time_up(&mut self) -> bool {
-        if let Some(max_time) = self.max_time {
-            self.stop_search = self.elapsed() >= max_time;
-            return self.stop_search;
+        if self.max_time == Duration::MAX {
+            return false;
         }
-        false
+        self.stop_search = self.time_elapsed() >= self.max_time;
+        return self.stop_search;
     }
 
     pub fn check_stop(&mut self, enable_timer: bool) -> bool {
-        if !enable_timer {
+        if self.stopper.load(MEMORY_ORDERING) {
+            return true;
+        }
+        if self.is_dummy || !enable_timer {
             return false;
         }
         if self.stop_search {
@@ -66,6 +79,6 @@ impl Timer {
 
 impl Default for Timer {
     fn default() -> Self {
-        Self::new()
+        Self::new(Arc::new(AtomicBool::new(false)))
     }
 }

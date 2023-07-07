@@ -9,10 +9,11 @@ mod evaluate;
 mod nnue;
 mod nnue_rs;
 mod parse;
+mod polyglot;
 mod search;
 mod selfplay;
 mod sort;
-mod tablebase;
+mod syzygy;
 mod tests;
 mod timer;
 mod tt;
@@ -25,7 +26,8 @@ pub use chess::Piece::*;
 pub use chess::{
     get_adjacent_files, get_bishop_moves, get_file as get_file_bb, get_king_moves,
     get_knight_moves, get_pawn_attacks, get_rank as get_rank_bb, get_rook_moves, BitBoard,
-    BoardStatus, ChessMove as Move, Color, File, Piece, Rank, Square,
+    BoardStatus, ChessMove as Move, Color, File, Piece, Rank, Square, ALL_COLORS, ALL_FILES,
+    ALL_PIECES, ALL_RANKS, ALL_SQUARES,
 };
 pub use constants::atomic::*;
 pub use constants::bitboard::*;
@@ -41,7 +43,9 @@ pub use evaluate::*;
 pub use failure::Fail;
 pub use fxhash::FxHashMap as HashMap;
 pub use itertools::Itertools;
+use lazy_static::lazy_static;
 pub use parse::*;
+pub use polyglot::*;
 pub use search::*;
 pub use selfplay::self_play;
 pub use sort::*;
@@ -49,25 +53,35 @@ pub use std::cmp::{self, Ordering};
 pub use std::convert::From;
 pub use std::env;
 pub use std::fmt::{self, Display};
-pub use std::io::{self, Write};
+pub use std::fs;
 pub use std::mem;
 pub use std::num::ParseIntError;
 pub use std::str::{FromStr, ParseBoolError};
-pub use std::sync::atomic::AtomicUsize;
+pub use std::sync::atomic::{AtomicBool, AtomicUsize};
 pub use std::sync::{Arc, Mutex};
 pub use std::thread;
 pub use std::time::{Duration, Instant};
-pub use tablebase::*;
+pub use syzygy::*;
 use tests::test;
 pub use timer::Timer;
 pub use tt::*;
 pub use useful_macros::*;
 pub use utils::bitboard_utils::*;
+pub use utils::info_utils::*;
 pub use utils::cache_table_utils::*;
 pub use utils::classes::*;
-pub use utils::common_utils::*;
+pub use utils::engine_utils::*;
 pub use utils::engine_error::*;
 pub use utils::global_utils::*;
 pub use utils::hash_utils::*;
+pub use utils::io_utils::*;
 pub use utils::square_utils::*;
 pub use utils::string_utils::*;
+
+// pub use std::hint;
+// pub use std::num;
+
+lazy_static! {
+    pub static ref TRANSPOSITION_TABLE: TranspositionTable = TranspositionTable::default();
+    pub static ref EVALUATOR: Evaluator = Evaluator::default();
+}

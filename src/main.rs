@@ -16,10 +16,10 @@ fn main() {
     if !args.contains(&"--disable-backtrace") {
         env::set_var("RUST_BACKTRACE", "1");
     }
-    if !io::stdin().is_terminal() {
+    if !std::io::stdin().is_terminal() {
         set_uci_mode(true, false);
     }
-    if !io::stdout().is_terminal() {
+    if !std::io::stdout().is_terminal() {
         set_colored_output(false, false);
     }
     Parser::parse_args_and_run_main_loop(&args);

@@ -9,7 +9,7 @@ pub struct SearchInfo {
     pub score: Score,
     pub nodes: usize,
     pub hash_full: f64,
-    overwrites: usize,
+    pub overwrites: usize,
     pub collisions: usize,
     pub clock: Instant,
     pub pv: Vec<Option<Move>>,
@@ -82,7 +82,11 @@ impl SearchInfo {
         if !is_in_uci_mode() {
             score = self.board.score_flipped(score);
         }
-        let hashfull_string = if is_in_uci_mode() { (self.hash_full.round() as u8).to_string() } else { format!("{:.2}", self.hash_full) };
+        let hashfull_string = if is_in_uci_mode() {
+            (self.hash_full.round() as u8).to_string()
+        } else {
+            format!("{:.2}", self.hash_full)
+        };
         let style = SUCCESS_MESSAGE_STYLE;
         println!(
             "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
@@ -166,12 +170,17 @@ impl PVTable {
     }
 }
 
+impl Default for PVTable {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct Searcher {
     id: usize,
     initial_board: Board,
     board: Board,
     pv_table: PVTable,
-    transposition_table: Arc<TranspositionTable>,
     move_sorter: MoveSorter,
     timer: Timer,
     num_nodes_searched: Arc<AtomicUsize>,
@@ -184,19 +193,21 @@ impl Searcher {
     pub fn new(
         id: usize,
         board: Board,
-        transposition_table: Arc<TranspositionTable>,
-        timer: Timer,
         num_nodes_searched: Arc<AtomicUsize>,
         selective_depth: Arc<AtomicUsize>,
+        stopper: Arc<AtomicBool>,
     ) -> Self {
         Self {
             id,
             initial_board: board.clone(),
             board,
             pv_table: PVTable::new(),
-            transposition_table,
             move_sorter: MoveSorter::new(),
-            timer,
+            timer: if id == 0 {
+                Timer::new(stopper)
+            } else {
+                Timer::new_dummy()
+            },
             num_nodes_searched,
             selective_depth,
             ply: 0,
@@ -229,16 +240,16 @@ impl Searcher {
     ) {
         println!(
             "{} {} {} {} {} {} {} {} {} {} {}",
-            colorize("info", INFO_STYLE),
-            colorize("curr move", INFO_STYLE),
+            colorize("info", INFO_MESSAGE_STYLE),
+            colorize("curr move", INFO_MESSAGE_STYLE),
             curr_move.stringify_move(board).unwrap(),
-            colorize("depth", INFO_STYLE),
+            colorize("depth", INFO_MESSAGE_STYLE),
             depth,
-            colorize("score", INFO_STYLE),
+            colorize("score", INFO_MESSAGE_STYLE),
             board.score_flipped(score).stringify(),
-            colorize("nodes", INFO_STYLE),
+            colorize("nodes", INFO_MESSAGE_STYLE),
             self.get_num_nodes_searched(),
-            colorize("time", INFO_STYLE),
+            colorize("time", INFO_MESSAGE_STYLE),
             time_elapsed.stringify(),
         );
     }
@@ -255,7 +266,7 @@ impl Searcher {
                 self.board.generate_legal_moves(),
                 &self.board,
                 0,
-                self.transposition_table.read_best_move(self.board.hash()),
+                TRANSPOSITION_TABLE.read_best_move(self.board.hash()),
                 self.get_best_move(),
                 Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
             )
@@ -281,9 +292,9 @@ impl Searcher {
             self.move_sorter.follow_pv();
         }
         if self.is_main_threaded() {
-            self.selective_depth.store(0, MEMORY_ORDER);
+            self.selective_depth.store(0, MEMORY_ORDERING);
         }
-        let enable_timer = depth > 1;
+        let enable_timer = depth > 1 && self.is_main_threaded();
         if self.timer.check_stop(enable_timer) {
             return None;
         }
@@ -335,15 +346,13 @@ impl Searcher {
                 alpha = score;
                 self.pv_table.update_table(self.ply, move_);
                 if score >= beta {
-                    self.transposition_table
-                        .write(key, depth, self.ply, beta, HashBeta, move_);
+                    TRANSPOSITION_TABLE.write(key, depth, self.ply, beta, HashBeta, move_);
                     return Some(beta);
                 }
             }
         }
         if !self.timer.check_stop(enable_timer) {
-            self.transposition_table
-                .write(key, depth, self.ply, alpha, flag, self.get_best_move());
+            TRANSPOSITION_TABLE.write(key, depth, self.ply, alpha, flag, self.get_best_move());
         }
         Some(max_score)
     }
@@ -394,12 +403,9 @@ impl Searcher {
         let is_pv_node = alpha != beta - 1;
         let key = self.board.hash();
         let best_move = if is_pv_node && self.is_main_threaded() {
-            self.transposition_table.read_best_move(key)
+            TRANSPOSITION_TABLE.read_best_move(key)
         } else {
-            match self
-                .transposition_table
-                .read(key, depth, self.ply, alpha, beta)
-            {
+            match TRANSPOSITION_TABLE.read(key, depth, self.ply, alpha, beta) {
                 (Some(score), _) => return Some(score),
                 (None, best_move) => best_move,
             }
@@ -415,7 +421,7 @@ impl Searcher {
             return Some(self.quiescence(alpha, beta));
         }
         // let is_endgame = self.board.is_endgame();
-        self.num_nodes_searched.fetch_add(1, MEMORY_ORDER);
+        self.num_nodes_searched.fetch_add(1, MEMORY_ORDERING);
         let not_in_check = checkers == BB_EMPTY;
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
@@ -522,8 +528,7 @@ impl Searcher {
                     self.move_sorter.add_history_move(move_, &self.board, depth);
                 }
                 if score >= beta {
-                    self.transposition_table
-                        .write(key, depth, self.ply, beta, HashBeta, move_);
+                    TRANSPOSITION_TABLE.write(key, depth, self.ply, beta, HashBeta, move_);
                     if not_capture_move {
                         self.move_sorter.update_killer_moves(move_, self.ply);
                     }
@@ -536,7 +541,7 @@ impl Searcher {
             return Some(if not_in_check { 0 } else { -mate_score });
         }
         if !self.timer.check_stop(enable_timer) {
-            self.transposition_table.write(
+            TRANSPOSITION_TABLE.write(
                 key,
                 depth,
                 self.ply,
@@ -557,9 +562,9 @@ impl Searcher {
             return 0;
         }
         if self.is_main_threaded() {
-            self.selective_depth.fetch_max(self.ply, MEMORY_ORDER);
+            self.selective_depth.fetch_max(self.ply, MEMORY_ORDERING);
         }
-        self.num_nodes_searched.fetch_add(1, MEMORY_ORDER);
+        self.num_nodes_searched.fetch_add(1, MEMORY_ORDERING);
         let evaluation = self.board.evaluate_flipped();
         if evaluation >= beta {
             return beta;
@@ -570,7 +575,7 @@ impl Searcher {
         let key = self.board.hash();
         for WeightedMove { move_, weight } in self.move_sorter.get_weighted_capture_moves_sorted(
             self.board.generate_legal_captures(),
-            self.transposition_table.read_best_move(key),
+            TRANSPOSITION_TABLE.read_best_move(key),
             &self.board,
         ) {
             if weight.is_negative() {
@@ -599,27 +604,42 @@ impl Searcher {
     }
 
     pub fn get_num_nodes_searched(&self) -> usize {
-        self.num_nodes_searched.load(MEMORY_ORDER)
+        self.num_nodes_searched.load(MEMORY_ORDERING)
     }
 
     pub fn get_selective_depth(&self) -> Ply {
-        self.selective_depth.load(MEMORY_ORDER)
+        self.selective_depth.load(MEMORY_ORDERING)
     }
 
     pub fn get_hash_full(&self) -> f64 {
-        self.transposition_table.get_hash_full()
+        TRANSPOSITION_TABLE.get_hash_full()
     }
 
     pub fn get_num_overwrites(&self) -> usize {
-        self.transposition_table.get_num_overwrites()
+        TRANSPOSITION_TABLE.get_num_overwrites()
     }
 
     pub fn get_num_collisions(&self) -> usize {
-        self.transposition_table.get_num_collisions()
+        TRANSPOSITION_TABLE.get_num_collisions()
     }
 
-    pub fn get_pv(&self) -> &[Option<Move>] {
-        self.pv_table.get_pv(0)
+    pub fn get_pv(&self) -> Vec<Option<Move>> {
+        self.pv_table.get_pv(0).to_vec()
+    }
+
+    fn extract_pv_from_t_table(&self, board: &mut Board) -> Vec<Option<Move>> {
+        let mut pv = Vec::new();
+        let best_move = TRANSPOSITION_TABLE.read_best_move(board.hash());
+        if let Some(best_move) = best_move {
+            pv.push(Some(best_move));
+            board.push(best_move);
+            pv.append(&mut self.extract_pv_from_t_table(board).to_vec());
+        }
+        pv
+    }
+
+    pub fn get_pv_from_t_table(&self) -> Vec<Option<Move>> {
+        self.extract_pv_from_t_table(&mut self.initial_board.clone())
     }
 
     pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
@@ -651,23 +671,30 @@ impl Searcher {
             moves_to_go,
         } = command
         {
-            let (time, inc) = match self.board.turn() {
-                White => (wtime, winc),
-                Black => (btime, binc),
+            if self.board.generate_legal_moves().len() == 1 {
+                return GoCommand::Depth(1);
+            }
+            let (self_time, self_inc, opponent_time, _opponent_inc) = match self.board.turn() {
+                White => (wtime, winc, btime, binc),
+                Black => (btime, binc, wtime, winc),
             };
             let divider = moves_to_go.unwrap_or(30);
-            let new_inc = inc
-                .checked_sub(Duration::from_millis(1000))
-                .unwrap_or(Duration::from_millis(0));
-            let search_time = (time / divider + new_inc)
-                .checked_sub(Duration::from_millis(2000))
-                .unwrap_or(Duration::from_millis(0));
-            // let multiplier = match_interpolate!(0.5, 1, 32, 2, self.board.get_num_pieces());
-            // let search_time = Duration::from_secs_f64(search_time.as_secs_f64() * multiplier);
-            GoCommand::MoveTime(search_time)
-        } else {
-            panic!("Expected Timed Command!")
+            let new_inc = self_inc
+                .checked_sub(Duration::from_secs(3))
+                .unwrap_or_default();
+            let opponent_time_advantage = opponent_time.checked_sub(self_time).unwrap_or_default();
+            let search_time = self_time
+                .checked_sub(opponent_time_advantage)
+                .unwrap_or_default()
+                / divider
+                + new_inc;
+            return GoCommand::MoveTime(
+                search_time
+                    .checked_sub(get_move_overhead())
+                    .unwrap_or_default(),
+            );
         }
+        panic!("Expected Timed Command!");
     }
 
     pub fn go(&mut self, mut command: GoCommand, print_info: bool) {

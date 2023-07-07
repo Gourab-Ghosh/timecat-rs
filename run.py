@@ -25,12 +25,8 @@ if sys.platform == "linux":
     sys.path.append(possible_cargo_path)
 
 if which("cargo") is None:
-    if sys.platform == "win32":
-        print("Please install Rust manually and add it to PATH and run this script again.")
-        sys.exit(1)
-    else:
-        print(f"Installing Rust...")
-        os.system("curl --proto '=https' -sSf https://sh.rustup.rs | sh")
+    print("Cargo not found. Please install Rust from https://www.rust-lang.org/tools/install")
+    sys.exit(1)
 
 args = set(sys.argv)
 

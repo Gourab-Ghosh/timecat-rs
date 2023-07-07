@@ -34,10 +34,12 @@ pub fn self_play(
         if print {
             println!();
         }
-        let (Some(best_move), score) = engine.go(go_command, print) else {return Err(EngineError::BestMoveNotFound { fen: engine.board.get_fen() })};
+        let response = engine.go(go_command, print);
+        let Some(best_move) = response.get_best_move() else {return Err(EngineError::BestMoveNotFound { fen: engine.board.get_fen() })};
+        let score = engine.board.score_flipped(response.get_score());
         let time_elapsed = clock.elapsed();
         let best_move_san = best_move.stringify_move(&engine.board).unwrap();
-        let pv = SearchInfo::get_pv_string(&engine.board, &engine.get_pv());
+        let pv = SearchInfo::get_pv_string(&engine.board, &response.get_pv());
         engine.board.push(best_move);
         if time_elapsed.as_secs_f64()
             > *time_taken_vec
@@ -85,12 +87,12 @@ pub fn self_play(
     let prediction_accuracy = calculate_prediction_accuracy(prediction_score_rms);
     println!(
         "\n{}:\n\n{}",
-        colorize("Game PGN", INFO_STYLE),
+        colorize("Game PGN", INFO_MESSAGE_STYLE),
         engine.board.get_pgn(),
     );
     println!(
         "\n{}:\n\n{:?}",
-        colorize("Time taken for all moves", INFO_STYLE),
+        colorize("Time taken for all moves", INFO_MESSAGE_STYLE),
         time_taken_vec
             .iter()
             .map(|x| (x * 1000.0).round() / 1000.0)
@@ -98,7 +100,7 @@ pub fn self_play(
     );
     println!(
         "\n{}:\n\n{}\n",
-        colorize("Prediction Scores", INFO_STYLE),
+        colorize("Prediction Scores", INFO_MESSAGE_STYLE),
         format!(
             "{:?}",
             prediction_score_vec
@@ -111,10 +113,7 @@ pub fn self_play(
     if let GoCommand::Depth(depth) = go_command {
         println_info("Depth Searched", format!("{}", depth));
     } else if let GoCommand::MoveTime(time) = go_command {
-        println_info(
-            "Time Searched Per Move",
-            time.stringify(),
-        );
+        println_info("Time Searched Per Move", time.stringify());
     }
     println_info(
         "Time taken per move",

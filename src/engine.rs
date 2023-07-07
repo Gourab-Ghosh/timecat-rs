@@ -43,71 +43,26 @@ impl GoCommand {
     }
 }
 
-pub struct Engine {
-    pub board: Board,
-    transposition_table: Arc<TranspositionTable>,
-    timer: Timer,
-    num_nodes_searched: Arc<AtomicUsize>,
-    selective_depth: Arc<AtomicUsize>,
-    pv: [Option<Move>; MAX_PLY],
+#[derive(Clone)]
+pub struct GoResponse {
+    search_info: SearchInfo,
 }
 
-impl Engine {
-    pub fn new(board: Board) -> Self {
-        Self {
-            board,
-            transposition_table: Arc::new(TranspositionTable::default()),
-            timer: Timer::default(),
-            num_nodes_searched: Arc::new(AtomicUsize::new(0)),
-            selective_depth: Arc::new(AtomicUsize::new(0)),
-            pv: [None; MAX_PLY],
-        }
+impl GoResponse {
+    fn new(search_info: SearchInfo) -> Self {
+        Self { search_info }
     }
 
-    fn reset_variables(&mut self) {
-        self.num_nodes_searched.store(0, MEMORY_ORDER);
-        self.selective_depth.store(0, MEMORY_ORDER);
-        self.timer.reset_variables();
-        self.transposition_table.reset_variables();
-        // self.board.get_evaluator().lock().unwrap().reset_variables();
-    }
-
-    pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
-        let result = self.board.set_fen(fen);
-        self.reset_variables();
-        result
-    }
-
-    pub fn from_fen(fen: &str) -> Result<Self, chess::Error> {
-        Ok(Engine::new(Board::from_fen(fen)?))
-    }
-
-    pub fn get_num_nodes_searched(&self) -> usize {
-        self.num_nodes_searched.load(MEMORY_ORDER)
-    }
-
-    pub fn get_selective_depth(&self) -> Ply {
-        self.selective_depth.load(MEMORY_ORDER)
-    }
-
-    pub fn get_hash_full(&self) -> f64 {
-        self.transposition_table.get_hash_full()
-    }
-
-    pub fn get_num_collisions(&self) -> usize {
-        self.transposition_table.get_num_collisions()
+    pub fn search_info(&self) -> &SearchInfo {
+        &self.search_info
     }
 
     pub fn get_pv(&self) -> Vec<Option<Move>> {
-        self.pv
-            .iter()
-            .map(|&m| m)
-            .take_while(|&m| m.is_some())
-            .collect_vec()
+        self.search_info.pv.clone()
     }
 
     pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
-        self.get_pv().get(n).copied().flatten()
+        self.search_info.pv.get(n).copied().flatten()
     }
 
     pub fn get_best_move(&self) -> Option<Move> {
@@ -118,18 +73,80 @@ impl Engine {
         self.get_nth_pv_move(1)
     }
 
+    pub fn get_score(&self) -> Score {
+        self.search_info.score
+    }
+}
+
+pub struct Engine {
+    pub board: Board,
+    num_nodes_searched: Arc<AtomicUsize>,
+    selective_depth: Arc<AtomicUsize>,
+    stopper: Arc<AtomicBool>,
+}
+
+impl Engine {
+    pub fn new(board: Board) -> Self {
+        Self {
+            board,
+            num_nodes_searched: Arc::new(AtomicUsize::new(0)),
+            selective_depth: Arc::new(AtomicUsize::new(0)),
+            stopper: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    fn reset_variables(&self) {
+        self.num_nodes_searched.store(0, MEMORY_ORDERING);
+        self.selective_depth.store(0, MEMORY_ORDERING);
+        self.stopper.store(false, MEMORY_ORDERING);
+        TRANSPOSITION_TABLE.reset_variables();
+        EVALUATOR.reset_variables();
+    }
+
+    pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
+        let result = self.board.set_fen(fen);
+        self.reset_variables();
+        TRANSPOSITION_TABLE.clear();
+        EVALUATOR.clear();
+        result
+    }
+
+    pub fn from_fen(fen: &str) -> Result<Self, chess::Error> {
+        Ok(Engine::new(Board::from_fen(fen)?))
+    }
+
+    pub fn get_num_nodes_searched(&self) -> usize {
+        self.num_nodes_searched.load(MEMORY_ORDERING)
+    }
+
+    pub fn get_selective_depth(&self) -> Ply {
+        self.selective_depth.load(MEMORY_ORDERING)
+    }
+
     pub fn generate_searcher(&self, id: usize) -> Searcher {
         Searcher::new(
             id,
             self.board.clone(),
-            self.transposition_table.clone(),
-            self.timer.clone(),
             self.num_nodes_searched.clone(),
             self.selective_depth.clone(),
+            self.stopper.clone(),
         )
     }
 
-    pub fn go(&mut self, command: GoCommand, print_info: bool) -> (Option<Move>, Score) {
+    fn update_stop_command_from_input(stopper: &AtomicBool) {
+        while !stopper.load(MEMORY_ORDERING) {
+            match read_line().to_lowercase().trim() {
+                "stop" => stopper.store(true, MEMORY_ORDERING),
+                "quit" | "exit" => {
+                    stopper.store(true, MEMORY_ORDERING);
+                    set_engine_termination(true);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    pub fn go(&self, command: GoCommand, print_info: bool) -> GoResponse {
         self.reset_variables();
         let num_threads = get_num_threads().max(1);
         for id in 1..num_threads {
@@ -138,16 +155,14 @@ impl Engine {
                 move || threaded_searcher.go(GoCommand::Infinite, false)
             });
         }
+        thread::spawn({
+            let stopper = self.stopper.clone();
+            move || Self::update_stop_command_from_input(&stopper)
+        });
         let mut main_thread_searcher = self.generate_searcher(0);
         main_thread_searcher.go(command, print_info);
-        let main_thread_searcher_ply_moves = main_thread_searcher.get_pv();
-        for ply in 0..MAX_PLY {
-            self.pv[ply] = main_thread_searcher_ply_moves.get(ply).copied().flatten();
-        }
-        (
-            self.get_best_move(),
-            self.board.score_flipped(main_thread_searcher.get_score()),
-        )
+        self.stopper.store(true, MEMORY_ORDERING);
+        GoResponse::new(main_thread_searcher.get_search_info(0))
     }
 }
 

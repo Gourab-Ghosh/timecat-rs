@@ -2,7 +2,6 @@ pub mod description {
     pub const ENGINE_NAME: &str = "Timecat";
     pub const ENGINE_AUTHOR: &str = "Gourab Ghosh";
     pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
-    pub const INFO_TEXT: &str = concat!("Timecat v", env!("CARGO_PKG_VERSION"));
 }
 
 macro_rules! make_array_recursively {
@@ -235,7 +234,7 @@ pub mod print_style {
     pub const BLACK_PIECES_STYLE: &str = "purple bold";
     pub const BOARD_SKELETON_STYLE: &str = "green";
     pub const BOARD_LABEL_STYLE: &str = "red bold";
-    pub const INFO_STYLE: &str = "bright_cyan bold";
+    pub const INFO_MESSAGE_STYLE: &str = "bright_cyan bold";
     pub const CHECK_STYLE: &str = "on_bright_red";
     pub const CHECKERS_STYLE: &str = "bright_red bold";
     pub const CHECKMATE_SCORE_STYLE: &str = "bright_red bold";
@@ -250,16 +249,20 @@ pub mod print_style {
 
 pub mod engine_constants {
     use super::types::*;
-    use crate::utils::{cache_table_utils::CacheTableSize, common_utils::evaluate_piece};
+    use crate::utils::{cache_table_utils::CacheTableSize, engine_utils::evaluate_piece};
     use chess::Piece::*;
     use std::time::Duration;
 
-    pub const INITIAL_NUM_THREADS: usize = 1;
+    pub const DEFAULT_NUM_THREADS: usize = 1;
     pub const MIN_NUM_THREADS: usize = 1;
     pub const MAX_NUM_THREADS: usize = 8;
-    pub const INITIAL_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(20);
+    pub const DEFAULT_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(20);
     pub const MIN_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(1);
     pub const MAX_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(1024);
+    pub const DEFAULT_MOVE_OVERHEAD: Duration = Duration::from_millis(100);
+    pub const MIN_MOVE_OVERHEAD: Duration = Duration::from_secs(0);
+    pub const MAX_MOVE_OVERHEAD: Duration = Duration::MAX;
+    pub const DEFAULT_USE_OWN_BOOK: bool = false;
 
     pub const MAX_PLY: usize = 255;
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
@@ -292,10 +295,10 @@ pub mod engine_constants {
     pub const PRINT_MOVE_INFO_DURATION_THRESHOLD: Duration = Duration::from_millis(1000);
     pub const COMMUNICATION_CHECK_INTERVAL: Duration = Duration::from_millis(100);
 
-    pub const INITIAL_MATERIAL_SCORE_ABS: Score = 16 * PAWN_VALUE
+    pub const DEFAULT_MATERIAL_SCORE_ABS: Score = 16 * PAWN_VALUE
         + 4 * (evaluate_piece(Knight) + evaluate_piece(Bishop) + evaluate_piece(Rook))
         + 2 * evaluate_piece(Queen);
-    pub const MAX_MATERIAL_SCORE: Score = INITIAL_MATERIAL_SCORE_ABS / 2;
+    pub const MAX_MATERIAL_SCORE: Score = DEFAULT_MATERIAL_SCORE_ABS / 2;
 
     #[rustfmt::skip]
     pub const MVV_LVA: [[MoveWeight; 6]; 6] = [
@@ -311,5 +314,5 @@ pub mod engine_constants {
 }
 
 pub mod atomic {
-    pub const MEMORY_ORDER: std::sync::atomic::Ordering = std::sync::atomic::Ordering::Relaxed;
+    pub const MEMORY_ORDERING: std::sync::atomic::Ordering = std::sync::atomic::Ordering::Relaxed;
 }

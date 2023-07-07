@@ -10,6 +10,7 @@ from chess.engine import SimpleEngine, Limit
 from engine_paths import FIRST_ENGINE_PATH, SECOND_ENGINE_PATH
 
 LOG_FILE_PATH = __file__.replace(".py", ".log")
+OVERWRITE_LOG_FILE = True
 # LOG_FILE_PATH = __file__.replace(".py", ".log").replace(".log", "1.log")
 ENGINE_NAME_LENGTH = 15
 
@@ -37,15 +38,16 @@ def play_game(engine1, engine2, limit, fen = STARTING_BOARD_FEN, print_info = Tr
     pgn = Board(fen).variation_san(board.move_stack.copy())
     if print_info:
         print(pgn)
-    if af_path is not None:
-        with open(af_path, "a") as af:
-            af.write(f"fen: {fen}, limit: {limit}\n{pgn}\n\n")
     outcome = board.outcome()
     if outcome is None:
         if board.is_repetition(3):
-            return Outcome(Termination.THREEFOLD_REPETITION, None)
-        if board.is_fifty_moves():
-            return Outcome(Termination.FIFTY_MOVES, None)
+            outcome = Outcome(Termination.THREEFOLD_REPETITION, None)
+        elif board.is_fifty_moves():
+            outcome = Outcome(Termination.FIFTY_MOVES, None)
+    result = outcome.result() if outcome else "1/2-1/2"
+    if af_path is not None:
+        with open(af_path, "a") as af:
+            af.write(f"fen: {fen}, limit: {limit}\n{pgn} {result}\n\n")
     return outcome
 
 def get_fen_and_opening_name(line):
@@ -60,23 +62,27 @@ def get_stats_string(stats):
 class Engine(SimpleEngine):
     pass
 
-def main():
-    engines = []
+def get_engine_paths():
+    engine_paths = []
     for engine_path in [FIRST_ENGINE_PATH, SECOND_ENGINE_PATH]:
         if not os.path.isfile(engine_path):
             raise FileNotFoundError(f"Engine path {engine_path} not found")
-        temp_dir = os.path.join(tempfile.gettempdir(), "temp_engine_files")
+        temp_dir = os.path.join(tempfile.gettempdir(), "engine_binaries")
         os.makedirs(temp_dir, exist_ok = True)
         _, engine_ext = os.path.splitext(engine_path)
         start_num = 1 << (4 * (ENGINE_NAME_LENGTH - 1))
         end_num = (start_num << 4) - 1
         engine_new_path = os.path.join(temp_dir, hex(random.randint(start_num, end_num))[2:].upper() + engine_ext)
         shutil.copy(engine_path, engine_new_path)
-        engines.append(engine_new_path)
+        engine_paths.append(engine_new_path)
+    return engine_paths
+
+def main():
+    engine_paths = get_engine_paths()
     random.seed(0)
-    with Engine.popen_uci(engines[0]) as engine1, Engine.popen_uci(engines[1]) as engine2:
+    with Engine.popen_uci(engine_paths[0]) as engine1, Engine.popen_uci(engine_paths[1]) as engine2:
         with open("test_fens.txt", "r") as rf:
-            fens_and_opening_name = [get_fen_and_opening_name(line) for line in rf.readlines()][:1000]
+            fens_and_opening_name = [get_fen_and_opening_name(line) for line in rf.readlines()]
         random.shuffle(fens_and_opening_name)
         stats = {
             True: 0,
@@ -84,10 +90,10 @@ def main():
             None: 0,
         }
         total_time = 0
-        if os.path.isfile(LOG_FILE_PATH):
+        if OVERWRITE_LOG_FILE and os.path.isfile(LOG_FILE_PATH):
             os.remove(LOG_FILE_PATH)
         limit = Limit(time = 1/10)
-        print(f"Playing {len(fens_and_opening_name)} games")
+        print(f"Playing {len(fens_and_opening_name)} games with limit {limit}")
         for i, (fen, opening) in enumerate(fens_and_opening_name):
             try:
                 start_time = time.time()
@@ -102,7 +108,7 @@ def main():
             except KeyboardInterrupt:
                 break
         print(f"Stats: {get_stats_string(stats)}")
-        print(f"Total time taken: {total_time}")
+        print(f"Total time taken: {datetime.utcfromtimestamp(total_time).time()}")
 
 if __name__ == "__main__":
     main()

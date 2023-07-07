@@ -4,7 +4,7 @@ use super::*;
 
 pub fn parse_command(engine: &mut Engine, raw_input: &str) {
     Parser::parse_command(engine, raw_input)
-        .unwrap_or_else(|err| panic!("{}", err.stringify(Some(raw_input))))
+        .unwrap_or_else(|err| panic!("{}", err.stringify_with_optional_raw_input(Some(raw_input))))
 }
 
 #[allow(unused_variables)]

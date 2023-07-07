@@ -7,23 +7,17 @@ pub struct Evaluator {
 }
 
 impl Evaluator {
+    pub fn print_info(&self) {
+        let cell_count = self.score_cache.lock().unwrap().len();
+        let size = CacheTableSize::get_entry_size::<Score>() * cell_count;
+        println_info(
+            "Evaluator Cache size",
+            format!("{} MB", size / 2_usize.pow(20)),
+        );
+        println_info("Evaluator Cells Count", format!("{} cells", cell_count));
+    }
+
     pub fn new() -> Self {
-        if !is_in_uci_mode() {
-            println_info(
-                "Evaluator Cache size",
-                format!(
-                    "{} MB",
-                    EVALUATOR_SIZE.to_cache_table_memory_size::<Score>()
-                ),
-            );
-            println_info(
-                "Evaluator Cells Count",
-                format!(
-                    "{} cells",
-                    EVALUATOR_SIZE.to_cache_table_size::<TranspositionTableEntry>()
-                ),
-            );
-        }
         Self {
             stockfish_network: StockfishNetwork::new(),
             score_cache: Mutex::new(CacheTable::new(
@@ -193,6 +187,10 @@ impl Evaluator {
 
     pub fn reset_variables(&self) {
         self.score_cache.lock().unwrap().reset_variables();
+    }
+
+    pub fn clear(&self) {
+        self.score_cache.lock().unwrap().clear();
     }
 }
 

@@ -52,7 +52,6 @@ struct BoardState {
 
 pub struct Board {
     board: chess::Board,
-    evaluator: Arc<Evaluator>,
     stack: Vec<(BoardState, Option<Move>)>,
     ep_square: Option<Square>,
     halfmove_clock: u8,
@@ -63,10 +62,9 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn new(evaluator: Arc<Evaluator>) -> Self {
+    pub fn new() -> Self {
         let mut board = Self {
             board: chess::Board::from_str(STARTING_FEN).unwrap(),
-            evaluator,
             stack: Vec::new(),
             ep_square: None,
             halfmove_clock: 0,
@@ -93,12 +91,9 @@ impl Board {
             return Ok(());
         }
         self.board = chess::Board::from_str(&fen).expect("FEN not parsed properly!");
+        self.update_ep_square();
         let mut splitted_fen = fen.split(' ');
-        self.ep_square = match splitted_fen.nth(3).unwrap_or("-") {
-            "-" => None,
-            square => Some(Square::from_str(square).expect("Invalid en_passant square!")),
-        };
-        self.halfmove_clock = splitted_fen.next().unwrap_or("0").parse().unwrap();
+        self.halfmove_clock = splitted_fen.nth(4).unwrap_or("0").parse().unwrap();
         self.fullmove_number = splitted_fen.next().unwrap_or("1").parse().unwrap();
         self.repetition_table.clear();
         self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
@@ -108,17 +103,9 @@ impl Board {
 
     pub fn from_fen(fen: &str) -> Result<Self, chess::Error> {
         let fen = simplify_fen(fen);
-        let mut board = Self::new(Default::default());
+        let mut board = Self::new();
         board.set_fen(&fen)?;
         Ok(board)
-    }
-
-    pub fn get_evaluator(&self) -> Arc<Evaluator> {
-        self.evaluator.clone()
-    }
-
-    pub fn set_evaluator(&mut self, evaluator: Arc<Evaluator>) {
-        self.evaluator = evaluator;
     }
 
     pub fn get_fen(&self) -> String {
@@ -278,10 +265,7 @@ impl Board {
                 String::new(),
                 format_info("Fen", self.get_fen()),
                 format_info("Transposition Key", self.hash().stringify()),
-                format_info(
-                    "Checkers",
-                    colorize(checkers.stringify(), CHECKERS_STYLE),
-                ),
+                format_info("Checkers", colorize(checkers.stringify(), CHECKERS_STYLE)),
                 format_info("Current Evaluation", self.evaluate().stringify()),
             ]
             .join("\n"),
@@ -603,6 +587,14 @@ impl Board {
         self.ep_square
     }
 
+    #[inline(always)]
+    pub fn update_ep_square(&mut self) {
+        self.ep_square = self
+            .board
+            .en_passant()
+            .map(|ep_square| ep_square.forward(self.turn()).unwrap());
+    }
+
     pub fn is_castling(&self, move_: Move) -> bool {
         if (self.get_piece_mask(King) & get_square_bb(move_.get_source())) != BB_EMPTY {
             let rank_diff = move_
@@ -671,10 +663,7 @@ impl Board {
                 .null_move()
                 .expect("Trying to push null move while in check!");
         }
-        self.ep_square = self
-            .board
-            .en_passant()
-            .map(|ep_square| ep_square.forward(self.turn()).unwrap());
+        self.update_ep_square();
         self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
         self.stack.push((board_state, optional_move));
     }
@@ -1009,7 +998,7 @@ impl Board {
     pub fn get_material_score(&self) -> Score {
         let mut score = 0;
         let black_occupied = self.black_occupied();
-        for &piece in chess::ALL_PIECES[..5].iter() {
+        for &piece in ALL_PIECES[..5].iter() {
             let piece_mask = self.get_piece_mask(piece);
             if piece_mask == &BB_EMPTY {
                 continue;
@@ -1040,7 +1029,7 @@ impl Board {
 
     #[inline(always)]
     pub fn get_masked_material_score_abs(&self, mask: &BitBoard) -> Score {
-        chess::ALL_PIECES[..5]
+        ALL_PIECES[..5]
             .iter()
             .map(|&piece| {
                 evaluate_piece(piece) * (self.get_piece_mask(piece) & mask).popcnt() as Score
@@ -1050,7 +1039,7 @@ impl Board {
 
     #[inline(always)]
     pub fn get_material_score_abs(&self) -> Score {
-        chess::ALL_PIECES[..5]
+        ALL_PIECES[..5]
             .iter()
             .map(|&piece| evaluate_piece(piece) * self.get_piece_mask(piece).popcnt() as Score)
             .sum()
@@ -1058,7 +1047,7 @@ impl Board {
 
     #[inline(always)]
     pub fn get_non_pawn_material_score_abs(&self) -> Score {
-        chess::ALL_PIECES[1..5]
+        ALL_PIECES[1..5]
             .iter()
             .map(|&piece| evaluate_piece(piece) * self.get_piece_mask(piece).popcnt() as Score)
             .sum()
@@ -1066,7 +1055,7 @@ impl Board {
 
     #[inline(always)]
     pub fn evaluate(&self) -> Score {
-        self.evaluator.evaluate(self)
+        EVALUATOR.evaluate(self)
     }
 
     #[inline(always)]
@@ -1118,7 +1107,6 @@ impl Clone for Board {
     fn clone(&self) -> Self {
         Self {
             board: self.board,
-            evaluator: self.evaluator.clone(),
             stack: Vec::new(),
             ep_square: self.ep_square,
             halfmove_clock: self.halfmove_clock,

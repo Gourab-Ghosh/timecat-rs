@@ -1,6 +1,6 @@
 use super::*;
 
-pub mod common_utils {
+pub mod engine_utils {
     use super::*;
 
     #[inline(always)]
@@ -20,16 +20,6 @@ pub mod common_utils {
             Queen => 9 * PAWN_VALUE,
             King => 20 * PAWN_VALUE,
         }
-    }
-
-    #[inline(always)]
-    pub fn format_info<T: ToString>(desc: &str, info: T) -> String {
-        format!("{}: {}", colorize(desc, INFO_STYLE), info.to_string())
-    }
-
-    #[inline(always)]
-    pub fn println_info<T: ToString>(desc: &str, info: T) {
-        println!("{}", format_info(desc, info));
     }
 
     #[inline(always)]
@@ -54,11 +44,11 @@ pub mod string_utils {
                 string.push(chr);
             }
         }
-        return string;
+        string
     }
 
     pub fn simplify_fen(fen: &str) -> String {
-        remove_double_spaces_and_trim(fen).to_string()
+        remove_double_spaces_and_trim(fen)
     }
 
     fn colorize_string(s: ColoredString, color: &str) -> ColoredString {
@@ -226,11 +216,7 @@ pub mod string_utils {
             }
             let precision = 3;
             let total_secs = self.as_secs_f64();
-            for (threshold, unit) in [
-                (86400.0, "days"),
-                (3600.0, "hr"),
-                (60.0, "min"),
-            ] {
+            for (threshold, unit) in [(86400.0, "days"), (3600.0, "hr"), (60.0, "min")] {
                 if total_secs >= threshold {
                     let time_unit = total_secs as u128 / threshold as u128;
                     let secs = total_secs % threshold;
@@ -250,6 +236,79 @@ pub mod string_utils {
                 string += "s";
             }
             string
+        }
+    }
+
+    impl Stringify for Move {
+        fn stringify(&self) -> String {
+            self.uci()
+        }
+    }
+
+    impl Stringify for WeightedMove {
+        fn stringify(&self) -> String {
+            format!("({}, {})", self.move_.stringify(), self.weight)
+        }
+    }
+
+    impl<T: Stringify> Stringify for Option<T> {
+        fn stringify(&self) -> String {
+            match self {
+                Some(t) => format!("Some({})", t.stringify()),
+                None => String::from("None"),
+            }
+        }
+    }
+
+    impl<T: Stringify, E: Display> Stringify for Result<T, E> {
+        fn stringify(&self) -> String {
+            match self {
+                Ok(t) => format!("Ok({})", t.stringify()),
+                Err(e) => format!("Err({})", e),
+            }
+        }
+    }
+
+    impl<T: Stringify> Stringify for [T] {
+        fn stringify(&self) -> String {
+            format!("[{}]", self.iter().map(|t| t.stringify()).join(", "))
+        }
+    }
+
+    impl<T: Stringify> Stringify for Vec<T> {
+        fn stringify(&self) -> String {
+            self.as_slice().stringify()
+        }
+    }
+
+    impl Stringify for CacheTableSize {
+        fn stringify(&self) -> String {
+            self.to_cache_table_memory_size::<TranspositionTableEntry>()
+                .to_string()
+        }
+    }
+
+    impl Stringify for Piece {
+        fn stringify(&self) -> String {
+            match self {
+                Pawn => "Pawn",
+                Knight => "Knight",
+                Bishop => "Bishop",
+                Rook => "Rook",
+                Queen => "Queen",
+                King => "King",
+            }
+            .to_string()
+        }
+    }
+
+    impl Stringify for Color {
+        fn stringify(&self) -> String {
+            match self {
+                White => "White",
+                Black => "Black",
+            }
+            .to_string()
         }
     }
 }
@@ -290,18 +349,24 @@ pub mod square_utils {
 }
 
 pub mod engine_error {
-    use std::fmt::Debug;
+    use std::{array::TryFromSliceError, fmt::Debug};
 
     use super::*;
     use EngineError::*;
 
-    #[derive(Clone, Fail)]
+    #[derive(Clone, Fail, PartialEq, Eq)]
     pub enum EngineError {
+        #[fail(display = "No input! Please try again!")]
+        NoInput,
+
         #[fail(display = "")]
         UnknownCommand,
 
         #[fail(display = "Sorry, this command is not implemented yet :(")]
         NotImplemented,
+
+        #[fail(display = "Engine is not running! Try again!")]
+        EngineNotRunning,
 
         #[fail(display = "Bad FEN string: {}! Try Again!", fen)]
         BadFen { fen: String },
@@ -349,20 +414,55 @@ pub mod engine_error {
         ZeroThreads,
 
         #[fail(
-            display = "Cannot exceed number of threads limit! Please choose a value up to {MAX_NUM_THREADS}!"
+            display = "Cannot set number of threads below the limit! Please choose a value above {MIN_NUM_THREADS}!"
+        )]
+        MinThreadsExceeded,
+
+        #[fail(
+            display = "Cannot set number of threads above the limit! Please choose a value below {MAX_NUM_THREADS}!"
         )]
         MaxThreadsExceeded,
+
+        #[fail(
+            display = "Cannot set hash table size below range {}! Please try again!",
+            range
+        )]
+        MinHashTableSizeExceeded { range: String },
+
+        #[fail(
+            display = "Cannot set hash table size above range {}! Please try again!",
+            range
+        )]
+        MaxHashTableSizeExceeded { range: String },
+
+        #[fail(
+            display = "Cannot set move overhead below range {}! Please try again!",
+            range
+        )]
+        MinMoveOverheadExceeded { range: String },
+
+        #[fail(
+            display = "Cannot set move overhead above range {}! Please try again!",
+            range
+        )]
+        MaxMoveOverheadExceeded { range: String },
 
         #[fail(display = "{}", err_msg)]
         CustomError { err_msg: String },
     }
 
     impl EngineError {
-        pub fn stringify(&self, optional_raw_input: Option<&str>) -> String {
+        pub fn stringify_with_optional_raw_input(
+            &self,
+            optional_raw_input: Option<&str>,
+        ) -> String {
             match self {
                 Self::UnknownCommand => match optional_raw_input {
                     Some(raw_input) => {
-                        format!("Unknown command: {}\nPlease try again!", raw_input.trim())
+                        format!(
+                            "Unknown command: {:?}\nType help for more information!",
+                            raw_input
+                        )
                     }
                     None => String::from("Unknown command!\nPlease try again!"),
                 },
@@ -371,15 +471,21 @@ pub mod engine_error {
         }
     }
 
+    impl Stringify for EngineError {
+        fn stringify(&self) -> String {
+            self.stringify_with_optional_raw_input(None)
+        }
+    }
+
     impl Debug for EngineError {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "{}", self.stringify(None))
+            write!(f, "{}", self.stringify())
         }
     }
 
     impl From<EngineError> for String {
         fn from(error: EngineError) -> Self {
-            error.stringify(None)
+            error.stringify()
         }
     }
 
@@ -412,6 +518,34 @@ pub mod engine_error {
             }
         }
     }
+
+    impl From<std::io::Error> for EngineError {
+        fn from(error: std::io::Error) -> Self {
+            CustomError {
+                err_msg: format!("{}! Try again!", error),
+            }
+        }
+    }
+
+    impl From<TryFromSliceError> for EngineError {
+        fn from(error: TryFromSliceError) -> Self {
+            CustomError {
+                err_msg: format!("{}! Try again!", error),
+            }
+        }
+    }
+
+    impl From<String> for EngineError {
+        fn from(err_msg: String) -> Self {
+            CustomError { err_msg }
+        }
+    }
+
+    impl From<&str> for EngineError {
+        fn from(err_msg: &str) -> Self {
+            err_msg.to_string().into()
+        }
+    }
 }
 
 pub mod bitboard_utils {
@@ -425,7 +559,7 @@ pub mod bitboard_utils {
 pub mod cache_table_utils {
     use super::CacheTableEntry;
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     pub enum CacheTableSize {
         Max(usize),
         Min(usize),
@@ -487,8 +621,6 @@ pub mod cache_table_utils {
 
 pub mod classes {
     use super::*;
-    // use std::collections::hash_map::DefaultHasher;
-    // use std::hash::{Hash, Hasher};
 
     #[derive(Default, Debug, Clone)]
     pub struct RepetitionTable {
@@ -528,52 +660,117 @@ pub mod classes {
         pub fn clear(&mut self) {
             self.count_map.clear();
         }
-
-        // fn hash<T: Hash>(t: &T) -> u64 {
-        //     let mut s = DefaultHasher::new();
-        //     t.hash(&mut s);
-        //     s.finish()
-        // }
     }
 }
 
-pub mod score_utils {
-    #[derive(Clone, Copy, Debug)]
-    enum Score {
-        Cp(i16),
-        Mate(i16),
-        Infinity,
+pub mod info_utils {
+    use super::*;
+
+    #[inline(always)]
+    pub fn format_info<T: ToString>(desc: &str, info: T) -> String {
+        format!(
+            "{}: {}",
+            colorize(desc, INFO_MESSAGE_STYLE),
+            info.to_string()
+        )
+    }
+
+    #[inline(always)]
+    pub fn println_info<T: ToString>(desc: &str, info: T) {
+        println!("{}", format_info(desc, info));
+    }
+
+    #[inline(always)]
+    pub fn get_engine_version() -> String {
+        format!("{ENGINE_NAME} v{ENGINE_VERSION}")
+    }
+
+    pub fn print_engine_version(color: bool) {
+        let version = get_engine_version();
+        if color {
+            println!("{}", colorize(version, SUCCESS_MESSAGE_STYLE));
+            return;
+        }
+        println!("{version}");
+    }
+
+    pub fn print_engine_info() {
+        print_engine_version(true);
+        println!();
+        TRANSPOSITION_TABLE.print_info();
+        EVALUATOR.print_info();
+    }
+}
+
+pub mod io_utils {
+    use super::*;
+    use std::io::{self, Read, Write};
+
+    static IS_ALREADY_READING_LINE: AtomicBool = AtomicBool::new(false);
+    static INPUT: Mutex<String> = Mutex::new(String::new());
+
+    pub fn print_line<T: Display>(line: T) {
+        let to_print = format!("{line}");
+        if to_print.is_empty() {
+            return;
+        }
+        print!("{to_print}");
+        io::stdout().flush().unwrap();
+    }
+
+    pub fn read_line() -> String {
+        if IS_ALREADY_READING_LINE.load(MEMORY_ORDERING) {
+            return INPUT.lock().unwrap().to_owned();
+        }
+        let mut input = INPUT.lock().unwrap();
+        input.clear();
+        IS_ALREADY_READING_LINE.store(true, MEMORY_ORDERING);
+        std::io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line!");
+        IS_ALREADY_READING_LINE.store(false, MEMORY_ORDERING);
+        input.to_owned()
     }
 }
 
 pub mod global_utils {
     use super::*;
 
-    static mut COLORED_OUTPUT: bool = true;
-    static mut UCI_MODE: bool = false;
-    static mut T_TABLE_SIZE: CacheTableSize = INITIAL_T_TABLE_SIZE;
-    static mut LONG_ALGEBRAIC_NOTATION: bool = false;
-    static mut NUM_THREADS: usize = INITIAL_NUM_THREADS;
+    static TERMINATE_ENGINE: AtomicBool = AtomicBool::new(false);
+    static COLORED_OUTPUT: AtomicBool = AtomicBool::new(true);
+    static UCI_MODE: AtomicBool = AtomicBool::new(false);
+    static T_TABLE_SIZE: Mutex<CacheTableSize> = Mutex::new(DEFAULT_T_TABLE_SIZE);
+    static LONG_ALGEBRAIC_NOTATION: AtomicBool = AtomicBool::new(false);
+    static NUM_THREADS: AtomicUsize = AtomicUsize::new(DEFAULT_NUM_THREADS);
+    static MOVE_OVERHEAD: Mutex<Duration> = Mutex::new(DEFAULT_MOVE_OVERHEAD);
+    static USE_OWN_BOOK: AtomicBool = AtomicBool::new(DEFAULT_USE_OWN_BOOK);
 
     fn print_info<T: Display>(message: &str, info: T) {
         if !is_in_uci_mode() {
             println!(
                 "{} {}",
                 colorize(message, SUCCESS_MESSAGE_STYLE),
-                colorize(info, INFO_STYLE),
+                colorize(info, INFO_MESSAGE_STYLE),
             );
         }
     }
 
     #[inline(always)]
+    pub fn terminate_engine() -> bool {
+        TERMINATE_ENGINE.load(MEMORY_ORDERING)
+    }
+
+    pub fn set_engine_termination(b: bool) {
+        TERMINATE_ENGINE.store(b, MEMORY_ORDERING);
+    }
+
+    #[inline(always)]
     pub fn is_colored_output() -> bool {
-        unsafe { COLORED_OUTPUT }
+        COLORED_OUTPUT.load(MEMORY_ORDERING)
     }
 
     pub fn set_colored_output(b: bool, print: bool) {
-        unsafe {
-            COLORED_OUTPUT = b;
-        }
+        COLORED_OUTPUT.store(b, MEMORY_ORDERING);
         if print {
             print_info("Colored output is set to", b);
         }
@@ -581,13 +778,11 @@ pub mod global_utils {
 
     #[inline(always)]
     pub fn is_in_uci_mode() -> bool {
-        unsafe { UCI_MODE }
+        UCI_MODE.load(MEMORY_ORDERING)
     }
 
     pub fn set_uci_mode(b: bool, print: bool) {
-        unsafe {
-            UCI_MODE = b;
-        }
+        UCI_MODE.store(b, MEMORY_ORDERING);
         if print {
             print_info("UCI mode is set to", b);
         }
@@ -600,42 +795,60 @@ pub mod global_utils {
 
     #[inline(always)]
     pub fn get_t_table_size() -> CacheTableSize {
-        unsafe { T_TABLE_SIZE }
+        T_TABLE_SIZE.lock().unwrap().to_owned()
     }
 
     pub fn set_t_table_size(size: CacheTableSize) {
-        unsafe {
-            T_TABLE_SIZE = size;
+        *T_TABLE_SIZE.lock().unwrap() = size;
+        TRANSPOSITION_TABLE.reset_size();
+        if !is_in_uci_mode() {
+            TRANSPOSITION_TABLE.print_info();
         }
         print_info(
-            "Set t-table size to",
+            "T-table is set to size to",
             size.to_cache_table_memory_size::<TranspositionTableEntry>(),
         );
     }
 
     #[inline(always)]
     pub fn use_long_algebraic_notation() -> bool {
-        unsafe { LONG_ALGEBRAIC_NOTATION }
+        LONG_ALGEBRAIC_NOTATION.load(MEMORY_ORDERING)
     }
 
     pub fn set_long_algebraic_notation(b: bool) {
-        unsafe {
-            LONG_ALGEBRAIC_NOTATION = b;
-        }
-        print_info("Set long algebraic notation to", b);
+        LONG_ALGEBRAIC_NOTATION.store(b, MEMORY_ORDERING);
+        print_info("Long algebraic notation is set to", b);
     }
 
     #[inline(always)]
     pub fn get_num_threads() -> usize {
-        unsafe { NUM_THREADS }
+        NUM_THREADS.load(MEMORY_ORDERING)
     }
 
     pub fn set_num_threads(num_threads: usize, print: bool) {
-        unsafe {
-            NUM_THREADS = num_threads;
-        }
+        NUM_THREADS.store(num_threads, MEMORY_ORDERING);
         if print {
-            print_info("Number of threads set to", num_threads);
+            print_info("Number of threads is set to", num_threads);
         }
+    }
+
+    #[inline(always)]
+    pub fn get_move_overhead() -> Duration {
+        MOVE_OVERHEAD.lock().unwrap().to_owned()
+    }
+
+    pub fn set_move_overhead(duration: Duration) {
+        *MOVE_OVERHEAD.lock().unwrap() = duration;
+        print_info("Move Overhead is set to", duration.stringify());
+    }
+
+    #[inline(always)]
+    pub fn use_own_book() -> bool {
+        USE_OWN_BOOK.load(MEMORY_ORDERING)
+    }
+
+    pub fn set_using_own_book(b: bool) {
+        USE_OWN_BOOK.store(b, MEMORY_ORDERING);
+        print_info("Own Book Usage is set to", b);
     }
 }

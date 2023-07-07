@@ -28,10 +28,11 @@ panic = "abort"
 binread = { version = "2.2.0", features = ["const_generics"] }
 bytemuck = { version = "1.13.1", features = ["min_const_generics", "derive", "extern_crate_alloc"] }
 chess = "3.2.0"
-colored = "2.0.0"
+colored = "2.0.4"
 failure = "0.1.8"
 fxhash = "0.2.1"
 itertools = "0.10.5"
+lazy_static = "1.4.0"
 
 [build-dependencies]
 reqwest = { version = "0.11.18", features = ["blocking"] }

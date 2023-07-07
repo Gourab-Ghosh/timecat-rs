@@ -113,21 +113,21 @@ impl Go {
             println!("{}\n", engine.board);
         }
         let clock = Instant::now();
-        let (Some(best_move), score) = engine.go(go_command, true) else {
+        let response = engine.go(go_command, true);
+        let Some(best_move) = response.get_best_move() else {
             return Err(BestMoveNotFound { fen: engine.board.get_fen() });
         };
-        let ponder_move = engine.get_ponder_move();
         if is_in_uci_mode() {
             let best_move_text = format!(
                 "{} {}",
-                colorize("bestmove", INFO_STYLE),
+                colorize("bestmove", INFO_MESSAGE_STYLE),
                 best_move.stringify_move(&engine.board).unwrap()
             );
-            let to_print = if let Some(ponder_move) = ponder_move {
+            let to_print = if let Some(ponder_move) = response.get_ponder_move() {
                 format!(
                     "{} {} {}",
                     best_move_text,
-                    colorize("ponder", INFO_STYLE),
+                    colorize("ponder", INFO_MESSAGE_STYLE),
                     ponder_move.stringify_move(&engine.board).unwrap()
                 )
             } else {
@@ -142,8 +142,8 @@ impl Go {
                 "{} Nodes/sec",
                 (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
             );
-            let pv_string = SearchInfo::get_pv_string(&engine.board, &engine.get_pv());
-            println_info("Score", score.stringify());
+            let pv_string = SearchInfo::get_pv_string(&engine.board, &response.get_pv());
+            println_info("Score", response.get_score().stringify());
             println_info("PV Line", pv_string);
             println_info("Position Count", position_count);
             println_info("Time", elapsed_time.stringify());
@@ -173,9 +173,17 @@ pub struct SetOption;
 
 impl SetOption {
     fn threads(commands: &[&str]) -> Result<(), EngineError> {
-        let threads = commands.iter().skip_while(|&&s| s == "value").skip(1).next().ok_or(UnknownCommand)?.parse()?;
+        let threads = commands
+            .iter()
+            .skip_while(|&&s| s != "value")
+            .nth(1)
+            .ok_or(UnknownCommand)?
+            .parse()?;
         if threads == 0 {
             return Err(ZeroThreads);
+        }
+        if threads < MIN_NUM_THREADS {
+            return Err(MinThreadsExceeded);
         }
         if threads > MAX_NUM_THREADS {
             return Err(MaxThreadsExceeded);
@@ -185,14 +193,48 @@ impl SetOption {
     }
 
     fn hash(commands: &[&str]) -> Result<(), EngineError> {
-        let hash = commands.iter().skip_while(|&&s| s == "value").skip(1).next().ok_or(UnknownCommand)?.parse()?;
-        if hash == 0 {
-            return Err(ZeroThreads);
+        let size = CacheTableSize::Max(
+            commands
+                .iter()
+                .skip_while(|&&s| s != "value")
+                .nth(1)
+                .ok_or(UnknownCommand)?
+                .parse()?,
+        );
+        if size < MIN_T_TABLE_SIZE {
+            return Err(MinHashTableSizeExceeded {
+                range: MIN_T_TABLE_SIZE.stringify(),
+            });
         }
-        if hash > MAX_NUM_THREADS {
-            return Err(MaxThreadsExceeded);
+        if size > MAX_T_TABLE_SIZE {
+            return Err(MaxHashTableSizeExceeded {
+                range: MAX_T_TABLE_SIZE.stringify(),
+            });
         }
-        set_num_threads(hash, true);
+        set_t_table_size(size);
+        Ok(())
+    }
+
+    fn move_overhead(commands: &[&str]) -> Result<(), EngineError> {
+        let overhead = Duration::from_millis(
+            commands
+                .iter()
+                .skip_while(|&&s| s != "value")
+                .nth(1)
+                .ok_or(UnknownCommand)?
+                .parse()?,
+        );
+        if overhead < MIN_MOVE_OVERHEAD {
+            return Err(MinMoveOverheadExceeded {
+                range: MIN_MOVE_OVERHEAD.stringify(),
+            });
+        }
+        if overhead > MAX_MOVE_OVERHEAD {
+            return Err(MaxMoveOverheadExceeded {
+                range: MAX_MOVE_OVERHEAD.stringify(),
+            });
+        }
+        set_move_overhead(overhead);
         Ok(())
     }
 
@@ -201,14 +243,22 @@ impl SetOption {
         if commands.get(1).ok_or(UnknownCommand)?.to_lowercase() != "name" {
             return Err(UnknownCommand);
         }
-        let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
-        if ["thread", "threads"].contains(&third_command.as_str()) {
+        let command_name = commands
+            .iter()
+            .skip(2)
+            .take_while(|&&c| c != "value")
+            .join(" ")
+            .to_lowercase();
+        if ["thread", "threads"].contains(&command_name.as_str()) {
             return Self::threads(commands);
         }
-        if third_command == "hash" {
-            return Err(NotImplemented);
+        if command_name == "move overhead" {
+            return Self::move_overhead(commands);
         }
-        if ["MultiPV"].contains(&third_command.as_str()) {
+        if command_name == "hash" {
+            return Self::hash(commands);
+        }
+        if ["multipv"].contains(&command_name.as_str()) {
             return Err(NotImplemented);
         }
         Err(UnknownCommand)
@@ -252,13 +302,7 @@ impl Set {
         if is_colored_output() == b {
             return Err(ColoredOutputUnchanged { b: third_command });
         }
-        if b {
-            println!();
-            set_colored_output(b, true);
-        } else {
-            set_colored_output(b, true);
-            println!();
-        }
+        set_colored_output(b, true);
         Ok(())
     }
 
@@ -333,7 +377,7 @@ impl Push {
                 println!(
                     "{} {}",
                     colorize("Pushed move:", SUCCESS_MESSAGE_STYLE),
-                    colorize(move_text, INFO_STYLE),
+                    colorize(move_text, INFO_MESSAGE_STYLE),
                 );
             }
         }
@@ -364,7 +408,10 @@ impl Pop {
                 println!(
                     "{} {}",
                     colorize("Popped move:", SUCCESS_MESSAGE_STYLE),
-                    colorize(last_move.stringify_move(&engine.board).unwrap(), INFO_STYLE),
+                    colorize(
+                        last_move.stringify_move(&engine.board).unwrap(),
+                        INFO_MESSAGE_STYLE
+                    ),
                 );
             }
         }
@@ -374,12 +421,6 @@ impl Pop {
     pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
         Self::n_times(engine, commands)
     }
-}
-
-#[derive(Debug)]
-enum ParserLoopState {
-    Continue,
-    Break,
 }
 
 struct UCIParser;
@@ -438,17 +479,25 @@ impl UCIParser {
     }
 
     fn print_info() {
-        println!("id name {}", INFO_TEXT);
+        println!("id name {}", get_engine_version());
         println!("id author {}", ENGINE_AUTHOR);
         println!(
-            "option name Threads type spin default {} min 1 max {}",
-            INITIAL_NUM_THREADS, MAX_NUM_THREADS
+            "option name Threads type spin default {} min {} max {}",
+            DEFAULT_NUM_THREADS, MIN_NUM_THREADS, MAX_NUM_THREADS
         );
-        // println!(
-        //     "option name Hash type spin default {} min 1 max {}",
-        //     INITIAL_T_TABLE_SIZE.to_cache_table_memory_size::<TranspositionTableEntry>(),
-        //     MAX_T_TABLE_SIZE.to_cache_table_memory_size::<TranspositionTableEntry>(),
-        // );
+        println!(
+            "option name Hash type spin default {} min {} max {}",
+            DEFAULT_T_TABLE_SIZE.stringify(),
+            MIN_T_TABLE_SIZE.stringify(),
+            MAX_T_TABLE_SIZE.stringify(),
+        );
+        println!(
+            "option name Move Overhead type spin default {} min {} max {}",
+            DEFAULT_MOVE_OVERHEAD.stringify(),
+            MIN_MOVE_OVERHEAD.stringify(),
+            MAX_MOVE_OVERHEAD.stringify(),
+        );
+        // println!("option name OwnBook type check default {DEFAULT_USE_OWN_BOOK}");
         println!("uciok");
     }
 
@@ -458,14 +507,23 @@ impl UCIParser {
         if first_command == "uci" {
             Self::print_info();
             return Ok(());
-        } else if first_command == "isready" {
+        }
+        if first_command == "isready" {
             println!("readyok");
             return Ok(());
-        } else if first_command == "ucinewgame" {
+        }
+        if first_command == "ucinewgame" {
             return Parser::run_command(engine, &format!("set board fen {}", STARTING_FEN));
-        } else if ["position", "go"].contains(&first_command.as_str()) {
+        }
+        if ["position", "go"].contains(&first_command.as_str()) {
             let parsed_input = Self::parse_uci_input(user_input)?;
             return Self::run_parsed_input(engine, &parsed_input);
+        }
+        if user_input.to_lowercase().trim() == "stop" {
+            return Parser::run_command(engine, "stop");
+        }
+        if EXIT_CODES.contains(&user_input.to_lowercase().trim()) {
+            return Parser::run_command(engine, "quit");
         }
         Err(UnknownCommand)
     }
@@ -489,15 +547,8 @@ pub struct Parser;
 
 impl Parser {
     fn get_input<T: Display>(q: T) -> String {
-        if !q.to_string().is_empty() {
-            print!("{q}");
-            std::io::stdout().flush().unwrap();
-        }
-        let mut user_input = String::new();
-        std::io::stdin()
-            .read_line(&mut user_input)
-            .expect("Failed to read line!");
-        user_input
+        print_line(q);
+        read_line()
     }
 
     fn sanitize_string(user_input: &str) -> String {
@@ -511,42 +562,34 @@ impl Parser {
     }
 
     fn run_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
+        if EXIT_CODES.contains(&user_input) {
+            return Ok(set_engine_termination(true));
+        }
+        let res = match user_input {
+            "d" => Ok(println!("{}", engine.board)),
+            "eval" => Ok(println_info(
+                "Current Score",
+                engine.board.evaluate().stringify(),
+            )),
+            "reset board" => Ok(engine.set_fen(STARTING_FEN)?),
+            "stop" => Err(EngineNotRunning),
+            _ => Err(UnknownCommand),
+        };
+        if res != Err(UnknownCommand) {
+            return res;
+        }
         let commands = Vec::from_iter(user_input.split(' '));
         let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
-        if user_input.to_lowercase() == "d" {
-            println!("{}", engine.board);
-            return Ok(());
+        match first_command.as_str() {
+            "help" => Err(NotImplemented),
+            "go" => Go::parse_sub_commands(engine, &commands),
+            "set" => Set::parse_sub_commands(engine, &commands),
+            "setoption" => SetOption::parse_sub_commands(&commands),
+            "push" => Push::parse_sub_commands(engine, &commands),
+            "pop" => Pop::parse_sub_commands(engine, &commands),
+            "selfplay" => SelfPlay::parse_sub_commands(engine, &commands),
+            _ => Err(UnknownCommand),
         }
-        if first_command == "help" {
-            return Err(NotImplemented);
-        }
-        if first_command == "go" {
-            return Go::parse_sub_commands(engine, &commands);
-        }
-        if first_command == "set" {
-            return Set::parse_sub_commands(engine, &commands);
-        }
-        if first_command == "setoption" {
-            return SetOption::parse_sub_commands(&commands);
-        }
-        if first_command == "push" {
-            return Push::parse_sub_commands(engine, &commands);
-        }
-        if first_command == "pop" {
-            return Pop::parse_sub_commands(engine, &commands);
-        }
-        if user_input == "eval" {
-            println_info("Current Score", engine.board.evaluate().stringify());
-            return Ok(());
-        }
-        if user_input == "reset board" {
-            engine.set_fen(STARTING_FEN)?;
-            return Ok(());
-        }
-        if first_command == "selfplay" {
-            return SelfPlay::parse_sub_commands(engine, &commands);
-        }
-        Err(UnknownCommand)
     }
 
     pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Result<(), EngineError> {
@@ -585,35 +628,41 @@ impl Parser {
     }
 
     fn parse_error(error: EngineError, optional_raw_input: Option<&str>) {
-        let error_message = error.stringify(optional_raw_input);
+        let error_message = error.stringify_with_optional_raw_input(optional_raw_input);
         println!("{}", colorize(error_message, ERROR_MESSAGE_STYLE));
     }
 
-    fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) -> ParserLoopState {
-        if raw_input.is_empty() || EXIT_CODES.contains(&raw_input.to_lowercase().trim()) {
-            if raw_input.is_empty() && is_colored_output() && !is_in_uci_mode() {
+    fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) {
+        if raw_input.is_empty() {
+            if !is_in_uci_mode() {
                 println!();
             }
-            println!(
-                "{}",
-                colorize("Program ended successfully!", SUCCESS_MESSAGE_STYLE)
-            );
-            return ParserLoopState::Break;
+            set_engine_termination(true);
+            return;
         }
         if raw_input.trim().is_empty() {
-            let error_message = colorize("No input! Please try again!", ERROR_MESSAGE_STYLE);
-            println!("{error_message}");
-            return ParserLoopState::Continue;
+            Self::parse_error(NoInput, None);
+            return;
         }
         if let Err(engine_error) = Self::parse_command(engine, raw_input) {
             Self::parse_error(engine_error, Some(raw_input));
         }
-        ParserLoopState::Continue
+    }
+
+    fn print_exit_message() {
+        println!(
+            "{}",
+            colorize("Program ended successfully!", SUCCESS_MESSAGE_STYLE)
+        );
     }
 
     pub fn main_loop() {
         let mut engine = Engine::default();
         loop {
+            if terminate_engine() {
+                Self::print_exit_message();
+                break;
+            }
             let raw_input = if is_in_uci_mode() {
                 Self::get_input("")
             } else {
@@ -623,10 +672,7 @@ impl Parser {
                 println!();
                 raw_input
             };
-            match Self::run_raw_input_checked(&mut engine, &raw_input) {
-                ParserLoopState::Break => break,
-                ParserLoopState::Continue => continue,
-            }
+            Self::run_raw_input_checked(&mut engine, &raw_input);
         }
     }
 
@@ -646,18 +692,17 @@ impl Parser {
             let num_threads = args
                 .iter()
                 .skip_while(|&arg| !arg.starts_with("--threads"))
-                .skip(1)
-                .next()
-                .unwrap_or(&"1")
+                .nth(1)
+                .unwrap_or(&"")
                 .parse()
-                .unwrap_or(1);
+                .unwrap_or(DEFAULT_NUM_THREADS);
             set_num_threads(num_threads, false);
         }
         if args.contains(&"--help") {
             println!("{}", Self::get_help_text());
         }
         if args.contains(&"--version") {
-            println!("{}", INFO_TEXT);
+            print_engine_version(false);
         }
         if args.contains(&"--test") {
             test().unwrap();
@@ -675,7 +720,7 @@ impl Parser {
             Self::run_raw_input_checked(&mut engine, &command);
             return;
         }
-        println!("{}\n", colorize(INFO_TEXT, SUCCESS_MESSAGE_STYLE));
+        print_engine_info();
         Self::main_loop();
     }
 

@@ -129,13 +129,16 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
     pub fn reset_variables(&mut self) {
         self.reset_num_overwrites();
         self.reset_num_collisions();
-        self.clear()
     }
 
     #[inline(always)]
     pub fn get_hash_full(&self) -> f64 {
         (self.table.iter().filter(|&&e| e.hash != 0).count() as f64 / self.table.len() as f64)
             * 100.0
+    }
+
+    pub fn len(&self) -> usize {
+        self.table.len()
     }
 }
 
@@ -190,23 +193,20 @@ pub struct TranspositionTable {
 }
 
 impl TranspositionTable {
+    pub fn print_info(&self) {
+        let cell_count = self.table.lock().unwrap().len();
+        let size = CacheTableSize::get_entry_size::<TranspositionTableEntry>() * cell_count;
+        println_info(
+            "Transposition Table Cache size",
+            format!("{} MB", size / 2_usize.pow(20)),
+        );
+        println_info(
+            "Transposition Table Cells Count",
+            format!("{} cells", cell_count),
+        );
+    }
+
     fn generate_new_table(cache_table_size: CacheTableSize) -> CacheTable<TranspositionTableEntry> {
-        if !is_in_uci_mode() {
-            println_info(
-                "Transposition Table Cache size",
-                format!(
-                    "{} MB",
-                    cache_table_size.to_cache_table_memory_size::<TranspositionTableEntry>()
-                ),
-            );
-            println_info(
-                "Transposition Table Cells Count",
-                format!(
-                    "{} cells",
-                    cache_table_size.to_cache_table_size::<TranspositionTableEntry>()
-                ),
-            );
-        }
         CacheTable::new(
             cache_table_size.to_cache_table_size::<TranspositionTableEntry>(),
             TranspositionTableEntry::default(),
@@ -279,8 +279,7 @@ impl TranspositionTable {
                 -mate_score
             };
         }
-        let mut table = self.table.lock().unwrap();
-        let old_entry = table.get(key);
+        let old_entry = self.table.lock().unwrap().get(key);
         let optional_data = if save_score {
             let old_optional_data = old_entry.and_then(|entry| entry.optional_data);
             if old_optional_data.map(|data| data.depth).unwrap_or(-1) < depth {
@@ -291,7 +290,7 @@ impl TranspositionTable {
         } else {
             None
         };
-        table.add(
+        self.table.lock().unwrap().add(
             key,
             TranspositionTableEntry {
                 optional_data,
@@ -326,6 +325,20 @@ impl TranspositionTable {
 
     pub fn reset_variables(&self) {
         self.table.lock().unwrap().reset_variables();
+    }
+
+    pub fn set_size(&self, size: CacheTableSize) {
+        let current_table_copy = self.table.lock().unwrap().table.clone();
+        *self.table.lock().unwrap() = Self::generate_new_table(size);
+        for &CacheTableEntry { hash, entry } in current_table_copy.into_iter() {
+            if hash != 0 {
+                self.table.lock().unwrap().add(hash, entry);
+            }
+        }
+    }
+
+    pub fn reset_size(&self) {
+        self.set_size(get_t_table_size());
     }
 }
 
