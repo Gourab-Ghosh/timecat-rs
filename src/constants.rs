@@ -226,7 +226,7 @@ pub mod board_representation {
 
 pub mod fen {
     pub const EMPTY_FEN: &str = "8/8/8/8/8/8/8/8 w - - 0 1";
-    pub const STARTING_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    pub const STARTING_BOARD_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 }
 
 pub mod print_style {
@@ -249,10 +249,12 @@ pub mod print_style {
 
 pub mod engine_constants {
     use super::types::*;
+    use crate::engine::GoCommand;
     use crate::utils::{cache_table_utils::CacheTableSize, engine_utils::evaluate_piece};
     use chess::Piece::*;
     use std::time::Duration;
 
+    pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
     pub const DEFAULT_NUM_THREADS: usize = 1;
     pub const MIN_NUM_THREADS: usize = 1;
     pub const MAX_NUM_THREADS: usize = 8;

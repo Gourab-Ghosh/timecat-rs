@@ -267,17 +267,19 @@ impl MoveSorter {
             - chess::MoveGen::new_legal(&move_made_sub_board).len() as MoveWeight
     }
 
-    pub fn get_weighted_moves_sorted<T: IntoIterator<Item = Move>>(
+    pub fn get_weighted_moves_sorted(
         &mut self,
-        moves_gen: T,
         board: &Board,
         ply: Ply,
-        best_move: impl Into<Option<Move>> + Copy,
+        optional_best_move: impl Into<Option<Move>>,
         optional_pv_move: impl Into<Option<Move>>,
         is_easily_winning_position: bool,
     ) -> WeightedMoveListSorter {
+        let best_move = optional_best_move
+            .into()
+            .or(TRANSPOSITION_TABLE.read_best_move(board.hash()));
         let optional_pv_move = optional_pv_move.into();
-        let moves_vec = Vec::from_iter(moves_gen.into_iter());
+        let moves_vec = Vec::from_iter(board.generate_legal_moves());
         if self.follow_pv {
             self.follow_pv = false;
             if let Some(pv_move) = optional_pv_move {
@@ -299,7 +301,7 @@ impl MoveSorter {
                     m,
                     board,
                     ply,
-                    best_move.into(),
+                    best_move,
                     optional_pv_move,
                     is_easily_winning_position,
                 ) + MAX_MOVES_PER_POSITION as MoveWeight
@@ -308,20 +310,18 @@ impl MoveSorter {
         }))
     }
 
-    pub fn get_weighted_capture_moves_sorted<T: IntoIterator<Item = Move>>(
-        &self,
-        moves_gen: T,
-        best_move: impl Into<Option<Move>> + Copy,
-        board: &Board,
-    ) -> WeightedMoveListSorter {
-        WeightedMoveListSorter::from_iter(moves_gen.into_iter().enumerate().map(|(idx, m)| {
-            WeightedMove::new(
-                m,
-                1000 * Self::score_capture(m, best_move.into(), board)
-                    + MAX_MOVES_PER_POSITION as MoveWeight
-                    - idx as MoveWeight,
-            )
-        }))
+    pub fn get_weighted_capture_moves_sorted(&self, board: &Board) -> WeightedMoveListSorter {
+        let best_move = TRANSPOSITION_TABLE.read_best_move(board.hash());
+        WeightedMoveListSorter::from_iter(board.generate_legal_captures().enumerate().map(
+            |(idx, m)| {
+                WeightedMove::new(
+                    m,
+                    1000 * Self::score_capture(m, best_move, board)
+                        + MAX_MOVES_PER_POSITION as MoveWeight
+                        - idx as MoveWeight,
+                )
+            },
+        ))
     }
 
     pub fn score_root_moves(

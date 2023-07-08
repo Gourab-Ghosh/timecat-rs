@@ -4,10 +4,6 @@ use super::*;
 use EngineError::*;
 // use Command::*;
 
-const EXIT_CODES: &[&str] = &[
-    "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
-];
-
 // enum Command<'a> {
 //     Go(GoCommand),
 //     MakeMove(&'a [Move]),
@@ -57,8 +53,8 @@ impl Go {
         let clock = Instant::now();
         let position_count = engine.board.perft(depth);
         let elapsed_time = clock.elapsed();
-        let nps = format!(
-            "{} Nodes/sec",
+        let nps: String = format!(
+            "{} nodes/sec",
             (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
         );
         println!();
@@ -72,40 +68,34 @@ impl Go {
         // TODO: Improve Unknown Command Detection
         if ["perft", "depth", "movetime", "infinite"]
             .iter()
-            .filter(|s| commands.contains(s))
+            .filter(|&s| commands.contains(s))
             .count()
             > 1
         {
             return Err(UnknownCommand);
         }
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
-        if second_command == "infinite" {
-            if commands.get(2).is_some() {
+        for (string, index) in [("depth", 3), ("movetime", 3), ("infinite", 2)] {
+            if second_command == string && commands.get(index).is_some() {
                 return Err(UnknownCommand);
             }
-            return Ok(GoCommand::Infinite);
         }
-        let int_str = commands.get(2).ok_or(UnknownCommand)?.to_string();
-        if second_command == "depth" {
-            if commands.get(3).is_some() {
-                return Err(UnknownCommand);
-            }
-            let depth = int_str.parse()?;
-            return Ok(GoCommand::Depth(depth));
-        } else if second_command == "movetime" {
-            if commands.get(3).is_some() {
-                return Err(UnknownCommand);
-            }
-            let time = int_str.parse()?;
-            return Ok(GoCommand::MoveTime(Duration::from_millis(time)));
+        match second_command.as_str() {
+            "depth" => Ok(GoCommand::Depth(
+                commands.get(2).ok_or(UnknownCommand)?.parse()?,
+            )),
+            "movetime" => Ok(GoCommand::from_millis(
+                commands.get(2).ok_or(UnknownCommand)?.parse()?,
+            )),
+            "infinite" => Ok(GoCommand::Infinite),
+            _ => Ok(GoCommand::Timed {
+                wtime: extract_time!(commands, "wtime").ok_or(WTimeNotMentioned)?,
+                btime: extract_time!(commands, "btime").ok_or(BTimeNotMentioned)?,
+                winc: extract_time!(commands, "winc").unwrap_or(Duration::new(0, 0)),
+                binc: extract_time!(commands, "binc").unwrap_or(Duration::new(0, 0)),
+                moves_to_go: extract_value!(commands, "movestogo"),
+            }),
         }
-        Ok(GoCommand::Timed {
-            wtime: extract_time!(commands, "wtime").ok_or(WTimeNotMentioned)?,
-            btime: extract_time!(commands, "btime").ok_or(BTimeNotMentioned)?,
-            winc: extract_time!(commands, "winc").unwrap_or(Duration::new(0, 0)),
-            binc: extract_time!(commands, "binc").unwrap_or(Duration::new(0, 0)),
-            moves_to_go: extract_value!(commands, "movestogo"),
-        })
     }
 
     fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<(), EngineError> {
@@ -118,22 +108,14 @@ impl Go {
             return Err(BestMoveNotFound { fen: engine.board.get_fen() });
         };
         if is_in_uci_mode() {
-            let best_move_text = format!(
-                "{} {}",
-                colorize("bestmove", INFO_MESSAGE_STYLE),
-                best_move.stringify_move(&engine.board).unwrap()
-            );
-            let to_print = if let Some(ponder_move) = response.get_ponder_move() {
-                format!(
-                    "{} {} {}",
-                    best_move_text,
-                    colorize("ponder", INFO_MESSAGE_STYLE),
-                    ponder_move.stringify_move(&engine.board).unwrap()
-                )
-            } else {
-                best_move_text
-            };
-            println!("{}", to_print);
+            let mut move_text =
+                format_info("bestmove", best_move.stringify_move(&engine.board).unwrap());
+            if let Some(ponder_move) = response.get_ponder_move() {
+                move_text += " ";
+                move_text +=
+                    &format_info("ponder", ponder_move.stringify_move(&engine.board).unwrap());
+            }
+            println!("{}", move_text);
         } else {
             println!();
             let elapsed_time = clock.elapsed();
@@ -142,7 +124,7 @@ impl Go {
                 "{} Nodes/sec",
                 (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
             );
-            let pv_string = SearchInfo::get_pv_string(&engine.board, &response.get_pv());
+            let pv_string = get_pv_string(&engine.board, response.get_pv());
             println_info("Score", response.get_score().stringify());
             println_info("PV Line", pv_string);
             println_info("Position Count", position_count);
@@ -159,7 +141,7 @@ impl Go {
     pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if second_command == "perft" {
-            let depth = commands.get(2).ok_or(UnknownCommand)?.to_string().parse()?;
+            let depth = commands.get(2).ok_or(UnknownCommand)?.parse()?;
             Self::perft(engine, depth);
             Ok(())
         } else {
@@ -172,13 +154,22 @@ impl Go {
 pub struct SetOption;
 
 impl SetOption {
-    fn threads(commands: &[&str]) -> Result<(), EngineError> {
-        let threads = commands
+    fn extract_value<T, E>(commands: &[&str]) -> Result<T, EngineError>
+    where
+        T: std::str::FromStr<Err = E>,
+        EngineError: From<E>,
+    {
+        commands
             .iter()
             .skip_while(|&&s| s != "value")
             .nth(1)
-            .ok_or(UnknownCommand)?
-            .parse()?;
+            .ok_or(EngineError::UnknownCommand)?
+            .parse()
+            .map_err(EngineError::from)
+    }
+
+    fn threads(commands: &[&str]) -> Result<(), EngineError> {
+        let threads = Self::extract_value(commands)?;
         if threads == 0 {
             return Err(ZeroThreads);
         }
@@ -193,14 +184,7 @@ impl SetOption {
     }
 
     fn hash(commands: &[&str]) -> Result<(), EngineError> {
-        let size = CacheTableSize::Max(
-            commands
-                .iter()
-                .skip_while(|&&s| s != "value")
-                .nth(1)
-                .ok_or(UnknownCommand)?
-                .parse()?,
-        );
+        let size = CacheTableSize::Max(Self::extract_value(commands)?);
         if size < MIN_T_TABLE_SIZE {
             return Err(MinHashTableSizeExceeded {
                 range: MIN_T_TABLE_SIZE.stringify(),
@@ -216,14 +200,7 @@ impl SetOption {
     }
 
     fn move_overhead(commands: &[&str]) -> Result<(), EngineError> {
-        let overhead = Duration::from_millis(
-            commands
-                .iter()
-                .skip_while(|&&s| s != "value")
-                .nth(1)
-                .ok_or(UnknownCommand)?
-                .parse()?,
-        );
+        let overhead = Duration::from_millis(Self::extract_value(commands)?);
         if overhead < MIN_MOVE_OVERHEAD {
             return Err(MinMoveOverheadExceeded {
                 range: MIN_MOVE_OVERHEAD.stringify(),
@@ -249,26 +226,20 @@ impl SetOption {
             .take_while(|&&c| c != "value")
             .join(" ")
             .to_lowercase();
-        if ["thread", "threads"].contains(&command_name.as_str()) {
-            return Self::threads(commands);
+        match command_name.as_str() {
+            "thread" | "threads" => Self::threads(commands),
+            "hash" => Self::hash(commands),
+            "move overhead" => Self::move_overhead(commands),
+            "multipv" => Err(NotImplemented),
+            _ => Err(UnknownCommand),
         }
-        if command_name == "move overhead" {
-            return Self::move_overhead(commands);
-        }
-        if command_name == "hash" {
-            return Self::hash(commands);
-        }
-        if ["multipv"].contains(&command_name.as_str()) {
-            return Err(NotImplemented);
-        }
-        Err(UnknownCommand)
     }
 
     fn parse_commands(commands: &[&str]) -> Result<(), EngineError> {
-        if commands.get(0).ok_or(UnknownCommand)?.to_lowercase() != "setoption" {
+        if commands.first().ok_or(UnknownCommand)?.to_lowercase() != "setoption" {
             return Err(UnknownCommand);
         }
-        Self::parse_sub_commands(&commands)
+        Self::parse_sub_commands(commands)
     }
 
     fn parse_input(input: &str) {
@@ -285,7 +256,10 @@ struct Set;
 
 impl Set {
     fn board_fen(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
-        let fen = commands[3..commands.len()].join(" ");
+        let mut fen = commands[3..].join(" ");
+        if fen == "startpos" {
+            fen = STARTING_BOARD_FEN.to_string();
+        }
         if !Board::is_good_fen(&fen) {
             return Err(BadFen { fen });
         };
@@ -318,26 +292,18 @@ impl Set {
 
     pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
-        if second_command == "board" {
-            let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
-            if third_command == "startpos" {
-                let commands = ["set", "board", "fen", STARTING_FEN];
-                return Self::board_fen(engine, &commands);
-            } else if third_command == "fen" {
-                return Self::board_fen(engine, commands);
+        match second_command.as_str() {
+            "board" => {
+                let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
+                match third_command.as_str() {
+                    "startpos" | "fen" => Self::board_fen(engine, commands),
+                    _ => Err(UnknownCommand),
+                }
             }
-        } else if second_command == "color" {
-            if commands.get(3).is_some() {
-                return Err(UnknownCommand);
-            }
-            return Self::color(commands);
-        } else if second_command == "ucimode" {
-            if commands.get(3).is_some() {
-                return Err(UnknownCommand);
-            }
-            return Self::ucimode(commands);
+            "color" => Self::color(commands),
+            "ucimode" => Self::ucimode(commands),
+            _ => Err(UnknownCommand),
         }
-        Err(UnknownCommand)
     }
 }
 
@@ -348,14 +314,11 @@ impl Push {
     fn moves(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         for move_text in commands.iter().skip(2) {
-            let optional_move = if second_command == "san" {
-                engine.board.parse_san(move_text)?
-            } else if second_command == "uci" {
-                engine.board.parse_uci(move_text)?
-            } else if ["move", "moves"].contains(&second_command.as_str()) {
-                engine.board.parse_move(move_text)?
-            } else {
-                return Err(UnknownCommand);
+            let optional_move = match second_command.as_str() {
+                "san" => engine.board.parse_san(move_text)?,
+                "uci" => engine.board.parse_uci(move_text)?,
+                "move" | "moves" => engine.board.parse_move(move_text)?,
+                _ => return Err(UnknownCommand),
             };
             if let Some(move_) = optional_move {
                 if !engine.board.is_legal(move_) {
@@ -374,11 +337,7 @@ impl Push {
                 engine.board.push(None);
             }
             if !is_in_uci_mode() {
-                println!(
-                    "{} {}",
-                    colorize("Pushed move:", SUCCESS_MESSAGE_STYLE),
-                    colorize(move_text, INFO_MESSAGE_STYLE),
-                );
+                println_info("Pushed move", move_text);
             }
         }
         Ok(())
@@ -405,13 +364,9 @@ impl Pop {
             }
             let last_move = engine.board.pop();
             if !is_in_uci_mode() {
-                println!(
-                    "{} {}",
-                    colorize("Popped move:", SUCCESS_MESSAGE_STYLE),
-                    colorize(
-                        last_move.stringify_move(&engine.board).unwrap(),
-                        INFO_MESSAGE_STYLE
-                    ),
+                println_info(
+                    "Popped move",
+                    last_move.stringify_move(&engine.board).unwrap(),
                 );
             }
         }
@@ -435,7 +390,7 @@ impl UCIParser {
         let mut new_input = String::from("set board fen ");
         match second_command.as_str() {
             "startpos" => {
-                new_input += STARTING_FEN;
+                new_input += STARTING_BOARD_FEN;
             }
             "fen" => {
                 let fen = commands
@@ -461,9 +416,6 @@ impl UCIParser {
 
     fn parse_uci_input(input: &str) -> Result<String, EngineError> {
         let modified_input = input.trim().to_lowercase();
-        if modified_input.starts_with("go") {
-            return Ok(modified_input);
-        }
         if modified_input.starts_with("position") {
             return Self::parse_uci_position_input(input);
         }
@@ -504,28 +456,16 @@ impl UCIParser {
     fn parse_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
         let commands = user_input.split_whitespace().collect_vec();
         let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
-        if first_command == "uci" {
-            Self::print_info();
-            return Ok(());
+        match first_command.as_str() {
+            "go" | "setoption" | "stop" => Parser::run_command(engine, user_input),
+            "uci" => Ok(Self::print_info()),
+            "isready" => Ok(println!("readyok")),
+            "ucinewgame" => {
+                Parser::run_command(engine, &format!("set board fen {}", STARTING_BOARD_FEN))
+            }
+            "position" => Self::run_parsed_input(engine, &Self::parse_uci_input(user_input)?),
+            _ => Err(UnknownCommand),
         }
-        if first_command == "isready" {
-            println!("readyok");
-            return Ok(());
-        }
-        if first_command == "ucinewgame" {
-            return Parser::run_command(engine, &format!("set board fen {}", STARTING_FEN));
-        }
-        if ["position", "go"].contains(&first_command.as_str()) {
-            let parsed_input = Self::parse_uci_input(user_input)?;
-            return Self::run_parsed_input(engine, &parsed_input);
-        }
-        if user_input.to_lowercase().trim() == "stop" {
-            return Parser::run_command(engine, "stop");
-        }
-        if EXIT_CODES.contains(&user_input.to_lowercase().trim()) {
-            return Parser::run_command(engine, "quit");
-        }
-        Err(UnknownCommand)
     }
 }
 
@@ -533,10 +473,12 @@ struct SelfPlay;
 
 impl SelfPlay {
     fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
+        let mut commands = commands.to_vec();
+        commands[0] = "go";
         let go_command = if commands.get(1).is_some() {
-            Go::extract_go_command(commands)?
+            Go::extract_go_command(&commands)?
         } else {
-            GoCommand::MoveTime(Duration::from_secs(3))
+            DEFAULT_SELFPLAY_COMMAND
         };
         self_play(engine, go_command, true, None)
     }
@@ -546,9 +488,13 @@ impl SelfPlay {
 pub struct Parser;
 
 impl Parser {
+    pub const EXIT_CODES: [&str; 7] = [
+        "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
+    ];
+
     fn get_input<T: Display>(q: T) -> String {
         print_line(q);
-        read_line()
+        IO_READER.read_line()
     }
 
     fn sanitize_string(user_input: &str) -> String {
@@ -562,17 +508,20 @@ impl Parser {
     }
 
     fn run_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
-        if EXIT_CODES.contains(&user_input) {
-            return Ok(set_engine_termination(true));
-        }
         let res = match user_input {
             "d" => Ok(println!("{}", engine.board)),
             "eval" => Ok(println_info(
                 "Current Score",
                 engine.board.evaluate().stringify(),
             )),
-            "reset board" => Ok(engine.set_fen(STARTING_FEN)?),
-            "stop" => Err(EngineNotRunning),
+            "reset board" => engine.set_fen(STARTING_BOARD_FEN).map_err(EngineError::from),
+            "stop" => {
+                if is_in_uci_mode() {
+                    Ok(())
+                } else {
+                    Err(EngineNotRunning)
+                }
+            }
             _ => Err(UnknownCommand),
         };
         if res != Err(UnknownCommand) {
@@ -594,6 +543,10 @@ impl Parser {
 
     pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Result<(), EngineError> {
         let sanitized_input = Self::sanitize_string(raw_input);
+        if Self::EXIT_CODES.contains(&sanitized_input.as_str()) {
+            set_engine_termination(true);
+            return Ok(());
+        }
         let first_command = sanitized_input
             .split_whitespace()
             .next()
@@ -682,6 +635,7 @@ impl Parser {
     }
 
     pub fn parse_args_and_run_main_loop(args: &[&str]) {
+        thread::spawn(|| IO_READER.start_reader());
         if args.contains(&"--uci") {
             set_uci_mode(true, false);
         }

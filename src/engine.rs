@@ -19,6 +19,10 @@ pub enum GoCommand {
 }
 
 impl GoCommand {
+    pub const fn from_millis(millis: u64) -> Self {
+        Self::MoveTime(Duration::from_millis(millis))
+    }
+
     pub fn is_infinite(&self) -> bool {
         self == &Self::Infinite
     }
@@ -57,12 +61,12 @@ impl GoResponse {
         &self.search_info
     }
 
-    pub fn get_pv(&self) -> Vec<Option<Move>> {
-        self.search_info.pv.clone()
+    pub fn get_pv(&self) -> &[Option<Move>] {
+        self.search_info.get_pv()
     }
 
     pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
-        self.search_info.pv.get(n).copied().flatten()
+        self.search_info.get_pv().get(n).copied().flatten()
     }
 
     pub fn get_best_move(&self) -> Option<Move> {
@@ -74,7 +78,7 @@ impl GoResponse {
     }
 
     pub fn get_score(&self) -> Score {
-        self.search_info.score
+        self.search_info.get_score()
     }
 }
 
@@ -135,7 +139,12 @@ impl Engine {
 
     fn update_stop_command_from_input(stopper: &AtomicBool) {
         while !stopper.load(MEMORY_ORDERING) {
-            match read_line().to_lowercase().trim() {
+            match IO_READER
+                .read_line_once()
+                .unwrap_or_default()
+                .to_lowercase()
+                .trim()
+            {
                 "stop" => stopper.store(true, MEMORY_ORDERING),
                 "quit" | "exit" => {
                     stopper.store(true, MEMORY_ORDERING);
@@ -162,7 +171,7 @@ impl Engine {
         let mut main_thread_searcher = self.generate_searcher(0);
         main_thread_searcher.go(command, print_info);
         self.stopper.store(true, MEMORY_ORDERING);
-        GoResponse::new(main_thread_searcher.get_search_info(0))
+        GoResponse::new(main_thread_searcher.get_search_info())
     }
 }
 

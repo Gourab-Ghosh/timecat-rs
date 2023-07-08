@@ -36,10 +36,10 @@ pub fn self_play(
         }
         let response = engine.go(go_command, print);
         let Some(best_move) = response.get_best_move() else {return Err(EngineError::BestMoveNotFound { fen: engine.board.get_fen() })};
-        let score = engine.board.score_flipped(response.get_score());
+        let score = response.get_score();
         let time_elapsed = clock.elapsed();
         let best_move_san = best_move.stringify_move(&engine.board).unwrap();
-        let pv = SearchInfo::get_pv_string(&engine.board, &response.get_pv());
+        let pv = get_pv_string(&engine.board, &response.get_pv());
         engine.board.push(best_move);
         if time_elapsed.as_secs_f64()
             > *time_taken_vec

@@ -64,13 +64,13 @@ pub struct Board {
 impl Board {
     pub fn new() -> Self {
         let mut board = Self {
-            board: chess::Board::from_str(STARTING_FEN).unwrap(),
+            board: chess::Board::from_str(STARTING_BOARD_FEN).unwrap(),
             stack: Vec::new(),
             ep_square: None,
             halfmove_clock: 0,
             fullmove_number: 1,
             num_repetitions: 0,
-            starting_fen: STARTING_FEN.to_string(),
+            starting_fen: STARTING_BOARD_FEN.to_string(),
             repetition_table: RepetitionTable::new(),
         };
         board.num_repetitions = board
@@ -148,7 +148,7 @@ impl Board {
     }
 
     pub fn reset(&mut self) {
-        self.set_fen(STARTING_FEN).unwrap();
+        self.set_fen(STARTING_BOARD_FEN).unwrap();
     }
 
     pub fn clear(&mut self) {
@@ -940,7 +940,7 @@ impl Board {
     /// The result of the game is included in the tags.
     pub fn get_pgn(&self) -> String {
         let mut pgn = String::new();
-        if self.starting_fen != STARTING_FEN {
+        if self.starting_fen != STARTING_BOARD_FEN {
             pgn += &format!("[FEN \"{}\"]", self.starting_fen);
         }
         pgn += &self.variation_san(
@@ -1099,7 +1099,7 @@ impl Display for Board {
 
 impl Default for Board {
     fn default() -> Self {
-        STARTING_FEN.into()
+        STARTING_BOARD_FEN.into()
     }
 }
 
@@ -1112,7 +1112,7 @@ impl Clone for Board {
             halfmove_clock: self.halfmove_clock,
             fullmove_number: self.fullmove_number,
             num_repetitions: self.num_repetitions,
-            starting_fen: STARTING_FEN.to_string(),
+            starting_fen: STARTING_BOARD_FEN.to_string(),
             repetition_table: self.repetition_table.clone(),
         }
     }

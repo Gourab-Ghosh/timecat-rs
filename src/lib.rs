@@ -67,14 +67,15 @@ pub use timer::Timer;
 pub use tt::*;
 pub use useful_macros::*;
 pub use utils::bitboard_utils::*;
-pub use utils::info_utils::*;
 pub use utils::cache_table_utils::*;
 pub use utils::classes::*;
-pub use utils::engine_utils::*;
 pub use utils::engine_error::*;
+pub use utils::engine_utils::*;
 pub use utils::global_utils::*;
 pub use utils::hash_utils::*;
+pub use utils::info_utils::*;
 pub use utils::io_utils::*;
+pub use utils::pv_utils::*;
 pub use utils::square_utils::*;
 pub use utils::string_utils::*;
 
@@ -84,4 +85,5 @@ pub use utils::string_utils::*;
 lazy_static! {
     pub static ref TRANSPOSITION_TABLE: TranspositionTable = TranspositionTable::default();
     pub static ref EVALUATOR: Evaluator = Evaluator::default();
+    pub static ref IO_READER: IoReader = IoReader::default();
 }

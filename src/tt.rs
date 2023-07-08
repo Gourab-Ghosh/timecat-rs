@@ -224,9 +224,7 @@ impl TranspositionTable {
         key: u64,
         depth: Depth,
         ply: Ply,
-        alpha: Score,
-        beta: Score,
-    ) -> (Option<Score>, Option<Move>) {
+    ) -> (Option<(Score, EntryFlag)>, Option<Move>) {
         let tt_entry = match self.table.lock().unwrap().get(key) {
             Some(entry) => entry,
             None => return (None, None),
@@ -247,11 +245,7 @@ impl TranspositionTable {
                 -(ply as Score)
             };
         }
-        match data.flag {
-            HashExact => (Some(score), best_move),
-            HashAlpha => (if score <= alpha { Some(score) } else { None }, best_move),
-            HashBeta => (if score >= beta { Some(score) } else { None }, best_move),
-        }
+        (Some((score, data.flag)), best_move)
     }
 
     pub fn read_best_move(&self, key: u64) -> Option<Move> {

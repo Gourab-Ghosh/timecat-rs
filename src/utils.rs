@@ -668,11 +668,14 @@ pub mod info_utils {
 
     #[inline(always)]
     pub fn format_info<T: ToString>(desc: &str, info: T) -> String {
-        format!(
-            "{}: {}",
-            colorize(desc, INFO_MESSAGE_STYLE),
-            info.to_string()
-        )
+        let mut desc = desc.trim().trim_end_matches(':').to_string();
+        desc = colorize(desc, INFO_MESSAGE_STYLE);
+        let info = info.to_string();
+        if is_in_uci_mode() {
+            format!("{desc} {info}")
+        } else {
+            format!("{desc}: {info}")
+        }
     }
 
     #[inline(always)]
@@ -702,12 +705,67 @@ pub mod info_utils {
     }
 }
 
+pub mod pv_utils {
+    use super::*;
+
+    pub fn extract_pv_from_t_table(board: &mut Board) -> Vec<Option<Move>> {
+        let mut pv = Vec::new();
+        let best_move = TRANSPOSITION_TABLE.read_best_move(board.hash());
+        if let Some(best_move) = best_move {
+            pv.push(Some(best_move));
+            board.push(best_move);
+            pv.append(&mut extract_pv_from_t_table(board));
+            board.pop();
+        }
+        pv
+    }
+
+    pub fn get_pv_as_uci(pv: &[Option<Move>]) -> String {
+        let mut pv_string = String::new();
+        for move_ in pv {
+            pv_string += &(move_.uci() + " ");
+        }
+        return pv_string.trim().to_string();
+    }
+
+    pub fn get_pv_as_algebraic(board: &Board, pv: &[Option<Move>], long: bool) -> String {
+        let mut board = board.clone();
+        let mut pv_string = String::new();
+        for &move_ in pv {
+            let is_legal_move = if let Some(move_) = move_ {
+                board.is_legal(move_)
+            } else {
+                false
+            };
+            pv_string += &(if is_legal_move {
+                board.algebraic_and_push(move_, long).unwrap()
+            } else {
+                colorize(move_.uci(), ERROR_MESSAGE_STYLE)
+            } + " ");
+        }
+        return pv_string.trim().to_string();
+    }
+
+    pub fn get_pv_as_san(board: &Board, pv: &[Option<Move>]) -> String {
+        get_pv_as_algebraic(board, pv, false)
+    }
+
+    pub fn get_pv_as_lan(board: &Board, pv: &[Option<Move>]) -> String {
+        get_pv_as_algebraic(board, pv, true)
+    }
+
+    pub fn get_pv_string(board: &Board, pv: &[Option<Move>]) -> String {
+        if is_in_uci_mode() {
+            get_pv_as_uci(pv)
+        } else {
+            get_pv_as_algebraic(board, pv, use_long_algebraic_notation())
+        }
+    }
+}
+
 pub mod io_utils {
     use super::*;
     use std::io::{self, Read, Write};
-
-    static IS_ALREADY_READING_LINE: AtomicBool = AtomicBool::new(false);
-    static INPUT: Mutex<String> = Mutex::new(String::new());
 
     pub fn print_line<T: Display>(line: T) {
         let to_print = format!("{line}");
@@ -718,18 +776,56 @@ pub mod io_utils {
         io::stdout().flush().unwrap();
     }
 
-    pub fn read_line() -> String {
-        if IS_ALREADY_READING_LINE.load(MEMORY_ORDERING) {
-            return INPUT.lock().unwrap().to_owned();
+    pub struct IoReader {
+        user_input: Mutex<String>,
+        received_input: AtomicBool,
+    }
+
+    impl IoReader {
+        pub fn new() -> Self {
+            Self {
+                user_input: Mutex::new(String::new()),
+                received_input: AtomicBool::new(false),
+            }
         }
-        let mut input = INPUT.lock().unwrap();
-        input.clear();
-        IS_ALREADY_READING_LINE.store(true, MEMORY_ORDERING);
-        std::io::stdin()
-            .read_line(&mut input)
-            .expect("Failed to read line!");
-        IS_ALREADY_READING_LINE.store(false, MEMORY_ORDERING);
-        input.to_owned()
+
+        pub fn start_reader(&self) {
+            loop {
+                if self.received_input.load(MEMORY_ORDERING) {
+                    continue;
+                }
+                std::io::stdin()
+                    .read_line(&mut self.user_input.lock().unwrap())
+                    .expect("Failed to read line!");
+                self.received_input.store(true, MEMORY_ORDERING);
+            }
+        }
+
+        pub fn read_line_once(&self) -> Option<String> {
+            while !self.received_input.load(MEMORY_ORDERING) {
+                thread::sleep(Duration::from_millis(1));
+                return None;
+            }
+            let mut user_input = self.user_input.lock().unwrap();
+            let input = user_input.to_owned();
+            user_input.clear();
+            self.received_input.store(false, MEMORY_ORDERING);
+            Some(input)
+        }
+
+        pub fn read_line(&self) -> String {
+            loop {
+                if let Some(input) = self.read_line_once() {
+                    return input;
+                }
+            }
+        }
+    }
+
+    impl Default for IoReader {
+        fn default() -> Self {
+            Self::new()
+        }
     }
 }
 
@@ -805,7 +901,7 @@ pub mod global_utils {
             TRANSPOSITION_TABLE.print_info();
         }
         print_info(
-            "T-table is set to size to",
+            "Transposition table is set to size to",
             size.to_cache_table_memory_size::<TranspositionTableEntry>(),
         );
     }

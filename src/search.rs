@@ -3,23 +3,23 @@ use EntryFlag::*;
 
 #[derive(Clone)]
 pub struct SearchInfo {
-    pub board: Board,
-    pub depth: Depth,
-    pub seldepth: Ply,
-    pub score: Score,
-    pub nodes: usize,
-    pub hash_full: f64,
-    pub overwrites: usize,
-    pub collisions: usize,
-    pub clock: Instant,
-    pub pv: Vec<Option<Move>>,
+    board: Board,
+    depth: Depth,
+    seldepth: Ply,
+    score: Score,
+    nodes: usize,
+    hash_full: f64,
+    overwrites: usize,
+    collisions: usize,
+    clock: Instant,
+    pv: Vec<Option<Move>>,
 }
 
 impl SearchInfo {
-    pub fn new(searcher: &Searcher, current_depth: Depth) -> Self {
+    pub fn new(searcher: &Searcher) -> Self {
         Self {
             board: searcher.initial_board.clone(),
-            depth: current_depth,
+            depth: searcher.get_current_depth(),
             seldepth: searcher.get_selective_depth(),
             score: searcher.get_score(),
             nodes: searcher.get_num_nodes_searched(),
@@ -31,46 +31,19 @@ impl SearchInfo {
         }
     }
 
-    pub fn get_pv_as_uci(pv: &[Option<Move>]) -> String {
-        let mut pv_string = String::new();
-        for move_ in pv {
-            pv_string += &(move_.uci() + " ");
+    pub fn get_depth(&self) -> Depth {
+        self.depth
+    }
+    pub fn get_pv(&self) -> &[Option<Move>] {
+        self.pv.as_slice()
+    }
+
+    pub fn get_score(&self) -> Score {
+        let mut score = self.score;
+        if !is_in_uci_mode() {
+            score = self.board.score_flipped(score);
         }
-        return pv_string.trim().to_string();
-    }
-
-    pub fn get_pv_as_algebraic(board: &Board, pv: &[Option<Move>], long: bool) -> String {
-        let mut board = board.clone();
-        let mut pv_string = String::new();
-        for &move_ in pv {
-            let is_legal_move = if let Some(move_) = move_ {
-                board.is_legal(move_)
-            } else {
-                false
-            };
-            pv_string += &(if is_legal_move {
-                board.algebraic_and_push(move_, long).unwrap()
-            } else {
-                colorize(move_.uci(), ERROR_MESSAGE_STYLE)
-            } + " ");
-        }
-        return pv_string.trim().to_string();
-    }
-
-    pub fn get_pv_as_san(board: &Board, pv: &[Option<Move>]) -> String {
-        Self::get_pv_as_algebraic(board, pv, false)
-    }
-
-    pub fn get_pv_as_lan(board: &Board, pv: &[Option<Move>]) -> String {
-        Self::get_pv_as_algebraic(board, pv, true)
-    }
-
-    pub fn get_pv_string(board: &Board, pv: &[Option<Move>]) -> String {
-        if is_in_uci_mode() {
-            Self::get_pv_as_uci(pv)
-        } else {
-            Self::get_pv_as_algebraic(board, pv, use_long_algebraic_notation())
-        }
+        score
     }
 
     pub fn get_time_elapsed(&self) -> Duration {
@@ -78,10 +51,6 @@ impl SearchInfo {
     }
 
     pub fn print_info(&self) {
-        let mut score = self.score;
-        if !is_in_uci_mode() {
-            score = self.board.score_flipped(score);
-        }
         let hashfull_string = if is_in_uci_mode() {
             (self.hash_full.round() as u8).to_string()
         } else {
@@ -95,7 +64,7 @@ impl SearchInfo {
             colorize("seldepth", style),
             self.seldepth,
             colorize("score", style),
-            score.stringify(),
+            self.get_score().stringify(),
             colorize("nodes", style),
             self.nodes,
             colorize("nps", style),
@@ -109,23 +78,21 @@ impl SearchInfo {
             colorize("time", style),
             self.get_time_elapsed().stringify(),
             colorize("pv", style),
-            Self::get_pv_string(&self.board, &self.pv),
+            get_pv_string(&self.board, &self.pv),
         );
     }
 
     pub fn print_warning_message(&self, mut alpha: Score, mut beta: Score) {
-        let mut score = self.score;
         if !is_in_uci_mode() {
             alpha = self.board.score_flipped(alpha);
             beta = self.board.score_flipped(beta);
-            score = self.board.score_flipped(score);
         }
         let warning_message = format!(
-            "info string Resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {}, beta {} and score {} with time {}",
+            "info string resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {}, beta {} and score {} with time {}",
             self.depth,
             alpha.stringify(),
             beta.stringify(),
-            score.stringify(),
+            self.get_score().stringify(),
             self.get_time_elapsed().stringify(),
         );
         println!("{}", colorize(warning_message, WARNING_MESSAGE_STYLE));
@@ -187,6 +154,7 @@ pub struct Searcher {
     selective_depth: Arc<AtomicUsize>,
     ply: Ply,
     score: Score,
+    current_depth: Depth,
 }
 
 impl Searcher {
@@ -212,6 +180,7 @@ impl Searcher {
             selective_depth,
             ply: 0,
             score: 0,
+            current_depth: 0,
         }
     }
 
@@ -231,11 +200,11 @@ impl Searcher {
     }
 
     fn print_root_node_info(
-        &self,
         board: &Board,
         curr_move: Move,
         depth: Depth,
         score: Score,
+        num_nodes_searched: usize,
         time_elapsed: Duration,
     ) {
         println!(
@@ -248,7 +217,7 @@ impl Searcher {
             colorize("score", INFO_MESSAGE_STYLE),
             board.score_flipped(score).stringify(),
             colorize("nodes", INFO_MESSAGE_STYLE),
-            self.get_num_nodes_searched(),
+            num_nodes_searched,
             colorize("time", INFO_MESSAGE_STYLE),
             time_elapsed.stringify(),
         );
@@ -263,7 +232,6 @@ impl Searcher {
         let mut moves_vec_sorted = self
             .move_sorter
             .get_weighted_moves_sorted(
-                self.board.generate_legal_moves(),
                 &self.board,
                 0,
                 TRANSPOSITION_TABLE.read_best_move(self.board.hash()),
@@ -338,7 +306,14 @@ impl Searcher {
             if print_move_info && self.is_main_threaded() {
                 let time_elapsed = clock.elapsed();
                 if time_elapsed > PRINT_MOVE_INFO_DURATION_THRESHOLD {
-                    self.print_root_node_info(&self.board, move_, depth, score, time_elapsed)
+                    Self::print_root_node_info(
+                        &self.board,
+                        move_,
+                        depth,
+                        score,
+                        self.get_num_nodes_searched(),
+                        time_elapsed,
+                    )
                 }
             }
             if score > alpha {
@@ -373,7 +348,7 @@ impl Searcher {
         mut depth: Depth,
         mut alpha: Score,
         mut beta: Score,
-        mut enable_timer: bool,
+        enable_timer: bool,
     ) -> Option<Score> {
         self.pv_table.set_length(self.ply, self.ply);
         if self.board.is_other_draw() {
@@ -405,15 +380,36 @@ impl Searcher {
         let best_move = if is_pv_node && self.is_main_threaded() {
             TRANSPOSITION_TABLE.read_best_move(key)
         } else {
-            match TRANSPOSITION_TABLE.read(key, depth, self.ply, alpha, beta) {
-                (Some(score), _) => return Some(score),
-                (None, best_move) => best_move,
+            let data = TRANSPOSITION_TABLE.read(key, depth, self.ply);
+            if let Some((score, flag)) = data.0 {
+                // match flag {
+                //     HashExact => return Some(score),
+                //     HashAlpha => alpha = alpha.max(score),
+                //     HashBeta => beta = beta.min(score),
+                // }
+                // if alpha >= beta {
+                //     return Some(alpha);
+                // }
+                match flag {
+                    HashExact => return Some(score),
+                    HashAlpha => {
+                        if score <= alpha {
+                            return Some(score);
+                        }
+                    }
+                    HashBeta => {
+                        if score >= beta {
+                            return Some(score);
+                        }
+                    }
+                }
             }
+            data.1
         };
         if self.ply == MAX_PLY - 1 {
             return Some(self.board.evaluate_flipped());
         }
-        enable_timer &= depth > 3;
+        // enable_timer &= depth > 3;
         if self.timer.check_stop(enable_timer) {
             return None;
         }
@@ -471,9 +467,7 @@ impl Searcher {
             }
         }
         let mut flag = HashAlpha;
-        let moves_gen = self.board.generate_legal_moves();
         let weighted_moves = self.move_sorter.get_weighted_moves_sorted(
-            moves_gen,
             &self.board,
             self.ply,
             best_move,
@@ -572,12 +566,10 @@ impl Searcher {
         if evaluation > alpha {
             alpha = evaluation;
         }
-        let key = self.board.hash();
-        for WeightedMove { move_, weight } in self.move_sorter.get_weighted_capture_moves_sorted(
-            self.board.generate_legal_captures(),
-            TRANSPOSITION_TABLE.read_best_move(key),
-            &self.board,
-        ) {
+        for WeightedMove { move_, weight } in self
+            .move_sorter
+            .get_weighted_capture_moves_sorted(&self.board)
+        {
             if weight.is_negative() {
                 break;
             }
@@ -624,26 +616,18 @@ impl Searcher {
     }
 
     pub fn get_pv(&self) -> Vec<Option<Move>> {
-        self.pv_table.get_pv(0).to_vec()
-    }
-
-    fn extract_pv_from_t_table(&self, board: &mut Board) -> Vec<Option<Move>> {
-        let mut pv = Vec::new();
-        let best_move = TRANSPOSITION_TABLE.read_best_move(board.hash());
-        if let Some(best_move) = best_move {
-            pv.push(Some(best_move));
-            board.push(best_move);
-            pv.append(&mut self.extract_pv_from_t_table(board).to_vec());
-        }
+        let pv = self.pv_table.get_pv(0).to_vec();
         pv
     }
 
     pub fn get_pv_from_t_table(&self) -> Vec<Option<Move>> {
-        self.extract_pv_from_t_table(&mut self.initial_board.clone())
+        extract_pv_from_t_table(&mut self.initial_board.clone())
     }
 
     pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
-        self.get_pv().get(n).copied().flatten()
+        let pv = self.pv_table.get_pv(0);
+        let nth_move = pv.get(n).copied().flatten();
+        nth_move
     }
 
     pub fn get_best_move(&self) -> Option<Move> {
@@ -658,8 +642,12 @@ impl Searcher {
         self.score
     }
 
-    pub fn get_search_info(&self, depth: Depth) -> SearchInfo {
-        SearchInfo::new(self, depth)
+    pub fn get_current_depth(&self) -> Depth {
+        self.current_depth
+    }
+
+    pub fn get_search_info(&self) -> SearchInfo {
+        SearchInfo::new(self)
     }
 
     fn parse_timed_command(&self, command: GoCommand) -> GoCommand {
@@ -706,12 +694,12 @@ impl Searcher {
         }
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
-        let mut current_depth = 1;
-        while current_depth < Depth::MAX {
+        self.current_depth = 1;
+        while self.current_depth < Depth::MAX {
             self.score = self
-                .search(current_depth, alpha, beta, print_info)
+                .search(self.current_depth, alpha, beta, print_info)
                 .unwrap_or(self.score);
-            let search_info = self.get_search_info(current_depth);
+            let search_info = self.get_search_info();
             if print_info && self.is_main_threaded() {
                 search_info.print_info();
             }
@@ -733,10 +721,10 @@ impl Searcher {
             };
             alpha = self.score - cutoff;
             beta = self.score + cutoff;
-            if command == GoCommand::Depth(current_depth) {
+            if command == GoCommand::Depth(self.current_depth) {
                 break;
             }
-            current_depth += 1;
+            self.current_depth += 1;
         }
     }
 }

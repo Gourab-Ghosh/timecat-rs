@@ -2,7 +2,7 @@
 
 import itertools as it
 import tempfile
-import os, shutil, time, random
+import os, sys, shutil, time, random
 from pprint import pprint
 from datetime import datetime
 from chess import Board, STARTING_BOARD_FEN, Outcome, Termination
@@ -13,6 +13,7 @@ LOG_FILE_PATH = __file__.replace(".py", ".log")
 OVERWRITE_LOG_FILE = True
 # LOG_FILE_PATH = __file__.replace(".py", ".log").replace(".log", "1.log")
 ENGINE_NAME_LENGTH = 15
+LIMIT = Limit(time = 1/10)
 
 def play_game(engine1, engine2, limit, fen = STARTING_BOARD_FEN, print_info = True, af_path = None) -> Outcome:
     board = Board(fen)
@@ -26,7 +27,7 @@ def play_game(engine1, engine2, limit, fen = STARTING_BOARD_FEN, print_info = Tr
         analysis = engine.analyse(board, limit)
         time_taken = time.time() - start_time
         if limit.time is not None:
-            if time_taken > 3 * limit.time:
+            if time_taken > max(3 * limit.time, 0.1):
                 print(f"Engine {engine.index} exceeded time limit of {limit.time} s by {round(time_taken - limit.time, 3)} s")
         move = analysis["pv"][0]
         if print_info:
@@ -81,6 +82,10 @@ def main():
     engine_paths = get_engine_paths()
     random.seed(0)
     with Engine.popen_uci(engine_paths[0]) as engine1, Engine.popen_uci(engine_paths[1]) as engine2:
+        print(f"Engine 1 path: {FIRST_ENGINE_PATH}")
+        engine1.configure({"Hash": 64})
+        print(f"Engine 2 path: {SECOND_ENGINE_PATH}")
+        engine2.configure({"Hash": 64})
         with open("test_fens.txt", "r") as rf:
             fens_and_opening_name = [get_fen_and_opening_name(line) for line in rf.readlines()]
         random.shuffle(fens_and_opening_name)
@@ -92,12 +97,11 @@ def main():
         total_time = 0
         if OVERWRITE_LOG_FILE and os.path.isfile(LOG_FILE_PATH):
             os.remove(LOG_FILE_PATH)
-        limit = Limit(time = 1/10)
-        print(f"Playing {len(fens_and_opening_name)} games with limit {limit}")
+        print(f"Playing {len(fens_and_opening_name)} games with limit {LIMIT}")
         for i, (fen, opening) in enumerate(fens_and_opening_name):
             try:
                 start_time = time.time()
-                outcome = play_game(engine1, engine2, limit, fen, False, LOG_FILE_PATH)
+                outcome = play_game(engine1, engine2, LIMIT, fen, "--verbose" in sys.argv, LOG_FILE_PATH)
                 time_taken = time.time() - start_time
                 total_time += time_taken
                 stats[outcome.winner] += 1
