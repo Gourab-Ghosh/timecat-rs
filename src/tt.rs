@@ -140,6 +140,10 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
     pub fn len(&self) -> usize {
         self.table.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.table.iter().all(|&e| e.hash == 0)
+    }
 }
 
 #[allow(clippy::enum_variant_names)]
@@ -324,7 +328,7 @@ impl TranspositionTable {
     pub fn set_size(&self, size: CacheTableSize) {
         let current_table_copy = self.table.lock().unwrap().table.clone();
         *self.table.lock().unwrap() = Self::generate_new_table(size);
-        for &CacheTableEntry { hash, entry } in current_table_copy.into_iter() {
+        for &CacheTableEntry { hash, entry } in current_table_copy.iter() {
             if hash != 0 {
                 self.table.lock().unwrap().add(hash, entry);
             }

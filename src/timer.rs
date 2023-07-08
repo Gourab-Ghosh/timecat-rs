@@ -22,9 +22,7 @@ impl Timer {
     }
 
     pub fn new_dummy() -> Self {
-        let mut timer = Timer::default();
-        timer.is_dummy = true;
-        timer
+        timer::Timer { is_dummy: true, ..Default::default() }
     }
 
     pub fn reset_variables(&mut self) {
@@ -60,7 +58,7 @@ impl Timer {
             return false;
         }
         self.stop_search = self.time_elapsed() >= self.max_time;
-        return self.stop_search;
+        self.stop_search
     }
 
     pub fn check_stop(&mut self, enable_timer: bool) -> bool {

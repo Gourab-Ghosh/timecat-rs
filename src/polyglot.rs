@@ -254,7 +254,7 @@ fn get_move_from_move_int(move_int: usize) -> Result<Move, EngineError> {
     Ok(Move::new(source, dest, promotion))
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Ord, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 struct PolyglotBookEntry {
     hash: u64,
     move_: Move,
@@ -281,6 +281,12 @@ impl PartialOrd for PolyglotBookEntry {
     }
 }
 
+impl Ord for PolyglotBookEntry {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.get_unique_key().cmp(&other.get_unique_key())
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct PolyglotBook {
     entries: Vec<PolyglotBookEntry>,
@@ -293,6 +299,10 @@ impl PolyglotBook {
 
     pub fn len(&self) -> usize {
         self.entries.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
     }
 
     pub fn get_all_weighted_moves_with_hashes(&self) -> Vec<(u64, WeightedMove)> {
@@ -378,7 +388,7 @@ impl PolyglotBookReader {
         let mut entries = Vec::new();
         let mut file = fs::File::open(path)?;
         let mut buffer = [0; 16];
-        while let Ok(_) = file.read_exact(&mut buffer) {
+        while file.read_exact(&mut buffer).is_ok() {
             let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
             let move_int = u16::from_be_bytes(buffer[8..10].try_into()?);
             let weight = u16::from_be_bytes(buffer[10..12].try_into()?);
@@ -407,7 +417,7 @@ impl PolyglotBookReader {
         let board_hash = polyglot_hash_from_board(board);
         let mut file = fs::File::open(path)?;
         let mut buffer = [0; 16];
-        while let Ok(_) = file.read_exact(&mut buffer) {
+        while file.read_exact(&mut buffer).is_ok() {
             let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
             if hash == board_hash {
                 let move_int = u16::from_be_bytes(buffer[8..10].try_into()?);

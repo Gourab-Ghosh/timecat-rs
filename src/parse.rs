@@ -458,7 +458,10 @@ impl UCIParser {
         let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
         match first_command.as_str() {
             "go" | "setoption" | "stop" => Parser::run_command(engine, user_input),
-            "uci" => Ok(Self::print_info()),
+            "uci" => {
+                Self::print_info();
+                Ok(())
+            },
             "isready" => Ok(println!("readyok")),
             "ucinewgame" => {
                 Parser::run_command(engine, &format!("set board fen {}", STARTING_BOARD_FEN))
@@ -510,10 +513,13 @@ impl Parser {
     fn run_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
         let res = match user_input {
             "d" => Ok(println!("{}", engine.board)),
-            "eval" => Ok(println_info(
-                "Current Score",
-                engine.board.evaluate().stringify(),
-            )),
+            "eval" => {
+                println_info(
+                    "Current Score",
+                    engine.board.evaluate().stringify(),
+                );
+                Ok(())
+            },
             "reset board" => engine.set_fen(STARTING_BOARD_FEN).map_err(EngineError::from),
             "stop" => {
                 if is_in_uci_mode() {

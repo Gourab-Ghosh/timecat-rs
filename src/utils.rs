@@ -802,7 +802,7 @@ pub mod io_utils {
         }
 
         pub fn read_line_once(&self) -> Option<String> {
-            while !self.received_input.load(MEMORY_ORDERING) {
+            if !self.received_input.load(MEMORY_ORDERING) {
                 thread::sleep(Duration::from_millis(1));
                 return None;
             }
