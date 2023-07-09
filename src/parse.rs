@@ -230,6 +230,10 @@ impl SetOption {
             "thread" | "threads" => Self::threads(commands),
             "hash" => Self::hash(commands),
             "move overhead" => Self::move_overhead(commands),
+            "clear hash" => {
+                clear_all_hash_tables();
+                Ok(())
+            }
             "multipv" => Err(NotImplemented),
             _ => Err(UnknownCommand),
         }
@@ -461,11 +465,12 @@ impl UCIParser {
             "uci" => {
                 Self::print_info();
                 Ok(())
-            },
-            "isready" => Ok(println!("readyok")),
-            "ucinewgame" => {
-                Parser::run_command(engine, &format!("set board fen {}", STARTING_BOARD_FEN))
             }
+            "isready" => Ok(println!("readyok")),
+            "ucinewgame" => Self::run_parsed_input(
+                engine,
+                &format!("setoption name Clear Hash && set board fen {STARTING_BOARD_FEN}"),
+            ),
             "position" => Self::run_parsed_input(engine, &Self::parse_uci_input(user_input)?),
             _ => Err(UnknownCommand),
         }
@@ -511,16 +516,18 @@ impl Parser {
     }
 
     fn run_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
+        if user_input.contains(&"&&") {
+            panic!("Multiple commands are not supported in run_command method in Parser!");
+        }
         let res = match user_input {
             "d" => Ok(println!("{}", engine.board)),
             "eval" => {
-                println_info(
-                    "Current Score",
-                    engine.board.evaluate().stringify(),
-                );
+                println_info("Current Score", engine.board.evaluate().stringify());
                 Ok(())
-            },
-            "reset board" => engine.set_fen(STARTING_BOARD_FEN).map_err(EngineError::from),
+            }
+            "reset board" => engine
+                .set_fen(STARTING_BOARD_FEN)
+                .map_err(EngineError::from),
             "stop" => {
                 if is_in_uci_mode() {
                     Ok(())

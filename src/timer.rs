@@ -22,7 +22,10 @@ impl Timer {
     }
 
     pub fn new_dummy() -> Self {
-        timer::Timer { is_dummy: true, ..Default::default() }
+        timer::Timer {
+            is_dummy: true,
+            ..Default::default()
+        }
     }
 
     pub fn reset_variables(&mut self) {

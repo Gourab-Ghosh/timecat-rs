@@ -947,4 +947,12 @@ pub mod global_utils {
         USE_OWN_BOOK.store(b, MEMORY_ORDERING);
         print_info("Own Book Usage is set to", b);
     }
+
+    pub fn clear_all_hash_tables() {
+        TRANSPOSITION_TABLE.clear();
+        EVALUATOR.clear();
+        if !is_in_uci_mode() {
+            println!("{}", colorize("All hash tables are cleared!", SUCCESS_MESSAGE_STYLE));
+        }
+    }
 }

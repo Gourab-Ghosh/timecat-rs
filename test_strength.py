@@ -9,6 +9,9 @@ from chess import Board, STARTING_BOARD_FEN, Outcome, Termination
 from chess.engine import SimpleEngine, Limit
 from engine_paths import FIRST_ENGINE_PATH, SECOND_ENGINE_PATH
 
+print(f"Engine 1 path: {FIRST_ENGINE_PATH}")
+print(f"Engine 2 path: {SECOND_ENGINE_PATH}")
+
 LOG_FILE_PATH = __file__.replace(".py", ".log")
 OVERWRITE_LOG_FILE = True
 # LOG_FILE_PATH = __file__.replace(".py", ".log").replace(".log", "1.log")
@@ -28,7 +31,7 @@ def play_game(engine1, engine2, limit, fen = STARTING_BOARD_FEN, print_info = Tr
         time_taken = time.time() - start_time
         if limit.time is not None:
             if time_taken > max(3 * limit.time, 0.1):
-                print(f"Engine {engine.index} exceeded time limit of {limit.time} s by {round(time_taken - limit.time, 3)} s")
+                print(f"Engine {engine.index} exceeded time limit of {limit.time} s by {round(time_taken - limit.time, 3)} s with fen {board.fen()}")
         move = analysis["pv"][0]
         if print_info:
             if engine1 is engine2:
@@ -82,9 +85,7 @@ def main():
     engine_paths = get_engine_paths()
     random.seed(0)
     with Engine.popen_uci(engine_paths[0]) as engine1, Engine.popen_uci(engine_paths[1]) as engine2:
-        print(f"Engine 1 path: {FIRST_ENGINE_PATH}")
         engine1.configure({"Hash": 64})
-        print(f"Engine 2 path: {SECOND_ENGINE_PATH}")
         engine2.configure({"Hash": 64})
         with open("test_fens.txt", "r") as rf:
             fens_and_opening_name = [get_fen_and_opening_name(line) for line in rf.readlines()]

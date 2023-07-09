@@ -110,8 +110,6 @@ impl Engine {
     pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
         let result = self.board.set_fen(fen);
         self.reset_variables();
-        TRANSPOSITION_TABLE.clear();
-        EVALUATOR.clear();
         result
     }
 

@@ -286,23 +286,12 @@ impl Searcher {
             let clock = Instant::now();
             self.push(move_);
             if move_index == 0
-                || -self
-                    .alpha_beta(depth - 1, -alpha - 1, -alpha, enable_timer)
-                    .unwrap_or(alpha)
-                    > alpha
+                || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, 0, enable_timer)? > alpha
             {
-                score = -self
-                    .alpha_beta(depth - 1, -beta, -alpha, enable_timer)
-                    .unwrap_or(-score);
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, 0, enable_timer)?;
                 max_score = max_score.max(score);
             }
             self.pop();
-            if self.timer.check_stop(enable_timer) {
-                if max_score == -CHECKMATE_SCORE {
-                    return None;
-                }
-                break;
-            }
             if print_move_info && self.is_main_threaded() {
                 let time_elapsed = clock.elapsed();
                 if time_elapsed > PRINT_MOVE_INFO_DURATION_THRESHOLD {
@@ -348,6 +337,7 @@ impl Searcher {
         mut depth: Depth,
         mut alpha: Score,
         mut beta: Score,
+        mut num_extensions: Depth,
         enable_timer: bool,
     ) -> Option<Score> {
         self.pv_table.set_length(self.ply, self.ply);
@@ -369,12 +359,20 @@ impl Searcher {
             }
         }
         let checkers = self.board.get_checkers();
-        let min_depth = if self.move_sorter.is_following_pv() {
-            1
+        let num_checkers = checkers.popcnt();
+        let check_extension = if num_checkers > 0 {
+            num_checkers + 1
         } else {
             0
-        };
-        depth = (depth + checkers.popcnt() as Depth).max(min_depth);
+        } as Depth;
+        let max_extension = self.current_depth + self.current_depth / 2;
+        if num_extensions + check_extension <= max_extension {
+            depth += check_extension;
+            num_extensions += check_extension;
+        }
+        let min_depth = self.move_sorter.is_following_pv() as Depth;
+        num_extensions = num_extensions.max(min_depth);
+        depth = depth.max(min_depth);
         let is_pv_node = alpha != beta - 1;
         let key = self.board.hash();
         let best_move = if is_pv_node && self.is_main_threaded() {
@@ -438,11 +436,14 @@ impl Searcher {
                     + (depth.abs_diff(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
                         .round() as Depth;
                 self.push(None);
-                let score = -self.alpha_beta(depth - 1 - r, -beta, -beta + 1, enable_timer)?;
+                let score = -self.alpha_beta(
+                    depth - 1 - r,
+                    -beta,
+                    -beta + 1,
+                    num_extensions,
+                    enable_timer,
+                )?;
                 self.pop();
-                if self.timer.check_stop(enable_timer) {
-                    return None;
-                }
                 if score >= beta {
                     return Some(beta);
                 }
@@ -489,7 +490,7 @@ impl Searcher {
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, enable_timer)?;
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, num_extensions, enable_timer)?;
             } else {
                 if safe_to_apply_lmr {
                     let lmr_reduction = Self::get_lmr_reduction(depth, move_index, is_pv_node);
@@ -498,6 +499,7 @@ impl Searcher {
                             depth - 1 - lmr_reduction,
                             -alpha - 1,
                             -alpha,
+                            num_extensions,
                             enable_timer,
                         )?
                     } else {
@@ -507,9 +509,21 @@ impl Searcher {
                     score = alpha + 1;
                 }
                 if score > alpha {
-                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha, enable_timer)?;
+                    score = -self.alpha_beta(
+                        depth - 1,
+                        -alpha - 1,
+                        -alpha,
+                        num_extensions,
+                        enable_timer,
+                    )?;
                     if score > alpha && score < beta {
-                        score = -self.alpha_beta(depth - 1, -beta, -alpha, enable_timer)?;
+                        score = -self.alpha_beta(
+                            depth - 1,
+                            -beta,
+                            -alpha,
+                            num_extensions,
+                            enable_timer,
+                        )?;
                     }
                 }
             }
