@@ -87,12 +87,12 @@ pub fn self_play(
     let prediction_accuracy = calculate_prediction_accuracy(prediction_score_rms);
     println!(
         "\n{}:\n\n{}",
-        colorize("Game PGN", INFO_MESSAGE_STYLE),
+        "Game PGN".colorize(INFO_MESSAGE_STYLE),
         engine.board.get_pgn(),
     );
     println!(
         "\n{}:\n\n{:?}",
-        colorize("Time taken for all moves", INFO_MESSAGE_STYLE),
+        "Time taken for all moves".colorize(INFO_MESSAGE_STYLE),
         time_taken_vec
             .iter()
             .map(|x| (x * 1000.0).round() / 1000.0)
@@ -100,7 +100,7 @@ pub fn self_play(
     );
     println!(
         "\n{}:\n\n{}\n",
-        colorize("Prediction Scores", INFO_MESSAGE_STYLE),
+        "Prediction Scores".colorize(INFO_MESSAGE_STYLE),
         format!(
             "{:?}",
             prediction_score_vec

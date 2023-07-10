@@ -59,25 +59,25 @@ impl SearchInfo {
         let style = SUCCESS_MESSAGE_STYLE;
         println!(
             "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
-            colorize("info depth", style),
+            "info depth".colorize(style),
             self.depth,
-            colorize("seldepth", style),
+            "seldepth".colorize(style),
             self.seldepth,
-            colorize("score", style),
+            "score".colorize(style),
             self.get_score().stringify(),
-            colorize("nodes", style),
+            "nodes".colorize(style),
             self.nodes,
-            colorize("nps", style),
+            "nps".colorize(style),
             (self.nodes as u128 * 10_u128.pow(9)) / self.get_time_elapsed().as_nanos(),
-            colorize("hashfull", style),
+            "hashfull".colorize(style),
             hashfull_string,
-            colorize("overwrites", style),
+            "overwrites".colorize(style),
             self.overwrites,
-            colorize("collisions", style),
+            "collisions".colorize(style),
             self.collisions,
-            colorize("time", style),
+            "time".colorize(style),
             self.get_time_elapsed().stringify(),
-            colorize("pv", style),
+            "pv".colorize(style),
             get_pv_string(&self.board, &self.pv),
         );
     }
@@ -95,7 +95,7 @@ impl SearchInfo {
             self.get_score().stringify(),
             self.get_time_elapsed().stringify(),
         );
-        println!("{}", colorize(warning_message, WARNING_MESSAGE_STYLE));
+        println!("{}", warning_message.colorize(WARNING_MESSAGE_STYLE));
     }
 }
 
@@ -209,16 +209,16 @@ impl Searcher {
     ) {
         println!(
             "{} {} {} {} {} {} {} {} {} {} {}",
-            colorize("info", INFO_MESSAGE_STYLE),
-            colorize("curr move", INFO_MESSAGE_STYLE),
+            "info".colorize(INFO_MESSAGE_STYLE),
+            "curr move".colorize(INFO_MESSAGE_STYLE),
             curr_move.stringify_move(board).unwrap(),
-            colorize("depth", INFO_MESSAGE_STYLE),
+            "depth".colorize(INFO_MESSAGE_STYLE),
             depth,
-            colorize("score", INFO_MESSAGE_STYLE),
+            "score".colorize(INFO_MESSAGE_STYLE),
             board.score_flipped(score).stringify(),
-            colorize("nodes", INFO_MESSAGE_STYLE),
+            "nodes".colorize(INFO_MESSAGE_STYLE),
             num_nodes_searched,
-            colorize("time", INFO_MESSAGE_STYLE),
+            "time".colorize(INFO_MESSAGE_STYLE),
             time_elapsed.stringify(),
         );
     }

@@ -209,7 +209,7 @@ impl Board {
             } else {
                 ""
             };
-            colorize(_char, style)
+            _char.colorize(style)
         }
         for c in skeleton.chars() {
             colored_skeleton.push_str(&get_colored_char(c));
@@ -257,7 +257,7 @@ impl Board {
                 style += " ";
                 style += LAST_MOVE_HIGHLIGHT_STYLE;
             }
-            skeleton = skeleton.replacen('O', &colorize(symbol, &style), 1);
+            skeleton = skeleton.replacen('O', &symbol.colorize(&style), 1);
         }
         skeleton.push('\n');
         skeleton.push_str(
@@ -265,7 +265,7 @@ impl Board {
                 String::new(),
                 format_info("Fen", self.get_fen()),
                 format_info("Transposition Key", self.hash().stringify()),
-                format_info("Checkers", colorize(checkers.stringify(), CHECKERS_STYLE)),
+                format_info("Checkers", checkers.stringify().colorize(CHECKERS_STYLE)),
                 format_info("Current Evaluation", self.evaluate().stringify()),
             ]
             .join("\n"),
@@ -1076,8 +1076,8 @@ impl Board {
             if print_move {
                 println!(
                     "{}: {}",
-                    colorize(move_, PERFT_MOVE_STYLE),
-                    colorize(c_count, PERFT_COUNT_STYLE),
+                    move_.colorize(PERFT_MOVE_STYLE),
+                    c_count.colorize(PERFT_COUNT_STYLE),
                 );
             }
             count += c_count;

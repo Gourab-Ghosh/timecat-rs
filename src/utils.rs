@@ -67,22 +67,27 @@ pub mod string_utils {
             unknown_color => panic!("Cannot colorize string to {}", unknown_color),
         }
     }
+    pub trait CustomColorize {
+        fn colorize(&self, styles: &str) -> String;
+    }
 
-    pub fn colorize<T: ToString>(obj: T, styles: &str) -> String {
-        let s = obj.to_string();
-        if !is_colored_output() {
-            return s;
+    impl<T: ToString> CustomColorize for T {
+        fn colorize(&self, styles: &str) -> String {
+            let s = self.to_string();
+            if !is_colored_output() {
+                return s;
+            }
+            let styles = remove_double_spaces_and_trim(styles);
+            let styles = styles.trim();
+            if styles.is_empty() {
+                return s;
+            }
+            let mut colored_string = ColoredString::from(s.as_str());
+            for style in remove_double_spaces_and_trim(styles).split(' ') {
+                colored_string = colorize_string(colored_string, style);
+            }
+            colored_string.to_string()
         }
-        let styles = remove_double_spaces_and_trim(styles);
-        let styles = styles.trim();
-        if styles.is_empty() {
-            return s;
-        }
-        let mut colored_string = ColoredString::from(s.as_str());
-        for style in remove_double_spaces_and_trim(styles).split(' ') {
-            colored_string = colorize_string(colored_string, style);
-        }
-        colored_string.to_string()
     }
 
     pub trait Stringify {
@@ -669,7 +674,7 @@ pub mod info_utils {
     #[inline(always)]
     pub fn format_info<T: ToString>(desc: &str, info: T) -> String {
         let mut desc = desc.trim().trim_end_matches(':').to_string();
-        desc = colorize(desc, INFO_MESSAGE_STYLE);
+        desc = desc.colorize(INFO_MESSAGE_STYLE);
         let info = info.to_string();
         if is_in_uci_mode() {
             format!("{desc} {info}")
@@ -691,7 +696,7 @@ pub mod info_utils {
     pub fn print_engine_version(color: bool) {
         let version = get_engine_version();
         if color {
-            println!("{}", colorize(version, SUCCESS_MESSAGE_STYLE));
+            println!("{}", version.colorize(SUCCESS_MESSAGE_STYLE));
             return;
         }
         println!("{version}");
@@ -740,7 +745,7 @@ pub mod pv_utils {
             pv_string += &(if is_legal_move {
                 board.algebraic_and_push(move_, long).unwrap()
             } else {
-                colorize(move_.uci(), ERROR_MESSAGE_STYLE)
+                move_.uci().colorize(ERROR_MESSAGE_STYLE)
             } + " ");
         }
         return pv_string.trim().to_string();
@@ -845,8 +850,8 @@ pub mod global_utils {
         if !is_in_uci_mode() {
             println!(
                 "{} {}",
-                colorize(message, SUCCESS_MESSAGE_STYLE),
-                colorize(info, INFO_MESSAGE_STYLE),
+                message.colorize(SUCCESS_MESSAGE_STYLE),
+                info.colorize(INFO_MESSAGE_STYLE),
             );
         }
     }
@@ -952,7 +957,7 @@ pub mod global_utils {
         TRANSPOSITION_TABLE.clear();
         EVALUATOR.clear();
         if !is_in_uci_mode() {
-            println!("{}", colorize("All hash tables are cleared!", SUCCESS_MESSAGE_STYLE));
+            println!("{}", "All hash tables are cleared!".colorize(SUCCESS_MESSAGE_STYLE));
         }
     }
 }

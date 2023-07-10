@@ -575,7 +575,7 @@ impl Parser {
                 raw_input.trim()
             );
             match UCIParser::parse_command(engine, &sanitized_input) {
-                Err(UnknownCommand) => println!("{}", colorize(message, WARNING_MESSAGE_STYLE)),
+                Err(UnknownCommand) => println!("{}", message.colorize(WARNING_MESSAGE_STYLE)),
                 anything_else => return anything_else,
             }
         }
@@ -593,7 +593,7 @@ impl Parser {
 
     fn parse_error(error: EngineError, optional_raw_input: Option<&str>) {
         let error_message = error.stringify_with_optional_raw_input(optional_raw_input);
-        println!("{}", colorize(error_message, ERROR_MESSAGE_STYLE));
+        println!("{}", error_message.colorize(ERROR_MESSAGE_STYLE));
     }
 
     fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) {
@@ -616,7 +616,7 @@ impl Parser {
     fn print_exit_message() {
         println!(
             "{}",
-            colorize("Program ended successfully!", SUCCESS_MESSAGE_STYLE)
+            "Program ended successfully!".colorize(SUCCESS_MESSAGE_STYLE)
         );
     }
 
@@ -631,7 +631,7 @@ impl Parser {
                 Self::get_input("")
             } else {
                 println!();
-                let message = colorize("Enter Command: ", INPUT_MESSAGE_STYLE);
+                let message = "Enter Command: ".colorize(INPUT_MESSAGE_STYLE);
                 let raw_input = Self::get_input(if is_in_uci_mode() { "" } else { &message });
                 println!();
                 raw_input
