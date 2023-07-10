@@ -429,7 +429,7 @@ impl UCIParser {
     fn run_parsed_input(engine: &mut Engine, parsed_input: &str) -> Result<(), EngineError> {
         let user_inputs = parsed_input.split("&&").map(|s| s.trim()).collect_vec();
         for user_input in user_inputs {
-            Parser::run_command(engine, user_input)?;
+            Parser::run_single_command(engine, user_input)?;
         }
         Ok(())
     }
@@ -447,6 +447,7 @@ impl UCIParser {
             MIN_T_TABLE_SIZE.stringify(),
             MAX_T_TABLE_SIZE.stringify(),
         );
+        println!("option name Clear Hahs type button");
         println!(
             "option name Move Overhead type spin default {} min {} max {}",
             DEFAULT_MOVE_OVERHEAD.stringify(),
@@ -461,7 +462,7 @@ impl UCIParser {
         let commands = user_input.split_whitespace().collect_vec();
         let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
         match first_command.as_str() {
-            "go" | "setoption" | "stop" => Parser::run_command(engine, user_input),
+            "go" | "setoption" | "stop" => Parser::run_single_command(engine, user_input),
             "uci" => {
                 Self::print_info();
                 Ok(())
@@ -515,10 +516,7 @@ impl Parser {
         user_input
     }
 
-    fn run_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
-        if user_input.contains(&"&&") {
-            panic!("Multiple commands are not supported in run_command method in Parser!");
-        }
+    fn run_single_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
         let res = match user_input {
             "d" => Ok(println!("{}", engine.board)),
             "eval" => {
@@ -588,7 +586,7 @@ impl Parser {
                 println!();
                 first_loop = false;
             }
-            Self::run_command(engine, user_input)?;
+            Self::run_single_command(engine, user_input)?;
         }
         Ok(())
     }
