@@ -957,7 +957,10 @@ pub mod global_utils {
         TRANSPOSITION_TABLE.clear();
         EVALUATOR.clear();
         if !is_in_uci_mode() {
-            println!("{}", "All hash tables are cleared!".colorize(SUCCESS_MESSAGE_STYLE));
+            println!(
+                "{}",
+                "All hash tables are cleared!".colorize(SUCCESS_MESSAGE_STYLE)
+            );
         }
     }
 }
