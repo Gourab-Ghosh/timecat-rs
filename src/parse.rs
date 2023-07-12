@@ -447,7 +447,7 @@ impl UCIParser {
             MIN_T_TABLE_SIZE.stringify(),
             MAX_T_TABLE_SIZE.stringify(),
         );
-        println!("option name Clear Hahs type button");
+        println!("option name Clear Hash type button");
         println!(
             "option name Move Overhead type spin default {} min {} max {}",
             DEFAULT_MOVE_OVERHEAD.stringify(),
@@ -621,6 +621,7 @@ impl Parser {
     }
 
     pub fn main_loop() {
+        thread::spawn(|| IO_READER.start_reader());
         let mut engine = Engine::default();
         loop {
             if terminate_engine() {
@@ -646,7 +647,6 @@ impl Parser {
     }
 
     pub fn parse_args_and_run_main_loop(args: &[&str]) {
-        thread::spawn(|| IO_READER.start_reader());
         if args.contains(&"--uci") {
             set_uci_mode(true, false);
         }

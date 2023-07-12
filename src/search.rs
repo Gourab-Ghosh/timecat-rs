@@ -332,6 +332,15 @@ impl Searcher {
         reduction.round() as Depth
     }
 
+    #[inline(always)]
+    fn safe_to_apply_extensions(
+        num_extensions: Depth,
+        extension: Depth,
+        max_extension: Depth,
+    ) -> bool {
+        num_extensions + extension <= max_extension
+    }
+
     fn alpha_beta(
         &mut self,
         mut depth: Depth,
@@ -365,8 +374,8 @@ impl Searcher {
         } else {
             0
         } as Depth;
-        let max_extension = self.current_depth + self.current_depth / 2;
-        if num_extensions + check_extension <= max_extension {
+        let max_extension = self.current_depth;
+        if Self::safe_to_apply_extensions(num_extensions, check_extension, max_extension) {
             depth += check_extension;
             num_extensions += check_extension;
         }
@@ -433,7 +442,7 @@ impl Searcher {
                 && self.board.has_non_pawn_material()
             {
                 let r = NULL_MOVE_MIN_REDUCTION
-                    + (depth.abs_diff(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
+                    + (depth.max(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
                         .round() as Depth;
                 self.push(None);
                 let score = -self.alpha_beta(
@@ -445,6 +454,7 @@ impl Searcher {
                 )?;
                 self.pop();
                 if score >= beta {
+                    TRANSPOSITION_TABLE.write(key, depth, self.ply, beta, HashBeta, best_move);
                     return Some(beta);
                 }
             }
@@ -477,6 +487,7 @@ impl Searcher {
         );
         let mut move_index = 0;
         for WeightedMove { move_, .. } in weighted_moves {
+            // let (mut depth, mut num_extensions) = (depth, num_extensions);
             let not_capture_move = !self.board.is_capture(move_);
             let mut safe_to_apply_lmr = move_index >= FULL_DEPTH_SEARCH_LMR
                 && depth >= REDUCTION_LIMIT_LMR
@@ -486,6 +497,10 @@ impl Searcher {
                 && move_.get_promotion().is_none()
                 && !self.move_sorter.is_killer_move(move_, self.ply)
                 && !self.board.is_passed_pawn(move_.get_source());
+            // if Self::safe_to_apply_extensions(num_extensions, 1, max_extension) && move_.get_promotion().is_some() {
+            //     depth += 1;
+            //     num_extensions += 1;
+            // }
             self.push(move_);
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
@@ -682,19 +697,19 @@ impl Searcher {
             };
             let divider = moves_to_go.unwrap_or(30);
             let new_inc = self_inc
-                .checked_sub(Duration::from_secs(3))
+                .checked_sub(Duration::from_secs(2))
                 .unwrap_or_default();
             let opponent_time_advantage = opponent_time.checked_sub(self_time).unwrap_or_default();
-            let search_time = self_time
-                .checked_sub(opponent_time_advantage)
+            let mut search_time = self_time
+                .checked_sub(opponent_time_advantage.max(Duration::from_secs(3)))
                 .unwrap_or_default()
                 / divider
                 + new_inc;
-            return GoCommand::MoveTime(
-                search_time
-                    .checked_sub(get_move_overhead())
-                    .unwrap_or_default(),
-            );
+            // search_time = (4 * search_time) / 5;
+            if self.board.get_fullmove_number() <= 10 {
+                search_time = search_time.min(Duration::from_millis(1000 * self.board.get_fullmove_number() as u64));
+            }
+            return GoCommand::MoveTime(search_time);
         }
         panic!("Expected Timed Command!");
     }

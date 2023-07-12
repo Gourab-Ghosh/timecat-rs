@@ -10,6 +10,7 @@ pub fn parse_command(engine: &mut Engine, raw_input: &str) {
 #[allow(unused_variables)]
 #[rustfmt::skip]
 pub fn test() -> Result<(), EngineError> {
+    thread::spawn(|| IO_READER.start_reader());
     // open_tablebase("directory", true, true, None, Board::new());
     let could_have_probably_played_better_move = [
         "5rk1/6pp/p1p5/1p1pqn2/1P6/2NP3P/2PQ1PP1/R5K1 w - - 0 26",

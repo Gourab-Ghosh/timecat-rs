@@ -40,7 +40,9 @@ impl Timer {
     }
 
     pub fn set_max_time(&mut self, duration: Duration) {
-        self.max_time = duration;
+        self.max_time = duration
+            .checked_sub(get_move_overhead())
+            .unwrap_or_default();
         self.stop_search = false;
     }
 

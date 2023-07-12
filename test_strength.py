@@ -61,7 +61,7 @@ def get_fen_and_opening_name(line):
     return fen, opening
 
 def get_stats_string(stats):
-    return f"Engine1 Win: {stats[True]}, Draw: {stats[None]}, Engine2 Win: {stats[False]}"
+    return f"Engine1 Win: {stats[True]}, Engine2 Win: {stats[False]}, Draw: {stats[None]}"
 
 class Engine(SimpleEngine):
     pass
@@ -85,8 +85,9 @@ def main():
     engine_paths = get_engine_paths()
     random.seed(0)
     with Engine.popen_uci(engine_paths[0]) as engine1, Engine.popen_uci(engine_paths[1]) as engine2:
-        engine1.configure({"Hash": 64})
-        engine2.configure({"Hash": 64})
+        if "Hash" in engine1.options.keys() and "Hash" in engine2.options.keys():
+            engine1.configure({"Hash": 64})
+            engine2.configure({"Hash": 64})
         with open("test_fens.txt", "r") as rf:
             fens_and_opening_name = [get_fen_and_opening_name(line) for line in rf.readlines()]
         random.shuffle(fens_and_opening_name)
