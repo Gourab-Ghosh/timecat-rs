@@ -168,7 +168,19 @@ impl Evaluator {
         if Self::is_easily_winning_position(board, material_score) {
             return self.king_corner_forcing_evaluation(board, material_score);
         }
-        self.stockfish_network.eval(&board.get_sub_board())
+        let mut nnue_eval = self.stockfish_network.eval(&board.get_sub_board());
+        let lower_threshold = 20 * PAWN_VALUE;
+        if nnue_eval.abs() > lower_threshold {
+            let multiplier = match_interpolate!(
+                0,
+                1,
+                lower_threshold,
+                35 * PAWN_VALUE,
+                nnue_eval.abs()
+            );
+            nnue_eval += (multiplier * (material_score as f64)).round() as Score;
+        }
+        nnue_eval
     }
 
     fn hashed_evaluate(&self, board: &Board) -> Score {

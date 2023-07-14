@@ -367,10 +367,15 @@ impl Searcher {
                 return Some(mate_score);
             }
         }
+        let is_endgame = self.board.is_endgame();
         let checkers = self.board.get_checkers();
         let num_checkers = checkers.popcnt();
         let check_extension = if num_checkers > 0 {
-            num_checkers + 1
+            let mut extension = num_checkers;
+            if !is_endgame {
+                extension += 1;
+            }
+            extension
         } else {
             0
         } as Depth;
@@ -423,7 +428,6 @@ impl Searcher {
         if depth == 0 {
             return Some(self.quiescence(alpha, beta));
         }
-        // let is_endgame = self.board.is_endgame();
         self.num_nodes_searched.fetch_add(1, MEMORY_ORDERING);
         let not_in_check = checkers == BB_EMPTY;
         if not_in_check && !DISABLE_ALL_PRUNINGS {
@@ -460,7 +464,7 @@ impl Searcher {
             }
             // razoring
             let d = 3;
-            if !is_pv_node && depth <= d && !self.board.is_endgame() {
+            if !is_pv_node && depth <= d && !is_endgame {
                 let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
                 if score < beta {
                     if depth == 1 {
@@ -695,19 +699,22 @@ impl Searcher {
                 White => (wtime, winc, btime, binc),
                 Black => (btime, binc, wtime, winc),
             };
-            let divider = moves_to_go.unwrap_or(30);
+            let divider = moves_to_go.unwrap_or(10);
             let new_inc = self_inc
                 .checked_sub(Duration::from_secs(2))
                 .unwrap_or_default();
             let opponent_time_advantage = opponent_time.checked_sub(self_time).unwrap_or_default();
+            let min_time_saving = (self_time / 2).min(Duration::from_secs(3));
             let mut search_time = self_time
-                .checked_sub(opponent_time_advantage.max(Duration::from_secs(3)))
+                .checked_sub(opponent_time_advantage.max(min_time_saving))
                 .unwrap_or_default()
                 / divider
                 + new_inc;
             // search_time = (4 * search_time) / 5;
-            if self.board.get_fullmove_number() <= 10 {
-                search_time = search_time.min(Duration::from_millis(1000 * self.board.get_fullmove_number() as u64));
+            if self.board.get_fullmove_number() <= 15 {
+                search_time = search_time.min(Duration::from_millis(
+                    1000 * self.board.get_fullmove_number() as u64,
+                ));
             }
             return GoCommand::MoveTime(search_time);
         }
