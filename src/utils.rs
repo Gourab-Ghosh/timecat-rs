@@ -10,6 +10,20 @@ pub mod engine_utils {
     }
 
     #[inline(always)]
+    pub fn get_upper_board_mask(rank: Rank, color: Color) -> BitBoard {
+        get_item_unchecked!(UPPER_BOARD_MASK, color.to_index(), rank.to_index())
+    }
+
+    #[inline(always)]
+    pub fn get_lower_board_mask(rank: Rank, color: Color) -> BitBoard {
+        get_upper_board_mask(rank, !color)
+    }
+}
+
+pub mod piece_utils {
+    use super::*;
+    
+    #[inline(always)]
     pub const fn evaluate_piece(piece: Piece) -> i16 {
         // never set knight and bishop values as same for knight bishop endgame
         match piece {
@@ -22,14 +36,85 @@ pub mod engine_utils {
         }
     }
 
-    #[inline(always)]
-    pub fn get_upper_board_mask(rank: Rank, color: Color) -> BitBoard {
-        get_item_unchecked!(UPPER_BOARD_MASK, color.to_index(), rank.to_index())
+    pub trait PieceType {
+        fn get_type(&self) -> usize;
     }
 
-    #[inline(always)]
-    pub fn get_lower_board_mask(rank: Rank, color: Color) -> BitBoard {
-        get_upper_board_mask(rank, !color)
+    impl PieceType for Piece {
+        fn get_type(&self) -> usize {
+            Some(*self).get_type()
+        }
+    }
+
+    impl PieceType for Option<Piece> {
+        fn get_type(&self) -> usize {
+            match *self {
+                Some(piece) => piece.to_index() + 1,
+                None => 0,
+            }
+        }
+    }
+}
+
+pub mod move_utils {
+    use super::*;
+
+    pub trait Compress {
+        fn compress(&self) -> u16;
+    }
+
+    pub trait Decompress<T> {
+        fn decompress(self) -> T;
+    }
+
+    impl Compress for Option<Piece> {
+        fn compress(&self) -> u16 {
+            self.get_type() as u16
+        }
+    }
+
+    impl Compress for Move {
+        fn compress(&self) -> u16 {
+            let mut compressed_move = 0;
+            compressed_move |= (self.get_source().to_index() as u16) << 6;
+            compressed_move |= self.get_dest().to_index() as u16;
+            compressed_move |= (self.get_promotion().compress()) << 12;
+            compressed_move
+        }
+    }
+
+    impl Compress for Option<Move> {
+        fn compress(&self) -> u16 {
+            match self {
+                Some(m) => m.compress(),
+                None => u16::MAX,
+            }
+        }
+    }
+
+    impl Decompress<Option<Piece>> for u16 {
+        fn decompress(self) -> Option<Piece> {
+            if self == 0 {
+                return None;
+            }
+            Some(get_item_unchecked!(ALL_PIECES, (self - 1) as usize))
+        }
+    }
+
+    impl Decompress<Option<Move>> for u16 {
+        fn decompress(self) -> Option<Move> {
+            if self == u16::MAX {
+                return None;
+            }
+            let source = get_item_unchecked!(ALL_SQUARES, ((self >> 6) & 0b111111) as usize);
+            let dest = get_item_unchecked!(ALL_SQUARES, (self & 0b111111) as usize);
+            let promotion = ((self >> 12) & 0b111).decompress();
+            Some(Move::new(
+                source,
+                dest,
+                promotion,
+            ))
+        }
     }
 }
 
@@ -288,8 +373,7 @@ pub mod string_utils {
 
     impl Stringify for CacheTableSize {
         fn stringify(&self) -> String {
-            self.to_cache_table_memory_size::<TranspositionTableEntry>()
-                .to_string()
+            format!("{self}")
         }
     }
 
@@ -415,42 +499,16 @@ pub mod engine_error {
         #[fail(display = "Game is already over! Please start a game from another position!")]
         GameAlreadyOver,
 
-        #[fail(display = "Cannot set number of threads to 0! Please try again!")]
-        ZeroThreads,
-
         #[fail(
-            display = "Cannot set number of threads below the limit! Please choose a value above {MIN_NUM_THREADS}!"
+            display = "Cannot set value of {} to {}, the value must be from {} to {}! Please try again!",
+            name, value, min, max
         )]
-        MinThreadsExceeded,
-
-        #[fail(
-            display = "Cannot set number of threads above the limit! Please choose a value below {MAX_NUM_THREADS}!"
-        )]
-        MaxThreadsExceeded,
-
-        #[fail(
-            display = "Cannot set hash table size below range {}! Please try again!",
-            range
-        )]
-        MinHashTableSizeExceeded { range: String },
-
-        #[fail(
-            display = "Cannot set hash table size above range {}! Please try again!",
-            range
-        )]
-        MaxHashTableSizeExceeded { range: String },
-
-        #[fail(
-            display = "Cannot set move overhead below range {}! Please try again!",
-            range
-        )]
-        MinMoveOverheadExceeded { range: String },
-
-        #[fail(
-            display = "Cannot set move overhead above range {}! Please try again!",
-            range
-        )]
-        MaxMoveOverheadExceeded { range: String },
+        InvalidSpinValue {
+            name: String,
+            value: Spin,
+            min: Spin,
+            max: Spin,
+        },
 
         #[fail(display = "{}", err_msg)]
         CustomError { err_msg: String },
@@ -562,7 +620,7 @@ pub mod bitboard_utils {
 }
 
 pub mod cache_table_utils {
-    use super::CacheTableEntry;
+    use super::*;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     pub enum CacheTableSize {
@@ -622,6 +680,19 @@ pub mod cache_table_utils {
             size * entry_size / 2_usize.pow(20)
         }
     }
+
+    impl Display for CacheTableSize {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            let mut s = format!(
+                "{}",
+                self.to_cache_table_memory_size::<TranspositionTableEntry>()
+            );
+            if !is_in_uci_mode() {
+                s += " MB";
+            }
+            write!(f, "{s}")
+        }
+    }
 }
 
 pub mod classes {
@@ -656,10 +727,11 @@ pub mod classes {
                     key.stringify()
                 )
             });
-            *count_entry -= 1;
-            if *count_entry == 0 {
+            if *count_entry == 1 {
                 self.count_map.remove(&key);
+                return;
             }
+            *count_entry -= 1;
         }
 
         pub fn clear(&mut self) {

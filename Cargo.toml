@@ -31,12 +31,12 @@ chess = "3.2.0"
 colored = "2.0.4"
 failure = "0.1.8"
 fxhash = "0.2.1"
-itertools = "0.10.5"
+itertools = "0.11.0"
 lazy_static = "1.4.0"
 
 [build-dependencies]
 reqwest = { version = "0.11.18", features = ["blocking"] }
-sha256 = "1.1.4"
+sha256 = "1.2.2"
 
 [package.metadata.docs.rs]
 all-features = true

@@ -1,9 +1,9 @@
 use super::*;
 
-#[derive(Clone, Copy, Default, Debug)]
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct WeightedMove {
-    pub move_: Move,
     pub weight: MoveWeight,
+    pub move_: Move,
 }
 
 impl WeightedMove {
@@ -18,6 +18,18 @@ pub struct WeightedMoveListSorter {
     len: usize,
     idx: usize,
     sorted: bool,
+}
+
+impl WeightedMoveListSorter {
+    #[inline(always)]
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    #[inline(always)]
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
 }
 
 impl Iterator for WeightedMoveListSorter {
@@ -131,9 +143,9 @@ impl MoveSorter {
     }
 
     fn get_least_attackers_move(square: Square, board: &chess::Board) -> Option<Move> {
-        let mut captute_moves = chess::MoveGen::new_legal(board);
-        captute_moves.set_iterator_mask(get_square_bb(square));
-        captute_moves.next()
+        let mut capture_moves = chess::MoveGen::new_legal(board);
+        capture_moves.set_iterator_mask(get_square_bb(square));
+        capture_moves.next()
     }
 
     fn see(square: Square, board: &mut chess::Board) -> Score {
@@ -275,9 +287,10 @@ impl MoveSorter {
         optional_pv_move: impl Into<Option<Move>>,
         is_easily_winning_position: bool,
     ) -> WeightedMoveListSorter {
-        let best_move = optional_best_move
-            .into()
-            .or(TRANSPOSITION_TABLE.read_best_move(board.hash()));
+        let mut best_move = optional_best_move.into();
+        if best_move.is_none() {
+            best_move = TRANSPOSITION_TABLE.read_best_move(board.hash());
+        }
         let optional_pv_move = optional_pv_move.into();
         let moves_vec = Vec::from_iter(board.generate_legal_moves());
         if self.follow_pv {

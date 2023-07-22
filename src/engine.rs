@@ -14,7 +14,7 @@ pub enum GoCommand {
         btime: Duration,
         winc: Duration,
         binc: Duration,
-        moves_to_go: Option<u32>,
+        moves_to_go: Option<NumMoves>,
     },
 }
 

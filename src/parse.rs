@@ -1,5 +1,3 @@
-use std::char::MAX;
-
 use super::*;
 use EngineError::*;
 // use Command::*;
@@ -154,67 +152,6 @@ impl Go {
 pub struct SetOption;
 
 impl SetOption {
-    fn extract_value<T, E>(commands: &[&str]) -> Result<T, EngineError>
-    where
-        T: std::str::FromStr<Err = E>,
-        EngineError: From<E>,
-    {
-        commands
-            .iter()
-            .skip_while(|&&s| s != "value")
-            .nth(1)
-            .ok_or(EngineError::UnknownCommand)?
-            .parse()
-            .map_err(EngineError::from)
-    }
-
-    fn threads(commands: &[&str]) -> Result<(), EngineError> {
-        let threads = Self::extract_value(commands)?;
-        if threads == 0 {
-            return Err(ZeroThreads);
-        }
-        if threads < MIN_NUM_THREADS {
-            return Err(MinThreadsExceeded);
-        }
-        if threads > MAX_NUM_THREADS {
-            return Err(MaxThreadsExceeded);
-        }
-        set_num_threads(threads, true);
-        Ok(())
-    }
-
-    fn hash(commands: &[&str]) -> Result<(), EngineError> {
-        let size = CacheTableSize::Max(Self::extract_value(commands)?);
-        if size < MIN_T_TABLE_SIZE {
-            return Err(MinHashTableSizeExceeded {
-                range: MIN_T_TABLE_SIZE.stringify(),
-            });
-        }
-        if size > MAX_T_TABLE_SIZE {
-            return Err(MaxHashTableSizeExceeded {
-                range: MAX_T_TABLE_SIZE.stringify(),
-            });
-        }
-        set_t_table_size(size);
-        Ok(())
-    }
-
-    fn move_overhead(commands: &[&str]) -> Result<(), EngineError> {
-        let overhead = Duration::from_millis(Self::extract_value(commands)?);
-        if overhead < MIN_MOVE_OVERHEAD {
-            return Err(MinMoveOverheadExceeded {
-                range: MIN_MOVE_OVERHEAD.stringify(),
-            });
-        }
-        if overhead > MAX_MOVE_OVERHEAD {
-            return Err(MaxMoveOverheadExceeded {
-                range: MAX_MOVE_OVERHEAD.stringify(),
-            });
-        }
-        set_move_overhead(overhead);
-        Ok(())
-    }
-
     fn parse_sub_commands(commands: &[&str]) -> Result<(), EngineError> {
         // setoption name NAME value VALUE
         if commands.get(1).ok_or(UnknownCommand)?.to_lowercase() != "name" {
@@ -226,14 +163,16 @@ impl SetOption {
             .take_while(|&&c| c != "value")
             .join(" ")
             .to_lowercase();
+        let value_string = commands
+            .iter()
+            .skip_while(|&&s| s != "value")
+            .skip(1)
+            .join(" ");
         match command_name.as_str() {
-            "thread" | "threads" => Self::threads(commands),
-            "hash" => Self::hash(commands),
-            "move overhead" => Self::move_overhead(commands),
-            "clear hash" => {
-                clear_all_hash_tables();
-                Ok(())
-            }
+            "thread" | "threads" => UCI_OPTIONS.set_option("Threads", value_string),
+            "hash" => UCI_OPTIONS.set_option("Hash", value_string),
+            "move overhead" => UCI_OPTIONS.set_option("Move Overhead", value_string),
+            "clear hash" => UCI_OPTIONS.set_option("Clear Hash", None),
             "multipv" => Err(NotImplemented),
             _ => Err(UnknownCommand),
         }
@@ -262,7 +201,7 @@ impl Set {
     fn board_fen(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
         let mut fen = commands[3..].join(" ");
         if fen == "startpos" {
-            fen = STARTING_BOARD_FEN.to_string();
+            fen = STARTING_POSITION_FEN.to_string();
         }
         if !Board::is_good_fen(&fen) {
             return Err(BadFen { fen });
@@ -394,7 +333,7 @@ impl UCIParser {
         let mut new_input = String::from("set board fen ");
         match second_command.as_str() {
             "startpos" => {
-                new_input += STARTING_BOARD_FEN;
+                new_input += STARTING_POSITION_FEN;
             }
             "fen" => {
                 let fen = commands
@@ -437,24 +376,9 @@ impl UCIParser {
     fn print_info() {
         println!("id name {}", get_engine_version());
         println!("id author {}", ENGINE_AUTHOR);
-        println!(
-            "option name Threads type spin default {} min {} max {}",
-            DEFAULT_NUM_THREADS, MIN_NUM_THREADS, MAX_NUM_THREADS
-        );
-        println!(
-            "option name Hash type spin default {} min {} max {}",
-            DEFAULT_T_TABLE_SIZE.stringify(),
-            MIN_T_TABLE_SIZE.stringify(),
-            MAX_T_TABLE_SIZE.stringify(),
-        );
-        println!("option name Clear Hash type button");
-        println!(
-            "option name Move Overhead type spin default {} min {} max {}",
-            DEFAULT_MOVE_OVERHEAD.stringify(),
-            MIN_MOVE_OVERHEAD.stringify(),
-            MAX_MOVE_OVERHEAD.stringify(),
-        );
-        // println!("option name OwnBook type check default {DEFAULT_USE_OWN_BOOK}");
+        for option in UCI_OPTIONS.get_all_options() {
+            println!("{}", option);
+        }
         println!("uciok");
     }
 
@@ -470,7 +394,7 @@ impl UCIParser {
             "isready" => Ok(println!("readyok")),
             "ucinewgame" => Self::run_parsed_input(
                 engine,
-                &format!("setoption name Clear Hash && set board fen {STARTING_BOARD_FEN}"),
+                &format!("setoption name Clear Hash && set board fen {STARTING_POSITION_FEN}"),
             ),
             "position" => Self::run_parsed_input(engine, &Self::parse_uci_input(user_input)?),
             _ => Err(UnknownCommand),
@@ -524,7 +448,7 @@ impl Parser {
                 Ok(())
             }
             "reset board" => engine
-                .set_fen(STARTING_BOARD_FEN)
+                .set_fen(STARTING_POSITION_FEN)
                 .map_err(EngineError::from),
             "stop" => {
                 if is_in_uci_mode() {

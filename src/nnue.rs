@@ -5,8 +5,6 @@ use nnue_rs::stockfish::halfkp::{SfHalfKpFullModel, SfHalfKpModel};
 use nnue_rs::Square as StockfishSquare;
 use std::io::Cursor;
 
-pub const NNUE_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/nnue_dir/nn.nnue"));
-
 fn square_to_stockfish_square(square: Square) -> StockfishSquare {
     StockfishSquare::from_index(square.to_index())
 }
@@ -19,7 +17,10 @@ pub struct StockfishNetwork {
 
 impl StockfishNetwork {
     pub fn new() -> Self {
-        let mut reader = Cursor::new(NNUE_BYTES);
+        let mut reader = Cursor::new(include_bytes!(concat!(
+            env!("OUT_DIR"),
+            "/nnue_dir/nn.nnue"
+        )));
         let model = SfHalfKpFullModel::read(&mut reader).expect("Bad NNUE file!");
         Self { model: model.model }
     }

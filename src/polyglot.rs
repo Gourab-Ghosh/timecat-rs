@@ -1,5 +1,5 @@
 use super::*;
-use std::io::Read;
+use std::io::{Read, Seek};
 
 #[rustfmt::skip]
 const POLYGLOT_RANDOM_64: [u64; 781] = [
@@ -414,24 +414,6 @@ mod array_implementation {
                 entries: Self::get_entries_from_bytes(bytes)?,
             })
         }
-
-        pub fn read_first_legal_move(
-            path: &str,
-            board: &Board,
-        ) -> Result<Option<Move>, EngineError> {
-            // Todo: optimize
-            let board_hash = polyglot_hash_from_board(board);
-            let mut file = fs::File::open(path)?;
-            let mut buffer = [0; 16];
-            while file.read_exact(&mut buffer).is_ok() {
-                let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
-                if hash == board_hash {
-                    let move_int = u16::from_be_bytes(buffer[8..10].try_into()?);
-                    return Ok(Some(get_move_from_move_int(move_int as usize)?));
-                }
-            }
-            Ok(None)
-        }
     }
 }
 
@@ -447,16 +429,13 @@ mod map_implementation {
 
     impl PolyglotBookEntry {
         fn get_weighted_move(&self) -> WeightedMove {
-            WeightedMove {
-                move_: self.move_,
-                weight: self.weight as MoveWeight,
-            }
+            WeightedMove::new(self.move_, self.weight as MoveWeight)
         }
     }
 
     impl PartialOrd for PolyglotBookEntry {
         fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-            Some(other.weight.cmp(&self.weight))
+            Some(self.cmp(other))
         }
     }
 
@@ -468,6 +447,7 @@ mod map_implementation {
 
     #[derive(Clone, Debug)]
     pub struct PolyglotBook {
+        // start_index: usize,
         entries_map: HashMap<u64, Vec<PolyglotBookEntry>>,
     }
 
@@ -588,23 +568,89 @@ mod map_implementation {
                 entries_map: Self::get_entries_from_bytes(bytes)?,
             })
         }
+    }
+}
 
-        pub fn read_first_legal_move(
-            path: &str,
-            board: &Board,
-        ) -> Result<Option<Move>, EngineError> {
-            // Todo: optimize
-            let board_hash = polyglot_hash_from_board(board);
-            let mut file = fs::File::open(path)?;
-            let mut buffer = [0; 16];
-            while file.read_exact(&mut buffer).is_ok() {
-                let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
-                if hash == board_hash {
-                    let move_int = u16::from_be_bytes(buffer[8..10].try_into()?);
-                    return Ok(Some(get_move_from_move_int(move_int as usize)?));
-                }
+fn read_bytes_at_offset(file: &fs::File, buffer: &mut [u8], offset: u64) -> std::io::Result<()> {
+    let mut reader = std::io::BufReader::new(file);
+    reader.seek(std::io::SeekFrom::Start(offset))?;
+    reader.read_exact(buffer)
+}
+
+pub fn find_first_matching_index(
+    file: &fs::File,
+    target_hash: u64,
+) -> Result<Option<u64>, EngineError> {
+    let mut buffer = [0; 16];
+    let mut start = 0;
+    let mut end = file.metadata()?.len() / 16 - 1;
+    let mut first_match_idx = None;
+    while start <= end {
+        let mid = start + (end - start) / 2;
+        let offset = mid * 16;
+        let read_result = read_bytes_at_offset(file, &mut buffer, offset);
+        if read_result.is_err() {
+            break;
+        }
+        let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
+        match hash.cmp(&target_hash) {
+            Ordering::Equal => {
+                first_match_idx = Some(mid);
+                end = mid - 1;
             }
-            Ok(None)
+            Ordering::Less => start = mid + 1,
+            Ordering::Greater => end = mid - 1,
         }
     }
+    Ok(first_match_idx)
+}
+
+pub fn search_all_moves_from_file(
+    path: &str,
+    board: &Board,
+) -> Result<Vec<WeightedMove>, EngineError> {
+    let target_hash = polyglot_hash_from_board(board);
+    let file = fs::File::open(path)?;
+    let mut buffer = [0; 16];
+    let mut moves = Vec::new();
+    if let Some(first_match_idx) = find_first_matching_index(&file, target_hash)? {
+        // Gather all moves with matching hash
+        let mut idx = first_match_idx;
+        loop {
+            let offset = idx * 16;
+            let read_result = read_bytes_at_offset(&file, &mut buffer, offset);
+            if read_result.is_err() {
+                break;
+            }
+            let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
+            let move_int = u16::from_be_bytes(buffer[8..10].try_into()?);
+            let weight = u16::from_be_bytes(buffer[10..12].try_into()?);
+            if hash == target_hash {
+                let move_ = get_move_from_move_int(move_int as usize)?;
+                moves.push(WeightedMove::new(move_, weight as MoveWeight));
+                idx += 1;
+            } else {
+                break;
+            }
+        }
+        moves.sort_unstable_by_key(|wm| -wm.weight);
+    }
+    Ok(moves)
+}
+
+pub fn search_best_moves_from_file(path: &str, board: &Board) -> Result<Option<Move>, EngineError> {
+    Ok(search_all_moves_from_file(path, board)?
+        .first()
+        .map(|wm| wm.move_))
+}
+
+pub fn test_polyglot(book_path: &str) -> Result<(), EngineError> {
+    let board = Board::from_fen(STARTING_POSITION_FEN)?;
+    let book = array_implementation::PolyglotBookReader::read_book_from_file(book_path)?;
+    let moves1 = book.get_all_weighed_moves(&board);
+    println!("{}", moves1.stringify());
+    let moves2 = search_all_moves_from_file(book_path, &board)?;
+    println!("{}", moves2.stringify());
+    assert_eq!(moves1, moves2);
+    Ok(())
 }

@@ -11,6 +11,7 @@ pub fn parse_command(engine: &mut Engine, raw_input: &str) {
 #[rustfmt::skip]
 pub fn test() -> Result<(), EngineError> {
     thread::spawn(|| IO_READER.start_reader());
+
     // open_tablebase("directory", true, true, None, Board::new());
     let could_have_probably_played_better_move = [
         "5rk1/6pp/p1p5/1p1pqn2/1P6/2NP3P/2PQ1PP1/R5K1 w - - 0 26",
@@ -92,6 +93,9 @@ pub fn test() -> Result<(), EngineError> {
     // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12")?; // weird results in 3 secs in my pc
     // parse_command(&mut engine, "go time 3000");
     parse_command(&mut engine, "go depth 13");
+
+    // let path = "";
+    // test_polyglot(path)?;
 
     // let mut board = Board::new();
     // println!("\n{board}");

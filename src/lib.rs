@@ -17,6 +17,7 @@ mod syzygy;
 mod tests;
 mod timer;
 mod tt;
+mod uci;
 mod useful_macros;
 mod utils;
 
@@ -65,11 +66,14 @@ pub use syzygy::*;
 use tests::test;
 pub use timer::Timer;
 pub use tt::*;
+pub use uci::*;
 pub use useful_macros::*;
 pub use utils::bitboard_utils::*;
 pub use utils::cache_table_utils::*;
 pub use utils::classes::*;
 pub use utils::engine_error::*;
+pub use utils::piece_utils::*;
+pub use utils::move_utils::*;
 pub use utils::engine_utils::*;
 pub use utils::global_utils::*;
 pub use utils::hash_utils::*;
@@ -86,4 +90,5 @@ lazy_static! {
     pub static ref TRANSPOSITION_TABLE: TranspositionTable = TranspositionTable::default();
     pub static ref EVALUATOR: Evaluator = Evaluator::default();
     pub static ref IO_READER: IoReader = IoReader::default();
+    pub static ref UCI_OPTIONS: UCIOptionsMap = UCIOptionsMap::default();
 }

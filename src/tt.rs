@@ -189,7 +189,7 @@ impl Default for TranspositionTableData {
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
 pub struct TranspositionTableEntry {
     optional_data: Option<TranspositionTableData>,
-    best_move: Option<Move>,
+    best_move: u16,
 }
 
 pub struct TranspositionTable {
@@ -233,7 +233,7 @@ impl TranspositionTable {
             Some(entry) => entry,
             None => return (None, None),
         };
-        let best_move = tt_entry.best_move;
+        let best_move = tt_entry.best_move.decompress();
         if DISABLE_T_TABLE || tt_entry.optional_data.is_none() {
             return (None, best_move);
         }
@@ -253,7 +253,7 @@ impl TranspositionTable {
     }
 
     pub fn read_best_move(&self, key: u64) -> Option<Move> {
-        self.table.lock().unwrap().get(key)?.best_move
+        self.table.lock().unwrap().get(key)?.best_move.decompress()
     }
 
     pub fn write(
@@ -265,7 +265,7 @@ impl TranspositionTable {
         flag: EntryFlag,
         best_move: impl Into<Option<Move>>,
     ) {
-        let save_score = !DISABLE_T_TABLE;
+        let save_score = !DISABLE_T_TABLE && !is_checkmate(score);
         if save_score && is_checkmate(score) {
             let mate_distance = CHECKMATE_SCORE
                 .abs_diff(score.abs())
@@ -294,7 +294,8 @@ impl TranspositionTable {
                 optional_data,
                 best_move: best_move
                     .into()
-                    .or(old_entry.and_then(|entry| entry.best_move)),
+                    .or(old_entry.and_then(|entry| entry.best_move.decompress()))
+                    .compress(),
             },
         );
     }
@@ -305,7 +306,7 @@ impl TranspositionTable {
 
     pub fn clear_best_moves(&self) {
         for e in self.table.lock().unwrap().table.iter_mut() {
-            e.entry.best_move = None;
+            e.entry.best_move = u16::MAX;
         }
     }
 

@@ -28,6 +28,7 @@ pub mod types {
     pub type Score = i16;
     pub type MoveWeight = i64;
     pub type NumMoves = u16;
+    pub type Spin = u128;
 }
 
 pub mod bitboard {
@@ -226,7 +227,8 @@ pub mod board_representation {
 
 pub mod fen {
     pub const EMPTY_FEN: &str = "8/8/8/8/8/8/8/8 w - - 0 1";
-    pub const STARTING_BOARD_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    pub const STARTING_POSITION_FEN: &str =
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 }
 
 pub mod print_style {
@@ -250,15 +252,15 @@ pub mod print_style {
 pub mod engine_constants {
     use super::types::*;
     use crate::engine::GoCommand;
-    use crate::utils::{cache_table_utils::CacheTableSize, engine_utils::evaluate_piece};
+    use crate::utils::{cache_table_utils::CacheTableSize, piece_utils::evaluate_piece};
     use chess::Piece::*;
     use std::time::Duration;
 
     pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
     pub const DEFAULT_NUM_THREADS: usize = 1;
     pub const MIN_NUM_THREADS: usize = 1;
-    pub const MAX_NUM_THREADS: usize = 8;
-    pub const DEFAULT_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(20);
+    pub const MAX_NUM_THREADS: usize = 1024;
+    pub const DEFAULT_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(16);
     pub const MIN_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(1);
     pub const MAX_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(1024);
     pub const DEFAULT_MOVE_OVERHEAD: Duration = Duration::from_millis(100);
@@ -301,6 +303,7 @@ pub mod engine_constants {
         + 4 * (evaluate_piece(Knight) + evaluate_piece(Bishop) + evaluate_piece(Rook))
         + 2 * evaluate_piece(Queen);
     pub const MAX_MATERIAL_SCORE: Score = INITIAL_MATERIAL_SCORE_ABS / 2;
+    pub const WINNING_SCORE_THRESHOLD: Score = 15 * PAWN_VALUE;
 
     #[rustfmt::skip]
     pub const MVV_LVA: [[MoveWeight; 6]; 6] = [

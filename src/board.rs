@@ -64,13 +64,13 @@ pub struct Board {
 impl Board {
     pub fn new() -> Self {
         let mut board = Self {
-            board: chess::Board::from_str(STARTING_BOARD_FEN).unwrap(),
+            board: chess::Board::from_str(STARTING_POSITION_FEN).unwrap(),
             stack: Vec::new(),
             ep_square: None,
             halfmove_clock: 0,
             fullmove_number: 1,
             num_repetitions: 0,
-            starting_fen: STARTING_BOARD_FEN.to_string(),
+            starting_fen: STARTING_POSITION_FEN.to_string(),
             repetition_table: RepetitionTable::new(),
         };
         board.num_repetitions = board
@@ -148,18 +148,11 @@ impl Board {
     }
 
     pub fn reset(&mut self) {
-        self.set_fen(STARTING_BOARD_FEN).unwrap();
+        self.set_fen(STARTING_POSITION_FEN).unwrap();
     }
 
     pub fn clear(&mut self) {
         self.set_fen(EMPTY_FEN).unwrap();
-    }
-
-    pub fn piece_type_at(&self, square: Square) -> usize {
-        match self.board.piece_on(square) {
-            None => 0,
-            Some(p) => p.to_index() + 1,
-        }
     }
 
     pub fn color_at(&self, square: Square) -> Option<Color> {
@@ -171,7 +164,7 @@ impl Board {
     }
 
     pub fn piece_symbol_at(&self, square: Square) -> String {
-        let symbol = get_item_unchecked!(PIECE_SYMBOLS, self.piece_type_at(square)).to_string();
+        let symbol = get_item_unchecked!(PIECE_SYMBOLS, self.piece_at(square).get_type()).to_string();
         if let Some(color) = self.color_at(square) {
             return match color {
                 White => symbol.to_uppercase(),
@@ -940,7 +933,7 @@ impl Board {
     /// The result of the game is included in the tags.
     pub fn get_pgn(&self) -> String {
         let mut pgn = String::new();
-        if self.starting_fen != STARTING_BOARD_FEN {
+        if self.starting_fen != STARTING_POSITION_FEN {
             pgn += &format!("[FEN \"{}\"]", self.starting_fen);
         }
         pgn += &self.variation_san(
@@ -1099,7 +1092,7 @@ impl Display for Board {
 
 impl Default for Board {
     fn default() -> Self {
-        STARTING_BOARD_FEN.into()
+        STARTING_POSITION_FEN.into()
     }
 }
 
@@ -1112,7 +1105,7 @@ impl Clone for Board {
             halfmove_clock: self.halfmove_clock,
             fullmove_number: self.fullmove_number,
             num_repetitions: self.num_repetitions,
-            starting_fen: STARTING_BOARD_FEN.to_string(),
+            starting_fen: STARTING_POSITION_FEN.to_string(),
             repetition_table: self.repetition_table.clone(),
         }
     }

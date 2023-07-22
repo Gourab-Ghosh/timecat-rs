@@ -445,12 +445,15 @@ impl Searcher {
                 && static_evaluation >= beta
                 && self.board.has_non_pawn_material()
             {
-                let r = NULL_MOVE_MIN_REDUCTION
-                    + (depth.max(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
-                        .round() as Depth;
+                // let r = NULL_MOVE_MIN_REDUCTION
+                //     + (depth.max(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
+                //         .round() as Depth;
+                // let reduced_depth = depth - r - 1;
+                let r = 1920 + (depth as i32) * 2368;
+                let reduced_depth = (((depth as u32) * 4096 - (r as u32)) / 4096) as Depth;
                 self.push(None);
                 let score = -self.alpha_beta(
-                    depth - 1 - r,
+                    reduced_depth,
                     -beta,
                     -beta + 1,
                     num_extensions,
@@ -464,7 +467,7 @@ impl Searcher {
             }
             // razoring
             let d = 3;
-            if !is_pv_node && depth <= d && !is_endgame {
+            if !is_pv_node && depth <= d && !is_checkmate(beta) {
                 let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
                 if score < beta {
                     if depth == 1 {
@@ -489,8 +492,17 @@ impl Searcher {
             self.get_nth_pv_move(self.ply),
             Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
         );
-        let mut move_index = 0;
-        for WeightedMove { move_, .. } in weighted_moves {
+        match weighted_moves.len() {
+            0 => return Some(if not_in_check { 0 } else { -mate_score }),
+            // 1 => {
+            //     if Self::safe_to_apply_extensions(num_extensions, check_extension, max_extension) {
+            //         depth += 1;
+            //         num_extensions += 1;
+            //     }
+            // }
+            _ => (),
+        }
+        for (move_index, WeightedMove { move_, .. }) in weighted_moves.enumerate() {
             // let (mut depth, mut num_extensions) = (depth, num_extensions);
             let not_capture_move = !self.board.is_capture(move_);
             let mut safe_to_apply_lmr = move_index >= FULL_DEPTH_SEARCH_LMR
@@ -562,10 +574,6 @@ impl Searcher {
                     return Some(beta);
                 }
             }
-            move_index += 1;
-        }
-        if move_index == 0 {
-            return Some(if not_in_check { 0 } else { -mate_score });
         }
         if !self.timer.check_stop(enable_timer) {
             TRANSPOSITION_TABLE.write(
@@ -683,6 +691,15 @@ impl Searcher {
         SearchInfo::new(self)
     }
 
+    fn calculate_divider(&self) -> NumMoves {
+        let sub = self.board.get_fullmove_number() / 2;
+        let default_divider = (20 as NumMoves)
+            .checked_sub(sub)
+            .unwrap_or_default()
+            .max(5);
+        default_divider
+    }
+
     fn parse_timed_command(&self, command: GoCommand) -> GoCommand {
         if let GoCommand::Timed {
             wtime,
@@ -695,27 +712,28 @@ impl Searcher {
             if self.board.generate_legal_moves().len() == 1 {
                 return GoCommand::Depth(1);
             }
-            let (self_time, self_inc, opponent_time, _opponent_inc) = match self.board.turn() {
+            let (self_time, self_inc, opponent_time, _) = match self.board.turn() {
                 White => (wtime, winc, btime, binc),
                 Black => (btime, binc, wtime, winc),
             };
-            let divider = moves_to_go.unwrap_or(10);
+            let divider = moves_to_go.unwrap_or(self.calculate_divider());
             let new_inc = self_inc
-                .checked_sub(Duration::from_secs(2))
+                .checked_sub(Duration::from_secs(1))
                 .unwrap_or_default();
+            let self_time_advantage_bonus = self_time
+                .checked_sub(opponent_time + Duration::from_secs(10))
+                .unwrap_or_default()
+                / 4;
             let opponent_time_advantage = opponent_time.checked_sub(self_time).unwrap_or_default();
             let min_time_saving = (self_time / 2).min(Duration::from_secs(3));
             let mut search_time = self_time
                 .checked_sub(opponent_time_advantage.max(min_time_saving))
                 .unwrap_or_default()
-                / divider
-                + new_inc;
-            // search_time = (4 * search_time) / 5;
-            if self.board.get_fullmove_number() <= 15 {
-                search_time = search_time.min(Duration::from_millis(
-                    1000 * self.board.get_fullmove_number() as u64,
-                ));
-            }
+                / divider as u32
+                + new_inc
+                + self_time_advantage_bonus;
+            search_time =
+                search_time.min(Duration::from_secs(self.board.get_fullmove_number() as u64) / 2);
             return GoCommand::MoveTime(search_time);
         }
         panic!("Expected Timed Command!");
@@ -735,6 +753,12 @@ impl Searcher {
             self.score = self
                 .search(self.current_depth, alpha, beta, print_info)
                 .unwrap_or(self.score);
+            if self.is_main_threaded()
+                && self.score >= WINNING_SCORE_THRESHOLD
+                && self.timer.time_elapsed() > Duration::from_secs(1)
+            {
+                self.timer.update_max_time(Duration::from_secs(10));
+            }
             let search_info = self.get_search_info();
             if print_info && self.is_main_threaded() {
                 search_info.print_info();

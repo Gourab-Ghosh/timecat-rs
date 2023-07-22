@@ -40,10 +40,14 @@ impl Timer {
     }
 
     pub fn set_max_time(&mut self, duration: Duration) {
-        self.max_time = duration
-            .checked_sub(get_move_overhead())
-            .unwrap_or_default();
+        self.max_time = duration;
         self.stop_search = false;
+    }
+
+    pub fn update_max_time(&mut self, duration: Duration) {
+        if self.max_time != Duration::MAX {
+            self.set_max_time(self.max_time.min(duration));
+        }
     }
 
     pub fn get_clock(&self) -> Instant {
@@ -62,7 +66,7 @@ impl Timer {
         if self.max_time == Duration::MAX {
             return false;
         }
-        self.stop_search = self.time_elapsed() >= self.max_time;
+        self.stop_search = self.time_elapsed() + get_move_overhead() >= self.max_time;
         self.stop_search
     }
 

@@ -169,16 +169,30 @@ impl Evaluator {
             return self.king_corner_forcing_evaluation(board, material_score);
         }
         let mut nnue_eval = self.stockfish_network.eval(&board.get_sub_board());
-        let lower_threshold = 20 * PAWN_VALUE;
-        if nnue_eval.abs() > lower_threshold {
+        if nnue_eval.abs() > WINNING_SCORE_THRESHOLD {
             let multiplier = match_interpolate!(
                 0,
                 1,
-                lower_threshold,
+                WINNING_SCORE_THRESHOLD,
                 35 * PAWN_VALUE,
                 nnue_eval.abs()
             );
             nnue_eval += (multiplier * (material_score as f64)).round() as Score;
+            let losing_side = if nnue_eval.is_positive() {
+                Black
+            } else {
+                White
+            };
+            nnue_eval += nnue_eval.signum()
+                * match_interpolate!(
+                    0,
+                    5.0 * multiplier,
+                    MAX_MATERIAL_SCORE,
+                    0,
+                    board.get_masked_material_score_abs(board.occupied_co(losing_side))
+                )
+                .round() as Score
+                * PAWN_VALUE;
         }
         nnue_eval
     }
