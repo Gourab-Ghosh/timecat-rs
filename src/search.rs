@@ -692,12 +692,10 @@ impl Searcher {
     }
 
     fn calculate_divider(&self) -> NumMoves {
-        let sub = self.board.get_fullmove_number() / 2;
-        let default_divider = (20 as NumMoves)
-            .checked_sub(sub)
+        (20 as NumMoves)
+            .checked_sub(self.board.get_fullmove_number() / 2)
             .unwrap_or_default()
-            .max(5);
-        default_divider
+            .max(5)
     }
 
     fn parse_timed_command(&self, command: GoCommand) -> GoCommand {
