@@ -461,7 +461,6 @@ impl Searcher {
                 )?;
                 self.pop();
                 if score >= beta {
-                    TRANSPOSITION_TABLE.write(key, depth, self.ply, beta, HashBeta, best_move);
                     return Some(beta);
                 }
             }
