@@ -5,6 +5,8 @@ version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
 description = "A chess engine"
+license-file = "LICENSE"
+keywords = ["rust", "chess-engine", "chess", "uci", "alpha-beta-pruning", "negamax", "chess-ai", "uci-chess-engine", "nnue", "timecat", "timecat-rs"]
 readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
