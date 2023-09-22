@@ -21,9 +21,10 @@ impl Timer {
         }
     }
 
-    pub fn new_dummy() -> Self {
+    pub fn new_dummy(stopper: Arc<AtomicBool>) -> Self {
         timer::Timer {
             is_dummy: true,
+            stopper,
             ..Default::default()
         }
     }

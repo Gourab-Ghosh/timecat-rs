@@ -156,19 +156,24 @@ impl Engine {
     pub fn go(&self, command: GoCommand, print_info: bool) -> GoResponse {
         self.reset_variables();
         let num_threads = get_num_threads().max(1);
+        let mut thread_handlers = vec![];
         for id in 1..num_threads {
-            thread::spawn({
+            let handler = thread::spawn({
                 let mut threaded_searcher = self.generate_searcher(id);
                 move || threaded_searcher.go(GoCommand::Infinite, false)
             });
+            thread_handlers.push(handler);
         }
-        thread::spawn({
+        thread_handlers.push(thread::spawn({
             let stopper = self.stopper.clone();
             move || Self::update_stop_command_from_input(&stopper)
-        });
+        }));
         let mut main_thread_searcher = self.generate_searcher(0);
         main_thread_searcher.go(command, print_info);
         self.stopper.store(true, MEMORY_ORDERING);
+        for handler in thread_handlers {
+            handler.join().unwrap();
+        }
         GoResponse::new(main_thread_searcher.get_search_info())
     }
 }

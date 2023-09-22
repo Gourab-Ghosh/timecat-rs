@@ -174,7 +174,7 @@ impl Searcher {
             timer: if id == 0 {
                 Timer::new(stopper)
             } else {
-                Timer::new_dummy()
+                Timer::new_dummy(stopper)
             },
             num_nodes_searched,
             selective_depth,
