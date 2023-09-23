@@ -18,7 +18,10 @@ OVERWRITE_LOG_FILE = True
 ENGINE_NAME_LENGTH = 15
 LIMIT = Limit(time = 1/10)
 
-def play_game(engine1, engine2, limit, fen = STARTING_BOARD_FEN, print_info = True, af_path = None) -> Outcome:
+class Engine(SimpleEngine):
+    pass
+
+def play_game(engine1: Engine, engine2: Engine, limit, fen = STARTING_BOARD_FEN, print_info = True, af_path = None) -> Outcome:
     board = Board(fen)
     if engine1 is not engine2:
         engine1.index = 1
@@ -62,9 +65,6 @@ def get_fen_and_opening_name(line):
 
 def get_stats_string(stats):
     return f"Engine1 Win: {stats[True]}, Engine2 Win: {stats[False]}, Draw: {stats[None]}"
-
-class Engine(SimpleEngine):
-    pass
 
 def get_engine_paths():
     engine_paths = []
