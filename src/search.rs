@@ -721,7 +721,7 @@ impl Searcher {
                 .checked_sub(opponent_time + Duration::from_secs(10))
                 .unwrap_or_default()
                 / 4;
-            let opponent_time_advantage = opponent_time.checked_sub(self_time).unwrap_or_default();
+            let opponent_time_advantage = opponent_time.checked_sub(self_time).unwrap_or_default().min(self_time / 2);
             let min_time_saving = (self_time / 2).min(Duration::from_secs(3));
             let mut search_time = self_time
                 .checked_sub(opponent_time_advantage.max(min_time_saving))

@@ -95,6 +95,21 @@ pub fn test() -> Result<(), EngineError> {
     // parse_command(&mut engine, "go time 3000");
     parse_command(&mut engine, "go depth 13");
 
+    // let mut engine = Engine::default();
+    // let mut sans =  "Nc3 Nf6 d4 d5 e3 Nc6 Nf3 Bg4 h3 Bh5 g4 Bg6 Bb5 a6 Bxc6+ bxc6 Ne5 Qd6 h4 Ne4 h5 Nxc3 bxc3 Be4 f3 f6 fxe4 fxe5 Qf3 dxe4 Qxe4 exd4 cxd4 O-O-O Ke2 Qd5 Kd3 Qxe4+ Kxe4 e6 c4 c5 Bb2 cxd4 Bxd4 Rg8 Raf1 g6 h6 Bb4 Rf7 Rd7 Rg7 Re8 Rf1 e5 Bb2 Rd2 Rff7 Bd6 c5 Rxb2 cxd6 cxd6 Rxh7 Kb8 Rhg7 Rd8 Rxg6 Rxa2 h7 d5+ Kxe5 Ra3 Rg8 Rxe3+ Kf4 Re4+ Kg5 Ree8 Rgg7 Re2 Kh4 Rh2+ Kg5 Re2 Kh4 Rh2+ Kg5 Re2".split(' ').collect_vec();
+    // for san in &mut sans[0..76] {
+    //     engine.board.push_san(san);
+    // }
+    // println!("{}", engine.board);
+    // let go_command = GoCommand::Timed {
+    //     wtime: Duration::from_millis(267809),
+    //     btime: Duration::from_millis(532920),
+    //     winc: Duration::from_millis(0),
+    //     binc: Duration::from_millis(0),
+    //     moves_to_go: None,
+    // };
+    // engine.go(go_command, true);
+    
     // let path = "";
     // test_polyglot(path)?;
 
@@ -107,5 +122,6 @@ pub fn test() -> Result<(), EngineError> {
     //     board.push(move_);
     //     println!("\n{board}");
     // }
+
     Ok(())
 }
