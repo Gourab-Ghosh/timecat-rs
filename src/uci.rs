@@ -60,16 +60,15 @@ impl UCIOption {
         UCIOption::new(name, UCIOptionType::Button { function })
     }
 
-    fn set_option(&self, value: Option<String>) -> Result<(), EngineError> {
+    fn set_option(&self, value_string: String) -> Result<(), EngineError> {
         match &self.option_type {
             UCIOptionType::Check { function, .. } => {
-                let value = value.unwrap().parse()?;
-                function(value);
+                function(value_string.parse()?);
             }
             UCIOptionType::Spin {
                 min, max, function, ..
             } => {
-                let value = value.unwrap().parse()?;
+                let value = value_string.parse()?;
                 if value < *min || value > *max {
                     return Err(EngineError::InvalidSpinValue {
                         name: self.name.to_owned(),
@@ -81,13 +80,13 @@ impl UCIOption {
                 function(value);
             }
             UCIOptionType::Combo { function, .. } => {
-                function(&value.unwrap());
+                function(&value_string);
             }
             UCIOptionType::Button { function } => {
                 function();
             }
             UCIOptionType::String { function, .. } => {
-                function(&value.unwrap());
+                function(&value_string);
             }
         }
         Ok(())
@@ -130,53 +129,33 @@ impl fmt::Display for UCIOption {
 }
 
 pub struct UCIOptionsMap {
-    options: Mutex<HashMap<String, UCIOptionType>>,
+    options: Mutex<Vec<UCIOption>>,
 }
 
 impl UCIOptionsMap {
     fn new() -> Self {
-        let uci_map = Self {
-            options: Default::default(),
-        };
-        {
-            let mut inner_map = uci_map.options.lock().unwrap();
-            for UCIOption { name, option_type } in get_uci_options() {
-                inner_map.insert(name, option_type);
-            }
+        Self {
+            options: Mutex::new(get_uci_options()),
         }
-        uci_map
     }
 
-    pub fn get_option(&self, name: &str) -> Option<UCIOption> {
+    pub fn get_option(&self, command_name: &str) -> Option<UCIOption> {
         self.options
             .lock()
             .unwrap()
-            .get(name)
-            .map(|option_type| UCIOption::new(name, option_type.clone()))
+            .iter()
+            .find(|UCIOption { name, .. }| name.to_lowercase() == command_name)
+            .cloned()
     }
 
     pub fn get_all_options(&self) -> Vec<UCIOption> {
-        let mut all_options = self
-            .options
-            .lock()
-            .unwrap()
-            .iter()
-            .map(|(name, option_type)| UCIOption::new(name, option_type.clone()))
-            .collect_vec();
-        all_options.sort_unstable();
-        all_options
+        self.options.lock().unwrap().clone()
     }
 
-    pub fn set_option(
-        &self,
-        name: &str,
-        value_string: impl Into<Option<String>>,
-    ) -> Result<(), EngineError> {
-        if let Some(option) = self.get_option(name) {
-            option.set_option(value_string.into())
-        } else {
-            Err(EngineError::UnknownCommand)
-        }
+    pub fn set_option(&self, command_name: &str, value_string: String) -> Result<(), EngineError> {
+        self.get_option(command_name)
+            .ok_or(EngineError::UnknownCommand)?
+            .set_option(value_string)
     }
 }
 

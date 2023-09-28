@@ -277,9 +277,9 @@ impl TranspositionTable {
                 -mate_score
             };
         }
-        let old_entry = self.table.lock().unwrap().get(key);
+        let old_optional_entry = self.table.lock().unwrap().get(key);
         let optional_data = if save_score {
-            let old_optional_data = old_entry.and_then(|entry| entry.optional_data);
+            let old_optional_data = old_optional_entry.and_then(|entry| entry.optional_data);
             if old_optional_data.map(|data| data.depth).unwrap_or(-1) < depth {
                 Some(TranspositionTableData { depth, score, flag })
             } else {
@@ -294,7 +294,7 @@ impl TranspositionTable {
                 optional_data,
                 best_move: best_move
                     .into()
-                    .or(old_entry.and_then(|entry| entry.best_move.decompress()))
+                    .or(old_optional_entry.and_then(|entry| entry.best_move.decompress()))
                     .compress(),
             },
         );

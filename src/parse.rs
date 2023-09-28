@@ -103,7 +103,9 @@ impl Go {
         let clock = Instant::now();
         let response = engine.go(go_command, true);
         let Some(best_move) = response.get_best_move() else {
-            return Err(BestMoveNotFound { fen: engine.board.get_fen() });
+            return Err(BestMoveNotFound {
+                fen: engine.board.get_fen(),
+            });
         };
         if is_in_uci_mode() {
             let mut move_text =
@@ -153,7 +155,6 @@ pub struct SetOption;
 
 impl SetOption {
     fn parse_sub_commands(commands: &[&str]) -> Result<(), EngineError> {
-        // setoption name NAME value VALUE
         if commands.get(1).ok_or(UnknownCommand)?.to_lowercase() != "name" {
             return Err(UnknownCommand);
         }
@@ -168,14 +169,7 @@ impl SetOption {
             .skip_while(|&&s| s != "value")
             .skip(1)
             .join(" ");
-        match command_name.as_str() {
-            "thread" | "threads" => UCI_OPTIONS.set_option("Threads", value_string),
-            "hash" => UCI_OPTIONS.set_option("Hash", value_string),
-            "move overhead" => UCI_OPTIONS.set_option("Move Overhead", value_string),
-            "clear hash" => UCI_OPTIONS.set_option("Clear Hash", None),
-            "multipv" => Err(NotImplemented),
-            _ => Err(UnknownCommand),
-        }
+        UCI_OPTIONS.set_option(&command_name, value_string)
     }
 
     fn parse_commands(commands: &[&str]) -> Result<(), EngineError> {

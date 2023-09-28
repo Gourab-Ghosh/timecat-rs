@@ -35,7 +35,11 @@ pub fn self_play(
             println!();
         }
         let response = engine.go(go_command, print);
-        let Some(best_move) = response.get_best_move() else {return Err(EngineError::BestMoveNotFound { fen: engine.board.get_fen() })};
+        let Some(best_move) = response.get_best_move() else {
+            return Err(EngineError::BestMoveNotFound {
+                fen: engine.board.get_fen(),
+            });
+        };
         let score = response.get_score();
         let time_elapsed = clock.elapsed();
         let best_move_san = best_move.stringify_move(&engine.board).unwrap();

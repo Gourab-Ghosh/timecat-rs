@@ -22,7 +22,7 @@ pub mod engine_utils {
 
 pub mod piece_utils {
     use super::*;
-    
+
     #[inline(always)]
     pub const fn evaluate_piece(piece: Piece) -> i16 {
         // never set knight and bishop values as same for knight bishop endgame
@@ -109,11 +109,7 @@ pub mod move_utils {
             let source = get_item_unchecked!(ALL_SQUARES, ((self >> 6) & 0b111111) as usize);
             let dest = get_item_unchecked!(ALL_SQUARES, (self & 0b111111) as usize);
             let promotion = ((self >> 12) & 0b111).decompress();
-            Some(Move::new(
-                source,
-                dest,
-                promotion,
-            ))
+            Some(Move::new(source, dest, promotion))
         }
     }
 }
