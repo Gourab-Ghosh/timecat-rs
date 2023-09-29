@@ -128,11 +128,11 @@ impl fmt::Display for UCIOption {
     }
 }
 
-pub struct UCIOptionsMap {
+pub struct UCIOptionsVec {
     options: Mutex<Vec<UCIOption>>,
 }
 
-impl UCIOptionsMap {
+impl UCIOptionsVec {
     fn new() -> Self {
         Self {
             options: Mutex::new(get_uci_options()),
@@ -149,7 +149,7 @@ impl UCIOptionsMap {
     }
 
     pub fn get_all_options(&self) -> Vec<UCIOption> {
-        self.options.lock().unwrap().clone()
+        self.options.lock().unwrap().to_owned()
     }
 
     pub fn set_option(&self, command_name: &str, value_string: String) -> Result<(), EngineError> {
@@ -159,7 +159,7 @@ impl UCIOptionsMap {
     }
 }
 
-impl Default for UCIOptionsMap {
+impl Default for UCIOptionsVec {
     fn default() -> Self {
         Self::new()
     }
