@@ -29,6 +29,7 @@ enum UCIOptionType {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UCIOption {
     name: String,
+    alternate_names: Vec<String>,
     option_type: UCIOptionType,
 }
 
@@ -36,8 +37,14 @@ impl UCIOption {
     fn new(name: &str, option_type: UCIOptionType) -> Self {
         Self {
             name: name.to_owned(),
+            alternate_names: vec![],
             option_type,
         }
+    }
+
+    fn add_alternate_name(mut self, name: &str) -> Self {
+        self.alternate_names.push(name.to_lowercase().to_string());
+        self
     }
 
     fn new_spin(name: &str, default: Spin, min: Spin, max: Spin, function: fn(Spin)) -> Self {
@@ -140,11 +147,20 @@ impl UCIOptionsVec {
     }
 
     pub fn get_option(&self, command_name: &str) -> Option<UCIOption> {
+        let command_name = command_name.to_string();
         self.options
             .lock()
             .unwrap()
             .iter()
-            .find(|UCIOption { name, .. }| name.to_lowercase() == command_name)
+            .find(
+                |UCIOption {
+                     name,
+                     alternate_names,
+                     ..
+                 }| {
+                    name.to_lowercase() == command_name || alternate_names.contains(&command_name)
+                },
+            )
             .cloned()
     }
 
@@ -173,7 +189,7 @@ fn get_uci_options() -> Vec<UCIOption> {
             MIN_NUM_THREADS as Spin,
             MAX_NUM_THREADS as Spin,
             |value| set_num_threads(value as usize, true),
-        ),
+        ).add_alternate_name("Thread"),
         UCIOption::new_spin(
             "Hash",
             DEFAULT_T_TABLE_SIZE.unwrap() as Spin,
