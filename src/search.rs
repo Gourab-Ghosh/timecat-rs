@@ -491,6 +491,7 @@ impl Searcher {
             self.get_nth_pv_move(self.ply),
             Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
         );
+        #[allow(clippy::single_match)]
         match weighted_moves.len() {
             0 => return Some(if not_in_check { 0 } else { -mate_score }),
             // 1 => {
