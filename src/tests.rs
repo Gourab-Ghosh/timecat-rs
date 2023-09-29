@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::*;
 
 pub fn parse_command(engine: &mut Engine, raw_input: &str) {
