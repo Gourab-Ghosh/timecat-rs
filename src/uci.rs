@@ -61,7 +61,7 @@ impl UCIOption {
     }
 
     fn set_option(&self, value_string: String) -> Result<(), EngineError> {
-        match &self.option_type {
+        match self.option_type {
             UCIOptionType::Check { function, .. } => {
                 function(value_string.parse()?);
             }
@@ -69,12 +69,12 @@ impl UCIOption {
                 min, max, function, ..
             } => {
                 let value = value_string.parse()?;
-                if value < *min || value > *max {
+                if value < min || value > max {
                     return Err(EngineError::InvalidSpinValue {
                         name: self.name.to_owned(),
                         value,
-                        min: *min,
-                        max: *max,
+                        min,
+                        max,
                     });
                 }
                 function(value);

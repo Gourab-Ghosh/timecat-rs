@@ -98,6 +98,7 @@ impl Board {
         self.repetition_table.clear();
         self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
         self.starting_fen = self.get_fen();
+        self.stack.clear();
         Ok(())
     }
 

@@ -40,7 +40,7 @@ impl SearchInfo {
 
     pub fn get_score(&self) -> Score {
         let mut score = self.score;
-        if !is_in_uci_mode() {
+        if is_in_console_mode() {
             score = self.board.score_flipped(score);
         }
         score
@@ -51,10 +51,10 @@ impl SearchInfo {
     }
 
     pub fn print_info(&self) {
-        let hashfull_string = if is_in_uci_mode() {
-            (self.hash_full.round() as u8).to_string()
-        } else {
+        let hashfull_string = if is_in_console_mode() {
             format!("{:.2}", self.hash_full)
+        } else {
+            (self.hash_full.round() as u8).to_string()
         };
         let style = SUCCESS_MESSAGE_STYLE;
         println!(
@@ -83,7 +83,7 @@ impl SearchInfo {
     }
 
     pub fn print_warning_message(&self, mut alpha: Score, mut beta: Score) {
-        if !is_in_uci_mode() {
+        if is_in_console_mode() {
             alpha = self.board.score_flipped(alpha);
             beta = self.board.score_flipped(beta);
         }

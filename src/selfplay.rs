@@ -135,14 +135,8 @@ pub fn self_play(
     println_info("Max time taken", format!("{:.3} s", max_time_taken));
     println_info("Min time taken", format!("{:.3} s", min_time_taken));
     println_info("Max time taken by fen", max_time_taken_fen);
-    println_info(
-        "Max prediction magnitude",
-        max_abs_score.stringify_score_normal(),
-    );
-    println_info(
-        "Min prediction magnitude",
-        min_abs_score.stringify_score_normal(),
-    );
+    println_info("Max prediction magnitude", max_abs_score.stringify());
+    println_info("Min prediction magnitude", min_abs_score.stringify());
     engine.set_fen(&stating_fen)?;
     Ok(())
 }

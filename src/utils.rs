@@ -176,12 +176,12 @@ pub mod string_utils {
     }
 
     pub trait StringifyScore {
-        fn stringify_score_normal(self) -> String;
+        fn stringify_score(self) -> String;
         fn stringify_score_uci(self) -> String;
     }
 
     impl StringifyScore for Score {
-        fn stringify_score_normal(self) -> String {
+        fn stringify_score(self) -> String {
             if self == INFINITY {
                 return "INFINITY".to_string();
             }
@@ -221,10 +221,10 @@ pub mod string_utils {
 
     impl Stringify for Score {
         fn stringify(&self) -> String {
-            if is_in_uci_mode() {
-                self.stringify_score_uci()
+            if is_in_console_mode() {
+                self.stringify_score()
             } else {
-                self.stringify_score_normal()
+                self.stringify_score_uci()
             }
         }
     }
@@ -254,10 +254,10 @@ pub mod string_utils {
         }
 
         fn stringify_move(&self, board: &Board) -> Result<String, BoardError> {
-            if is_in_uci_mode() {
-                Ok(self.uci())
-            } else {
+            if is_in_console_mode() {
                 self.algebraic(board, use_long_algebraic_notation())
+            } else {
+                Ok(self.uci())
             }
         }
     }
@@ -294,7 +294,7 @@ pub mod string_utils {
 
     impl Stringify for Duration {
         fn stringify(&self) -> String {
-            if is_in_uci_mode() {
+            if !is_in_console_mode() {
                 return self.as_millis().to_string();
             }
             if self < &Duration::from_secs(1) {
@@ -469,10 +469,10 @@ pub mod engine_error {
         },
 
         #[fail(display = "Colored output already set to {}! Try again!", b)]
-        ColoredOutputUnchanged { b: String },
+        ColoredOutputUnchanged { b: bool },
 
-        #[fail(display = "UCI mode already set to {}! Try again!", b)]
-        UCIModeUnchanged { b: String },
+        #[fail(display = "Already in Console Mode! Try again!")]
+        ConsoleModeUnchanged,
 
         #[fail(display = "Move Stack is empty, pop not possible! Try again!")]
         EmptyStack,
@@ -516,16 +516,18 @@ pub mod engine_error {
             optional_raw_input: Option<&str>,
         ) -> String {
             match self {
-                Self::UnknownCommand => match optional_raw_input {
-                    Some(raw_input) => {
-                        format!(
-                            "Unknown command: {:?}\nType help for more information!",
-                            raw_input
-                        )
+                Self::UnknownCommand => {
+                    let command_type = if is_in_console_mode() {
+                        "Console"
+                    } else {
+                        "UCI"
+                    };
+                    match optional_raw_input {
+                        Some(raw_input) => format!("Unknown {command_type} Command: {raw_input:?}\nType help for more information!"),
+                        None => format!("Unknown {command_type} Command!\nPlease try again!"),
                     }
-                    None => String::from("Unknown command!\nPlease try again!"),
-                },
-                other_err => format!("{}", other_err),
+                }
+                other_err => other_err.to_string(),
             }
         }
     }
@@ -683,7 +685,7 @@ pub mod cache_table_utils {
                 "{}",
                 self.to_cache_table_memory_size::<TranspositionTableEntry>()
             );
-            if !is_in_uci_mode() {
+            if is_in_console_mode() {
                 s += " MB";
             }
             write!(f, "{s}")
@@ -744,10 +746,10 @@ pub mod info_utils {
         let mut desc = desc.trim().trim_end_matches(':').to_string();
         desc = desc.colorize(INFO_MESSAGE_STYLE);
         let info = info.to_string();
-        if is_in_uci_mode() {
-            format!("{desc} {info}")
-        } else {
+        if is_in_console_mode() {
             format!("{desc}: {info}")
+        } else {
+            format!("{desc} {info}")
         }
     }
 
@@ -828,10 +830,10 @@ pub mod pv_utils {
     }
 
     pub fn get_pv_string(board: &Board, pv: &[Option<Move>]) -> String {
-        if is_in_uci_mode() {
-            get_pv_as_uci(pv)
-        } else {
+        if is_in_console_mode() {
             get_pv_as_algebraic(board, pv, use_long_algebraic_notation())
+        } else {
+            get_pv_as_uci(pv)
         }
     }
 }
@@ -907,7 +909,7 @@ pub mod global_utils {
 
     static TERMINATE_ENGINE: AtomicBool = AtomicBool::new(false);
     static COLORED_OUTPUT: AtomicBool = AtomicBool::new(true);
-    static UCI_MODE: AtomicBool = AtomicBool::new(false);
+    static CONSOLE_MODE: AtomicBool = AtomicBool::new(true);
     static T_TABLE_SIZE: Mutex<CacheTableSize> = Mutex::new(DEFAULT_T_TABLE_SIZE);
     static LONG_ALGEBRAIC_NOTATION: AtomicBool = AtomicBool::new(false);
     static NUM_THREADS: AtomicUsize = AtomicUsize::new(DEFAULT_NUM_THREADS);
@@ -915,7 +917,7 @@ pub mod global_utils {
     static USE_OWN_BOOK: AtomicBool = AtomicBool::new(DEFAULT_USE_OWN_BOOK);
 
     fn print_info<T: Display>(message: &str, info: T) {
-        if !is_in_uci_mode() {
+        if is_in_console_mode() {
             println!(
                 "{} {}",
                 message.colorize(SUCCESS_MESSAGE_STYLE),
@@ -946,20 +948,15 @@ pub mod global_utils {
     }
 
     #[inline(always)]
-    pub fn is_in_uci_mode() -> bool {
-        UCI_MODE.load(MEMORY_ORDERING)
+    pub fn is_in_console_mode() -> bool {
+        CONSOLE_MODE.load(MEMORY_ORDERING)
     }
 
-    pub fn set_uci_mode(b: bool, print: bool) {
-        UCI_MODE.store(b, MEMORY_ORDERING);
+    pub fn set_console_mode(b: bool, print: bool) {
+        CONSOLE_MODE.store(b, MEMORY_ORDERING);
         if print {
             print_info("UCI mode is set to", b);
         }
-    }
-
-    pub fn enable_uci_and_disable_color() {
-        set_colored_output(false, false);
-        set_uci_mode(true, false);
     }
 
     #[inline(always)]
@@ -970,7 +967,7 @@ pub mod global_utils {
     pub fn set_t_table_size(size: CacheTableSize) {
         *T_TABLE_SIZE.lock().unwrap() = size;
         TRANSPOSITION_TABLE.reset_size();
-        if !is_in_uci_mode() {
+        if is_in_console_mode() {
             TRANSPOSITION_TABLE.print_info();
         }
         print_info(
@@ -1024,7 +1021,7 @@ pub mod global_utils {
     pub fn clear_all_hash_tables() {
         TRANSPOSITION_TABLE.clear();
         EVALUATOR.clear();
-        if !is_in_uci_mode() {
+        if is_in_console_mode() {
             println!(
                 "{}",
                 "All hash tables are cleared!".colorize(SUCCESS_MESSAGE_STYLE)

@@ -17,7 +17,7 @@ fn main() {
         env::set_var("RUST_BACKTRACE", "1");
     }
     if !std::io::stdin().is_terminal() {
-        set_uci_mode(true, false);
+        set_console_mode(false, false);
     }
     if !std::io::stdout().is_terminal() {
         set_colored_output(false, false);

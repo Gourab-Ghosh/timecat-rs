@@ -45,7 +45,7 @@ struct Go;
 
 impl Go {
     fn perft(engine: &mut Engine, depth: Depth) -> usize {
-        if !is_in_uci_mode() {
+        if is_in_console_mode() {
             println!("{}\n", engine.board);
         }
         let clock = Instant::now();
@@ -97,7 +97,7 @@ impl Go {
     }
 
     fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<(), EngineError> {
-        if !is_in_uci_mode() {
+        if is_in_console_mode() {
             println!("{}\n", engine.board);
         }
         let clock = Instant::now();
@@ -107,16 +107,7 @@ impl Go {
                 fen: engine.board.get_fen(),
             });
         };
-        if is_in_uci_mode() {
-            let mut move_text =
-                format_info("bestmove", best_move.stringify_move(&engine.board).unwrap());
-            if let Some(ponder_move) = response.get_ponder_move() {
-                move_text += " ";
-                move_text +=
-                    &format_info("ponder", ponder_move.stringify_move(&engine.board).unwrap());
-            }
-            println!("{}", move_text);
-        } else {
+        if is_in_console_mode() {
             println!();
             let elapsed_time = clock.elapsed();
             let position_count = engine.get_num_nodes_searched();
@@ -134,6 +125,15 @@ impl Go {
                 "Best Move",
                 best_move.stringify_move(&engine.board).unwrap(),
             );
+        } else {
+            let mut move_text =
+                format_info("bestmove", best_move.stringify_move(&engine.board).unwrap());
+            if let Some(ponder_move) = response.get_ponder_move() {
+                move_text += " ";
+                move_text +=
+                    &format_info("ponder", ponder_move.stringify_move(&engine.board).unwrap());
+            }
+            println!("{}", move_text);
         }
         Ok(())
     }
@@ -201,7 +201,7 @@ impl Set {
             return Err(BadFen { fen });
         };
         engine.set_fen(&fen)?;
-        if !is_in_uci_mode() {
+        if is_in_console_mode() {
             println!("{}", engine.board);
         }
         Ok(())
@@ -211,19 +211,9 @@ impl Set {
         let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
         let b = third_command.parse()?;
         if is_colored_output() == b {
-            return Err(ColoredOutputUnchanged { b: third_command });
+            return Err(ColoredOutputUnchanged { b });
         }
         set_colored_output(b, true);
-        Ok(())
-    }
-
-    fn ucimode(commands: &[&str]) -> Result<(), EngineError> {
-        let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
-        let b = third_command.parse()?;
-        if is_in_uci_mode() == b {
-            return Err(UCIModeUnchanged { b: third_command });
-        }
-        set_uci_mode(b, true);
         Ok(())
     }
 
@@ -238,7 +228,6 @@ impl Set {
                 }
             }
             "color" => Self::color(commands),
-            "ucimode" => Self::ucimode(commands),
             _ => Err(UnknownCommand),
         }
     }
@@ -273,7 +262,7 @@ impl Push {
                 }
                 engine.board.push(None);
             }
-            if !is_in_uci_mode() {
+            if is_in_console_mode() {
                 println_info("Pushed move", move_text);
             }
         }
@@ -300,7 +289,7 @@ impl Pop {
                 return Err(EmptyStack);
             }
             let last_move = engine.board.pop();
-            if !is_in_uci_mode() {
+            if is_in_console_mode() {
                 println_info(
                     "Popped move",
                     last_move.stringify_move(&engine.board).unwrap(),
@@ -368,28 +357,38 @@ impl UCIParser {
     }
 
     fn print_info() {
-        println!("id name {}", get_engine_version());
-        println!("id author {}", ENGINE_AUTHOR);
+        println!(
+            "{}",
+            format!("id name {}", get_engine_version()).colorize(INFO_MESSAGE_STYLE)
+        );
+        println!(
+            "{}",
+            format!("id author {}", ENGINE_AUTHOR).colorize(INFO_MESSAGE_STYLE)
+        );
         for option in UCI_OPTIONS.get_all_options() {
-            println!("{}", option);
+            println!("{}", option.to_string().colorize(INFO_MESSAGE_STYLE));
         }
-        println!("uciok");
+        println!("{}", "uciok".colorize(SUCCESS_MESSAGE_STYLE));
     }
 
     fn parse_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
         let commands = user_input.split_whitespace().collect_vec();
         let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
         match first_command.as_str() {
-            "go" | "setoption" | "stop" => Parser::run_single_command(engine, user_input),
+            "go" | "setoption" | "stop" | "help" | "d" | "eval" => {
+                Parser::run_single_command(engine, user_input)
+            }
             "uci" => {
                 Self::print_info();
                 Ok(())
             }
-            "isready" => Ok(println!("readyok")),
-            "ucinewgame" => Self::run_parsed_input(
-                engine,
-                &format!("setoption name Clear Hash && set board fen {STARTING_POSITION_FEN}"),
-            ),
+            "isready" => {
+                println!("readyok");
+                Ok(())
+            }
+            "ucinewgame" => {
+                Self::run_parsed_input(engine, "setoption name Clear Hash && reset board")
+            }
             "position" => Self::run_parsed_input(engine, &Self::parse_uci_input(user_input)?),
             _ => Err(UnknownCommand),
         }
@@ -445,12 +444,13 @@ impl Parser {
                 .set_fen(STARTING_POSITION_FEN)
                 .map_err(EngineError::from),
             "stop" => {
-                if is_in_uci_mode() {
-                    Ok(())
-                } else {
+                if is_in_console_mode() {
                     Err(EngineNotRunning)
+                } else {
+                    Ok(())
                 }
             }
+            "help" => Err(NotImplemented),
             _ => Err(UnknownCommand),
         };
         if res != Err(UnknownCommand) {
@@ -459,7 +459,6 @@ impl Parser {
         let commands = Vec::from_iter(user_input.split(' '));
         let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
         match first_command.as_str() {
-            "help" => Err(NotImplemented),
             "go" => Go::parse_sub_commands(engine, &commands),
             "set" => Set::parse_sub_commands(engine, &commands),
             "setoption" => SetOption::parse_sub_commands(&commands),
@@ -485,26 +484,32 @@ impl Parser {
             if sanitized_input.split_whitespace().nth(1).is_some() {
                 return Err(UnknownCommand);
             }
-            enable_uci_and_disable_color();
+            set_console_mode(false, false);
+            UCIParser::parse_command(engine, &first_command)?;
+            return Ok(());
         }
-        if is_in_uci_mode() {
-            let message = format!(
-                "Unknown UCI command: {}, Trying to find command within default commands!",
-                raw_input.trim()
-            );
-            match UCIParser::parse_command(engine, &sanitized_input) {
-                Err(UnknownCommand) => println!("{}", message.colorize(WARNING_MESSAGE_STYLE)),
-                anything_else => return anything_else,
+        if first_command == "console" {
+            if sanitized_input.split_whitespace().nth(1).is_some() {
+                return Err(UnknownCommand);
             }
+            if is_in_console_mode() {
+                return Err(ConsoleModeUnchanged);
+            }
+            set_console_mode(true, false);
+            return Ok(());
         }
         let user_inputs = sanitized_input.split("&&").map(|s| s.trim()).collect_vec();
         let mut first_loop = true;
         for user_input in user_inputs {
-            if !first_loop {
-                println!();
-                first_loop = false;
+            if is_in_console_mode() {
+                if !first_loop {
+                    println!();
+                    first_loop = false;
+                }
+                Self::run_single_command(engine, user_input)?;
+            } else {
+                UCIParser::parse_command(engine, user_input)?;
             }
-            Self::run_single_command(engine, user_input)?;
         }
         Ok(())
     }
@@ -516,7 +521,7 @@ impl Parser {
 
     fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) {
         if raw_input.is_empty() {
-            if !is_in_uci_mode() {
+            if is_in_console_mode() {
                 println!();
             }
             set_engine_termination(true);
@@ -546,27 +551,27 @@ impl Parser {
                 Self::print_exit_message();
                 break;
             }
-            let raw_input = if is_in_uci_mode() {
-                Self::get_input("")
-            } else {
+            let raw_input = if is_in_console_mode() {
                 println!();
                 let message = "Enter Command: ".colorize(INPUT_MESSAGE_STYLE);
-                let raw_input = Self::get_input(if is_in_uci_mode() { "" } else { &message });
+                let raw_input = Self::get_input(if is_in_console_mode() { &message } else { "" });
                 println!();
                 raw_input
+            } else {
+                Self::get_input("")
             };
             Self::run_raw_input_checked(&mut engine, &raw_input);
         }
     }
 
     pub fn uci_loop() {
-        enable_uci_and_disable_color();
+        set_console_mode(false, false);
         Self::main_loop();
     }
 
     pub fn parse_args_and_run_main_loop(args: &[&str]) {
         if args.contains(&"--uci") {
-            set_uci_mode(true, false);
+            set_console_mode(false, false);
         }
         if args.contains(&"--no-color") {
             set_colored_output(false, false);
