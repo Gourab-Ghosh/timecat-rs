@@ -450,7 +450,10 @@ impl Parser {
                     Ok(())
                 }
             }
-            "help" => Err(NotImplemented),
+            "help" => {
+                println!("{}", Self::get_help_text());
+                Ok(())
+            },
             _ => Err(UnknownCommand),
         };
         if res != Err(UnknownCommand) {
@@ -613,6 +616,7 @@ impl Parser {
     }
 
     pub fn get_help_text() -> String {
-        String::new()
+        let help_text = "Sadly, the help text is till now not implemented. But type uci to go into the uci mode and visit the link \"https://backscattering.de/chess/uci/\" to know the necessary commands required to use an uci chess engine.";
+        help_text.colorize(ERROR_MESSAGE_STYLE).to_string()
     }
 }
