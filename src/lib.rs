@@ -2,13 +2,9 @@
 #![allow(unused_imports)]
 #![allow(unused_macros)]
 
-// use mimalloc::MiMalloc;
-// #[global_allocator]
-// static GLOBAL: MiMalloc = MiMalloc;
-
-use jemallocator::Jemalloc;
 #[global_allocator]
-static GLOBAL: Jemalloc = Jemalloc;
+// static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 mod board;
 mod constants;
