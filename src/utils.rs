@@ -884,6 +884,7 @@ pub mod io_utils {
             let mut user_input = self.user_input.lock().unwrap();
             let input = user_input.to_owned();
             user_input.clear();
+            drop(user_input);
             self.received_input.store(false, MEMORY_ORDERING);
             Some(input)
         }
