@@ -2,6 +2,14 @@
 #![allow(unused_imports)]
 #![allow(unused_macros)]
 
+// use mimalloc::MiMalloc;
+// #[global_allocator]
+// static GLOBAL: MiMalloc = MiMalloc;
+
+use jemallocator::Jemalloc;
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
 mod board;
 mod constants;
 mod engine;
