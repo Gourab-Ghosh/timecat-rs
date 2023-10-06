@@ -453,7 +453,7 @@ impl Parser {
             "help" => {
                 println!("{}", Self::get_help_text());
                 Ok(())
-            },
+            }
             _ => Err(UnknownCommand),
         };
         if res != Err(UnknownCommand) {

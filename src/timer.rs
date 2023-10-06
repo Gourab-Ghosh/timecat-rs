@@ -1,5 +1,4 @@
 use super::*;
-use std::io::{stdin, BufRead};
 
 #[derive(Clone, Debug)]
 pub struct Timer {

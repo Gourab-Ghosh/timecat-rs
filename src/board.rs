@@ -1,5 +1,3 @@
-use chess::MoveGen;
-
 use super::*;
 
 #[derive(Clone, Debug, Fail)]

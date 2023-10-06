@@ -189,7 +189,8 @@ fn get_uci_options() -> Vec<UCIOption> {
             MIN_NUM_THREADS as Spin,
             MAX_NUM_THREADS as Spin,
             |value| set_num_threads(value as usize, true),
-        ).add_alternate_name("Thread"),
+        )
+        .add_alternate_name("Thread"),
         UCIOption::new_spin(
             "Hash",
             DEFAULT_T_TABLE_SIZE.unwrap() as Spin,
