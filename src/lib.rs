@@ -3,8 +3,8 @@
 #![allow(unused_macros)]
 
 #[global_allocator]
-// static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
-static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+// pub static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+pub static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 mod board;
 mod constants;
