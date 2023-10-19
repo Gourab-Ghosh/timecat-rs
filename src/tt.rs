@@ -200,13 +200,13 @@ impl TranspositionTable {
     pub fn print_info(&self) {
         let cell_count = self.table.lock().unwrap().len();
         let size = CacheTableSize::get_entry_size::<TranspositionTableEntry>() * cell_count;
-        println_info(
-            "Transposition Table Cache size",
-            format!("{} MB", size / 2_usize.pow(20)),
-        );
-        println_info(
-            "Transposition Table Cells Count",
-            format!("{} cells", cell_count),
+        println!(
+            "{}",
+            format!(
+                "Hash Table initialization complete with {cell_count} entries taking {} MB space.",
+                size / 2_usize.pow(20),
+            )
+            .colorize(INFO_MESSAGE_STYLE)
         );
     }
 

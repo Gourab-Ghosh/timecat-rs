@@ -10,11 +10,7 @@ impl Evaluator {
     pub fn print_info(&self) {
         let cell_count = self.score_cache.lock().unwrap().len();
         let size = CacheTableSize::get_entry_size::<Score>() * cell_count;
-        println_info(
-            "Evaluator Cache size",
-            format!("{} MB", size / 2_usize.pow(20)),
-        );
-        println_info("Evaluator Cells Count", format!("{} cells", cell_count));
+        println!("{}", format!("Evaluation Cache Table initialization complete with {cell_count} entries taking {} MB space.", size / 2_usize.pow(20)).colorize(INFO_MESSAGE_STYLE));
     }
 
     pub fn new() -> Self {
