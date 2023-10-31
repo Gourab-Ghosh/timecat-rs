@@ -294,7 +294,7 @@ pub mod string_utils {
 
     impl Stringify for Duration {
         fn stringify(&self) -> String {
-            if !is_in_debug_mode() {
+            if !is_in_console_mode() {
                 return self.as_millis().to_string();
             }
             if self < &Duration::from_secs(1) {
@@ -691,7 +691,7 @@ pub mod cache_table_utils {
                 "{}",
                 self.to_cache_table_memory_size::<TranspositionTableEntry>()
             );
-            if is_in_debug_mode() {
+            if is_in_console_mode() {
                 s += " MB";
             }
             write!(f, "{s}")
