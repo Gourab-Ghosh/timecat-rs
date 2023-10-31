@@ -753,9 +753,23 @@ pub mod info_utils {
         }
     }
 
-    #[inline(always)]
+    pub fn force_println_info<T: ToString>(desc: &str, info: T) {
+        let formatted_info = format_info(desc, info);
+        let to_print = if is_in_console_mode() {
+            formatted_info
+        } else {
+            format!(
+                "{} {formatted_info}",
+                "info string".colorize(INFO_MESSAGE_STYLE)
+            )
+        };
+        println!("{to_print}");
+    }
+
     pub fn println_info<T: ToString>(desc: &str, info: T) {
-        println!("{}", format_info(desc, info));
+        if is_in_debug_mode() {
+            force_println_info(desc, info);
+        }
     }
 
     #[inline(always)]
@@ -916,14 +930,23 @@ pub mod global_utils {
     static NUM_THREADS: AtomicUsize = AtomicUsize::new(DEFAULT_NUM_THREADS);
     static MOVE_OVERHEAD: Mutex<Duration> = Mutex::new(DEFAULT_MOVE_OVERHEAD);
     static USE_OWN_BOOK: AtomicBool = AtomicBool::new(DEFAULT_USE_OWN_BOOK);
+    static DEBUG_MODE: AtomicBool = AtomicBool::new(DEFAULT_DEBUG_MODE);
 
-    fn print_info<T: Display>(message: &str, info: T) {
-        if is_in_console_mode() {
-            println!(
+    fn print_info<T: Display>(message: &str, info: impl Into<Option<T>>) {
+        let mut to_print = if let Some(info_message) = info.into() {
+            format!(
                 "{} {}",
                 message.colorize(SUCCESS_MESSAGE_STYLE),
-                info.colorize(INFO_MESSAGE_STYLE),
-            );
+                info_message.colorize(INFO_MESSAGE_STYLE),
+            )
+        } else {
+            format!("{}", message.colorize(SUCCESS_MESSAGE_STYLE))
+        };
+        if !is_in_console_mode() {
+            to_print = format!("{} {to_print}", "info string".colorize(INFO_MESSAGE_STYLE))
+        }
+        if is_in_debug_mode() {
+            println!("{to_print}");
         }
     }
 
@@ -955,6 +978,7 @@ pub mod global_utils {
 
     pub fn set_console_mode(b: bool, print: bool) {
         CONSOLE_MODE.store(b, MEMORY_ORDERING);
+        DEBUG_MODE.store(b, MEMORY_ORDERING);
         if print {
             print_info("UCI mode is set to", b);
         }
@@ -1019,14 +1043,19 @@ pub mod global_utils {
         print_info("Own Book Usage is set to", b);
     }
 
+    #[inline(always)]
+    pub fn is_in_debug_mode() -> bool {
+        DEBUG_MODE.load(MEMORY_ORDERING)
+    }
+
+    pub fn set_debug_mode(b: bool) {
+        DEBUG_MODE.store(b, MEMORY_ORDERING);
+        print_info("Debug Mode is set to", b);
+    }
+
     pub fn clear_all_hash_tables() {
         TRANSPOSITION_TABLE.clear();
         EVALUATOR.clear();
-        if is_in_console_mode() {
-            println!(
-                "{}",
-                "All hash tables are cleared!".colorize(SUCCESS_MESSAGE_STYLE)
-            );
-        }
+        print_info::<&str>("All hash tables are cleared!", None);
     }
 }

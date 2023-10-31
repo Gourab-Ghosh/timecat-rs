@@ -56,9 +56,9 @@ impl Go {
             (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
         );
         println!();
-        println_info("Position Count", position_count);
-        println_info("Time", elapsed_time.stringify());
-        println_info("Speed", nps);
+        force_println_info("Position Count", position_count);
+        force_println_info("Time", elapsed_time.stringify());
+        force_println_info("Speed", nps);
         position_count
     }
 
@@ -107,20 +107,22 @@ impl Go {
                 fen: engine.board.get_fen(),
             });
         };
+        let elapsed_time = clock.elapsed();
+        let position_count = engine.get_num_nodes_searched();
+        let nps = format!(
+            "{} Nodes/sec",
+            (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
+        );
+        let pv_string = get_pv_string(&engine.board, response.get_pv());
         if is_in_console_mode() {
             println!();
-            let elapsed_time = clock.elapsed();
-            let position_count = engine.get_num_nodes_searched();
-            let nps = format!(
-                "{} Nodes/sec",
-                (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
-            );
-            let pv_string = get_pv_string(&engine.board, response.get_pv());
-            println_info("Score", response.get_score().stringify());
-            println_info("PV Line", pv_string);
-            println_info("Position Count", position_count);
-            println_info("Time", elapsed_time.stringify());
-            println_info("Speed", nps);
+        }
+        println_info("Score", response.get_score().stringify());
+        println_info("PV Line", pv_string);
+        println_info("Position Count", position_count);
+        println_info("Time", elapsed_time.stringify());
+        println_info("Speed", nps);
+        if is_in_console_mode() {
             println_info(
                 "Best Move",
                 best_move.stringify_move(&engine.board).unwrap(),
@@ -130,8 +132,10 @@ impl Go {
                 format_info("bestmove", best_move.stringify_move(&engine.board).unwrap());
             if let Some(ponder_move) = response.get_ponder_move() {
                 move_text += " ";
+                let mut new_board = engine.board.clone();
+                new_board.push(best_move);
                 move_text +=
-                    &format_info("ponder", ponder_move.stringify_move(&engine.board).unwrap());
+                    &format_info("ponder", ponder_move.stringify_move(&new_board).unwrap());
             }
             println!("{}", move_text);
         }
@@ -262,9 +266,7 @@ impl Push {
                 }
                 engine.board.push(None);
             }
-            if is_in_console_mode() {
-                println_info("Pushed move", move_text);
-            }
+            println_info("Pushed move", move_text);
         }
         Ok(())
     }
@@ -289,12 +291,10 @@ impl Pop {
                 return Err(EmptyStack);
             }
             let last_move = engine.board.pop();
-            if is_in_console_mode() {
-                println_info(
-                    "Popped move",
-                    last_move.stringify_move(&engine.board).unwrap(),
-                );
-            }
+            println_info(
+                "Popped move",
+                last_move.stringify_move(&engine.board).unwrap(),
+            );
         }
         Ok(())
     }
@@ -437,7 +437,7 @@ impl Parser {
         let res = match user_input {
             "d" => Ok(println!("{}", engine.board)),
             "eval" => {
-                println_info("Current Score", engine.board.evaluate().stringify());
+                force_println_info("Current Score", engine.board.evaluate().stringify());
                 Ok(())
             }
             "reset board" => engine

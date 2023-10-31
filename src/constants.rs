@@ -267,6 +267,7 @@ pub mod engine_constants {
     pub const MIN_MOVE_OVERHEAD: Duration = Duration::from_secs(0);
     pub const MAX_MOVE_OVERHEAD: Duration = Duration::MAX;
     pub const DEFAULT_USE_OWN_BOOK: bool = false;
+    pub const DEFAULT_DEBUG_MODE: bool = true;
 
     pub const MAX_PLY: usize = 255;
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
