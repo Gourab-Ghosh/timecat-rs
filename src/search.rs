@@ -50,36 +50,37 @@ impl SearchInfo {
         self.clock.elapsed()
     }
 
+    #[inline(always)]
+    pub fn format_info<T: Display>(desc: &str, info: T) -> String {
+        format!(
+            "{} {info}",
+            desc.trim()
+                .trim_end_matches(':')
+                .colorize(SUCCESS_MESSAGE_STYLE)
+        )
+    }
+
     pub fn print_info(&self) {
         let hashfull_string = if is_in_console_mode() {
             format!("{:.2}%", self.hash_full)
         } else {
             (self.hash_full.round() as u8).to_string()
         };
-        let style = SUCCESS_MESSAGE_STYLE;
-        println!(
-            "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
-            "info depth".colorize(style),
-            self.depth,
-            "seldepth".colorize(style),
-            self.seldepth,
-            "score".colorize(style),
-            self.get_score().stringify(),
-            "nodes".colorize(style),
-            self.nodes,
-            "nps".colorize(style),
-            (self.nodes as u128 * 10_u128.pow(9)) / self.get_time_elapsed().as_nanos(),
-            "hashfull".colorize(style),
-            hashfull_string,
-            "overwrites".colorize(style),
-            self.overwrites,
-            "collisions".colorize(style),
-            self.collisions,
-            "time".colorize(style),
-            self.get_time_elapsed().stringify(),
-            "pv".colorize(style),
-            get_pv_string(&self.board, &self.pv),
-        );
+        let nps = (self.nodes as u128 * 10_u128.pow(9)) / self.get_time_elapsed().as_nanos();
+        let outputs = [
+            "info".colorize(INFO_MESSAGE_STYLE),
+            Self::format_info("depth", self.depth),
+            Self::format_info("seldepth", self.seldepth),
+            Self::format_info("score", self.get_score().stringify()),
+            Self::format_info("nodes", self.nodes),
+            Self::format_info("nps", nps),
+            Self::format_info("hashfull", hashfull_string),
+            Self::format_info("overwrites", self.overwrites),
+            Self::format_info("collisions", self.collisions),
+            Self::format_info("time", self.get_time_elapsed().stringify()),
+            Self::format_info("pv", get_pv_string(&self.board, &self.pv)),
+        ];
+        println!("{}", outputs.join(" "));
     }
 
     pub fn print_warning_message(&self, mut alpha: Score, mut beta: Score) {

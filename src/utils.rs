@@ -748,10 +748,11 @@ pub mod info_utils {
     use super::*;
 
     #[inline(always)]
-    pub fn format_info<T: ToString>(desc: &str, info: T) -> String {
-        let mut desc = desc.trim().trim_end_matches(':').to_string();
-        desc = desc.colorize(INFO_MESSAGE_STYLE);
-        let info = info.to_string();
+    pub fn format_info<T: Display>(desc: &str, info: T) -> String {
+        let desc = desc
+            .trim()
+            .trim_end_matches(':')
+            .colorize(INFO_MESSAGE_STYLE);
         if is_in_console_mode() {
             format!("{desc}: {info}")
         } else {
@@ -759,7 +760,7 @@ pub mod info_utils {
         }
     }
 
-    pub fn force_println_info<T: ToString>(desc: &str, info: T) {
+    pub fn force_println_info<T: Display>(desc: &str, info: T) {
         let formatted_info = format_info(desc, info);
         let to_print = if is_in_console_mode() {
             formatted_info
@@ -772,7 +773,7 @@ pub mod info_utils {
         println!("{to_print}");
     }
 
-    pub fn println_info<T: ToString>(desc: &str, info: T) {
+    pub fn println_info<T: Display>(desc: &str, info: T) {
         if is_in_debug_mode() {
             force_println_info(desc, info);
         }
@@ -946,7 +947,7 @@ pub mod global_utils {
                 info_message.colorize(INFO_MESSAGE_STYLE),
             )
         } else {
-            format!("{}", message.colorize(SUCCESS_MESSAGE_STYLE))
+            message.colorize(SUCCESS_MESSAGE_STYLE)
         };
         if !is_in_console_mode() {
             to_print = format!("{} {to_print}", "info string".colorize(INFO_MESSAGE_STYLE))
