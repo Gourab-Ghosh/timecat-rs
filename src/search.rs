@@ -51,7 +51,7 @@ impl SearchInfo {
     }
 
     pub fn print_info(&self) {
-        let hashfull_string = if is_in_console_mode() {
+        let hashfull_string = if is_in_debug_mode() {
             format!("{:.2}", self.hash_full)
         } else {
             (self.hash_full.round() as u8).to_string()

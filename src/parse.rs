@@ -45,7 +45,7 @@ struct Go;
 
 impl Go {
     fn perft(engine: &mut Engine, depth: Depth) -> usize {
-        if is_in_console_mode() {
+        if is_in_debug_mode() {
             println!("{}\n", engine.board);
         }
         let clock = Instant::now();
@@ -97,8 +97,8 @@ impl Go {
     }
 
     fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<(), EngineError> {
-        if is_in_console_mode() {
-            println!("{}\n", engine.board);
+        if is_in_debug_mode() {
+            println!("{}\n\n", engine.board);
         }
         let clock = Instant::now();
         let response = engine.go(go_command, true);
@@ -114,9 +114,6 @@ impl Go {
             (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
         );
         let pv_string = get_pv_string(&engine.board, response.get_pv());
-        if is_in_console_mode() {
-            println!();
-        }
         println_info("Score", response.get_score().stringify());
         println_info("PV Line", pv_string);
         println_info("Position Count", position_count);
@@ -205,7 +202,7 @@ impl Set {
             return Err(BadFen { fen });
         };
         engine.set_fen(&fen)?;
-        if is_in_console_mode() {
+        if is_in_debug_mode() {
             println!("{}", engine.board);
         }
         Ok(())
@@ -524,7 +521,7 @@ impl Parser {
 
     fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) {
         if raw_input.is_empty() {
-            if is_in_console_mode() {
+            if is_in_debug_mode() {
                 println!();
             }
             set_engine_termination(true);
@@ -556,8 +553,7 @@ impl Parser {
             }
             let raw_input = if is_in_console_mode() {
                 println!();
-                let message = "Enter Command: ".colorize(INPUT_MESSAGE_STYLE);
-                let raw_input = Self::get_input(if is_in_console_mode() { &message } else { "" });
+                let raw_input = Self::get_input("Enter Command: ".colorize(INPUT_MESSAGE_STYLE));
                 println!();
                 raw_input
             } else {
