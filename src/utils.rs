@@ -496,6 +496,12 @@ pub mod engine_error {
         GameAlreadyOver,
 
         #[fail(
+            display = "Debug command {} is unknown! The possible commands are on or off!",
+            command
+        )]
+        UnknownDebugCommand { command: String },
+
+        #[fail(
             display = "Cannot set value of {} to {}, the value must be from {} to {}! Please try again!",
             name, value, min, max
         )]

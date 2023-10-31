@@ -372,7 +372,7 @@ impl UCIParser {
         let commands = user_input.split_whitespace().collect_vec();
         let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
         match first_command.as_str() {
-            "go" | "setoption" | "stop" | "help" | "d" | "eval" => {
+            "go" | "setoption" | "stop" | "help" | "d" | "eval" | "debug" => {
                 Parser::run_single_command(engine, user_input)
             }
             "uci" => {
@@ -407,6 +407,30 @@ impl SelfPlay {
     }
 }
 
+struct DebugMode;
+
+impl DebugMode {
+    fn get_debug_mode(second_command: &str) -> Result<bool, EngineError> {
+        match second_command {
+            "on" => Ok(true),
+            "off" => Ok(false),
+            _ => Err(UnknownDebugCommand {
+                command: second_command.to_string(),
+            }),
+        }
+    }
+
+    fn parse_sub_commands(commands: &[&str]) -> Result<(), EngineError> {
+        if commands.get(2).is_some() {
+            return Err(UnknownCommand);
+        }
+        set_debug_mode(Self::get_debug_mode(
+            &commands.get(1).ok_or(UnknownCommand)?.to_lowercase(),
+        )?);
+        Ok(())
+    }
+}
+
 #[derive(Debug)]
 pub struct Parser;
 
@@ -431,7 +455,7 @@ impl Parser {
     }
 
     fn run_single_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
-        let res = match user_input {
+        let res = match user_input.to_lowercase().as_str() {
             "d" => Ok(println!("{}", engine.board)),
             "eval" => {
                 force_println_info("Current Score", engine.board.evaluate().stringify());
@@ -465,6 +489,7 @@ impl Parser {
             "push" => Push::parse_sub_commands(engine, &commands),
             "pop" => Pop::parse_sub_commands(engine, &commands),
             "selfplay" => SelfPlay::parse_sub_commands(engine, &commands),
+            "debug" => DebugMode::parse_sub_commands(&commands),
             _ => Err(UnknownCommand),
         }
     }

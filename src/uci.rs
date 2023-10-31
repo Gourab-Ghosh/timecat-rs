@@ -211,7 +211,6 @@ fn get_uci_options() -> Vec<UCIOption> {
         //     DEFAULT_USE_OWN_BOOK,
         //     set_using_own_book,
         // ),
-        UCIOption::new_check("Debug", DEFAULT_DEBUG_MODE, set_debug_mode),
     ];
     options
 }
