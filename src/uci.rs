@@ -100,7 +100,7 @@ impl UCIOption {
     }
 }
 
-impl fmt::Display for UCIOption {
+impl Display for UCIOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match &self.option_type {
             UCIOptionType::Check { default, .. } => {

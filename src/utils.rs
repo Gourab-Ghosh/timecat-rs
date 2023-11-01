@@ -434,12 +434,10 @@ pub mod square_utils {
 }
 
 pub mod engine_error {
-    use std::{array::TryFromSliceError, fmt::Debug};
-
     use super::*;
     use EngineError::*;
 
-    #[derive(Clone, Fail, PartialEq, Eq)]
+    #[derive(Clone, Fail, PartialEq, Eq, Debug)]
     pub enum EngineError {
         #[fail(display = "No input! Please try again!")]
         NoInput,
@@ -450,17 +448,17 @@ pub mod engine_error {
         #[fail(display = "Sorry, this command is not implemented yet :(")]
         NotImplemented,
 
-        #[fail(display = "Engine is not running! Try again!")]
+        #[fail(display = "Engine is not running! Please try again!")]
         EngineNotRunning,
 
-        #[fail(display = "Bad FEN string: {}! Try Again!", fen)]
+        #[fail(display = "Bad FEN string: {}! Please try Again!", fen)]
         BadFen { fen: String },
 
-        #[fail(display = "Invalid depth {}! Try again!", depth)]
-        InvalidDepth { depth: String },
+        #[fail(display = "Invalid depth {}! Please try again!", depth)]
+        InvalidDepth { depth: Depth },
 
         #[fail(
-            display = "Illegal move {} in position {}! Try again!",
+            display = "Illegal move {} in position {}! Please try again!",
             move_text, board_fen
         )]
         IllegalMove {
@@ -468,35 +466,35 @@ pub mod engine_error {
             board_fen: String,
         },
 
-        #[fail(display = "Colored output already set to {}! Try again!", b)]
+        #[fail(display = "Colored output already set to {}! Please try again!", b)]
         ColoredOutputUnchanged { b: bool },
 
-        #[fail(display = "Already in Console Mode! Try again!")]
+        #[fail(display = "Already in Console Mode! Please try again!")]
         ConsoleModeUnchanged,
 
-        #[fail(display = "Move Stack is empty, pop not possible! Try again!")]
+        #[fail(display = "Move Stack is empty, pop not possible! Please try again!")]
         EmptyStack,
 
-        #[fail(display = "Best move not found in position {}! Try again!", fen)]
+        #[fail(display = "Best move not found in position {}! Please try again!", fen)]
         BestMoveNotFound { fen: String },
 
         #[fail(
-            display = "Cannot apply null move in position {}, as king is in check! Try again!",
+            display = "Cannot apply null move in position {}, as king is in check! Please try again!",
             fen
         )]
         NullMoveInCheck { fen: String },
 
-        #[fail(display = "You didn't mention wtime! Try again!")]
+        #[fail(display = "You didn't mention wtime! Please try again!")]
         WTimeNotMentioned,
 
-        #[fail(display = "You didn't mention btime! Try again!")]
+        #[fail(display = "You didn't mention btime! Please try again!")]
         BTimeNotMentioned,
 
         #[fail(display = "Game is already over! Please start a game from another position!")]
         GameAlreadyOver,
 
         #[fail(
-            display = "Debug command {} is unknown! The possible commands are on or off!",
+            display = "Debug command {} is unknown! The possible commands are on or off! Please try again!",
             command
         )]
         UnknownDebugCommand { command: String },
@@ -529,7 +527,7 @@ pub mod engine_error {
                         "UCI"
                     };
                     match optional_raw_input {
-                        Some(raw_input) => format!("Unknown {command_type} Command: {raw_input:?}\nType help for more information!"),
+                        Some(raw_input) => format!("Unknown {command_type} Command: {:?}\nType help for more information!", raw_input.trim_end_matches('\n')),
                         None => format!("Unknown {command_type} Command!\nPlease try again!"),
                     }
                 }
@@ -541,12 +539,6 @@ pub mod engine_error {
     impl Stringify for EngineError {
         fn stringify(&self) -> String {
             self.stringify_with_optional_raw_input(None)
-        }
-    }
-
-    impl Debug for EngineError {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "{}", self.stringify())
         }
     }
 
@@ -565,7 +557,7 @@ pub mod engine_error {
     impl From<ParseBoolError> for EngineError {
         fn from(error: ParseBoolError) -> Self {
             CustomError {
-                err_msg: format!("Failed to parse bool, {}! Try again!", error),
+                err_msg: format!("Failed to parse bool, {error}! Please try again!"),
             }
         }
     }
@@ -573,34 +565,26 @@ pub mod engine_error {
     impl From<ParseIntError> for EngineError {
         fn from(error: ParseIntError) -> Self {
             CustomError {
-                err_msg: format!("Failed to parse integer, {}! Try again!", error),
+                err_msg: format!("Failed to parse integer, {error}! Please try again!"),
             }
         }
     }
 
-    impl From<chess::Error> for EngineError {
-        fn from(error: chess::Error) -> Self {
-            CustomError {
-                err_msg: format!("{}! Try again!", error),
+    macro_rules! impl_error_convert {
+        ($class:ty) => {
+            impl From<$class> for EngineError {
+                fn from(error: $class) -> Self {
+                    CustomError {
+                        err_msg: format!("{error}! Please try again!"),
+                    }
+                }
             }
-        }
+        };
     }
 
-    impl From<std::io::Error> for EngineError {
-        fn from(error: std::io::Error) -> Self {
-            CustomError {
-                err_msg: format!("{}! Try again!", error),
-            }
-        }
-    }
-
-    impl From<TryFromSliceError> for EngineError {
-        fn from(error: TryFromSliceError) -> Self {
-            CustomError {
-                err_msg: format!("{}! Try again!", error),
-            }
-        }
-    }
+    impl_error_convert!(chess::Error);
+    impl_error_convert!(std::io::Error);
+    impl_error_convert!(std::array::TryFromSliceError);
 
     impl From<String> for EngineError {
         fn from(err_msg: String) -> Self {

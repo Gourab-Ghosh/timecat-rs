@@ -62,6 +62,14 @@ impl Go {
         position_count
     }
 
+    fn extract_depth(depth_str: &str) -> Result<Depth, EngineError> {
+        let depth: Depth = depth_str.parse()?;
+        if depth.is_negative() {
+            return Err(InvalidDepth { depth });
+        }
+        Ok(depth)
+    }
+
     pub fn extract_go_command(commands: &[&str]) -> Result<GoCommand, EngineError> {
         // TODO: Improve Unknown Command Detection
         if ["perft", "depth", "movetime", "infinite"]
@@ -80,7 +88,7 @@ impl Go {
         }
         match second_command.as_str() {
             "depth" => Ok(GoCommand::Depth(
-                commands.get(2).ok_or(UnknownCommand)?.parse()?,
+                Self::extract_depth(commands.get(2).ok_or(UnknownCommand)?)?,
             )),
             "movetime" => Ok(GoCommand::from_millis(
                 commands.get(2).ok_or(UnknownCommand)?.parse()?,
