@@ -276,7 +276,7 @@ pub mod engine_constants {
     pub const INFINITY: Score = CHECKMATE_SCORE + 4 * MAX_PLY as Score;
     pub const NUM_KILLER_MOVES: usize = 3;
     pub const PAWN_VALUE: Score = 100;
-    pub const CLEAR_TABLE_AFTER_EACH_SEARCH: bool = false;
+    pub const CLEAR_TABLE_AFTER_EACH_SEARCH: bool = true;
 
     pub const DISABLE_ALL_PRUNINGS: bool = false;
     pub const DISABLE_LMR: bool = false || DISABLE_ALL_PRUNINGS;

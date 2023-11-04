@@ -3,12 +3,12 @@ use nnue::StockfishNetwork;
 
 pub struct Evaluator {
     stockfish_network: StockfishNetwork,
-    score_cache: Mutex<CacheTable<Score>>,
+    score_cache: CacheTable<Score>,
 }
 
 impl Evaluator {
     pub fn print_info(&self) {
-        let cell_count = self.score_cache.lock().unwrap().len();
+        let cell_count = self.score_cache.len();
         let size = CacheTableSize::get_entry_size::<Score>() * cell_count;
         println!("{}", format!("Evaluation Cache Table initialization complete with {cell_count} entries taking {} MB space.", size / 2_usize.pow(20)).colorize(INFO_MESSAGE_STYLE));
     }
@@ -16,10 +16,10 @@ impl Evaluator {
     pub fn new() -> Self {
         Self {
             stockfish_network: StockfishNetwork::new(),
-            score_cache: Mutex::new(CacheTable::new(
-                EVALUATOR_SIZE.to_cache_table_size::<Score>(),
+            score_cache: CacheTable::new(
+                EVALUATOR_SIZE,
                 0,
-            )),
+            ),
         }
     }
 
@@ -195,11 +195,11 @@ impl Evaluator {
 
     fn hashed_evaluate(&self, board: &Board) -> Score {
         let hash = board.hash();
-        if let Some(score) = self.score_cache.lock().unwrap().get(hash) {
+        if let Some(score) = self.score_cache.get(hash) {
             return score;
         }
         let score = self.evaluate_raw(board);
-        self.score_cache.lock().unwrap().add(hash, score);
+        self.score_cache.add(hash, score);
         score
     }
 
@@ -208,11 +208,15 @@ impl Evaluator {
     }
 
     pub fn reset_variables(&self) {
-        self.score_cache.lock().unwrap().reset_variables();
+        self.score_cache.reset_variables();
     }
 
     pub fn clear(&self) {
-        self.score_cache.lock().unwrap().clear();
+        self.score_cache.clear();
+    }
+
+    pub fn set_size(&self, size: CacheTableSize) {
+        self.score_cache.set_size(size);
     }
 }
 
