@@ -105,6 +105,9 @@ impl Engine {
         self.stopper.store(false, MEMORY_ORDERING);
         TRANSPOSITION_TABLE.reset_variables();
         EVALUATOR.reset_variables();
+        if CLEAR_TABLE_AFTER_EACH_SEARCH {
+            TRANSPOSITION_TABLE.clear()
+        }
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {

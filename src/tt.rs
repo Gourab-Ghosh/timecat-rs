@@ -129,9 +129,6 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
     pub fn reset_variables(&mut self) {
         self.reset_num_overwrites();
         self.reset_num_collisions();
-        if CLEAR_TABLE_AT_EACH_LINE {
-            self.clear()
-        }
     }
 
     #[inline(always)]
