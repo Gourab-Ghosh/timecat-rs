@@ -350,16 +350,6 @@ impl TranspositionTable {
         self.table.reset_variables();
     }
 
-    // pub fn set_size(&self, size: CacheTableSize) {
-    //     let current_table_copy = self.table.table.lock().unwrap().clone();
-    //     self.table = Self::generate_new_table(size);
-    //     for &CacheTableEntry { hash, entry } in current_table_copy.iter() {
-    //         if hash != 0 {
-    //             self.table.add(hash, entry);
-    //         }
-    //     }
-    // }
-
     pub fn set_size(&self, size: CacheTableSize) {
         self.table.set_size(size);
     }
