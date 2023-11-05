@@ -259,6 +259,23 @@ pub struct TranspositionTableEntry {
     best_move: Option<Move>,
 }
 
+impl TranspositionTableEntry {
+    fn new(optional_data: Option<TranspositionTableData>, best_move: Option<Move>) -> Self {
+        Self {
+            optional_data,
+            best_move,
+        }
+    }
+
+    fn get_best_move(&self) -> Option<Move> {
+        self.best_move
+    }
+
+    fn set_best_move(&mut self, move_: Option<Move>) {
+        self.best_move = move_;
+    }
+}
+
 pub struct TranspositionTable {
     table: CacheTable<TranspositionTableEntry>,
 }
@@ -296,12 +313,13 @@ impl TranspositionTable {
             Some(entry) => entry,
             None => return (None, None),
         };
+        let best_move = tt_entry.get_best_move();
         if DISABLE_T_TABLE || tt_entry.optional_data.is_none() {
-            return (None, tt_entry.best_move);
+            return (None, best_move);
         }
         let data = tt_entry.optional_data.unwrap();
         if data.depth < depth {
-            return (None, tt_entry.best_move);
+            return (None, best_move);
         }
         let mut score = data.score;
         if is_checkmate(score) {
@@ -311,11 +329,11 @@ impl TranspositionTable {
                 -(ply as Score)
             };
         }
-        (Some((score, data.flag)), tt_entry.best_move)
+        (Some((score, data.flag)), best_move)
     }
 
     pub fn read_best_move(&self, key: u64) -> Option<Move> {
-        self.table.get(key)?.best_move
+        self.table.get(key)?.get_best_move()
     }
 
     pub fn write(
@@ -352,12 +370,12 @@ impl TranspositionTable {
         };
         self.table.add(
             key,
-            TranspositionTableEntry {
+            TranspositionTableEntry::new(
                 optional_data,
-                best_move: best_move
+                best_move
                     .into()
-                    .or(old_optional_entry.and_then(|entry| entry.best_move)),
-            },
+                    .or(old_optional_entry.and_then(|entry| entry.get_best_move())),
+            ),
         );
     }
 
@@ -367,7 +385,7 @@ impl TranspositionTable {
 
     pub fn clear_best_moves(&self) {
         for e in self.table.table.lock().unwrap().iter_mut() {
-            e.entry.best_move = None;
+            e.entry.set_best_move(None);
         }
     }
 
