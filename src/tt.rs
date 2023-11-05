@@ -74,7 +74,7 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
     }
 
     fn reset_mask(&self, table: &[CacheTableEntry<T>]) {
-        self.mask.store(Self::get_mask(&table), MEMORY_ORDERING);
+        self.mask.store(Self::get_mask(table), MEMORY_ORDERING);
         self.is_safe_to_do_bitwise_and.store(
             Self::is_safe_to_do_bitwise_and(table.len()),
             MEMORY_ORDERING,

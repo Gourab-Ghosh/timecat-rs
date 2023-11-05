@@ -248,30 +248,36 @@ pub mod string_utils {
     }
 
     pub trait StringifyMove {
-        fn uci(&self) -> String;
-        fn algebraic(&self, board: &Board, long: bool) -> Result<String, BoardError>;
-        fn san(&self, board: &Board) -> Result<String, BoardError> {
+        fn uci(self) -> String;
+        fn algebraic(self, board: &Board, long: bool) -> Result<String, BoardError>;
+        fn san(self, board: &Board) -> Result<String, BoardError>
+        where
+            Self: Sized,
+        {
             self.algebraic(board, false)
         }
-        fn lan(&self, board: &Board) -> Result<String, BoardError> {
+        fn lan(self, board: &Board) -> Result<String, BoardError>
+        where
+            Self: Sized,
+        {
             self.algebraic(board, true)
         }
-        fn stringify_move(&self, board: &Board) -> Result<String, BoardError>;
+        fn stringify_move(self, board: &Board) -> Result<String, BoardError>;
     }
 
     impl StringifyMove for Option<Move> {
-        fn uci(&self) -> String {
+        fn uci(self) -> String {
             match self {
                 Some(m) => m.to_string(),
                 None => String::from("0000"),
             }
         }
 
-        fn algebraic(&self, board: &Board, long: bool) -> Result<String, BoardError> {
-            board.clone().algebraic_and_push(*self, long)
+        fn algebraic(self, board: &Board, long: bool) -> Result<String, BoardError> {
+            board.clone().algebraic_and_push(self, long)
         }
 
-        fn stringify_move(&self, board: &Board) -> Result<String, BoardError> {
+        fn stringify_move(self, board: &Board) -> Result<String, BoardError> {
             if is_in_console_mode() {
                 self.algebraic(board, use_long_algebraic_notation())
             } else {
@@ -281,16 +287,16 @@ pub mod string_utils {
     }
 
     impl StringifyMove for Move {
-        fn uci(&self) -> String {
-            Some(*self).uci()
+        fn uci(self) -> String {
+            Some(self).uci()
         }
 
-        fn algebraic(&self, board: &Board, long: bool) -> Result<String, BoardError> {
-            Some(*self).algebraic(board, long)
+        fn algebraic(self, board: &Board, long: bool) -> Result<String, BoardError> {
+            Some(self).algebraic(board, long)
         }
 
-        fn stringify_move(&self, board: &Board) -> Result<String, BoardError> {
-            Some(*self).stringify_move(board)
+        fn stringify_move(self, board: &Board) -> Result<String, BoardError> {
+            Some(self).stringify_move(board)
         }
     }
 
@@ -418,12 +424,12 @@ pub mod string_utils {
 
 pub mod hash_utils {
     pub trait CustomHash {
-        fn hash(&self) -> u64;
+        fn hash(self) -> u64;
     }
 
     impl CustomHash for chess::Board {
         #[inline(always)]
-        fn hash(&self) -> u64 {
+        fn hash(self) -> u64 {
             self.get_hash().max(1)
         }
     }
