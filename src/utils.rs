@@ -124,8 +124,8 @@ pub mod move_utils {
             if self == CompressedObject::MAX {
                 return None;
             }
-            let source = ((self >> 6) & 0b111111).decompress();
-            let dest = (self & 0b111111).decompress();
+            let source = ((self >> 6) & 64).decompress();
+            let dest = (self & 64).decompress();
             let promotion = (self >> 12).decompress();
             Some(Move::new(source, dest, promotion))
         }
