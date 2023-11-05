@@ -28,6 +28,7 @@ pub mod types {
     pub type Score = i16;
     pub type MoveWeight = i64;
     pub type NumMoves = u16;
+    pub type CompressedObject = u16;
     pub type Spin = u128;
 }
 
@@ -253,19 +254,32 @@ pub mod engine_constants {
     use super::types::*;
     use crate::engine::GoCommand;
     use crate::utils::{cache_table_utils::CacheTableSize, piece_utils::evaluate_piece};
+    use crate::{TranspositionTableEntry, UCIOptionValues};
     use chess::Piece::*;
     use std::time::Duration;
 
     pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
-    pub const DEFAULT_NUM_THREADS: usize = 1;
-    pub const MIN_NUM_THREADS: usize = 1;
-    pub const MAX_NUM_THREADS: usize = 1024;
-    pub const DEFAULT_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(16);
-    pub const MIN_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(1);
-    pub const MAX_T_TABLE_SIZE: CacheTableSize = CacheTableSize::Max(1024);
-    pub const DEFAULT_MOVE_OVERHEAD: Duration = Duration::from_millis(100);
-    pub const MIN_MOVE_OVERHEAD: Duration = Duration::from_secs(0);
-    pub const MAX_MOVE_OVERHEAD: Duration = Duration::MAX;
+    pub const NUM_THREADS_UCI: UCIOptionValues<usize> = UCIOptionValues::new(1, 1, 1024);
+    pub const T_TABLE_SIZE_UCI: UCIOptionValues<CacheTableSize> = UCIOptionValues::new(
+        CacheTableSize::Exact(16),
+        CacheTableSize::Exact(1),
+        CacheTableSize::Exact({
+            let transposition_table_entry_size =
+                CacheTableSize::get_entry_size::<TranspositionTableEntry>();
+            let evaluator_entry_size = CacheTableSize::get_entry_size::<Score>();
+            let max_size = if transposition_table_entry_size > evaluator_entry_size {
+                transposition_table_entry_size
+            } else {
+                evaluator_entry_size
+            };
+            (usize::MAX >> 20) / max_size
+        }),
+    );
+    pub const MOVE_OVERHEAD_UCI: UCIOptionValues<Duration> = UCIOptionValues::new(
+        Duration::from_millis(100),
+        Duration::from_secs(0),
+        Duration::MAX,
+    );
     pub const DEFAULT_USE_OWN_BOOK: bool = false;
     pub const DEFAULT_DEBUG_MODE: bool = true;
 
@@ -276,7 +290,7 @@ pub mod engine_constants {
     pub const INFINITY: Score = CHECKMATE_SCORE + 4 * MAX_PLY as Score;
     pub const NUM_KILLER_MOVES: usize = 3;
     pub const PAWN_VALUE: Score = 100;
-    pub const CLEAR_TABLE_AFTER_EACH_SEARCH: bool = true;
+    pub const CLEAR_TABLE_AFTER_EACH_SEARCH: bool = false;
 
     pub const DISABLE_ALL_PRUNINGS: bool = false;
     pub const DISABLE_LMR: bool = false || DISABLE_ALL_PRUNINGS;
@@ -295,7 +309,7 @@ pub mod engine_constants {
     pub const MAX_MOVES_PER_POSITION: usize = 250;
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
 
-    pub const EVALUATOR_SIZE: CacheTableSize = CacheTableSize::Max(20);
+    pub const EVALUATOR_SIZE: CacheTableSize = CacheTableSize::Exact(16);
 
     pub const FOLLOW_PV: bool = true;
     pub const PRINT_MOVE_INFO_DURATION_THRESHOLD: Duration = Duration::from_millis(1000);

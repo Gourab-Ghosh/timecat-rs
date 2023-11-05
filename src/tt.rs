@@ -40,8 +40,10 @@ macro_rules! update_overwrites_and_collisions {
 
 pub struct CacheTable<T: Copy + Clone + PartialEq + PartialOrd> {
     table: Mutex<Box<[CacheTableEntry<T>]>>,
+    size: Mutex<CacheTableSize>,
     default: T,
-    mask: usize,
+    mask: AtomicUsize,
+    is_safe_to_do_bitwise_and: AtomicBool,
     num_overwrites: AtomicUsize,
     num_collisions: AtomicUsize,
 }
@@ -49,41 +51,69 @@ pub struct CacheTable<T: Copy + Clone + PartialEq + PartialOrd> {
 impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
     #[inline(always)]
     fn generate_table(size: CacheTableSize, default: T) -> Box<[CacheTableEntry<T>]> {
-        let size = size.to_cache_table_size::<T>();
-        if size.count_ones() != 1 {
-            panic!("You cannot create a CacheTable with a non-binary number.");
-        }
-        let values = vec![
+        vec![
             CacheTableEntry {
                 hash: 0,
                 entry: default
             };
-            size
-        ];
-        values.into_boxed_slice()
+            size.to_cache_table_size::<T>()
+        ]
+        .into_boxed_slice()
+    }
+
+    fn is_safe_to_do_bitwise_and(size: usize) -> bool {
+        size.count_ones() == 1 && size > 1
+    }
+
+    fn get_mask(table: &[CacheTableEntry<T>]) -> usize {
+        if Self::is_safe_to_do_bitwise_and(table.len()) {
+            table.len() - 1
+        } else {
+            table.len()
+        }
+    }
+
+    fn reset_mask(&self, table: &[CacheTableEntry<T>]) {
+        self.mask.store(Self::get_mask(&table), MEMORY_ORDERING);
+        self.is_safe_to_do_bitwise_and.store(
+            Self::is_safe_to_do_bitwise_and(table.len()),
+            MEMORY_ORDERING,
+        );
     }
 
     #[inline(always)]
     pub fn new(size: CacheTableSize, default: T) -> CacheTable<T> {
-        let table = Self::generate_table(size, default);
-        CacheTable {
-            mask: table.len() - 1,
-            table: Mutex::new(table),
+        let cache_table = CacheTable {
+            table: Mutex::new(Self::generate_table(size, default)),
+            size: Mutex::new(size),
             default,
+            mask: Default::default(),
+            is_safe_to_do_bitwise_and: Default::default(),
             num_overwrites: AtomicUsize::new(0),
             num_collisions: AtomicUsize::new(0),
-        }
+        };
+        cache_table.reset_mask(&cache_table.table.lock().unwrap());
+        cache_table
     }
 
     #[inline(always)]
     fn get_index(&self, hash: u64) -> usize {
-        // (hash ^ hash.rotate_left(32)) as usize & self.mask
-        hash as usize & self.mask
+        if self.is_safe_to_do_bitwise_and.load(MEMORY_ORDERING) {
+            hash as usize & self.mask.load(MEMORY_ORDERING)
+        } else {
+            hash as usize % self.mask.load(MEMORY_ORDERING)
+        }
     }
 
     #[inline(always)]
     pub fn get(&self, hash: u64) -> Option<T> {
-        let entry = unsafe { *self.table.lock().unwrap().get_unchecked(self.get_index(hash)) };
+        let entry = unsafe {
+            *self
+                .table
+                .lock()
+                .unwrap()
+                .get_unchecked(self.get_index(hash))
+        };
         if entry.hash == hash {
             Some(entry.entry)
         } else {
@@ -116,7 +146,11 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
     }
 
     pub fn clear(&self) {
-        self.table.lock().unwrap().iter_mut().for_each(|e| e.hash = 0);
+        self.table
+            .lock()
+            .unwrap()
+            .iter_mut()
+            .for_each(|e| e.hash = 0);
     }
 
     #[inline(always)]
@@ -159,9 +193,18 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
         self.table.lock().unwrap().iter().all(|&e| e.hash == 0)
     }
 
+    pub fn get_size(&self) -> CacheTableSize {
+        *self.size.lock().unwrap()
+    }
+
     pub fn set_size(&self, size: CacheTableSize) {
-        let current_table_copy = self.table.lock().unwrap().clone();
-        *self.table.lock().unwrap() = Self::generate_table(size, self.default);
+        *self.size.lock().unwrap() = size;
+        let mut table = self.table.lock().unwrap();
+        let current_table_copy = table.clone();
+        *table = Self::generate_table(size, self.default);
+        self.reset_mask(&table);
+        self.reset_variables();
+        drop(table);
         for &CacheTableEntry { hash, entry } in current_table_copy.iter() {
             if hash != 0 {
                 self.add(hash, entry);
@@ -213,7 +256,7 @@ impl Default for TranspositionTableData {
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
 pub struct TranspositionTableEntry {
     optional_data: Option<TranspositionTableData>,
-    best_move: u16,
+    best_move: Option<Move>,
 }
 
 pub struct TranspositionTable {
@@ -222,23 +265,19 @@ pub struct TranspositionTable {
 
 impl TranspositionTable {
     pub fn print_info(&self) {
-        let cell_count = self.table.len();
-        let size = CacheTableSize::get_entry_size::<TranspositionTableEntry>() * cell_count;
         println!(
             "{}",
             format!(
-                "Hash Table initialization complete with {cell_count} entries taking {} MB space.",
-                size / 2_usize.pow(20),
+                "Hash Table initialization complete with {} entries taking {} space.",
+                self.table.len(),
+                self.table.get_size(),
             )
             .colorize(INFO_MESSAGE_STYLE)
         );
     }
 
     fn generate_new_table(cache_table_size: CacheTableSize) -> CacheTable<TranspositionTableEntry> {
-        CacheTable::new(
-            cache_table_size,
-            TranspositionTableEntry::default(),
-        )
+        CacheTable::new(cache_table_size, TranspositionTableEntry::default())
     }
 
     pub fn new() -> Self {
@@ -257,13 +296,12 @@ impl TranspositionTable {
             Some(entry) => entry,
             None => return (None, None),
         };
-        let best_move = tt_entry.best_move.decompress();
         if DISABLE_T_TABLE || tt_entry.optional_data.is_none() {
-            return (None, best_move);
+            return (None, tt_entry.best_move);
         }
         let data = tt_entry.optional_data.unwrap();
         if data.depth < depth {
-            return (None, best_move);
+            return (None, tt_entry.best_move);
         }
         let mut score = data.score;
         if is_checkmate(score) {
@@ -273,11 +311,11 @@ impl TranspositionTable {
                 -(ply as Score)
             };
         }
-        (Some((score, data.flag)), best_move)
+        (Some((score, data.flag)), tt_entry.best_move)
     }
 
     pub fn read_best_move(&self, key: u64) -> Option<Move> {
-        self.table.get(key)?.best_move.decompress()
+        self.table.get(key)?.best_move
     }
 
     pub fn write(
@@ -318,8 +356,7 @@ impl TranspositionTable {
                 optional_data,
                 best_move: best_move
                     .into()
-                    .or(old_optional_entry.and_then(|entry| entry.best_move.decompress()))
-                    .compress(),
+                    .or(old_optional_entry.and_then(|entry| entry.best_move)),
             },
         );
     }
@@ -330,7 +367,7 @@ impl TranspositionTable {
 
     pub fn clear_best_moves(&self) {
         for e in self.table.table.lock().unwrap().iter_mut() {
-            e.entry.best_move = u16::MAX;
+            e.entry.best_move = None;
         }
     }
 

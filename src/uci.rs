@@ -1,5 +1,31 @@
 use super::*;
 
+pub trait IntoSpin {
+    fn into_spin(self) -> Spin;
+}
+
+macro_rules! impl_into_spin {
+    ($type_:ty) => {
+        impl IntoSpin for $type_ {
+            fn into_spin(self) -> Spin {
+                self as Spin
+            }
+        }
+    };
+
+    ($type_:ty, $func:ident) => {
+        impl IntoSpin for $type_ {
+            fn into_spin(self) -> Spin {
+                self.$func() as Spin
+            }
+        }
+    };
+}
+
+impl_into_spin!(usize);
+impl_into_spin!(CacheTableSize, unwrap);
+impl_into_spin!(Duration, as_millis);
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum UCIOptionType {
     Button {
@@ -26,6 +52,31 @@ enum UCIOptionType {
     },
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct UCIOptionValues<T: Clone + Copy + IntoSpin> {
+    default: T,
+    min: T,
+    max: T,
+}
+
+impl<T: Clone + Copy + IntoSpin> UCIOptionValues<T> {
+    pub const fn new(default: T, min: T, max: T) -> Self {
+        Self { default, min, max }
+    }
+
+    pub const fn get_default(self) -> T {
+        self.default
+    }
+
+    pub const fn get_min(self) -> T {
+        self.min
+    }
+
+    pub const fn get_max(self) -> T {
+        self.max
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UCIOption {
     name: String,
@@ -47,13 +98,17 @@ impl UCIOption {
         self
     }
 
-    fn new_spin(name: &str, default: Spin, min: Spin, max: Spin, function: fn(Spin)) -> Self {
+    fn new_spin<T: Clone + Copy + IntoSpin>(
+        name: &str,
+        values: UCIOptionValues<T>,
+        function: fn(Spin),
+    ) -> Self {
         UCIOption::new(
             name,
             UCIOptionType::Spin {
-                default,
-                min,
-                max,
+                default: values.get_default().into_spin(),
+                min: values.get_min().into_spin(),
+                max: values.get_max().into_spin(),
                 function,
             },
         )
@@ -183,29 +238,17 @@ impl Default for UCIOptionsVec {
 
 fn get_uci_options() -> Vec<UCIOption> {
     let options = vec![
-        UCIOption::new_spin(
-            "Threads",
-            DEFAULT_NUM_THREADS as Spin,
-            MIN_NUM_THREADS as Spin,
-            MAX_NUM_THREADS as Spin,
-            |value| set_num_threads(value as usize, true),
-        )
+        UCIOption::new_spin("Threads", NUM_THREADS_UCI, |value| {
+            set_num_threads(value as usize, true)
+        })
         .add_alternate_name("Thread"),
-        UCIOption::new_spin(
-            "Hash",
-            DEFAULT_T_TABLE_SIZE.unwrap() as Spin,
-            MIN_T_TABLE_SIZE.unwrap() as Spin,
-            MAX_T_TABLE_SIZE.unwrap() as Spin,
-            |value| set_t_table_size(CacheTableSize::Max(value as usize)),
-        ),
+        UCIOption::new_spin("Hash", T_TABLE_SIZE_UCI, |value| {
+            set_t_table_size(CacheTableSize::Exact(value as usize))
+        }),
         UCIOption::new_button("Clear Hash", clear_all_hash_tables),
-        UCIOption::new_spin(
-            "Move Overhead",
-            DEFAULT_MOVE_OVERHEAD.as_millis() as Spin,
-            MIN_MOVE_OVERHEAD.as_millis() as Spin,
-            MAX_MOVE_OVERHEAD.as_millis() as Spin,
-            |value| set_move_overhead(Duration::from_millis(value as u64)),
-        ),
+        UCIOption::new_spin("Move Overhead", MOVE_OVERHEAD_UCI, |value| {
+            set_move_overhead(Duration::from_millis(value as u64))
+        }),
         // UCIOption::new_check(
         //     "OwnBook",
         //     DEFAULT_USE_OWN_BOOK,

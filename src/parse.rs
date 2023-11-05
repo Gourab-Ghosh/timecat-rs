@@ -87,9 +87,9 @@ impl Go {
             }
         }
         match second_command.as_str() {
-            "depth" => Ok(GoCommand::Depth(
-                Self::extract_depth(commands.get(2).ok_or(UnknownCommand)?)?,
-            )),
+            "depth" => Ok(GoCommand::Depth(Self::extract_depth(
+                commands.get(2).ok_or(UnknownCommand)?,
+            )?)),
             "movetime" => Ok(GoCommand::from_millis(
                 commands.get(2).ok_or(UnknownCommand)?.parse()?,
             )),
@@ -615,7 +615,7 @@ impl Parser {
                 .nth(1)
                 .unwrap_or(&"")
                 .parse()
-                .unwrap_or(DEFAULT_NUM_THREADS);
+                .unwrap_or(NUM_THREADS_UCI.get_default());
             set_num_threads(num_threads, false);
         }
         if args.contains(&"--help") {

@@ -8,18 +8,13 @@ pub struct Evaluator {
 
 impl Evaluator {
     pub fn print_info(&self) {
-        let cell_count = self.score_cache.len();
-        let size = CacheTableSize::get_entry_size::<Score>() * cell_count;
-        println!("{}", format!("Evaluation Cache Table initialization complete with {cell_count} entries taking {} MB space.", size / 2_usize.pow(20)).colorize(INFO_MESSAGE_STYLE));
+        println!("{}", format!("Evaluation Cache Table initialization complete with {} entries taking {} MB space.", self.score_cache.len(), self.score_cache.get_size()).colorize(INFO_MESSAGE_STYLE));
     }
 
     pub fn new() -> Self {
         Self {
             stockfish_network: StockfishNetwork::new(),
-            score_cache: CacheTable::new(
-                EVALUATOR_SIZE,
-                0,
-            ),
+            score_cache: CacheTable::new(EVALUATOR_SIZE, 0),
         }
     }
 

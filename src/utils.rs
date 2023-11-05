@@ -37,18 +37,18 @@ pub mod piece_utils {
     }
 
     pub trait PieceType {
-        fn get_type(&self) -> usize;
+        fn get_type(self) -> usize;
     }
 
     impl PieceType for Piece {
-        fn get_type(&self) -> usize {
-            Some(*self).get_type()
+        fn get_type(self) -> usize {
+            Some(self).get_type()
         }
     }
 
     impl PieceType for Option<Piece> {
-        fn get_type(&self) -> usize {
-            match *self {
+        fn get_type(self) -> usize {
+            match self {
                 Some(piece) => piece.to_index() + 1,
                 None => 0,
             }
@@ -60,7 +60,7 @@ pub mod move_utils {
     use super::*;
 
     pub trait Compress {
-        fn compress(&self) -> u16;
+        fn compress(self) -> CompressedObject;
     }
 
     pub trait Decompress<T> {
@@ -68,31 +68,43 @@ pub mod move_utils {
     }
 
     impl Compress for Option<Piece> {
-        fn compress(&self) -> u16 {
-            self.get_type() as u16
+        fn compress(self) -> CompressedObject {
+            self.get_type() as CompressedObject
+        }
+    }
+
+    impl Compress for Piece {
+        fn compress(self) -> CompressedObject {
+            Some(self).compress()
+        }
+    }
+
+    impl Compress for Square {
+        fn compress(self) -> CompressedObject {
+            self.to_index() as CompressedObject
         }
     }
 
     impl Compress for Move {
-        fn compress(&self) -> u16 {
+        fn compress(self) -> CompressedObject {
             let mut compressed_move = 0;
-            compressed_move |= (self.get_source().to_index() as u16) << 6;
-            compressed_move |= self.get_dest().to_index() as u16;
-            compressed_move |= (self.get_promotion().compress()) << 12;
+            compressed_move |= self.get_source().compress() << 6;
+            compressed_move |= self.get_dest().compress();
+            compressed_move |= self.get_promotion().compress() << 12;
             compressed_move
         }
     }
 
     impl Compress for Option<Move> {
-        fn compress(&self) -> u16 {
+        fn compress(self) -> CompressedObject {
             match self {
                 Some(m) => m.compress(),
-                None => u16::MAX,
+                None => CompressedObject::MAX,
             }
         }
     }
 
-    impl Decompress<Option<Piece>> for u16 {
+    impl Decompress<Option<Piece>> for CompressedObject {
         fn decompress(self) -> Option<Piece> {
             if self == 0 {
                 return None;
@@ -101,14 +113,20 @@ pub mod move_utils {
         }
     }
 
-    impl Decompress<Option<Move>> for u16 {
+    impl Decompress<Square> for CompressedObject {
+        fn decompress(self) -> Square {
+            get_item_unchecked!(ALL_SQUARES, self as usize)
+        }
+    }
+
+    impl Decompress<Option<Move>> for CompressedObject {
         fn decompress(self) -> Option<Move> {
-            if self == u16::MAX {
+            if self == CompressedObject::MAX {
                 return None;
             }
-            let source = get_item_unchecked!(ALL_SQUARES, ((self >> 6) & 0b111111) as usize);
-            let dest = get_item_unchecked!(ALL_SQUARES, (self & 0b111111) as usize);
-            let promotion = ((self >> 12) & 0b111).decompress();
+            let source = ((self >> 6) & 0b111111).decompress();
+            let dest = (self & 0b111111).decompress();
+            let promotion = (self >> 12).decompress();
             Some(Move::new(source, dest, promotion))
         }
     }
@@ -527,7 +545,10 @@ pub mod engine_error {
                         "UCI"
                     };
                     match optional_raw_input {
-                        Some(raw_input) => format!("Unknown {command_type} Command: {:?}\nType help for more information!", raw_input.trim_end_matches('\n')),
+                        Some(raw_input) => format!(
+                            "Unknown {command_type} Command: {:?}\nType help for more information!",
+                            raw_input.trim_end_matches('\n')
+                        ),
                         None => format!("Unknown {command_type} Command!\nPlease try again!"),
                     }
                 }
@@ -608,6 +629,8 @@ pub mod bitboard_utils {
 }
 
 pub mod cache_table_utils {
+    use std::fmt::format;
+
     use super::*;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -615,6 +638,7 @@ pub mod cache_table_utils {
         Max(usize),
         Min(usize),
         Round(usize),
+        Exact(usize),
     }
 
     impl CacheTableSize {
@@ -623,6 +647,7 @@ pub mod cache_table_utils {
                 Self::Max(size) => *size,
                 Self::Min(size) => *size,
                 Self::Round(size) => *size,
+                Self::Exact(size) => *size,
             }
         }
 
@@ -637,8 +662,11 @@ pub mod cache_table_utils {
         pub fn is_round(&self) -> bool {
             matches!(self, Self::Round(_))
         }
+        pub fn is_exact(&self) -> bool {
+            matches!(self, Self::Exact(_))
+        }
 
-        pub fn get_entry_size<T: Copy + Clone + PartialEq + PartialOrd>() -> usize {
+        pub const fn get_entry_size<T: Copy + Clone + PartialEq + PartialOrd>() -> usize {
             std::mem::size_of::<CacheTableEntry<T>>()
         }
 
@@ -649,11 +677,15 @@ pub mod cache_table_utils {
             let entry_size = Self::get_entry_size::<T>();
             size *= 2_usize.pow(20);
             size /= entry_size;
+            if self.is_exact() {
+                return (size, entry_size);
+            }
             let pow_f64 = (size as f64).log2();
             let pow = match self {
                 Self::Max(_) => pow_f64.floor(),
                 Self::Min(_) => pow_f64.ceil(),
                 Self::Round(_) => pow_f64.round(),
+                Self::Exact(_) => unreachable!(),
             } as u32;
             size = 2_usize.pow(pow);
             (size, entry_size)
@@ -671,14 +703,7 @@ pub mod cache_table_utils {
 
     impl Display for CacheTableSize {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            let mut s = format!(
-                "{}",
-                self.to_cache_table_memory_size::<TranspositionTableEntry>()
-            );
-            if is_in_console_mode() {
-                s += " MB";
-            }
-            write!(f, "{s}")
+            write!(f, "{} MB", self.unwrap())
         }
     }
 }
@@ -916,10 +941,10 @@ pub mod global_utils {
     static TERMINATE_ENGINE: AtomicBool = AtomicBool::new(false);
     static COLORED_OUTPUT: AtomicBool = AtomicBool::new(true);
     static CONSOLE_MODE: AtomicBool = AtomicBool::new(true);
-    static T_TABLE_SIZE: Mutex<CacheTableSize> = Mutex::new(DEFAULT_T_TABLE_SIZE);
+    static T_TABLE_SIZE: Mutex<CacheTableSize> = Mutex::new(T_TABLE_SIZE_UCI.get_default());
     static LONG_ALGEBRAIC_NOTATION: AtomicBool = AtomicBool::new(false);
-    static NUM_THREADS: AtomicUsize = AtomicUsize::new(DEFAULT_NUM_THREADS);
-    static MOVE_OVERHEAD: Mutex<Duration> = Mutex::new(DEFAULT_MOVE_OVERHEAD);
+    static NUM_THREADS: AtomicUsize = AtomicUsize::new(NUM_THREADS_UCI.get_default());
+    static MOVE_OVERHEAD: Mutex<Duration> = Mutex::new(MOVE_OVERHEAD_UCI.get_default());
     static USE_OWN_BOOK: AtomicBool = AtomicBool::new(DEFAULT_USE_OWN_BOOK);
     static DEBUG_MODE: AtomicBool = AtomicBool::new(DEFAULT_DEBUG_MODE);
 
