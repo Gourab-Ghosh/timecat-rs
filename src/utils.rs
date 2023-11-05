@@ -119,17 +119,24 @@ pub mod move_utils {
         }
     }
 
+
     impl Decompress<Option<Move>> for CompressedObject {
         fn decompress(self) -> Option<Move> {
             if self == CompressedObject::MAX {
                 return None;
             }
-            let source = ((self >> 6) & 64).decompress();
-            let dest = (self & 64).decompress();
+            let source = ((self >> 6) & 63).decompress();
+            let dest = (self & 63).decompress();
             let promotion = (self >> 12).decompress();
             Some(Move::new(source, dest, promotion))
         }
     }
+
+    // impl<T> Decompress<T> for CompressedObject where CompressedObject: Decompress<Option<T>> {
+    //     fn decompress(self) -> T {
+    //         self.decompress().unwrap_or_else(|| panic!("Failed to decompress"))
+    //     }
+    // }
 }
 
 pub mod string_utils {
