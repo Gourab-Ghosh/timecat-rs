@@ -157,17 +157,17 @@ pub mod string_utils {
     }
 
     #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
-    pub struct ColoredStringStyle {
+    pub struct ColoredStringStyle<'a> {
         optional_fg_color: Option<Color>,
         optional_bg_color: Option<Color>,
-        styles: &'static [Styles],
+        styles: &'a [Styles],
     }
 
-    impl ColoredStringStyle {
+    impl<'a> ColoredStringStyle<'a> {
         pub const fn new(
             optional_fg_color: Option<Color>,
             optional_bg_color: Option<Color>,
-            styles: &'static [Styles],
+            styles: &'a [Styles],
         ) -> Self {
             Self {
                 optional_fg_color,
@@ -180,6 +180,16 @@ pub mod string_utils {
             Self::new(None, None, &[])
         }
 
+        fn get_updated_styles(self_styles: &[Styles], other_styles: &[Styles]) -> Vec<Styles> {
+            let mut styles = vec![];
+            for &style in self_styles.iter().chain(other_styles) {
+                if !styles.contains(&style) {
+                    styles.push(style);
+                }
+            }
+            styles
+        }
+
         pub fn update(&mut self, colored_string_style: Self) {
             self.optional_fg_color = colored_string_style
                 .optional_fg_color
@@ -187,13 +197,7 @@ pub mod string_utils {
             self.optional_bg_color = colored_string_style
                 .optional_bg_color
                 .or(self.optional_bg_color);
-            let mut styles = vec![];
-            for &style in self.styles.iter().chain(colored_string_style.styles) {
-                if !styles.contains(&style) {
-                    styles.push(style);
-                }
-            }
-            self.styles = Box::leak(styles.into_boxed_slice());
+            self.styles = Box::leak::<'a>(Self::get_updated_styles(self.styles, colored_string_style.styles).into_boxed_slice());
         }
 
         fn has_color_and_no_style(self) -> bool {
