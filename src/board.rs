@@ -231,12 +231,12 @@ impl Board {
             };
             let mut style = ColoredStringStyle::no_style();
             if symbol != " " {
-                style.update(match self.color_at(square).unwrap() {
+                style += match self.color_at(square).unwrap() {
                     White => WHITE_PIECES_STYLE,
                     Black => BLACK_PIECES_STYLE,
-                });
+                };
                 if square == king_square && checkers != BB_EMPTY {
-                    style.update(CHECK_STYLE);
+                    style += CHECK_STYLE;
                 }
             }
             if last_move.is_some()
@@ -246,7 +246,7 @@ impl Board {
                 ]
                 .contains(&square)
             {
-                style.update(LAST_MOVE_HIGHLIGHT_STYLE);
+                style += LAST_MOVE_HIGHLIGHT_STYLE;
             }
             skeleton = skeleton.replacen('O', &symbol.colorize(style), 1);
         }

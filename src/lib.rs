@@ -57,6 +57,7 @@ pub use std::fmt::{self, Display};
 pub use std::fs;
 pub use std::mem;
 pub use std::num::ParseIntError;
+pub use std::ops::{Add, AddAssign};
 pub use std::str::{FromStr, ParseBoolError};
 pub use std::sync::atomic::{AtomicBool, AtomicUsize};
 pub use std::sync::{Arc, Mutex};

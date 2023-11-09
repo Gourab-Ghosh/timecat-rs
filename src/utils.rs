@@ -156,7 +156,7 @@ pub mod string_utils {
         remove_double_spaces_and_trim(fen)
     }
 
-    #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+    #[derive(Clone, PartialEq, Eq, Debug, Default)]
     pub struct ColoredStringStyle<'a> {
         optional_fg_color: Option<Color>,
         optional_bg_color: Option<Color>,
@@ -180,9 +180,9 @@ pub mod string_utils {
             Self::new(None, None, &[])
         }
 
-        fn get_updated_styles(self, other_styles: &[Styles]) -> Vec<Styles> {
+        fn get_updated_styles(&self, other: &Self) -> Vec<Styles> {
             let mut styles = vec![];
-            for &style in self.styles.iter().chain(other_styles) {
+            for &style in self.styles.iter().chain(other.styles) {
                 if !styles.contains(&style) {
                     styles.push(style);
                 }
@@ -190,26 +190,26 @@ pub mod string_utils {
             styles
         }
 
-        pub fn update(&mut self, colored_string_style: Self) {
+        pub fn update(&mut self, colored_string_style: &Self) {
             self.optional_fg_color = colored_string_style
                 .optional_fg_color
                 .or(self.optional_fg_color);
             self.optional_bg_color = colored_string_style
                 .optional_bg_color
                 .or(self.optional_bg_color);
-            self.styles = Box::leak::<'a>(
-                self.get_updated_styles(colored_string_style.styles)
+            self.styles = Box::leak(
+                self.get_updated_styles(colored_string_style)
                     .into_boxed_slice(),
             );
         }
 
-        fn has_color_and_no_style(self) -> bool {
+        fn has_color_and_no_style(&self) -> bool {
             self.optional_fg_color.is_none()
                 && self.optional_bg_color.is_none()
                 && self.styles.is_empty()
         }
 
-        fn colorize(self, s: &str) -> String {
+        fn colorize(&self, s: &str) -> String {
             if self.has_color_and_no_style() || !is_colored_output() {
                 return s.to_string();
             }
@@ -228,6 +228,22 @@ pub mod string_utils {
                 }
             }
             colored_string.to_string()
+        }
+    }
+
+    impl AddAssign for ColoredStringStyle<'_> {
+        fn add_assign(&mut self, rhs: Self) {
+            self.update(&rhs);
+        }
+    }
+
+    impl Add for ColoredStringStyle<'_> {
+        type Output = Self;
+
+        fn add(self, rhs: Self) -> Self::Output {
+            let mut self_clone = self.clone();
+            self_clone += rhs;
+            self_clone
         }
     }
 
