@@ -180,9 +180,9 @@ pub mod string_utils {
             Self::new(None, None, &[])
         }
 
-        fn get_updated_styles(self_styles: &[Styles], other_styles: &[Styles]) -> Vec<Styles> {
+        fn get_updated_styles(self, other_styles: &[Styles]) -> Vec<Styles> {
             let mut styles = vec![];
-            for &style in self_styles.iter().chain(other_styles) {
+            for &style in self.styles.iter().chain(other_styles) {
                 if !styles.contains(&style) {
                     styles.push(style);
                 }
@@ -197,7 +197,10 @@ pub mod string_utils {
             self.optional_bg_color = colored_string_style
                 .optional_bg_color
                 .or(self.optional_bg_color);
-            self.styles = Box::leak::<'a>(Self::get_updated_styles(self.styles, colored_string_style.styles).into_boxed_slice());
+            self.styles = Box::leak::<'a>(
+                self.get_updated_styles(colored_string_style.styles)
+                    .into_boxed_slice(),
+            );
         }
 
         fn has_color_and_no_style(self) -> bool {
