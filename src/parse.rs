@@ -45,7 +45,7 @@ struct Go;
 
 impl Go {
     fn perft(engine: &mut Engine, depth: Depth) -> usize {
-        if is_in_debug_mode() {
+        if is_in_console_mode() {
             println!("{}\n", engine.board);
         }
         let clock = Instant::now();
@@ -105,8 +105,8 @@ impl Go {
     }
 
     fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<(), EngineError> {
-        if is_in_debug_mode() {
-            println!("{}\n\n", engine.board);
+        if is_in_console_mode() {
+            println!("{}\n", engine.board);
         }
         let clock = Instant::now();
         let response = engine.go(go_command, true);
@@ -122,6 +122,9 @@ impl Go {
             (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
         );
         let pv_string = get_pv_string(&engine.board, response.get_pv());
+        if is_in_console_mode() {
+            println!();
+        }
         println_info("Score", response.get_score().stringify());
         println_info("PV Line", pv_string);
         println_info("Position Count", position_count);
@@ -210,7 +213,7 @@ impl Set {
             return Err(BadFen { fen });
         };
         engine.set_fen(&fen)?;
-        if is_in_debug_mode() {
+        if is_in_console_mode() {
             println!("{}", engine.board);
         }
         Ok(())
@@ -554,7 +557,7 @@ impl Parser {
 
     fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) {
         if raw_input.is_empty() {
-            if is_in_debug_mode() {
+            if is_in_console_mode() {
                 println!();
             }
             set_engine_termination(true);
@@ -598,7 +601,7 @@ impl Parser {
 
     pub fn uci_loop() {
         set_console_mode(false, false);
-        Self::main_loop();
+        measure_time(Self::main_loop);
     }
 
     pub fn parse_args_and_run_main_loop(args: &[&str]) {
@@ -620,12 +623,14 @@ impl Parser {
         }
         if args.contains(&"--help") {
             println!("{}", Self::get_help_text());
+            return;
         }
         if args.contains(&"--version") {
             print_engine_version(false);
+            return;
         }
         if args.contains(&"--test") {
-            test().unwrap();
+            measure_time(test).unwrap();
             return;
         }
         if args.contains(&"-c") || args.contains(&"--command") {
@@ -641,7 +646,7 @@ impl Parser {
             return;
         }
         print_engine_info();
-        Self::main_loop();
+        measure_time(Self::main_loop);
     }
 
     pub fn get_help_text() -> String {

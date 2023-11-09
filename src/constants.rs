@@ -232,29 +232,33 @@ pub mod fen {
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 }
 
+#[rustfmt::skip]
 pub mod print_style {
-    pub const WHITE_PIECES_STYLE: &str = "white bold";
-    pub const BLACK_PIECES_STYLE: &str = "purple bold";
-    pub const BOARD_SKELETON_STYLE: &str = "green";
-    pub const BOARD_LABEL_STYLE: &str = "red bold";
-    pub const INFO_MESSAGE_STYLE: &str = "bright_cyan bold";
-    pub const CHECK_STYLE: &str = "on_bright_red";
-    pub const CHECKERS_STYLE: &str = "bright_red bold";
-    pub const CHECKMATE_SCORE_STYLE: &str = "bright_red bold";
-    pub const PERFT_MOVE_STYLE: &str = "green bold";
-    pub const PERFT_COUNT_STYLE: &str = "";
-    pub const INPUT_MESSAGE_STYLE: &str = "blue bold";
-    pub const SUCCESS_MESSAGE_STYLE: &str = "green bold";
-    pub const ERROR_MESSAGE_STYLE: &str = "red bold";
-    pub const LAST_MOVE_HIGHLIGHT_STYLE: &str = "on_bright_black";
-    pub const WARNING_MESSAGE_STYLE: &str = "bright_yellow bold";
+    use crate::{colored_string_style, ColoredStringStyle};
+    use colored::{Color, Styles::*};
+
+    pub const WHITE_PIECES_STYLE: ColoredStringStyle = colored_string_style!(White, _, [Bold]);
+    pub const BLACK_PIECES_STYLE: ColoredStringStyle = colored_string_style!(Magenta, _, [Bold]);
+    pub const BOARD_SKELETON_STYLE: ColoredStringStyle = colored_string_style!(Green, _, []);
+    pub const BOARD_LABEL_STYLE: ColoredStringStyle = colored_string_style!(Red, _, [Bold]);
+    pub const INFO_MESSAGE_STYLE: ColoredStringStyle = colored_string_style!(BrightCyan, _, [Bold]);
+    pub const CHECK_STYLE: ColoredStringStyle = colored_string_style!(_, BrightRed, []);
+    pub const CHECKERS_STYLE: ColoredStringStyle = colored_string_style!(BrightRed, _, [Bold]);
+    pub const CHECKMATE_SCORE_STYLE: ColoredStringStyle = colored_string_style!(BrightRed, _, [Bold]);
+    pub const PERFT_MOVE_STYLE: ColoredStringStyle = colored_string_style!(Green, _, [Bold]);
+    pub const PERFT_COUNT_STYLE: ColoredStringStyle = colored_string_style!(_, _, []);
+    pub const INPUT_MESSAGE_STYLE: ColoredStringStyle = colored_string_style!(Blue, _, [Bold]);
+    pub const SUCCESS_MESSAGE_STYLE: ColoredStringStyle = colored_string_style!(Green, _, [Bold]);
+    pub const ERROR_MESSAGE_STYLE: ColoredStringStyle = colored_string_style!(Red, _, [Bold]);
+    pub const LAST_MOVE_HIGHLIGHT_STYLE: ColoredStringStyle = colored_string_style!(BrightBlack, _, []);
+    pub const WARNING_MESSAGE_STYLE: ColoredStringStyle = colored_string_style!(BrightYellow, _, [Bold]);
 }
 
 pub mod engine_constants {
     use super::types::*;
-    use crate::engine::GoCommand;
-    use crate::utils::{cache_table_utils::CacheTableSize, piece_utils::evaluate_piece};
-    use crate::{TranspositionTableEntry, UCIOptionValues};
+    use crate::{
+        evaluate_piece, CacheTableSize, GoCommand, TranspositionTableEntry, UCIOptionValues,
+    };
     use chess::Piece::*;
     use std::time::Duration;
 

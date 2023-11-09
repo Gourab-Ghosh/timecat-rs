@@ -82,6 +82,7 @@ pub use utils::piece_utils::*;
 pub use utils::pv_utils::*;
 pub use utils::square_utils::*;
 pub use utils::string_utils::*;
+pub use utils::time_utils::*;
 
 // pub use std::hint;
 // pub use std::num;

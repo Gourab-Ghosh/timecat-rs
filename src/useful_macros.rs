@@ -60,3 +60,20 @@ macro_rules! match_interpolate {
         )
     };
 }
+
+#[macro_export]
+macro_rules! colored_string_style {
+    ($fg_color:ident, $bg_color:ident, $styles:expr) => {
+        ColoredStringStyle::new(Some(Color::$fg_color), Some(Color::$bg_color), &$styles)
+    };
+
+    (_, $bg_color:ident, $styles:expr) => {
+        ColoredStringStyle::new(None, Some(Color::$bg_color), &$styles)
+    };
+    ($fg_color:ident, _, $styles:expr) => {
+        ColoredStringStyle::new(Some(Color::$fg_color), None, &$styles)
+    };
+    (_, _, $styles:expr) => {
+        ColoredStringStyle::new(None, None, &$styles)
+    };
+}

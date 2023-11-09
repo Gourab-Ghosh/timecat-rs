@@ -200,7 +200,7 @@ impl Board {
             } else if "abcdefghABCDEFGH12345678".contains(c) {
                 BOARD_LABEL_STYLE
             } else {
-                ""
+                ColoredStringStyle::no_style()
             };
             _char.colorize(style)
         }
@@ -229,15 +229,14 @@ impl Board {
             } else {
                 self.piece_symbol_at(square)
             };
-            let mut style = String::new();
+            let mut style = ColoredStringStyle::no_style();
             if symbol != " " {
-                style += match self.color_at(square).unwrap() {
+                style.update(match self.color_at(square).unwrap() {
                     White => WHITE_PIECES_STYLE,
                     Black => BLACK_PIECES_STYLE,
-                };
+                });
                 if square == king_square && checkers != BB_EMPTY {
-                    style += " ";
-                    style += CHECK_STYLE;
+                    style.update(CHECK_STYLE);
                 }
             }
             if last_move.is_some()
@@ -247,10 +246,9 @@ impl Board {
                 ]
                 .contains(&square)
             {
-                style += " ";
-                style += LAST_MOVE_HIGHLIGHT_STYLE;
+                style.update(LAST_MOVE_HIGHLIGHT_STYLE);
             }
-            skeleton = skeleton.replacen('O', &symbol.colorize(&style), 1);
+            skeleton = skeleton.replacen('O', &symbol.colorize(style), 1);
         }
         skeleton.push('\n');
         skeleton.push_str(

@@ -119,7 +119,6 @@ pub mod move_utils {
         }
     }
 
-
     impl Decompress<Option<Move>> for CompressedObject {
         fn decompress(self) -> Option<Move> {
             if self == CompressedObject::MAX {
@@ -141,7 +140,7 @@ pub mod move_utils {
 
 pub mod string_utils {
     use super::*;
-    use colored::{ColoredString, Colorize};
+    use colored::{Color, ColoredString, Colorize, Styles};
 
     pub fn remove_double_spaces_and_trim(s: &str) -> String {
         let mut string = String::new();
@@ -157,42 +156,81 @@ pub mod string_utils {
         remove_double_spaces_and_trim(fen)
     }
 
-    fn colorize_string(s: ColoredString, color: &str) -> ColoredString {
-        match color {
-            "red" => s.red(),
-            "blue" => s.blue(),
-            "green" => s.green(),
-            "white" => s.white(),
-            "purple" => s.purple(),
-            "bright_cyan" => s.bright_cyan(),
-            "bright_red" => s.bright_red(),
-            "on_bright_red" => s.on_bright_red(),
-            "on_bright_black" => s.on_bright_black(),
-            "bright_yellow" => s.bright_yellow(),
-            "bold" => s.bold(),
-            unknown_color => panic!("Cannot colorize string to {}", unknown_color),
+    #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+    pub struct ColoredStringStyle {
+        optional_fg_color: Option<Color>,
+        optional_bg_color: Option<Color>,
+        styles: &'static [Styles],
+    }
+
+    impl ColoredStringStyle {
+        pub const fn new(
+            optional_fg_color: Option<Color>,
+            optional_bg_color: Option<Color>,
+            styles: &'static [Styles],
+        ) -> Self {
+            Self {
+                optional_fg_color,
+                optional_bg_color,
+                styles,
+            }
+        }
+
+        pub const fn no_style() -> Self {
+            Self::new(None, None, &[])
+        }
+
+        pub fn update(&mut self, colored_string_style: Self) {
+            self.optional_fg_color = colored_string_style
+                .optional_fg_color
+                .or(self.optional_fg_color);
+            self.optional_bg_color = colored_string_style
+                .optional_bg_color
+                .or(self.optional_bg_color);
+            let mut styles = vec![];
+            for &style in self.styles.iter().chain(colored_string_style.styles) {
+                if !styles.contains(&style) {
+                    styles.push(style);
+                }
+            }
+            self.styles = Box::leak(styles.into_boxed_slice());
+        }
+
+        fn has_color_and_no_style(self) -> bool {
+            self.optional_fg_color.is_none()
+                && self.optional_bg_color.is_none()
+                && self.styles.is_empty()
+        }
+
+        fn colorize(self, s: &str) -> String {
+            if self.has_color_and_no_style() || !is_colored_output() {
+                return s.to_string();
+            }
+            let mut colored_string = ColoredString::from(s);
+            if let Some(fg_color) = self.optional_fg_color {
+                colored_string = colored_string.color(fg_color);
+            }
+            if let Some(bg_color) = self.optional_bg_color {
+                colored_string = colored_string.on_color(bg_color);
+            }
+            for &style in self.styles.iter() {
+                colored_string = match style {
+                    Styles::Bold => colored_string.bold(),
+                    Styles::Clear => colored_string.clear(),
+                    _ => todo!(),
+                }
+            }
+            colored_string.to_string()
         }
     }
+
     pub trait CustomColorize {
-        fn colorize(&self, styles: &str) -> String;
+        fn colorize(&self, style: ColoredStringStyle) -> String;
     }
 
     impl<T: ToString> CustomColorize for T {
-        fn colorize(&self, styles: &str) -> String {
-            let s = self.to_string();
-            if !is_colored_output() {
-                return s;
-            }
-            let styles = remove_double_spaces_and_trim(styles);
-            let styles = styles.trim();
-            if styles.is_empty() {
-                return s;
-            }
-            let mut colored_string = ColoredString::from(s.as_str());
-            for style in remove_double_spaces_and_trim(styles).split(' ') {
-                colored_string = colorize_string(colored_string, style);
-            }
-            colored_string.to_string()
+        fn colorize(&self, style: ColoredStringStyle) -> String {
+            style.colorize(&self.to_string())
         }
     }
 
@@ -323,39 +361,6 @@ pub mod string_utils {
         }
     }
 
-    impl Stringify for Duration {
-        fn stringify(&self) -> String {
-            if !is_in_console_mode() {
-                return self.as_millis().to_string();
-            }
-            if self < &Duration::from_secs(1) {
-                return self.as_millis().to_string() + " ms";
-            }
-            let precision = 3;
-            let total_secs = self.as_secs_f64();
-            for (threshold, unit) in [(86400.0, "days"), (3600.0, "hr"), (60.0, "min")] {
-                if total_secs >= threshold {
-                    let time_unit = total_secs as u128 / threshold as u128;
-                    let secs = total_secs % threshold;
-                    let mut string = format!("{} {}", time_unit, unit);
-                    if time_unit > 1 {
-                        string += "s";
-                    }
-                    if secs >= 10.0_f64.powi(-(precision as i32)) {
-                        string += " ";
-                        string += &Duration::from_secs_f64(secs).stringify();
-                    }
-                    return string;
-                }
-            }
-            let mut string = format!("{:.1$} sec", total_secs, precision);
-            if total_secs > 1.0 {
-                string += "s";
-            }
-            string
-        }
-    }
-
     impl Stringify for Move {
         fn stringify(&self) -> String {
             self.uci()
@@ -418,7 +423,7 @@ pub mod string_utils {
         }
     }
 
-    impl Stringify for Color {
+    impl Stringify for chess::Color {
         fn stringify(&self) -> String {
             match self {
                 White => "White",
@@ -426,6 +431,53 @@ pub mod string_utils {
             }
             .to_string()
         }
+    }
+}
+
+pub mod time_utils {
+    use super::*;
+
+    impl Stringify for Duration {
+        fn stringify(&self) -> String {
+            if !is_in_console_mode() {
+                return self.as_millis().to_string();
+            }
+            if self < &Duration::from_secs(1) {
+                return self.as_millis().to_string() + " ms";
+            }
+            let precision = 3;
+            let total_secs = self.as_secs_f64();
+            for (threshold, unit) in [(86400.0, "days"), (3600.0, "hr"), (60.0, "min")] {
+                if total_secs >= threshold {
+                    let time_unit = total_secs as u128 / threshold as u128;
+                    let secs = total_secs % threshold;
+                    let mut string = format!("{} {}", time_unit, unit);
+                    if time_unit > 1 {
+                        string += "s";
+                    }
+                    if secs >= 10.0_f64.powi(-(precision as i32)) {
+                        string += " ";
+                        string += &Duration::from_secs_f64(secs).stringify();
+                    }
+                    return string;
+                }
+            }
+            let mut string = format!("{:.1$} sec", total_secs, precision);
+            if total_secs > 1.0 {
+                string += "s";
+            }
+            string
+        }
+    }
+
+    pub fn measure_time<T>(func: impl Fn() -> T) -> T {
+        let clock = Instant::now();
+        let res = func();
+        if is_in_console_mode() {
+            println!();
+        }
+        println_info("Run Time", clock.elapsed().stringify());
+        res
     }
 }
 
@@ -962,6 +1014,9 @@ pub mod global_utils {
     static DEBUG_MODE: AtomicBool = AtomicBool::new(DEFAULT_DEBUG_MODE);
 
     fn print_info<T: Display>(message: &str, info: impl Into<Option<T>>) {
+        if !is_in_debug_mode() {
+            return;
+        }
         let mut to_print = if let Some(info_message) = info.into() {
             format!(
                 "{} {}",
@@ -974,9 +1029,7 @@ pub mod global_utils {
         if !is_in_console_mode() {
             to_print = format!("{} {to_print}", "info string".colorize(INFO_MESSAGE_STYLE))
         }
-        if is_in_debug_mode() {
-            println!("{to_print}");
-        }
+        println!("{to_print}");
     }
 
     #[inline(always)]

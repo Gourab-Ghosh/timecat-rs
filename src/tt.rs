@@ -203,8 +203,8 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
         let current_table_copy = table.clone();
         *table = Self::generate_table(size, self.default);
         self.reset_mask(&table);
-        self.reset_variables();
         drop(table);
+        self.reset_variables();
         for &CacheTableEntry { hash, entry } in current_table_copy.iter() {
             if hash != 0 {
                 self.add(hash, entry);
@@ -282,15 +282,15 @@ pub struct TranspositionTable {
 
 impl TranspositionTable {
     pub fn print_info(&self) {
-        println!(
-            "{}",
-            format!(
-                "Hash Table initialization complete with {} entries taking {} space.",
-                self.table.len(),
-                self.table.get_size(),
-            )
-            .colorize(INFO_MESSAGE_STYLE)
+        let mut to_print = format!(
+            "Hash Table initialization complete with {} entries taking {} space.",
+            self.table.len(),
+            self.table.get_size(),
         );
+        if !is_in_console_mode() {
+            to_print = "info_string ".to_string() + to_print.trim();
+        }
+        println!("{}", to_print.colorize(INFO_MESSAGE_STYLE));
     }
 
     fn generate_new_table(cache_table_size: CacheTableSize) -> CacheTable<TranspositionTableEntry> {

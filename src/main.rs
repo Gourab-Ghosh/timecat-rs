@@ -10,7 +10,6 @@ use std::io::IsTerminal;
 use timecat::*;
 
 fn main() {
-    let clock = Instant::now();
     let args = env::args().collect_vec();
     let args = args.iter().map(|s| s.as_str()).collect_vec();
     if !args.contains(&"--disable-backtrace") {
@@ -23,5 +22,4 @@ fn main() {
         set_colored_output(false, false);
     }
     Parser::parse_args_and_run_main_loop(&args);
-    println_info("\nRun Time", clock.elapsed().stringify());
 }
