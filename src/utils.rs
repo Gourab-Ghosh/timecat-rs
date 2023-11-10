@@ -140,7 +140,7 @@ pub mod move_utils {
 
 pub mod string_utils {
     use super::*;
-    use colored::{ColoredString, Colorize};
+    use colored::Colorize;
 
     pub fn remove_double_spaces_and_trim(s: &str) -> String {
         let mut string = String::new();
@@ -157,11 +157,11 @@ pub mod string_utils {
     }
 
     pub trait CustomColorize {
-        fn colorize(&self, styles_functions: &[fn(ColoredString) -> ColoredString]) -> String;
+        fn colorize(&self, styles_functions: &ColoredStringFunctions) -> String;
     }
 
     impl<T: ToString> CustomColorize for T {
-        fn colorize(&self, styles_functions: &[fn(ColoredString) -> ColoredString]) -> String {
+        fn colorize(&self, styles_functions: &ColoredStringFunctions) -> String {
             let self_string = self.to_string();
             if styles_functions.is_empty() || !is_colored_output() {
                 return self_string;

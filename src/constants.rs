@@ -10,6 +10,8 @@ macro_rules! make_array_recursively {
 }
 
 pub mod types {
+    use colored::ColoredString;
+
     pub type Ply = usize;
     pub type Depth = i8;
     pub type Score = i16;
@@ -17,6 +19,7 @@ pub mod types {
     pub type NumMoves = u16;
     pub type CompressedObject = u16;
     pub type Spin = u128;
+    pub type ColoredStringFunctions = [fn(ColoredString) -> ColoredString];
 }
 
 pub mod bitboard {
@@ -221,23 +224,24 @@ pub mod fen {
 
 #[rustfmt::skip]
 pub mod print_style {
+    use crate::ColoredStringFunctions;
     use colored::{ColoredString, Colorize};
-
-    pub const WHITE_PIECES_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::white, ColoredString::bold];
-    pub const BLACK_PIECES_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::purple, ColoredString::bold];
-    pub const BOARD_SKELETON_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::green];
-    pub const BOARD_LABEL_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::red, ColoredString::bold];
-    pub const INFO_MESSAGE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::bright_cyan, ColoredString::bold];
-    pub const CHECK_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::on_bright_red];
-    pub const CHECKERS_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::bright_red, ColoredString::bold];
-    pub const CHECKMATE_SCORE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::bright_red, ColoredString::bold];
-    pub const PERFT_MOVE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::green, ColoredString::bold];
-    pub const PERFT_COUNT_STYLE: &[fn(ColoredString) -> ColoredString] = &[];
-    pub const INPUT_MESSAGE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::blue, ColoredString::bold];
-    pub const SUCCESS_MESSAGE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::green, ColoredString::bold];
-    pub const ERROR_MESSAGE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::red, ColoredString::bold];
-    pub const LAST_MOVE_HIGHLIGHT_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::on_bright_black];
-    pub const WARNING_MESSAGE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::bright_yellow, ColoredString::bold];
+    
+    pub const WHITE_PIECES_STYLE: &ColoredStringFunctions = &[ColoredString::white, ColoredString::bold];
+    pub const BLACK_PIECES_STYLE: &ColoredStringFunctions = &[ColoredString::purple, ColoredString::bold];
+    pub const BOARD_SKELETON_STYLE: &ColoredStringFunctions = &[ColoredString::green];
+    pub const BOARD_LABEL_STYLE: &ColoredStringFunctions = &[ColoredString::red, ColoredString::bold];
+    pub const INFO_MESSAGE_STYLE: &ColoredStringFunctions = &[ColoredString::bright_cyan, ColoredString::bold];
+    pub const CHECK_STYLE: &ColoredStringFunctions = &[ColoredString::on_bright_red];
+    pub const CHECKERS_STYLE: &ColoredStringFunctions = &[ColoredString::bright_red, ColoredString::bold];
+    pub const CHECKMATE_SCORE_STYLE: &ColoredStringFunctions = &[ColoredString::bright_red, ColoredString::bold];
+    pub const PERFT_MOVE_STYLE: &ColoredStringFunctions = &[ColoredString::green, ColoredString::bold];
+    pub const PERFT_COUNT_STYLE: &ColoredStringFunctions = &[];
+    pub const INPUT_MESSAGE_STYLE: &ColoredStringFunctions = &[ColoredString::blue, ColoredString::bold];
+    pub const SUCCESS_MESSAGE_STYLE: &ColoredStringFunctions = &[ColoredString::green, ColoredString::bold];
+    pub const ERROR_MESSAGE_STYLE: &ColoredStringFunctions = &[ColoredString::red, ColoredString::bold];
+    pub const LAST_MOVE_HIGHLIGHT_STYLE: &ColoredStringFunctions = &[ColoredString::on_bright_black];
+    pub const WARNING_MESSAGE_STYLE: &ColoredStringFunctions = &[ColoredString::bright_yellow, ColoredString::bold];
 }
 
 pub mod engine_constants {
