@@ -140,7 +140,7 @@ pub mod move_utils {
 
 pub mod string_utils {
     use super::*;
-    use colored::{Color, ColoredString, Colorize, Styles};
+    use colored::{ColoredString, Colorize};
 
     pub fn remove_double_spaces_and_trim(s: &str) -> String {
         let mut string = String::new();
@@ -156,104 +156,21 @@ pub mod string_utils {
         remove_double_spaces_and_trim(fen)
     }
 
-    #[derive(Clone, PartialEq, Eq, Debug, Default)]
-    pub struct ColoredStringStyle<'a> {
-        optional_fg_color: Option<Color>,
-        optional_bg_color: Option<Color>,
-        styles: &'a [Styles],
-    }
-
-    impl<'a> ColoredStringStyle<'a> {
-        pub const fn new(
-            optional_fg_color: Option<Color>,
-            optional_bg_color: Option<Color>,
-            styles: &'a [Styles],
-        ) -> Self {
-            Self {
-                optional_fg_color,
-                optional_bg_color,
-                styles,
-            }
-        }
-
-        pub const fn no_style() -> Self {
-            Self::new(None, None, &[])
-        }
-
-        fn get_updated_styles(&self, other: &Self) -> Vec<Styles> {
-            let mut styles = vec![];
-            for &style in self.styles.iter().chain(other.styles) {
-                if !styles.contains(&style) {
-                    styles.push(style);
-                }
-            }
-            styles
-        }
-
-        pub fn update(&mut self, colored_string_style: &Self) {
-            self.optional_fg_color = colored_string_style
-                .optional_fg_color
-                .or(self.optional_fg_color);
-            self.optional_bg_color = colored_string_style
-                .optional_bg_color
-                .or(self.optional_bg_color);
-            self.styles = Box::leak(
-                self.get_updated_styles(colored_string_style)
-                    .into_boxed_slice(),
-            );
-        }
-
-        fn has_color_and_no_style(&self) -> bool {
-            self.optional_fg_color.is_none()
-                && self.optional_bg_color.is_none()
-                && self.styles.is_empty()
-        }
-
-        fn colorize(&self, s: &str) -> String {
-            if self.has_color_and_no_style() || !is_colored_output() {
-                return s.to_string();
-            }
-            let mut colored_string = ColoredString::from(s);
-            if let Some(fg_color) = self.optional_fg_color {
-                colored_string = colored_string.color(fg_color);
-            }
-            if let Some(bg_color) = self.optional_bg_color {
-                colored_string = colored_string.on_color(bg_color);
-            }
-            for &style in self.styles.iter() {
-                colored_string = match style {
-                    Styles::Bold => colored_string.bold(),
-                    Styles::Clear => colored_string.clear(),
-                    _ => todo!(),
-                }
-            }
-            colored_string.to_string()
-        }
-    }
-
-    impl AddAssign for ColoredStringStyle<'_> {
-        fn add_assign(&mut self, rhs: Self) {
-            self.update(&rhs);
-        }
-    }
-
-    impl Add for ColoredStringStyle<'_> {
-        type Output = Self;
-
-        fn add(self, rhs: Self) -> Self::Output {
-            let mut self_clone = self.clone();
-            self_clone += rhs;
-            self_clone
-        }
-    }
-
     pub trait CustomColorize {
-        fn colorize(&self, style: ColoredStringStyle) -> String;
+        fn colorize(&self, styles_functions: &[fn(ColoredString) -> ColoredString]) -> String;
     }
 
     impl<T: ToString> CustomColorize for T {
-        fn colorize(&self, style: ColoredStringStyle) -> String {
-            style.colorize(&self.to_string())
+        fn colorize(&self, styles_functions: &[fn(ColoredString) -> ColoredString]) -> String {
+            let self_string = self.to_string();
+            if styles_functions.is_empty() || !is_colored_output() {
+                return self_string;
+            }
+            let mut colorized_string = self_string.normal();
+            for &func in styles_functions {
+                colorized_string = func(colorized_string);
+            }
+            colorized_string.to_string()
         }
     }
 
@@ -717,8 +634,6 @@ pub mod bitboard_utils {
 }
 
 pub mod cache_table_utils {
-    use std::fmt::format;
-
     use super::*;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -958,7 +873,7 @@ pub mod pv_utils {
 
 pub mod io_utils {
     use super::*;
-    use std::io::{self, Read, Write};
+    use std::io::{self, Write};
 
     pub fn print_line<T: Display>(line: T) {
         let to_print = format!("{line}");

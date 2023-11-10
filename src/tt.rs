@@ -1,5 +1,4 @@
 use super::*;
-use EntryFlag::*;
 
 #[derive(Copy, Clone, PartialEq, PartialOrd)]
 pub struct CacheTableEntry<T: Copy + Clone + PartialEq + PartialOrd> {
@@ -227,20 +226,6 @@ struct TranspositionTableData {
     depth: Depth,
     score: Score,
     flag: EntryFlag,
-}
-
-impl TranspositionTableData {
-    pub fn depth(&self) -> Depth {
-        self.depth
-    }
-
-    pub fn score(&self) -> Score {
-        self.score
-    }
-
-    pub fn flag(&self) -> EntryFlag {
-        self.flag
-    }
 }
 
 impl Default for TranspositionTableData {

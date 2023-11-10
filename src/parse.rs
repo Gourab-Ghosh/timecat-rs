@@ -167,6 +167,9 @@ pub struct SetOption;
 
 impl SetOption {
     fn parse_sub_commands(commands: &[&str]) -> Result<(), EngineError> {
+        if commands.first().ok_or(UnknownCommand)?.to_lowercase() != "setoption" {
+            return Err(UnknownCommand);
+        }
         if commands.get(1).ok_or(UnknownCommand)?.to_lowercase() != "name" {
             return Err(UnknownCommand);
         }
@@ -182,21 +185,6 @@ impl SetOption {
             .skip(1)
             .join(" ");
         UCI_OPTIONS.set_option(&command_name, value_string)
-    }
-
-    fn parse_commands(commands: &[&str]) -> Result<(), EngineError> {
-        if commands.first().ok_or(UnknownCommand)?.to_lowercase() != "setoption" {
-            return Err(UnknownCommand);
-        }
-        Self::parse_sub_commands(commands)
-    }
-
-    fn parse_input(input: &str) {
-        let sanitized_input = Parser::sanitize_string(input);
-        let commands: Vec<&str> = sanitized_input.split_ascii_whitespace().collect_vec();
-        if let Err(error) = Self::parse_commands(&commands) {
-            Parser::parse_error(error, Some(input));
-        }
     }
 }
 

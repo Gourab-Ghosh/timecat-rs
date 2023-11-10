@@ -195,14 +195,14 @@ impl Board {
         let mut colored_skeleton = String::new();
         fn get_colored_char(c: char) -> String {
             let mut _char = c.to_string();
-            let style = if "+-|".contains(c) {
+            let styles = if "+-|".contains(c) {
                 BOARD_SKELETON_STYLE
             } else if "abcdefghABCDEFGH12345678".contains(c) {
                 BOARD_LABEL_STYLE
             } else {
-                ColoredStringStyle::no_style()
+                &[]
             };
-            _char.colorize(style)
+            _char.colorize(styles)
         }
         for c in skeleton.chars() {
             colored_skeleton.push_str(&get_colored_char(c));
@@ -229,14 +229,14 @@ impl Board {
             } else {
                 self.piece_symbol_at(square)
             };
-            let mut style = ColoredStringStyle::no_style();
+            let mut styles = vec![];
             if symbol != " " {
-                style += match self.color_at(square).unwrap() {
+                styles.extend_from_slice(match self.color_at(square).unwrap() {
                     White => WHITE_PIECES_STYLE,
                     Black => BLACK_PIECES_STYLE,
-                };
+                });
                 if square == king_square && checkers != BB_EMPTY {
-                    style += CHECK_STYLE;
+                    styles.extend_from_slice(CHECK_STYLE);
                 }
             }
             if last_move.is_some()
@@ -246,9 +246,9 @@ impl Board {
                 ]
                 .contains(&square)
             {
-                style += LAST_MOVE_HIGHLIGHT_STYLE;
+                styles.extend_from_slice(LAST_MOVE_HIGHLIGHT_STYLE);
             }
-            skeleton = skeleton.replacen('O', &symbol.colorize(style), 1);
+            skeleton = skeleton.replacen('O', &symbol.colorize(&styles), 1);
         }
         skeleton.push('\n');
         skeleton.push_str(

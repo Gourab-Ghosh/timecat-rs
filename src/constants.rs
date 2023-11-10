@@ -9,19 +9,6 @@ macro_rules! make_array_recursively {
     ($x:expr) => ($x);
 }
 
-macro_rules! generate_lmr_table {
-    () => {
-        let mut lmr_table = [[0; 64]; 64];
-        for depth in 1..MAX_PLY {
-            for move_number in 1..MAX_PLY {
-                let reduction = (depth as f64).ln() * (move_number as f64).ln() / 3.0;
-                lmr_table[depth][move_number] = reduction as usize;
-            }
-        }
-        lmr_table
-    };
-}
-
 pub mod types {
     pub type Ply = usize;
     pub type Depth = i8;
@@ -234,24 +221,23 @@ pub mod fen {
 
 #[rustfmt::skip]
 pub mod print_style {
-    use crate::{colored_string_style, ColoredStringStyle};
-    use colored::{Color, Styles::*};
+    use colored::{ColoredString, Colorize};
 
-    pub const WHITE_PIECES_STYLE: ColoredStringStyle = colored_string_style!(White, _, [Bold]);
-    pub const BLACK_PIECES_STYLE: ColoredStringStyle = colored_string_style!(Magenta, _, [Bold]);
-    pub const BOARD_SKELETON_STYLE: ColoredStringStyle = colored_string_style!(Green, _, []);
-    pub const BOARD_LABEL_STYLE: ColoredStringStyle = colored_string_style!(Red, _, [Bold]);
-    pub const INFO_MESSAGE_STYLE: ColoredStringStyle = colored_string_style!(BrightCyan, _, [Bold]);
-    pub const CHECK_STYLE: ColoredStringStyle = colored_string_style!(_, BrightRed, []);
-    pub const CHECKERS_STYLE: ColoredStringStyle = colored_string_style!(BrightRed, _, [Bold]);
-    pub const CHECKMATE_SCORE_STYLE: ColoredStringStyle = colored_string_style!(BrightRed, _, [Bold]);
-    pub const PERFT_MOVE_STYLE: ColoredStringStyle = colored_string_style!(Green, _, [Bold]);
-    pub const PERFT_COUNT_STYLE: ColoredStringStyle = colored_string_style!(_, _, []);
-    pub const INPUT_MESSAGE_STYLE: ColoredStringStyle = colored_string_style!(Blue, _, [Bold]);
-    pub const SUCCESS_MESSAGE_STYLE: ColoredStringStyle = colored_string_style!(Green, _, [Bold]);
-    pub const ERROR_MESSAGE_STYLE: ColoredStringStyle = colored_string_style!(Red, _, [Bold]);
-    pub const LAST_MOVE_HIGHLIGHT_STYLE: ColoredStringStyle = colored_string_style!(BrightBlack, _, []);
-    pub const WARNING_MESSAGE_STYLE: ColoredStringStyle = colored_string_style!(BrightYellow, _, [Bold]);
+    pub const WHITE_PIECES_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::white, ColoredString::bold];
+    pub const BLACK_PIECES_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::purple, ColoredString::bold];
+    pub const BOARD_SKELETON_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::green];
+    pub const BOARD_LABEL_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::red, ColoredString::bold];
+    pub const INFO_MESSAGE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::bright_cyan, ColoredString::bold];
+    pub const CHECK_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::on_bright_red];
+    pub const CHECKERS_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::bright_red, ColoredString::bold];
+    pub const CHECKMATE_SCORE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::bright_red, ColoredString::bold];
+    pub const PERFT_MOVE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::green, ColoredString::bold];
+    pub const PERFT_COUNT_STYLE: &[fn(ColoredString) -> ColoredString] = &[];
+    pub const INPUT_MESSAGE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::blue, ColoredString::bold];
+    pub const SUCCESS_MESSAGE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::green, ColoredString::bold];
+    pub const ERROR_MESSAGE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::red, ColoredString::bold];
+    pub const LAST_MOVE_HIGHLIGHT_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::on_bright_black];
+    pub const WARNING_MESSAGE_STYLE: &[fn(ColoredString) -> ColoredString] = &[ColoredString::bright_yellow, ColoredString::bold];
 }
 
 pub mod engine_constants {
@@ -276,7 +262,7 @@ pub mod engine_constants {
             } else {
                 evaluator_entry_size
             };
-            (usize::MAX >> 20) / max_size
+            (usize::MAX >> 21) / max_size // Assuming that Evaluator and Transposition Table will take same amount of space, so 21 not 20.
         }),
     );
     pub const MOVE_OVERHEAD_UCI: UCIOptionValues<Duration> = UCIOptionValues::new(
