@@ -495,6 +495,10 @@ impl Parser {
 
     pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Result<(), EngineError> {
         let sanitized_input = Self::sanitize_string(raw_input);
+        println_info("Running Command", &sanitized_input);
+        if is_in_console_and_debug_mode() {
+            println!();
+        }
         if Self::EXIT_CODES.contains(&sanitized_input.as_str()) {
             set_engine_termination(true);
             return Ok(());

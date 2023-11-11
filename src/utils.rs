@@ -143,13 +143,10 @@ pub mod string_utils {
     use colored::Colorize;
 
     pub fn remove_double_spaces_and_trim(s: &str) -> String {
-        let mut string = String::new();
-        for chr in s.trim().chars() {
-            if !(chr == ' ' && string.ends_with(' ')) {
-                string.push(chr);
-            }
-        }
-        string
+        s.trim()
+            .chars()
+            .dedup_by(|&c1, &c2| c1 == ' ' && c2 == ' ')
+            .join("")
     }
 
     pub fn simplify_fen(fen: &str) -> String {
@@ -1071,6 +1068,11 @@ pub mod global_utils {
     pub fn set_debug_mode(b: bool) {
         DEBUG_MODE.store(b, MEMORY_ORDERING);
         print_info("Debug Mode is set to", b);
+    }
+
+    #[inline(always)]
+    pub fn is_in_console_and_debug_mode() -> bool {
+        is_in_console_mode() && is_in_debug_mode()
     }
 
     pub fn clear_all_hash_tables() {

@@ -248,6 +248,7 @@ impl Board {
             {
                 styles.extend_from_slice(LAST_MOVE_HIGHLIGHT_STYLE);
             }
+            styles.dedup();
             skeleton = skeleton.replacen('O', &symbol.colorize(&styles), 1);
         }
         skeleton.push('\n');
