@@ -4,14 +4,7 @@ pub mod description {
     pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
 }
 
-macro_rules! make_array_recursively {
-    ($($x:expr),*) => ([$(make_array_recursively!($x)),*]);
-    ($x:expr) => ($x);
-}
-
 pub mod types {
-    use colored::ColoredString;
-
     pub type Ply = usize;
     pub type Depth = i8;
     pub type Score = i16;
@@ -19,115 +12,57 @@ pub mod types {
     pub type NumMoves = u16;
     pub type CompressedObject = u16;
     pub type Spin = u128;
-    pub type ColoredStringFunctions = [fn(ColoredString) -> ColoredString];
+    pub type ColoredStringFunctions = [fn(colored::ColoredString) -> colored::ColoredString];
 }
 
 pub mod bitboard {
-    use chess::BitBoard;
+    use crate::{paste, BitBoard, File::*};
 
     pub const BB_EMPTY: BitBoard = BitBoard(0);
     pub const BB_ALL: BitBoard = BitBoard(0xffff_ffff_ffff_ffff);
 
-    pub const BB_A1: BitBoard = BitBoard(1 << 0);
-    pub const BB_B1: BitBoard = BitBoard(1 << 1);
-    pub const BB_C1: BitBoard = BitBoard(1 << 2);
-    pub const BB_D1: BitBoard = BitBoard(1 << 3);
-    pub const BB_E1: BitBoard = BitBoard(1 << 4);
-    pub const BB_F1: BitBoard = BitBoard(1 << 5);
-    pub const BB_G1: BitBoard = BitBoard(1 << 6);
-    pub const BB_H1: BitBoard = BitBoard(1 << 7);
-    pub const BB_A2: BitBoard = BitBoard(1 << 8);
-    pub const BB_B2: BitBoard = BitBoard(1 << 9);
-    pub const BB_C2: BitBoard = BitBoard(1 << 10);
-    pub const BB_D2: BitBoard = BitBoard(1 << 11);
-    pub const BB_E2: BitBoard = BitBoard(1 << 12);
-    pub const BB_F2: BitBoard = BitBoard(1 << 13);
-    pub const BB_G2: BitBoard = BitBoard(1 << 14);
-    pub const BB_H2: BitBoard = BitBoard(1 << 15);
-    pub const BB_A3: BitBoard = BitBoard(1 << 16);
-    pub const BB_B3: BitBoard = BitBoard(1 << 17);
-    pub const BB_C3: BitBoard = BitBoard(1 << 18);
-    pub const BB_D3: BitBoard = BitBoard(1 << 19);
-    pub const BB_E3: BitBoard = BitBoard(1 << 20);
-    pub const BB_F3: BitBoard = BitBoard(1 << 21);
-    pub const BB_G3: BitBoard = BitBoard(1 << 22);
-    pub const BB_H3: BitBoard = BitBoard(1 << 23);
-    pub const BB_A4: BitBoard = BitBoard(1 << 24);
-    pub const BB_B4: BitBoard = BitBoard(1 << 25);
-    pub const BB_C4: BitBoard = BitBoard(1 << 26);
-    pub const BB_D4: BitBoard = BitBoard(1 << 27);
-    pub const BB_E4: BitBoard = BitBoard(1 << 28);
-    pub const BB_F4: BitBoard = BitBoard(1 << 29);
-    pub const BB_G4: BitBoard = BitBoard(1 << 30);
-    pub const BB_H4: BitBoard = BitBoard(1 << 31);
-    pub const BB_A5: BitBoard = BitBoard(1 << 32);
-    pub const BB_B5: BitBoard = BitBoard(1 << 33);
-    pub const BB_C5: BitBoard = BitBoard(1 << 34);
-    pub const BB_D5: BitBoard = BitBoard(1 << 35);
-    pub const BB_E5: BitBoard = BitBoard(1 << 36);
-    pub const BB_F5: BitBoard = BitBoard(1 << 37);
-    pub const BB_G5: BitBoard = BitBoard(1 << 38);
-    pub const BB_H5: BitBoard = BitBoard(1 << 39);
-    pub const BB_A6: BitBoard = BitBoard(1 << 40);
-    pub const BB_B6: BitBoard = BitBoard(1 << 41);
-    pub const BB_C6: BitBoard = BitBoard(1 << 42);
-    pub const BB_D6: BitBoard = BitBoard(1 << 43);
-    pub const BB_E6: BitBoard = BitBoard(1 << 44);
-    pub const BB_F6: BitBoard = BitBoard(1 << 45);
-    pub const BB_G6: BitBoard = BitBoard(1 << 46);
-    pub const BB_H6: BitBoard = BitBoard(1 << 47);
-    pub const BB_A7: BitBoard = BitBoard(1 << 48);
-    pub const BB_B7: BitBoard = BitBoard(1 << 49);
-    pub const BB_C7: BitBoard = BitBoard(1 << 50);
-    pub const BB_D7: BitBoard = BitBoard(1 << 51);
-    pub const BB_E7: BitBoard = BitBoard(1 << 52);
-    pub const BB_F7: BitBoard = BitBoard(1 << 53);
-    pub const BB_G7: BitBoard = BitBoard(1 << 54);
-    pub const BB_H7: BitBoard = BitBoard(1 << 55);
-    pub const BB_A8: BitBoard = BitBoard(1 << 56);
-    pub const BB_B8: BitBoard = BitBoard(1 << 57);
-    pub const BB_C8: BitBoard = BitBoard(1 << 58);
-    pub const BB_D8: BitBoard = BitBoard(1 << 59);
-    pub const BB_E8: BitBoard = BitBoard(1 << 60);
-    pub const BB_F8: BitBoard = BitBoard(1 << 61);
-    pub const BB_G8: BitBoard = BitBoard(1 << 62);
-    pub const BB_H8: BitBoard = BitBoard(1 << 63);
+    macro_rules! generate_bitboard_constants {
+        (@bb_squares $(($file:expr, $rank:expr)),*) => {
+            paste! {
+                $(
+                    pub const [<BB_$file$rank>]: BitBoard = BitBoard(1 << (8 * ($rank - 1) + $file as usize));
+                )*
+                pub const BB_SQUARES: [BitBoard; 64] = [$( [<BB_$file$rank>] ), *];
+            }
+        };
+
+        (@bb_ranks_and_files $(($file:expr, $rank:expr)), *) => {
+            $(
+                paste!{
+                    pub const [<BB_FILE_$file>]: BitBoard = BitBoard(0x0101_0101_0101_0101 << ($rank - 1));
+                    pub const [<BB_RANK_$rank>]: BitBoard = BitBoard(0xff << (($rank - 1) << 3));
+                }
+            )*
+        };
+    }
 
     #[rustfmt::skip]
-    pub const BB_SQUARES: [BitBoard; 64] = [
-        BB_A1, BB_B1, BB_C1, BB_D1, BB_E1, BB_F1, BB_G1, BB_H1,
-        BB_A2, BB_B2, BB_C2, BB_D2, BB_E2, BB_F2, BB_G2, BB_H2,
-        BB_A3, BB_B3, BB_C3, BB_D3, BB_E3, BB_F3, BB_G3, BB_H3,
-        BB_A4, BB_B4, BB_C4, BB_D4, BB_E4, BB_F4, BB_G4, BB_H4,
-        BB_A5, BB_B5, BB_C5, BB_D5, BB_E5, BB_F5, BB_G5, BB_H5,
-        BB_A6, BB_B6, BB_C6, BB_D6, BB_E6, BB_F6, BB_G6, BB_H6,
-        BB_A7, BB_B7, BB_C7, BB_D7, BB_E7, BB_F7, BB_G7, BB_H7,
-        BB_A8, BB_B8, BB_C8, BB_D8, BB_E8, BB_F8, BB_G8, BB_H8,
-    ];
+    generate_bitboard_constants!(
+        @bb_squares
+        (A, 1), (B, 1), (C, 1), (D, 1), (E, 1), (F, 1), (G, 1), (H, 1),
+        (A, 2), (B, 2), (C, 2), (D, 2), (E, 2), (F, 2), (G, 2), (H, 2),
+        (A, 3), (B, 3), (C, 3), (D, 3), (E, 3), (F, 3), (G, 3), (H, 3),
+        (A, 4), (B, 4), (C, 4), (D, 4), (E, 4), (F, 4), (G, 4), (H, 4),
+        (A, 5), (B, 5), (C, 5), (D, 5), (E, 5), (F, 5), (G, 5), (H, 5),
+        (A, 6), (B, 6), (C, 6), (D, 6), (E, 6), (F, 6), (G, 6), (H, 6),
+        (A, 7), (B, 7), (C, 7), (D, 7), (E, 7), (F, 7), (G, 7), (H, 7),
+        (A, 8), (B, 8), (C, 8), (D, 8), (E, 8), (F, 8), (G, 8), (H, 8)
+    );
+    generate_bitboard_constants!(
+        @bb_ranks_and_files
+        (A, 1), (B, 2), (C, 3), (D, 4), (E, 5), (F, 6), (G, 7), (H, 8)
+    );
 
     pub const BB_CORNERS: BitBoard = BitBoard(BB_A1.0 | BB_H1.0 | BB_A8.0 | BB_H8.0);
     pub const BB_CENTER: BitBoard = BitBoard(BB_D4.0 | BB_E4.0 | BB_D5.0 | BB_E5.0);
 
     pub const BB_LIGHT_SQUARES: BitBoard = BitBoard(0x55aa_55aa_55aa_55aa);
     pub const BB_DARK_SQUARES: BitBoard = BitBoard(0xaa55_aa55_aa55_aa55);
-
-    pub const BB_FILE_A: BitBoard = BitBoard(0x0101_0101_0101_0101);
-    pub const BB_FILE_B: BitBoard = BitBoard(0x0101_0101_0101_0101 << 1);
-    pub const BB_FILE_C: BitBoard = BitBoard(0x0101_0101_0101_0101 << 2);
-    pub const BB_FILE_D: BitBoard = BitBoard(0x0101_0101_0101_0101 << 3);
-    pub const BB_FILE_E: BitBoard = BitBoard(0x0101_0101_0101_0101 << 4);
-    pub const BB_FILE_F: BitBoard = BitBoard(0x0101_0101_0101_0101 << 5);
-    pub const BB_FILE_G: BitBoard = BitBoard(0x0101_0101_0101_0101 << 6);
-    pub const BB_FILE_H: BitBoard = BitBoard(0x0101_0101_0101_0101 << 7);
-
-    pub const BB_RANK_1: BitBoard = BitBoard(0xff);
-    pub const BB_RANK_2: BitBoard = BitBoard(0xff << (1 << 3));
-    pub const BB_RANK_3: BitBoard = BitBoard(0xff << (2 << 3));
-    pub const BB_RANK_4: BitBoard = BitBoard(0xff << (3 << 3));
-    pub const BB_RANK_5: BitBoard = BitBoard(0xff << (4 << 3));
-    pub const BB_RANK_6: BitBoard = BitBoard(0xff << (5 << 3));
-    pub const BB_RANK_7: BitBoard = BitBoard(0xff << (6 << 3));
-    pub const BB_RANK_8: BitBoard = BitBoard(0xff << (7 << 3));
 
     pub const BB_BACKRANKS: BitBoard = BitBoard(BB_RANK_1.0 | BB_RANK_8.0);
 
@@ -222,35 +157,38 @@ pub mod fen {
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 }
 
-#[rustfmt::skip]
 pub mod print_style {
     use crate::ColoredStringFunctions;
-    use colored::{ColoredString, Colorize};
-    
-    pub const WHITE_PIECES_STYLE: &ColoredStringFunctions = &[ColoredString::white, ColoredString::bold];
-    pub const BLACK_PIECES_STYLE: &ColoredStringFunctions = &[ColoredString::purple, ColoredString::bold];
-    pub const BOARD_SKELETON_STYLE: &ColoredStringFunctions = &[ColoredString::green];
-    pub const BOARD_LABEL_STYLE: &ColoredStringFunctions = &[ColoredString::red, ColoredString::bold];
-    pub const INFO_MESSAGE_STYLE: &ColoredStringFunctions = &[ColoredString::bright_cyan, ColoredString::bold];
-    pub const CHECK_STYLE: &ColoredStringFunctions = &[ColoredString::on_bright_red];
-    pub const CHECKERS_STYLE: &ColoredStringFunctions = &[ColoredString::bright_red, ColoredString::bold];
-    pub const CHECKMATE_SCORE_STYLE: &ColoredStringFunctions = &[ColoredString::bright_red, ColoredString::bold];
-    pub const PERFT_MOVE_STYLE: &ColoredStringFunctions = &[ColoredString::green, ColoredString::bold];
-    pub const PERFT_COUNT_STYLE: &ColoredStringFunctions = &[];
-    pub const INPUT_MESSAGE_STYLE: &ColoredStringFunctions = &[ColoredString::blue, ColoredString::bold];
-    pub const SUCCESS_MESSAGE_STYLE: &ColoredStringFunctions = &[ColoredString::green, ColoredString::bold];
-    pub const ERROR_MESSAGE_STYLE: &ColoredStringFunctions = &[ColoredString::red, ColoredString::bold];
-    pub const LAST_MOVE_HIGHLIGHT_STYLE: &ColoredStringFunctions = &[ColoredString::on_bright_black];
-    pub const WARNING_MESSAGE_STYLE: &ColoredStringFunctions = &[ColoredString::bright_yellow, ColoredString::bold];
+
+    macro_rules! generate_constants {
+        ($constant_name:ident, [$( $func_name:ident ), *]) => {
+            pub const $constant_name: &ColoredStringFunctions = &[$( colored::Colorize::$func_name ), *];
+        };
+    }
+
+    generate_constants!(WHITE_PIECES_STYLE, [white, bold]);
+    generate_constants!(BLACK_PIECES_STYLE, [purple, bold]);
+    generate_constants!(BOARD_SKELETON_STYLE, [green]);
+    generate_constants!(BOARD_LABEL_STYLE, [red, bold]);
+    generate_constants!(INFO_MESSAGE_STYLE, [bright_cyan, bold]);
+    generate_constants!(CHECK_STYLE, [on_bright_red]);
+    generate_constants!(CHECKERS_STYLE, [bright_red, bold]);
+    generate_constants!(CHECKMATE_SCORE_STYLE, [bright_red, bold]);
+    generate_constants!(PERFT_MOVE_STYLE, [green, bold]);
+    generate_constants!(PERFT_COUNT_STYLE, []);
+    generate_constants!(INPUT_MESSAGE_STYLE, [blue, bold]);
+    generate_constants!(SUCCESS_MESSAGE_STYLE, [green, bold]);
+    generate_constants!(ERROR_MESSAGE_STYLE, [red, bold]);
+    generate_constants!(LAST_MOVE_HIGHLIGHT_STYLE, [on_bright_black]);
+    generate_constants!(WARNING_MESSAGE_STYLE, [bright_yellow, bold]);
 }
 
 pub mod engine_constants {
     use super::types::*;
     use crate::{
-        evaluate_piece, CacheTableSize, GoCommand, TranspositionTableEntry, UCIOptionValues,
+        evaluate_piece, CacheTableSize, Duration, GoCommand, Piece::*, TranspositionTableEntry,
+        UCIOptionValues,
     };
-    use chess::Piece::*;
-    use std::time::Duration;
 
     pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
     pub const NUM_THREADS_UCI: UCIOptionValues<usize> = UCIOptionValues::new(1, 1, 1024);

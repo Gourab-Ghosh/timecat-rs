@@ -46,6 +46,7 @@ pub use fxhash::FxHashMap as HashMap;
 pub use itertools::Itertools;
 use lazy_static::lazy_static;
 pub use parse::*;
+pub use paste::paste;
 pub use polyglot::*;
 pub use search::*;
 pub use selfplay::self_play;

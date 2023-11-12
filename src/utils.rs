@@ -140,7 +140,6 @@ pub mod move_utils {
 
 pub mod string_utils {
     use super::*;
-    use colored::Colorize;
 
     pub fn remove_double_spaces_and_trim(s: &str) -> String {
         s.trim()
@@ -163,7 +162,7 @@ pub mod string_utils {
             if styles_functions.is_empty() || !is_colored_output() {
                 return self_string;
             }
-            let mut colorized_string = self_string.normal();
+            let mut colorized_string = self_string.as_str().into();
             for &func in styles_functions {
                 colorized_string = func(colorized_string);
             }
