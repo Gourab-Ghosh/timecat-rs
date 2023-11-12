@@ -22,7 +22,7 @@ pub mod bitboard {
     pub const BB_ALL: BitBoard = BitBoard(0xffff_ffff_ffff_ffff);
 
     macro_rules! generate_bitboard_constants {
-        (@bb_squares $(($file:expr, $rank:expr)),*) => {
+        (@bb_squares $(($file:expr, $rank:expr)), *,) => {
             paste! {
                 $(
                     pub const [<BB_$file$rank>]: BitBoard = BitBoard(1 << (8 * ($rank - 1) + $file as usize));
@@ -31,7 +31,7 @@ pub mod bitboard {
             }
         };
 
-        (@bb_ranks_and_files $(($file:expr, $rank:expr)), *) => {
+        (@bb_ranks_and_files $(($file:expr, $rank:expr)), *,) => {
             $(
                 paste!{
                     pub const [<BB_FILE_$file>]: BitBoard = BitBoard(0x0101_0101_0101_0101 << ($rank - 1));
@@ -51,11 +51,11 @@ pub mod bitboard {
         (A, 5), (B, 5), (C, 5), (D, 5), (E, 5), (F, 5), (G, 5), (H, 5),
         (A, 6), (B, 6), (C, 6), (D, 6), (E, 6), (F, 6), (G, 6), (H, 6),
         (A, 7), (B, 7), (C, 7), (D, 7), (E, 7), (F, 7), (G, 7), (H, 7),
-        (A, 8), (B, 8), (C, 8), (D, 8), (E, 8), (F, 8), (G, 8), (H, 8)
+        (A, 8), (B, 8), (C, 8), (D, 8), (E, 8), (F, 8), (G, 8), (H, 8),
     );
     generate_bitboard_constants!(
         @bb_ranks_and_files
-        (A, 1), (B, 2), (C, 3), (D, 4), (E, 5), (F, 6), (G, 7), (H, 8)
+        (A, 1), (B, 2), (C, 3), (D, 4), (E, 5), (F, 6), (G, 7), (H, 8),
     );
 
     pub const BB_CORNERS: BitBoard = BitBoard(BB_A1.0 | BB_H1.0 | BB_A8.0 | BB_H8.0);
