@@ -34,8 +34,8 @@ pub mod bitboard {
         (@bb_ranks_and_files $(($file:expr, $rank:expr)), *,) => {
             $(
                 paste!{
-                    pub const [<BB_FILE_$file>]: BitBoard = BitBoard(0x0101_0101_0101_0101 << ($rank - 1));
                     pub const [<BB_RANK_$rank>]: BitBoard = BitBoard(0xff << (($rank - 1) << 3));
+                    pub const [<BB_FILE_$file>]: BitBoard = BitBoard(0x0101_0101_0101_0101 << ($rank - 1));
                 }
             )*
         };
