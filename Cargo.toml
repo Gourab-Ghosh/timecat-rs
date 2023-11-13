@@ -24,7 +24,7 @@ codegen-units = 1
 lto = true
 panic = "abort"
 # rustflags = ["-C", "target-cpu=native"]
-# strip = true
+strip = true
 
 [dependencies]
 binread = { version = "2.2.0", features = ["const_generics"] }
