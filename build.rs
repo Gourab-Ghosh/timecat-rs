@@ -1,4 +1,3 @@
-use std::fmt::Debug;
 use std::fs::File;
 use std::path::Path;
 
@@ -7,16 +6,13 @@ const NNUE_FILE_NAME: &str = "nn-62ef826d1a6d.nnue";
 
 struct NNUEGenerationError(String);
 
-impl<T> From<T> for NNUEGenerationError
-where
-    T: ToString,
-{
+impl<T: ToString> From<T> for NNUEGenerationError {
     fn from(msg: T) -> Self {
         NNUEGenerationError(msg.to_string())
     }
 }
 
-impl Debug for NNUEGenerationError {
+impl std::fmt::Debug for NNUEGenerationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)
     }
@@ -71,8 +67,8 @@ fn main() {
                 println!("cargo:rerun-if-changed={}", nnue_path.to_str().unwrap());
             }
             Err(err) => {
-                println!("cargo:warning={:?}", err);
                 remove_nnue_file(&nnue_path).unwrap();
+                panic!("{err:?}");
             }
         }
     }
