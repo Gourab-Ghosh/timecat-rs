@@ -434,7 +434,7 @@ impl DebugMode {
 pub struct Parser;
 
 impl Parser {
-    pub const EXIT_CODES: [&str; 7] = [
+    pub const EXIT_CODES: [&'static str; 7] = [
         "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
     ];
 
