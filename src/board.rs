@@ -444,10 +444,10 @@ impl Board {
     }
 
     pub fn has_only_same_colored_bishop(&self) -> bool {
-        if self.get_num_pieces() > 32 {
+        let non_king_pieces_mask = self.get_non_king_pieces_mask();
+        if non_king_pieces_mask.popcnt() > 32 {
             return false;
         }
-        let non_king_pieces_mask = self.get_non_king_pieces_mask();
         let bishop_bitboard = self.get_piece_mask(Bishop);
         &(non_king_pieces_mask & BB_LIGHT_SQUARES) == bishop_bitboard
             || &(non_king_pieces_mask & BB_DARK_SQUARES) == bishop_bitboard

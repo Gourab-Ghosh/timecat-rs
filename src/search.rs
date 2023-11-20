@@ -267,16 +267,16 @@ impl Searcher {
         if self.is_main_threaded() {
             self.selective_depth.store(0, MEMORY_ORDERING);
         }
-        let enable_timer = depth > 1 && self.is_main_threaded();
-        if self.timer.check_stop(enable_timer) {
-            return None;
-        }
         if self.board.is_game_over() {
             return if self.board.is_checkmate() {
                 Some(-CHECKMATE_SCORE)
             } else {
                 Some(0)
             };
+        }
+        let enable_timer = depth > 1 && self.is_main_threaded();
+        if self.timer.check_stop(enable_timer) {
+            return None;
         }
         let key = self.board.hash();
         let mut score = -CHECKMATE_SCORE;
