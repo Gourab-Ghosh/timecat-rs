@@ -155,6 +155,12 @@ impl Evaluator {
     }
 
     pub fn evaluate_raw(&self, board: &Board) -> Score {
+        let knights_mask = board.get_piece_mask(Knight);
+        if &(board.occupied() & !board.get_piece_mask(King)) == knights_mask
+            && knights_mask.popcnt() < 3
+        {
+            return 0;
+        }
         let material_score = board.get_material_score();
         if Self::is_easily_winning_position(board, material_score) {
             return self.king_corner_forcing_evaluation(board, material_score);

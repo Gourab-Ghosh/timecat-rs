@@ -441,7 +441,8 @@ impl Board {
     pub fn has_only_same_colored_bishop(&self) -> bool {
         let non_king_material = self.occupied() & !self.get_piece_mask(King);
         let bishop_bitboard = self.get_piece_mask(Bishop);
-        &(non_king_material & BB_LIGHT_SQUARES) == bishop_bitboard || &(non_king_material & BB_DARK_SQUARES) == bishop_bitboard
+        &(non_king_material & BB_LIGHT_SQUARES) == bishop_bitboard
+            || &(non_king_material & BB_DARK_SQUARES) == bishop_bitboard
     }
 
     pub fn is_insufficient_material(&self) -> bool {
