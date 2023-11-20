@@ -156,7 +156,7 @@ impl Evaluator {
 
     pub fn evaluate_raw(&self, board: &Board) -> Score {
         let knights_mask = board.get_piece_mask(Knight);
-        if &(board.occupied() & !board.get_piece_mask(King)) == knights_mask
+        if &board.get_non_king_pieces_mask() == knights_mask
             && knights_mask.popcnt() < 3
         {
             return 0;
