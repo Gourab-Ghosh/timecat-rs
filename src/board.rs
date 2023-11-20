@@ -439,7 +439,11 @@ impl Board {
     }
 
     pub fn has_only_same_colored_bishop(&self) -> bool {
-        let non_king_material = self.occupied() & !self.get_piece_mask(King);
+        let occupied = self.occupied();
+        if occupied.popcnt() > 32 {
+            return false;
+        }
+        let non_king_material = occupied & !self.get_piece_mask(King);
         let bishop_bitboard = self.get_piece_mask(Bishop);
         &(non_king_material & BB_LIGHT_SQUARES) == bishop_bitboard
             || &(non_king_material & BB_DARK_SQUARES) == bishop_bitboard
@@ -448,11 +452,9 @@ impl Board {
     pub fn is_insufficient_material(&self) -> bool {
         match self.occupied().popcnt() {
             2 => true,
-            3 => {
-                self.get_piece_mask(Rook) == &BB_EMPTY
-                    && self.get_piece_mask(Queen) == &BB_EMPTY
-                    && self.get_piece_mask(Pawn) == &BB_EMPTY
-            }
+            3 => [Pawn, Rook, Queen]
+                .iter()
+                .all(|&piece| self.get_piece_mask(piece) == &BB_EMPTY),
             _ => self.has_only_same_colored_bishop(),
         }
     }
