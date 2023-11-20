@@ -177,7 +177,11 @@ impl Engine {
         for join_handle in join_handles {
             join_handle.join().unwrap();
         }
-        GoResponse::new(main_thread_searcher.get_search_info())
+        let mut search_info = main_thread_searcher.get_search_info();
+        if search_info.get_pv().is_empty() && self.board.status() == BoardStatus::Ongoing {
+            search_info.set_pv(&[self.board.generate_legal_moves().next()]);
+        }
+        GoResponse::new(search_info)
     }
 }
 

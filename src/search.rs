@@ -38,6 +38,10 @@ impl SearchInfo {
         self.pv.as_slice()
     }
 
+    pub fn set_pv(&mut self, pv: &[Option<Move>]) {
+        self.pv = pv.to_vec();
+    }
+
     pub fn get_score(&self) -> Score {
         let mut score = self.score;
         if is_in_console_mode() {
