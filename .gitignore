@@ -4,6 +4,7 @@
 **/__pycache__/
 perf*
 src/*.bak
+Cargo.lock
 temp*
 flamegraph.svg
 *.log
