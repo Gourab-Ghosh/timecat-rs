@@ -153,11 +153,11 @@ pub mod string_utils {
     }
 
     pub trait CustomColorize {
-        fn colorize(&self, styles_functions: &ColoredStringFunctions) -> String;
+        fn colorize(&self, styles_functions: &[ColoredStringFunction]) -> String;
     }
 
     impl<T: ToString> CustomColorize for T {
-        fn colorize(&self, styles_functions: &ColoredStringFunctions) -> String {
+        fn colorize(&self, styles_functions: &[ColoredStringFunction]) -> String {
             let self_string = self.to_string();
             if styles_functions.is_empty() || !is_colored_output() {
                 return self_string;
