@@ -359,8 +359,10 @@ impl Searcher {
         if self.board.is_other_draw() {
             return Some(0);
         }
-        if self.board.is_checkmate() {
-            return Some(-mate_score);
+        match self.board.status() {
+            BoardStatus::Checkmate => return Some(-mate_score),
+            BoardStatus::Stalemate => return Some(0),
+            BoardStatus::Ongoing => (),
         }
         // // mate distance pruning
         // alpha = alpha.max(-mate_score);
@@ -400,8 +402,8 @@ impl Searcher {
         let best_move = if is_pv_node && self.is_main_threaded() {
             TRANSPOSITION_TABLE.read_best_move(key)
         } else {
-            let data = TRANSPOSITION_TABLE.read(key, depth, self.ply);
-            if let Some((score, flag)) = data.0 {
+            let (optional_data, best_move) = TRANSPOSITION_TABLE.read(key, depth, self.ply);
+            if let Some((score, flag)) = optional_data {
                 // match flag {
                 //     HashExact => return Some(score),
                 //     HashAlpha => alpha = alpha.max(score),
@@ -424,7 +426,7 @@ impl Searcher {
                     }
                 }
             }
-            data.1
+            best_move
         };
         if self.ply == MAX_PLY - 1 {
             return Some(self.board.evaluate_flipped());
@@ -499,17 +501,17 @@ impl Searcher {
             self.get_nth_pv_move(self.ply),
             Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
         );
-        #[allow(clippy::single_match)]
-        match weighted_moves.len() {
-            0 => return Some(0),
-            // 1 => {
-            //     if Self::safe_to_apply_extensions(num_extensions, check_extension, max_extension) {
-            //         depth += 1;
-            //         num_extensions += 1;
-            //     }
-            // }
-            _ => (),
-        }
+        // #[allow(clippy::single_match)]
+        // match weighted_moves.len() {
+        //     0 => return Some(0),
+        //     // 1 => {
+        //     //     if Self::safe_to_apply_extensions(num_extensions, check_extension, max_extension) {
+        //     //         depth += 1;
+        //     //         num_extensions += 1;
+        //     //     }
+        //     // }
+        //     _ => (),
+        // }
         for (move_index, WeightedMove { move_, .. }) in weighted_moves.enumerate() {
             // let (mut depth, mut num_extensions) = (depth, num_extensions);
             let not_capture_move = !self.board.is_capture(move_);

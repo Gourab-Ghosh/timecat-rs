@@ -449,7 +449,7 @@ impl Board {
             return false;
         }
         let bishop_bitboard = *self.get_piece_mask(Bishop);
-        if non_king_pieces_mask != bishop_bitboard  {
+        if non_king_pieces_mask != bishop_bitboard {
             return false;
         }
         non_king_pieces_mask & BB_LIGHT_SQUARES == bishop_bitboard
