@@ -355,10 +355,13 @@ impl Searcher {
         enable_timer: bool,
     ) -> Option<Score> {
         self.pv_table.set_length(self.ply, self.ply);
+        let mate_score = CHECKMATE_SCORE - self.ply as Score;
         if self.board.is_other_draw() {
             return Some(0);
         }
-        let mate_score = CHECKMATE_SCORE - self.ply as Score;
+        if self.board.is_checkmate() {
+            return Some(-mate_score);
+        }
         // // mate distance pruning
         // alpha = alpha.max(-mate_score);
         // beta = beta.min(mate_score - 1);
@@ -498,7 +501,7 @@ impl Searcher {
         );
         #[allow(clippy::single_match)]
         match weighted_moves.len() {
-            0 => return Some(if not_in_check { 0 } else { -mate_score }),
+            0 => return Some(0),
             // 1 => {
             //     if Self::safe_to_apply_extensions(num_extensions, check_extension, max_extension) {
             //         depth += 1;

@@ -448,9 +448,12 @@ impl Board {
         if non_king_pieces_mask.popcnt() > 32 {
             return false;
         }
-        let bishop_bitboard = self.get_piece_mask(Bishop);
-        &(non_king_pieces_mask & BB_LIGHT_SQUARES) == bishop_bitboard
-            || &(non_king_pieces_mask & BB_DARK_SQUARES) == bishop_bitboard
+        let bishop_bitboard = *self.get_piece_mask(Bishop);
+        if non_king_pieces_mask != bishop_bitboard  {
+            return false;
+        }
+        non_king_pieces_mask & BB_LIGHT_SQUARES == bishop_bitboard
+            || non_king_pieces_mask & BB_DARK_SQUARES == bishop_bitboard
     }
 
     pub fn is_insufficient_material(&self) -> bool {
