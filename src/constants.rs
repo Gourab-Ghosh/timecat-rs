@@ -28,6 +28,7 @@ pub mod bitboard {
                     pub const [<BB_$file$rank>]: BitBoard = BitBoard(1 << (8 * ($rank - 1) + $file as usize));
                 )*
                 pub const BB_SQUARES: [BitBoard; 64] = [$( [<BB_$file$rank>] ), *];
+                // const SQUARES_180: [chess::Square; 64] = [$( chess::Square::[<$file$rank>] ), *];
             }
         };
 
