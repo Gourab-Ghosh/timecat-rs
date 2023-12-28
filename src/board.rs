@@ -527,7 +527,7 @@ impl Board {
 
     #[inline(always)]
     pub fn is_quiet(&self, move_: Move) -> bool {
-        !(self.is_capture(move_) || self.gives_check(move_))
+        !(self.is_capture(move_) || !self.gives_check(move_))
     }
 
     pub fn is_zeroing(&self, move_: Move) -> bool {
@@ -731,35 +731,30 @@ impl Board {
         self.parse_uci(move_text).or(self.parse_san(move_text))
     }
 
-    pub fn push_san(&mut self, san: &str) -> Option<Move> {
-        let move_ = self.parse_san(san).unwrap_or_else(|err| panic!("{}", err));
+    pub fn push_san(&mut self, san: &str) -> Result<Option<Move>, EngineError> {
+        let move_ = self.parse_san(san)?;
         self.push(move_);
-        move_
+        Ok(move_)
     }
 
-    pub fn push_sans(&mut self, sans: &str) {
-        for san in remove_double_spaces_and_trim(sans).split(' ') {
-            self.push_san(san);
-        }
+    pub fn push_sans(&mut self, sans: &str) -> Result<Vec<Option<Move>>, EngineError> {
+        remove_double_spaces_and_trim(sans).split(' ').map(|san| self.push_san(san)).collect()
     }
 
-    pub fn push_uci(&mut self, uci: &str) -> Option<Move> {
+    pub fn push_uci(&mut self, uci: &str) -> Result<Option<Move>, EngineError> {
         let move_ = self
-            .parse_uci(uci)
-            .unwrap_or_else(|_| panic!("Bad uci: {uci}"));
+            .parse_uci(uci)?;
         self.push(move_);
-        move_
+        Ok(move_)
     }
 
     #[inline(always)]
     pub fn push_str(&mut self, s: &str) {
-        self.push_uci(s);
+        self.push_uci(s).unwrap();
     }
 
-    pub fn push_uci_moves(&mut self, uci_moves: &str) {
-        for uci in remove_double_spaces_and_trim(uci_moves).split(' ') {
-            self.push_uci(uci);
-        }
+    pub fn push_uci_moves(&mut self, uci_moves: &str) -> Result<Vec<Option<Move>>, EngineError> {
+        remove_double_spaces_and_trim(uci_moves).split(' ').map(|san| self.push_uci(san)).collect()
     }
 
     fn algebraic_without_suffix(
