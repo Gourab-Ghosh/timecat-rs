@@ -8,7 +8,11 @@ pub struct Evaluator {
 
 impl Evaluator {
     pub fn print_info(&self) {
-        println!("{}", format!("Evaluation Cache Table initialization complete with {} entries taking {} MB space.", self.score_cache.len(), self.score_cache.get_size()).colorize(INFO_MESSAGE_STYLE));
+        print_cache_table_info(
+            "Evaluation Cache Table",
+            self.score_cache.len(),
+            self.score_cache.get_size(),
+        );
     }
 
     pub fn new() -> Self {

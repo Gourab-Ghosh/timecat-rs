@@ -463,13 +463,7 @@ impl Parser {
             "reset board" => engine
                 .set_fen(STARTING_POSITION_FEN)
                 .map_err(EngineError::from),
-            "stop" => {
-                if is_in_console_mode() {
-                    Err(EngineNotRunning)
-                } else {
-                    Ok(())
-                }
-            }
+            "stop" => Err(EngineNotRunning),
             "help" => {
                 println!("{}", Self::get_help_text());
                 Ok(())
@@ -495,7 +489,6 @@ impl Parser {
 
     pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Result<(), EngineError> {
         let sanitized_input = Self::sanitize_string(raw_input);
-        println_info("Running Command", &sanitized_input);
         if is_in_console_and_debug_mode() {
             println!();
         }
@@ -542,8 +535,11 @@ impl Parser {
         Ok(())
     }
 
-    fn parse_error(error: EngineError, optional_raw_input: Option<&str>) {
-        let error_message = error.stringify_with_optional_raw_input(optional_raw_input);
+    fn parse_error_and_print(error: EngineError, optional_raw_input: Option<&str>) {
+        let mut error_message = error.stringify_with_optional_raw_input(optional_raw_input);
+        if !is_in_console_mode() {
+            error_message = "info string ".to_string() + &error_message.to_lowercase();
+        }
         println!("{}", error_message.colorize(ERROR_MESSAGE_STYLE));
     }
 
@@ -556,11 +552,11 @@ impl Parser {
             return;
         }
         if raw_input.trim().is_empty() {
-            Self::parse_error(NoInput, None);
+            Self::parse_error_and_print(NoInput, None);
             return;
         }
         if let Err(engine_error) = Self::parse_command(engine, raw_input) {
-            Self::parse_error(engine_error, Some(raw_input));
+            Self::parse_error_and_print(engine_error, Some(raw_input));
         }
     }
 

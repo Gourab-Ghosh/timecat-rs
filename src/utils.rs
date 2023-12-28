@@ -38,13 +38,13 @@ pub mod piece_utils {
 
     pub trait PieceType {
         type PieceType;
-        
+
         fn get_type(self) -> Self::PieceType;
     }
 
     impl PieceType for Piece {
         type PieceType = u8;
-        
+
         fn get_type(self) -> Self::PieceType {
             Some(self).get_type()
         }
@@ -52,7 +52,7 @@ pub mod piece_utils {
 
     impl PieceType for Option<Piece> {
         type PieceType = u8;
-        
+
         fn get_type(self) -> Self::PieceType {
             match self {
                 Some(piece) => piece.to_index() as Self::PieceType + 1,
@@ -67,7 +67,7 @@ pub mod move_utils {
 
     pub trait Compress {
         type CompressedItem;
-        
+
         fn compress(self) -> Self::CompressedItem;
     }
 
@@ -77,7 +77,7 @@ pub mod move_utils {
 
     impl Compress for Option<Piece> {
         type CompressedItem = u8;
-        
+
         fn compress(self) -> Self::CompressedItem {
             self.get_type() as Self::CompressedItem
         }
@@ -830,6 +830,16 @@ pub mod info_utils {
         println!();
         TRANSPOSITION_TABLE.print_info();
         EVALUATOR.print_info();
+    }
+
+    pub fn print_cache_table_info(name: &str, table_len: impl Display, table_size: impl Display) {
+        let mut to_print = format!(
+            "{name} initialization complete with {table_len} entries taking {table_size} space."
+        );
+        if !is_in_console_mode() {
+            to_print = "info string ".to_string() + to_print.trim();
+        }
+        println!("{}", to_print.colorize(INFO_MESSAGE_STYLE));
     }
 }
 

@@ -267,15 +267,7 @@ pub struct TranspositionTable {
 
 impl TranspositionTable {
     pub fn print_info(&self) {
-        let mut to_print = format!(
-            "Hash Table initialization complete with {} entries taking {} space.",
-            self.table.len(),
-            self.table.get_size(),
-        );
-        if !is_in_console_mode() {
-            to_print = "info_string ".to_string() + to_print.trim();
-        }
-        println!("{}", to_print.colorize(INFO_MESSAGE_STYLE));
+        print_cache_table_info("Hash Table", self.table.len(), self.table.get_size());
     }
 
     fn generate_new_table(cache_table_size: CacheTableSize) -> CacheTable<TranspositionTableEntry> {

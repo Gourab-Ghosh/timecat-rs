@@ -163,8 +163,8 @@ impl Board {
     }
 
     pub fn piece_symbol_at(&self, square: Square) -> String {
-        let symbol =
-            get_item_unchecked!(PIECE_SYMBOLS, self.piece_at(square).get_type() as usize).to_string();
+        let symbol = get_item_unchecked!(PIECE_SYMBOLS, self.piece_at(square).get_type() as usize)
+            .to_string();
         if let Some(color) = self.color_at(square) {
             return match color {
                 White => symbol.to_uppercase(),

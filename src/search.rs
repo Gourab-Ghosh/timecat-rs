@@ -498,7 +498,13 @@ impl Searcher {
         );
         #[allow(clippy::single_match)]
         match weighted_moves.len() {
-            0 => return if not_in_check {Some(0)} else {Some(-mate_score)},
+            0 => {
+                return if not_in_check {
+                    Some(0)
+                } else {
+                    Some(-mate_score)
+                }
+            }
             // 1 => {
             //     if Self::safe_to_apply_extensions(num_extensions, check_extension, max_extension) {
             //         depth += 1;
