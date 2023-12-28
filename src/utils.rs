@@ -37,19 +37,25 @@ pub mod piece_utils {
     }
 
     pub trait PieceType {
-        fn get_type(self) -> usize;
+        type PieceType;
+        
+        fn get_type(self) -> Self::PieceType;
     }
 
     impl PieceType for Piece {
-        fn get_type(self) -> usize {
+        type PieceType = u8;
+        
+        fn get_type(self) -> Self::PieceType {
             Some(self).get_type()
         }
     }
 
     impl PieceType for Option<Piece> {
-        fn get_type(self) -> usize {
+        type PieceType = u8;
+        
+        fn get_type(self) -> Self::PieceType {
             match self {
-                Some(piece) => piece.to_index() + 1,
+                Some(piece) => piece.to_index() as Self::PieceType + 1,
                 None => 0,
             }
         }
@@ -60,7 +66,9 @@ pub mod move_utils {
     use super::*;
 
     pub trait Compress {
-        fn compress(self) -> CompressedObject;
+        type CompressedItem;
+        
+        fn compress(self) -> Self::CompressedItem;
     }
 
     pub trait Decompress<T> {
@@ -68,43 +76,53 @@ pub mod move_utils {
     }
 
     impl Compress for Option<Piece> {
-        fn compress(self) -> CompressedObject {
-            self.get_type() as CompressedObject
+        type CompressedItem = u8;
+        
+        fn compress(self) -> Self::CompressedItem {
+            self.get_type() as Self::CompressedItem
         }
     }
 
     impl Compress for Piece {
-        fn compress(self) -> CompressedObject {
+        type CompressedItem = u8;
+
+        fn compress(self) -> Self::CompressedItem {
             Some(self).compress()
         }
     }
 
     impl Compress for Square {
-        fn compress(self) -> CompressedObject {
-            self.to_index() as CompressedObject
+        type CompressedItem = u16;
+
+        fn compress(self) -> Self::CompressedItem {
+            self.to_index() as Self::CompressedItem
         }
     }
 
     impl Compress for Move {
-        fn compress(self) -> CompressedObject {
+        type CompressedItem = u16;
+
+        fn compress(self) -> Self::CompressedItem {
             let mut compressed_move = 0;
             compressed_move |= self.get_source().compress() << 6;
             compressed_move |= self.get_dest().compress();
-            compressed_move |= self.get_promotion().compress() << 12;
+            compressed_move |= (self.get_promotion().compress() as Self::CompressedItem) << 12;
             compressed_move
         }
     }
 
     impl Compress for Option<Move> {
-        fn compress(self) -> CompressedObject {
+        type CompressedItem = u16;
+
+        fn compress(self) -> Self::CompressedItem {
             match self {
                 Some(m) => m.compress(),
-                None => CompressedObject::MAX,
+                None => Self::CompressedItem::MAX,
             }
         }
     }
 
-    impl Decompress<Option<Piece>> for CompressedObject {
+    impl Decompress<Option<Piece>> for u8 {
         fn decompress(self) -> Option<Piece> {
             if self == 0 {
                 return None;
@@ -113,15 +131,21 @@ pub mod move_utils {
         }
     }
 
-    impl Decompress<Square> for CompressedObject {
+    impl Decompress<Option<Piece>> for u16 {
+        fn decompress(self) -> Option<Piece> {
+            (self as u8).decompress()
+        }
+    }
+
+    impl Decompress<Square> for u16 {
         fn decompress(self) -> Square {
             get_item_unchecked!(ALL_SQUARES, self as usize)
         }
     }
 
-    impl Decompress<Option<Move>> for CompressedObject {
+    impl Decompress<Option<Move>> for u16 {
         fn decompress(self) -> Option<Move> {
-            if self == CompressedObject::MAX {
+            if self == u16::MAX {
                 return None;
             }
             let source = ((self >> 6) & 63).decompress();

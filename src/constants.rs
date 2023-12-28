@@ -10,7 +10,6 @@ pub mod types {
     pub type Score = i16;
     pub type MoveWeight = i64;
     pub type NumMoves = u16;
-    pub type CompressedObject = u16;
     pub type Spin = u128;
     pub type ColoredStringFunction = fn(colored::ColoredString) -> colored::ColoredString;
 }
