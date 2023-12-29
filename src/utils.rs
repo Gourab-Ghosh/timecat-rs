@@ -176,6 +176,24 @@ pub mod string_utils {
         remove_double_spaces_and_trim(fen)
     }
 
+    pub fn flip_board_fen(fen: &str) -> Result<String, EngineError> {
+        let fen = remove_double_spaces_and_trim(fen);
+        let (position_fen, rest_fen) = fen.split_once(' ').ok_or(EngineError::BadFen {
+            fen: fen.to_string(),
+        })?;
+        Ok(format!(
+            "{} {rest_fen}",
+            position_fen
+                .chars()
+                .map(|c| match c {
+                    c if c.is_uppercase() => c.to_ascii_lowercase(),
+                    c if c.is_lowercase() => c.to_ascii_uppercase(),
+                    _ => c,
+                })
+                .collect::<String>(),
+        ))
+    }
+
     pub trait CustomColorize {
         fn colorize(&self, styles_functions: &[ColoredStringFunction]) -> String;
     }

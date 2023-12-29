@@ -112,14 +112,18 @@ impl Board {
         let parent_class_fen = self.board.to_string();
         let splitted_parent_class_fen = parent_class_fen.split(' ');
         let mut fen = String::new();
-        for (i, part) in splitted_parent_class_fen.enumerate() {
+        for part in splitted_parent_class_fen.take(3) {
             fen.push_str(part);
             fen.push(' ');
-            if i == 3 {
-                break;
-            }
         }
-        fen.push_str(&format!("{} {}", self.halfmove_clock, self.fullmove_number));
+        fen.push_str(&format!(
+            "{} {} {}",
+            self.ep_square()
+                .map(|square| square.to_string())
+                .unwrap_or("-".to_string()),
+            self.halfmove_clock,
+            self.fullmove_number,
+        ));
         fen
     }
 
@@ -422,7 +426,7 @@ impl Board {
 
     pub fn has_insufficient_material(&self, color: Color) -> bool {
         let occupied = self.occupied_co(color);
-        return match occupied.popcnt() {
+        match occupied.popcnt() {
             1 => true,
             2 => {
                 (self.get_piece_mask(Rook) | self.get_piece_mask(Queen) | self.get_piece_mask(Pawn))
@@ -430,7 +434,7 @@ impl Board {
                     == BB_EMPTY
             }
             _ => false,
-        };
+        }
     }
 
     #[inline(always)]
@@ -527,7 +531,7 @@ impl Board {
 
     #[inline(always)]
     pub fn is_quiet(&self, move_: Move) -> bool {
-        !(self.is_capture(move_) || !self.gives_check(move_))
+        !(self.is_capture(move_) || self.gives_check(move_))
     }
 
     pub fn is_zeroing(&self, move_: Move) -> bool {
@@ -705,7 +709,8 @@ impl Board {
         self.stack.is_empty()
     }
 
-    pub fn parse_san(&self, san: &str) -> Result<Option<Move>, chess::Error> {
+    pub fn parse_san(&self, mut san: &str) -> Result<Option<Move>, chess::Error> {
+        san = san.trim();
         if san == "--" {
             return Ok(None);
         }
@@ -738,12 +743,14 @@ impl Board {
     }
 
     pub fn push_sans(&mut self, sans: &str) -> Result<Vec<Option<Move>>, EngineError> {
-        remove_double_spaces_and_trim(sans).split(' ').map(|san| self.push_san(san)).collect()
+        remove_double_spaces_and_trim(sans)
+            .split(' ')
+            .map(|san| self.push_san(san))
+            .collect()
     }
 
     pub fn push_uci(&mut self, uci: &str) -> Result<Option<Move>, EngineError> {
-        let move_ = self
-            .parse_uci(uci)?;
+        let move_ = self.parse_uci(uci)?;
         self.push(move_);
         Ok(move_)
     }
@@ -754,7 +761,10 @@ impl Board {
     }
 
     pub fn push_uci_moves(&mut self, uci_moves: &str) -> Result<Vec<Option<Move>>, EngineError> {
-        remove_double_spaces_and_trim(uci_moves).split(' ').map(|san| self.push_uci(san)).collect()
+        remove_double_spaces_and_trim(uci_moves)
+            .split(' ')
+            .map(|san| self.push_uci(san))
+            .collect()
     }
 
     fn algebraic_without_suffix(
