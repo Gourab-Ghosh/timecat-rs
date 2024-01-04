@@ -500,7 +500,7 @@ mod map_implementation {
             let hash = polyglot_hash_from_board(board);
             self.entries_map
                 .get(&hash)
-                .and_then(|entries| entries.get(0).map(|entry| entry.move_))
+                .and_then(|entries| entries.first().map(|entry| entry.move_))
         }
     }
 

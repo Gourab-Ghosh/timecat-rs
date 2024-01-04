@@ -10,10 +10,10 @@ use std::io::IsTerminal;
 use timecat::*;
 
 fn main() {
-    let args = env::args().collect_vec();
+    let args = std::env::args().collect_vec();
     let args = args.iter().map(|s| s.as_str()).collect_vec();
     if !args.contains(&"--disable-backtrace") {
-        env::set_var("RUST_BACKTRACE", "1");
+        std::env::set_var("RUST_BACKTRACE", "1");
     }
     if !std::io::stdin().is_terminal() {
         set_console_mode(false, false);
