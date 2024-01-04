@@ -1,6 +1,4 @@
 #![allow(dead_code)]
-// #![allow(unused_imports)]
-#![allow(unused_macros)]
 
 mod board;
 mod constants;
@@ -66,7 +64,6 @@ use tests::test;
 use timer::Timer;
 use tt::*;
 use uci::*;
-// pub use useful_macros::*;
 pub use utils::bitboard_utils::*;
 pub use utils::cache_table_utils::*;
 pub use utils::classes::*;
