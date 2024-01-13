@@ -1097,7 +1097,7 @@ impl Board {
     }
 }
 
-impl Display for Board {
+impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_board_string(false))
     }

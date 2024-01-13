@@ -361,7 +361,7 @@ pub mod string_utils {
         }
     }
 
-    impl<T: Stringify, E: Display> Stringify for Result<T, E> {
+    impl<T: Stringify, E: Error> Stringify for Result<T, E> {
         fn stringify(&self) -> String {
             match self {
                 Ok(t) => format!("Ok({})", t.stringify()),
@@ -743,7 +743,7 @@ pub mod cache_table_utils {
         }
     }
 
-    impl Display for CacheTableSize {
+    impl fmt::Display for CacheTableSize {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(f, "{} MB", self.unwrap())
         }
@@ -799,7 +799,7 @@ pub mod info_utils {
     use super::*;
 
     #[inline(always)]
-    pub fn format_info<T: Display>(desc: &str, info: T) -> String {
+    pub fn format_info<T: fmt::Display>(desc: &str, info: T) -> String {
         let desc = desc
             .trim()
             .trim_end_matches(':')
@@ -811,7 +811,7 @@ pub mod info_utils {
         }
     }
 
-    pub fn force_println_info<T: Display>(desc: &str, info: T) {
+    pub fn force_println_info<T: fmt::Display>(desc: &str, info: T) {
         let formatted_info = format_info(desc, info);
         let to_print = if is_in_console_mode() {
             formatted_info
@@ -824,7 +824,7 @@ pub mod info_utils {
         println!("{to_print}");
     }
 
-    pub fn println_info<T: Display>(desc: &str, info: T) {
+    pub fn println_info<T: fmt::Display>(desc: &str, info: T) {
         if is_in_debug_mode() {
             force_println_info(desc, info);
         }
@@ -851,7 +851,7 @@ pub mod info_utils {
         EVALUATOR.print_info();
     }
 
-    pub fn print_cache_table_info(name: &str, table_len: impl Display, table_size: impl Display) {
+    pub fn print_cache_table_info(name: &str, table_len: impl fmt::Display, table_size: impl fmt::Display) {
         let mut to_print = format!(
             "{name} initialization complete with {table_len} entries taking {table_size} space."
         );
@@ -924,7 +924,7 @@ pub mod io_utils {
     use super::*;
     use std::io::{self, Write};
 
-    pub fn print_line<T: Display>(line: T) {
+    pub fn print_line<T: fmt::Display>(line: T) {
         let to_print = format!("{line}");
         if to_print.is_empty() {
             return;
@@ -1000,7 +1000,7 @@ pub mod global_utils {
     static USE_OWN_BOOK: AtomicBool = AtomicBool::new(DEFAULT_USE_OWN_BOOK);
     static DEBUG_MODE: AtomicBool = AtomicBool::new(DEFAULT_DEBUG_MODE);
 
-    fn print_info<T: Display>(message: &str, info: impl Into<Option<T>>) {
+    fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
         if !is_in_debug_mode() {
             return;
         }

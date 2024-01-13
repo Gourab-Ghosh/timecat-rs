@@ -55,7 +55,7 @@ impl SearchInfo {
     }
 
     #[inline(always)]
-    pub fn format_info<T: Display>(desc: &str, info: T) -> String {
+    pub fn format_info<T: fmt::Display>(desc: &str, info: T) -> String {
         format!(
             "{} {info}",
             desc.trim()

@@ -438,7 +438,7 @@ impl Parser {
         "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
     ];
 
-    fn get_input<T: Display>(q: T) -> String {
+    fn get_input<T: fmt::Display>(q: T) -> String {
         print_line(q);
         IO_READER.read_line()
     }
