@@ -285,14 +285,12 @@ impl SubBoard {
                 } else {
                     Some(PieceType::Bishop)
                 }
+            } else if self.pieces(PieceType::Rook) & opp != EMPTY_BITBOARD {
+                Some(PieceType::Rook)
+            } else if self.pieces(PieceType::Queen) & opp != EMPTY_BITBOARD {
+                Some(PieceType::Queen)
             } else {
-                if self.pieces(PieceType::Rook) & opp != EMPTY_BITBOARD {
-                    Some(PieceType::Rook)
-                } else if self.pieces(PieceType::Queen) & opp != EMPTY_BITBOARD {
-                    Some(PieceType::Queen)
-                } else {
-                    Some(PieceType::King)
-                }
+                Some(PieceType::King)
             }
         }
     }

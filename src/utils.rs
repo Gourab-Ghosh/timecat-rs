@@ -851,7 +851,11 @@ pub mod info_utils {
         EVALUATOR.print_info();
     }
 
-    pub fn print_cache_table_info(name: &str, table_len: impl fmt::Display, table_size: impl fmt::Display) {
+    pub fn print_cache_table_info(
+        name: &str,
+        table_len: impl fmt::Display,
+        table_size: impl fmt::Display,
+    ) {
         let mut to_print = format!(
             "{name} initialization complete with {table_len} entries taking {table_size} space."
         );

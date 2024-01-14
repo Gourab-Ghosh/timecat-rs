@@ -24,27 +24,6 @@
 //     Parser::parse_args_and_run_main_loop(&args);
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 mod chess;
 
 use chess::*;

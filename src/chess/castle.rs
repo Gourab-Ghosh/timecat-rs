@@ -10,12 +10,12 @@ pub enum CastleRights {
 
 impl CastleRights {
     // /// Can I castle kingside?
-    // pub fn has_kingside(&self) -> bool {
+    // pub fn has_kingside(self) -> bool {
     //     self.to_index() & 1 == 1
     // }
 
     // /// Can I castle queenside?
-    // pub fn has_queenside(&self) -> bool {
+    // pub fn has_queenside(self) -> bool {
     //     self.to_index() & 2 == 2
     // }
 
@@ -28,28 +28,28 @@ impl CastleRights {
     // }
 
     // /// What squares need to be empty to castle kingside?
-    // pub fn kingside_squares(&self, color: Color) -> BitBoard {
+    // pub fn kingside_squares(self, color: Color) -> BitBoard {
     //     unsafe { *KINGSIDE_CASTLE_SQUARES.get_unchecked(color.to_index()) }
     // }
 
     // /// What squares need to be empty to castle queenside?
-    // pub fn queenside_squares(&self, color: Color) -> BitBoard {
+    // pub fn queenside_squares(self, color: Color) -> BitBoard {
     //     unsafe { *QUEENSIDE_CASTLE_SQUARES.get_unchecked(color.to_index()) }
     // }
 
     // /// Remove castle rights, and return a new `CastleRights`.
-    // pub fn remove(&self, remove: CastleRights) -> CastleRights {
+    // pub fn remove(self, remove: CastleRights) -> CastleRights {
     //     CastleRights::from_index(self.to_index() & !remove.to_index())
     // }
 
     // /// Add some castle rights, and return a new `CastleRights`.
-    // pub fn add(&self, add: CastleRights) -> CastleRights {
+    // pub fn add(self, add: CastleRights) -> CastleRights {
     //     CastleRights::from_index(self.to_index() | add.to_index())
     // }
 
     /// Convert `CastleRights` to `usize` for table lookups
-    pub fn to_index(&self) -> usize {
-        *self as usize
+    pub fn to_index(self) -> usize {
+        self as usize
     }
 
     /// Convert `usize` to `CastleRights`.  Panic if invalid number.
@@ -64,8 +64,8 @@ impl CastleRights {
     }
 
     // /// Which rooks can we "guarantee" we haven't moved yet?
-    // pub fn unmoved_rooks(&self, color: Color) -> BitBoard {
-    //     match *self {
+    // pub fn unmoved_rooks(self, color: Color) -> BitBoard {
+    //     match self {
     //         CastleRights::None => EMPTY_BITBOARD,
     //         CastleRights::KingSide => BitBoard::set(color.to_my_backrank(), File::H),
     //         CastleRights::QueenSide => BitBoard::set(color.to_my_backrank(), File::A),
@@ -76,8 +76,8 @@ impl CastleRights {
     //     }
     // }
 
-    pub fn to_string(&self, color: Color) -> String {
-        let result = match *self {
+    pub fn to_string(self, color: Color) -> String {
+        let result = match self {
             CastleRights::None => "",
             CastleRights::KingSide => "k",
             CastleRights::QueenSide => "q",

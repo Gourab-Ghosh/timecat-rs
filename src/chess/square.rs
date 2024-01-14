@@ -183,8 +183,8 @@ impl fmt::Display for Square {
         write!(
             f,
             "{}{}",
-            (('a' as u8) + ((self.to_index() & 7) as u8)) as char,
-            (('1' as u8) + ((self.to_index() >> 3) as u8)) as char
+            (b'a' + ((self.to_index() & 7) as u8)) as char,
+            (b'1' + ((self.to_index() >> 3) as u8)) as char
         )
     }
 }
