@@ -546,7 +546,7 @@ impl Parser {
     fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) {
         if raw_input.is_empty() {
             if is_in_console_mode() {
-                println!();
+                println!("\n");
             }
             set_engine_termination(true);
             return;
@@ -577,9 +577,7 @@ impl Parser {
             }
             let raw_input = if is_in_console_mode() {
                 println!();
-                let raw_input = Self::get_input("Enter Command: ".colorize(INPUT_MESSAGE_STYLE));
-                println!();
-                raw_input
+                Self::get_input("Enter Command: ".colorize(INPUT_MESSAGE_STYLE))
             } else {
                 Self::get_input("")
             };
