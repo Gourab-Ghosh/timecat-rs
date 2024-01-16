@@ -69,17 +69,18 @@ impl BitBoard {
 
 macro_rules! implement_bitwise_operations {
     ($direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident) => {
-        impl $assign_trait<&u64> for BitBoard {
-            fn $assign_func(&mut self, rhs: &u64) {
-                self.get_mask().$assign_func(rhs)
-            }
-        }
-
-        impl $assign_trait<u64> for BitBoard {
-            fn $assign_func(&mut self, rhs: u64) {
-                self.$assign_func(&rhs)
-            }
-        }
+        implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, u128);
+        implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, usize);
+        implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, u64);
+        implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, u32);
+        implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, u16);
+        implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, u8);
+        implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, i128);
+        implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, isize);
+        implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, i64);
+        implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, i32);
+        implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, i16);
+        implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, i8);
 
         impl $assign_trait<&BitBoard> for BitBoard {
             fn $assign_func(&mut self, rhs: &Self) {
@@ -90,22 +91,6 @@ macro_rules! implement_bitwise_operations {
         impl $assign_trait for BitBoard {
             fn $assign_func(&mut self, rhs: Self) {
                 self.$assign_func(&rhs.get_mask())
-            }
-        }
-
-        impl $direct_trait<&u64> for &BitBoard {
-            type Output = BitBoard;
-
-            fn $direct_func(self, rhs: &u64) -> Self::Output {
-                BitBoard::new(self.get_mask().$direct_func(rhs))
-            }
-        }
-
-        impl $direct_trait<u64> for &BitBoard {
-            type Output = BitBoard;
-
-            fn $direct_func(self, rhs: u64) -> Self::Output {
-                self.$direct_func(&rhs)
             }
         }
 
@@ -138,6 +123,98 @@ macro_rules! implement_bitwise_operations {
 
             fn $direct_func(self, rhs: &Self) -> Self::Output {
                 (&self).$direct_func(rhs)
+            }
+        }
+    };
+
+    (@integer_implementation $direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident, $int_type: ident) => {
+        impl $assign_trait<$int_type> for BitBoard {
+            fn $assign_func(&mut self, rhs: $int_type) {
+                self.get_mask().$assign_func(rhs as u64)
+            }
+        }
+
+        impl $assign_trait<&$int_type> for BitBoard {
+            fn $assign_func(&mut self, rhs: &$int_type) {
+                self.$assign_func(*rhs)
+            }
+        }
+
+        impl $direct_trait<&$int_type> for BitBoard {
+            type Output = Self;
+
+            fn $direct_func(mut self, rhs: &$int_type) -> Self::Output {
+                self.$assign_func(rhs);
+                self
+            }
+        }
+
+        impl $direct_trait<$int_type> for BitBoard {
+            type Output = Self;
+
+            fn $direct_func(self, rhs: $int_type) -> Self::Output {
+                self.$direct_func(&rhs)
+            }
+        }
+
+        impl $direct_trait<&$int_type> for &BitBoard {
+            type Output = BitBoard;
+
+            fn $direct_func(self, rhs: &$int_type) -> Self::Output {
+                (*self).$direct_func(rhs)
+            }
+        }
+
+        impl $direct_trait<$int_type> for &BitBoard {
+            type Output = BitBoard;
+
+            fn $direct_func(self, rhs: $int_type) -> Self::Output {
+                (*self).$direct_func(rhs)
+            }
+        }
+
+        impl $assign_trait<&BitBoard> for $int_type {
+            fn $assign_func(&mut self, rhs: &BitBoard) {
+                self.$assign_func(rhs.get_mask() as $int_type)
+            }
+        }
+
+        impl $assign_trait<BitBoard> for $int_type {
+            fn $assign_func(&mut self, rhs: BitBoard) {
+                self.$assign_func(&rhs)
+            }
+        }
+
+        impl $direct_trait<&BitBoard> for $int_type {
+            type Output = $int_type;
+
+            fn $direct_func(mut self, rhs: &BitBoard) -> Self::Output {
+                self.$assign_func(rhs);
+                self
+            }
+        }
+
+        impl $direct_trait<BitBoard> for $int_type {
+            type Output = $int_type;
+
+            fn $direct_func(self, rhs: BitBoard) -> Self::Output {
+                self.$direct_func(&rhs)
+            }
+        }
+
+        impl $direct_trait<&BitBoard> for &$int_type {
+            type Output = $int_type;
+
+            fn $direct_func(self, rhs: &BitBoard) -> Self::Output {
+                (*self).$direct_func(rhs)
+            }
+        }
+
+        impl $direct_trait<BitBoard> for &$int_type {
+            type Output = $int_type;
+
+            fn $direct_func(self, rhs: BitBoard) -> Self::Output {
+                self.$direct_func(&rhs)
             }
         }
     };
