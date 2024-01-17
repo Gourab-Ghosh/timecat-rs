@@ -533,19 +533,19 @@ impl SubBoard {
 //     }
 // }
 
-// impl TryFrom<&mut BoardBuilder> for SubBoard {
-//     type Error = ChessError;
-
-//     fn try_from(fen: &mut BoardBuilder) -> Result<Self, Self::Error> {
-//         (&*fen).try_into()
-//     }
-// }
-
 // impl TryFrom<BoardBuilder> for SubBoard {
 //     type Error = ChessError;
 
 //     fn try_from(fen: BoardBuilder) -> Result<Self, Self::Error> {
 //         (&fen).try_into()
+//     }
+// }
+
+// impl TryFrom<&mut BoardBuilder> for SubBoard {
+//     type Error = ChessError;
+
+//     fn try_from(fen: &mut BoardBuilder) -> Result<Self, Self::Error> {
+//         (*fen).try_into()
 //     }
 // }
 

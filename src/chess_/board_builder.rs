@@ -6,6 +6,8 @@ pub struct BoardBuilder {
     side_to_move: Color,
     castle_rights: [CastleRights; 2],
     en_passant: Option<File>,
+    halfmove_number: u8,
+    fullmove_count: u16,
 }
 
 impl BoardBuilder {
@@ -16,6 +18,8 @@ impl BoardBuilder {
             side_to_move: Color::White,
             castle_rights: [CastleRights::None, CastleRights::None],
             en_passant: None,
+            halfmove_number: 0,
+            fullmove_count: 1,
         }
     }
 
