@@ -3,18 +3,18 @@ use super::*;
 pub mod engine_utils {
     use super::*;
 
-    #[inline(always)]
+    #[inline]
     pub fn is_checkmate(score: Score) -> bool {
         let abs_score = score.abs();
         abs_score > CHECKMATE_THRESHOLD && abs_score <= CHECKMATE_SCORE
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_upper_board_mask(rank: Rank, color: Color) -> BitBoard {
         get_item_unchecked!(UPPER_BOARD_MASK, color.to_index(), rank.to_index())
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_lower_board_mask(rank: Rank, color: Color) -> BitBoard {
         get_upper_board_mask(rank, !color)
     }
@@ -23,7 +23,7 @@ pub mod engine_utils {
 pub mod piece_utils {
     use super::*;
 
-    #[inline(always)]
+    #[inline]
     pub const fn evaluate_piece(piece: Piece) -> i16 {
         // never set knight and bishop values as same for knight bishop endgame
         match piece {
@@ -466,7 +466,7 @@ pub mod hash_utils {
     }
 
     impl CustomHash for chess::Board {
-        #[inline(always)]
+        #[inline]
         fn hash(self) -> u64 {
             self.get_hash().max(1)
         }
@@ -476,12 +476,12 @@ pub mod hash_utils {
 pub mod square_utils {
     use super::*;
 
-    #[inline(always)]
+    #[inline]
     pub fn square_mirror(square: Square) -> Square {
         get_item_unchecked!(SQUARES_180, square.to_index())
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_square_bb(sq: Square) -> BitBoard {
         get_item_unchecked!(BB_SQUARES, sq.to_index())
     }
@@ -571,6 +571,21 @@ pub mod engine_error {
             min: Spin,
             max: Spin,
         },
+
+        #[fail(display = "Got invalid rank string {}! Please try again!", s)]
+        InvalidRankString { s: String },
+
+        #[fail(display = "Got invalid file string {}! Please try again!", s)]
+        InvalidFileString { s: String },
+
+        #[fail(display = "Got invalid square string {}! Please try again!", s)]
+        InvalidSquareString { s: String },
+
+        #[fail(display = "You didn't mention wtime! Please try again!")]
+        InvalidUciMoveString { s: String },
+
+        #[fail(display = "Invalid sub board generated:\n\n{:#?}", board)]
+        InvalidSubBoard { board: chess_::SubBoard },
 
         #[fail(display = "{}", err_msg)]
         CustomError { err_msg: String },
@@ -798,7 +813,7 @@ pub mod classes {
 pub mod info_utils {
     use super::*;
 
-    #[inline(always)]
+    #[inline]
     pub fn format_info<T: fmt::Display>(desc: &str, info: T) -> String {
         let desc = desc
             .trim()
@@ -830,7 +845,7 @@ pub mod info_utils {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_engine_version() -> String {
         format!("{ENGINE_NAME} v{ENGINE_VERSION}")
     }
@@ -1023,7 +1038,7 @@ pub mod global_utils {
         println!("{to_print}");
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn terminate_engine() -> bool {
         TERMINATE_ENGINE.load(MEMORY_ORDERING)
     }
@@ -1032,7 +1047,7 @@ pub mod global_utils {
         TERMINATE_ENGINE.store(b, MEMORY_ORDERING);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_colored_output() -> bool {
         COLORED_OUTPUT.load(MEMORY_ORDERING)
     }
@@ -1044,7 +1059,7 @@ pub mod global_utils {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_in_console_mode() -> bool {
         CONSOLE_MODE.load(MEMORY_ORDERING)
     }
@@ -1057,7 +1072,7 @@ pub mod global_utils {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_t_table_size() -> CacheTableSize {
         T_TABLE_SIZE.lock().unwrap().to_owned()
     }
@@ -1074,7 +1089,7 @@ pub mod global_utils {
         );
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn use_long_algebraic_notation() -> bool {
         LONG_ALGEBRAIC_NOTATION.load(MEMORY_ORDERING)
     }
@@ -1084,7 +1099,7 @@ pub mod global_utils {
         print_info("Long algebraic notation is set to", b);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_num_threads() -> usize {
         NUM_THREADS.load(MEMORY_ORDERING)
     }
@@ -1096,7 +1111,7 @@ pub mod global_utils {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_move_overhead() -> Duration {
         MOVE_OVERHEAD.lock().unwrap().to_owned()
     }
@@ -1106,7 +1121,7 @@ pub mod global_utils {
         print_info("Move Overhead is set to", duration.stringify());
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn use_own_book() -> bool {
         USE_OWN_BOOK.load(MEMORY_ORDERING)
     }
@@ -1116,7 +1131,7 @@ pub mod global_utils {
         print_info("Own Book Usage is set to", b);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_in_debug_mode() -> bool {
         DEBUG_MODE.load(MEMORY_ORDERING)
     }
@@ -1126,7 +1141,7 @@ pub mod global_utils {
         print_info("Debug Mode is set to", b);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_in_console_and_debug_mode() -> bool {
         is_in_console_mode() && is_in_debug_mode()
     }

@@ -7,34 +7,25 @@
 // https://backscattering.de/chess/uci/
 
 use std::io::IsTerminal;
+use timecat::chess_::*;
 use timecat::*;
 
-mod chess_;
-use chess_::*;
-
-fn test() {
-    for _ in 0..30000000 {
-        for (i, square) in ALL_SQUARES.into_iter().enumerate() {
-            assert_eq!(BitBoard::new(1 << i).to_square(), square);
-        }
-    }
-
-    // let sub_board = SubBoard::default();
-    // for _ in 0..10000 {}
+fn chess_test() {
+    MoveGen::perft_test(&SubBoard::default(), 7);
 }
 
 fn main() {
     let args = std::env::args().collect_vec();
     let args = args.iter().map(|s| s.as_str()).collect_vec();
+    if !args.contains(&"--disable-backtrace") {
+        std::env::set_var("RUST_BACKTRACE", "1");
+    }
     if args.contains(&"--test") {
         let clock = std::time::Instant::now();
-        test();
+        chess_test();
         let time_passed = clock.elapsed().as_secs_f64();
         println!("Time elapsed: {time_passed:.3} s");
         return;
-    }
-    if !args.contains(&"--disable-backtrace") {
-        std::env::set_var("RUST_BACKTRACE", "1");
     }
     if !std::io::stdin().is_terminal() {
         set_console_mode(false, false);

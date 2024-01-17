@@ -3,8 +3,6 @@ use std::arch::x86_64::{_pdep_u64, _pext_u64};
 
 use super::*;
 
-// Include the generated lookup tables
-// include!(concat!(env!("OUT_DIR"), "magic_gen.rs"));
 include!("magic_gen.rs");
 
 /// Get the rays for a bishop on a particular square.
@@ -113,8 +111,8 @@ pub fn get_castle_moves() -> BitBoard {
 #[inline]
 pub fn get_pawn_quiets(sq: Square, color: Color, blockers: BitBoard) -> BitBoard {
     unsafe {
-        if (BitBoard::from_square(sq.wrapping_forward(color)) & blockers) != EMPTY_BITBOARD {
-            EMPTY_BITBOARD
+        if (BitBoard::from_square(sq.wrapping_forward(color)) & blockers) != BB_EMPTY {
+            BB_EMPTY
         } else {
             *PAWN_MOVES
                 .get_unchecked(color.to_index())

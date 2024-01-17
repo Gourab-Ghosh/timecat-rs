@@ -20,7 +20,7 @@ pub struct Move {
 }
 
 impl Move {
-    #[inline(always)]
+    #[inline]
     pub fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
         Self {
             source,
@@ -29,17 +29,17 @@ impl Move {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_source(&self) -> Square {
         self.source
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_dest(&self) -> Square {
         self.dest
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_promotion(&self) -> Option<PieceType> {
         self.promotion
     }
@@ -55,20 +55,20 @@ impl fmt::Display for Move {
 }
 
 impl FromStr for Move {
-    type Err = ChessError;
+    type Err = EngineError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let source = Square::from_str(s.get(0..2).ok_or(ChessError::InvalidUciMove)?)?;
-        let dest = Square::from_str(s.get(2..4).ok_or(ChessError::InvalidUciMove)?)?;
+        let source = Square::from_str(s.get(0..2).ok_or(EngineError::InvalidUciMoveString { s: s.to_string() })?)?;
+        let dest = Square::from_str(s.get(2..4).ok_or(EngineError::InvalidUciMoveString { s: s.to_string() })?)?;
 
         let mut promo = None;
         if s.len() == 5 {
-            promo = Some(match s.chars().last().ok_or(ChessError::InvalidUciMove)? {
+            promo = Some(match s.chars().last().ok_or(EngineError::InvalidUciMoveString { s: s.to_string() })? {
                 'q' => PieceType::Queen,
                 'r' => PieceType::Rook,
                 'n' => PieceType::Knight,
                 'b' => PieceType::Bishop,
-                _ => return Err(ChessError::InvalidUciMove),
+                _ => return Err(EngineError::InvalidUciMoveString { s: s.to_string() }),
             });
         }
 

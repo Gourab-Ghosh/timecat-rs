@@ -1,4 +1,5 @@
 use super::*;
+pub use PieceType::*;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
 pub enum PieceType {
@@ -10,7 +11,19 @@ pub enum PieceType {
     King,
 }
 
+pub const NUM_PIECE_TYPES: usize = 6;
+
+pub const ALL_PIECE_TYPES: [PieceType; NUM_PIECE_TYPES] = [Pawn, Knight, Bishop, Rook, Queen, King];
+
+pub const NUM_PROMOTION_PIECES: usize = 4;
+
+pub const PROMOTION_PIECES: [PieceType; NUM_PROMOTION_PIECES] = [Queen, Knight, Rook, Bishop];
+
 impl PieceType {
+    pub fn to_int(self) -> u8 {
+        self as u8
+    }
+
     pub fn to_index(self) -> usize {
         self as usize
     }
@@ -44,11 +57,11 @@ impl Piece {
         Self { type_, color }
     }
 
-    pub fn get_piece_type(&self) -> PieceType {
+    pub fn get_piece_type(self) -> PieceType {
         self.type_
     }
 
-    pub fn get_color(&self) -> Color {
+    pub fn get_color(self) -> Color {
         self.color
     }
 }

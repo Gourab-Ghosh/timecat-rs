@@ -1,4 +1,5 @@
 use super::*;
+pub use Color::*;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
 pub enum Color {
@@ -6,15 +7,17 @@ pub enum Color {
     Black,
 }
 
-pub const ALL_COLORS: [Color; 2] = [Color::White, Color::Black];
+pub const NUM_COLORS: usize = 2;
+
+pub const ALL_COLORS: [Color; NUM_COLORS] = [Color::White, Color::Black];
 
 impl Color {
-    #[inline(always)]
+    #[inline]
     pub const fn to_index(self) -> usize {
         self as usize
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_my_backrank(self) -> Rank {
         match self {
             Self::White => Rank::First,
@@ -22,7 +25,7 @@ impl Color {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_their_backrank(self) -> Rank {
         match self {
             Self::White => Rank::Eighth,
@@ -30,7 +33,7 @@ impl Color {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_second_rank(self) -> Rank {
         match self {
             Self::White => Rank::Second,
@@ -38,7 +41,7 @@ impl Color {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_fourth_rank(self) -> Rank {
         match self {
             Self::White => Rank::Fourth,
@@ -46,7 +49,7 @@ impl Color {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_seventh_rank(self) -> Rank {
         match self {
             Self::White => Rank::Seventh,
@@ -58,7 +61,7 @@ impl Color {
 impl Not for Color {
     type Output = Self;
 
-    #[inline(always)]
+    #[inline]
     fn not(self) -> Self {
         if self == Self::White {
             Self::Black

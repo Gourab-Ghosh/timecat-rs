@@ -7,17 +7,17 @@ pub struct CacheTableEntry<T: Copy + Clone + PartialEq + PartialOrd> {
 }
 
 impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTableEntry<T> {
-    #[inline(always)]
+    #[inline]
     pub fn new(hash: u64, entry: T) -> CacheTableEntry<T> {
         CacheTableEntry { hash, entry }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_hash(&self) -> u64 {
         self.hash
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_entry(&self) -> T {
         self.entry
     }
@@ -48,7 +48,7 @@ pub struct CacheTable<T: Copy + Clone + PartialEq + PartialOrd> {
 }
 
 impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
-    #[inline(always)]
+    #[inline]
     fn generate_table(size: CacheTableSize, default: T) -> Box<[CacheTableEntry<T>]> {
         vec![
             CacheTableEntry {
@@ -80,7 +80,7 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
         );
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn new(size: CacheTableSize, default: T) -> CacheTable<T> {
         let cache_table = CacheTable {
             table: Mutex::new(Self::generate_table(size, default)),
@@ -95,7 +95,7 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
         cache_table
     }
 
-    #[inline(always)]
+    #[inline]
     fn get_index(&self, hash: u64) -> usize {
         if self.is_safe_to_do_bitwise_and.load(MEMORY_ORDERING) {
             hash as usize & self.mask.load(MEMORY_ORDERING)
@@ -104,7 +104,7 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get(&self, hash: u64) -> Option<T> {
         let entry = unsafe {
             *self
@@ -120,7 +120,7 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn add(&self, hash: u64, entry: T) {
         let mut table = self.table.lock().unwrap();
         let e = unsafe { table.get_unchecked_mut(self.get_index(hash)) };
@@ -131,7 +131,7 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
         update_overwrites_and_collisions!(self, e_hash, e_entry, hash, entry);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn replace_if<F: Fn(T) -> bool>(&self, hash: u64, entry: T, replace: F) {
         let mut table = self.table.lock().unwrap();
         let e = unsafe { table.get_unchecked_mut(self.get_index(hash)) };
@@ -152,22 +152,22 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
             .for_each(|e| e.hash = 0);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_num_overwrites(&self) -> usize {
         self.num_overwrites.load(MEMORY_ORDERING)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_num_collisions(&self) -> usize {
         self.num_collisions.load(MEMORY_ORDERING)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn reset_num_overwrites(&self) {
         self.num_overwrites.store(0, MEMORY_ORDERING);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn reset_num_collisions(&self) {
         self.num_collisions.store(0, MEMORY_ORDERING);
     }
@@ -177,7 +177,7 @@ impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
         self.reset_num_collisions();
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_hash_full(&self) -> f64 {
         let inner_table = self.table.lock().unwrap();
         (inner_table.iter().filter(|&&e| e.hash != 0).count() as f64 / inner_table.len() as f64)

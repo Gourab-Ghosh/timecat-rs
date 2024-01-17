@@ -26,34 +26,34 @@ pub const ALL_RANKS: [Rank; NUM_RANKS] = [
 ];
 
 impl Rank {
-    #[inline(always)]
+    #[inline]
     pub const fn from_index(i: usize) -> Rank {
         unsafe { transmute((i as u8) & 7) }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn down(self) -> Rank {
         Rank::from_index(self.to_index().wrapping_sub(1))
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn up(self) -> Rank {
         Rank::from_index(self.to_index() + 1)
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_index(self) -> usize {
         self as usize
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_int(self) -> u8 {
         self as u8
     }
 }
 
 impl FromStr for Rank {
-    type Err = ChessError;
+    type Err = EngineError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.trim() {
@@ -65,7 +65,7 @@ impl FromStr for Rank {
             "6" => Ok(Rank::Sixth),
             "7" => Ok(Rank::Seventh),
             "8" => Ok(Rank::Eighth),
-            _ => Err(ChessError::InvalidRank),
+            _ => Err(EngineError::InvalidRankString { s: s.to_string() }),
         }
     }
 }

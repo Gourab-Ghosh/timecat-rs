@@ -8,44 +8,67 @@ pub enum CastleRights {
     Both,
 }
 
+const CASTLES_PER_SQUARE: [[u8; 64]; 2] = [
+    [
+        2, 0, 0, 0, 3, 0, 0, 1, // 1
+        0, 0, 0, 0, 0, 0, 0, 0, // 2
+        0, 0, 0, 0, 0, 0, 0, 0, // 3
+        0, 0, 0, 0, 0, 0, 0, 0, // 4
+        0, 0, 0, 0, 0, 0, 0, 0, // 5
+        0, 0, 0, 0, 0, 0, 0, 0, // 6
+        0, 0, 0, 0, 0, 0, 0, 0, // 7
+        0, 0, 0, 0, 0, 0, 0, 0, // 8
+    ],
+    [
+        0, 0, 0, 0, 0, 0, 0, 0, // 1
+        0, 0, 0, 0, 0, 0, 0, 0, // 2
+        0, 0, 0, 0, 0, 0, 0, 0, // 3
+        0, 0, 0, 0, 0, 0, 0, 0, // 4
+        0, 0, 0, 0, 0, 0, 0, 0, // 5
+        0, 0, 0, 0, 0, 0, 0, 0, // 6
+        0, 0, 0, 0, 0, 0, 0, 0, // 7
+        2, 0, 0, 0, 3, 0, 0, 1,
+    ],
+];
+
 impl CastleRights {
-    // /// Can I castle kingside?
-    // pub fn has_kingside(self) -> bool {
-    //     self.to_index() & 1 == 1
-    // }
+    /// Can I castle kingside?
+    pub fn has_kingside(self) -> bool {
+        self.to_index() & 1 == 1
+    }
 
-    // /// Can I castle queenside?
-    // pub fn has_queenside(self) -> bool {
-    //     self.to_index() & 2 == 2
-    // }
+    /// Can I castle queenside?
+    pub fn has_queenside(self) -> bool {
+        self.to_index() & 2 == 2
+    }
 
-    // pub fn square_to_castle_rights(color: Color, sq: Square) -> CastleRights {
-    //     CastleRights::from_index(unsafe {
-    //         *CASTLES_PER_SQUARE
-    //             .get_unchecked(color.to_index())
-    //             .get_unchecked(sq.to_index())
-    //     } as usize)
-    // }
+    pub fn square_to_castle_rights(color: Color, sq: Square) -> CastleRights {
+        CastleRights::from_index(unsafe {
+            *CASTLES_PER_SQUARE
+                .get_unchecked(color.to_index())
+                .get_unchecked(sq.to_index())
+        } as usize)
+    }
 
-    // /// What squares need to be empty to castle kingside?
-    // pub fn kingside_squares(self, color: Color) -> BitBoard {
-    //     unsafe { *KINGSIDE_CASTLE_SQUARES.get_unchecked(color.to_index()) }
-    // }
+    /// What squares need to be empty to castle kingside?
+    pub fn kingside_squares(self, color: Color) -> BitBoard {
+        unsafe { *KINGSIDE_CASTLE_SQUARES.get_unchecked(color.to_index()) }
+    }
 
-    // /// What squares need to be empty to castle queenside?
-    // pub fn queenside_squares(self, color: Color) -> BitBoard {
-    //     unsafe { *QUEENSIDE_CASTLE_SQUARES.get_unchecked(color.to_index()) }
-    // }
+    /// What squares need to be empty to castle queenside?
+    pub fn queenside_squares(self, color: Color) -> BitBoard {
+        unsafe { *QUEENSIDE_CASTLE_SQUARES.get_unchecked(color.to_index()) }
+    }
 
-    // /// Remove castle rights, and return a new `CastleRights`.
-    // pub fn remove(self, remove: CastleRights) -> CastleRights {
-    //     CastleRights::from_index(self.to_index() & !remove.to_index())
-    // }
+    /// Remove castle rights, and return a new `CastleRights`.
+    pub fn remove(self, remove: CastleRights) -> CastleRights {
+        CastleRights::from_index(self.to_index() & !remove.to_index())
+    }
 
-    // /// Add some castle rights, and return a new `CastleRights`.
-    // pub fn add(self, add: CastleRights) -> CastleRights {
-    //     CastleRights::from_index(self.to_index() | add.to_index())
-    // }
+    /// Add some castle rights, and return a new `CastleRights`.
+    pub fn add(self, add: CastleRights) -> CastleRights {
+        CastleRights::from_index(self.to_index() | add.to_index())
+    }
 
     /// Convert `CastleRights` to `usize` for table lookups
     pub fn to_index(self) -> usize {
@@ -63,18 +86,18 @@ impl CastleRights {
         }
     }
 
-    // /// Which rooks can we "guarantee" we haven't moved yet?
-    // pub fn unmoved_rooks(self, color: Color) -> BitBoard {
-    //     match self {
-    //         CastleRights::None => EMPTY_BITBOARD,
-    //         CastleRights::KingSide => BitBoard::set(color.to_my_backrank(), File::H),
-    //         CastleRights::QueenSide => BitBoard::set(color.to_my_backrank(), File::A),
-    //         CastleRights::Both => {
-    //             BitBoard::set(color.to_my_backrank(), File::A)
-    //                 ^ BitBoard::set(color.to_my_backrank(), File::H)
-    //         }
-    //     }
-    // }
+    /// Which rooks can we "guarantee" we haven't moved yet?
+    pub fn unmoved_rooks(self, color: Color) -> BitBoard {
+        match self {
+            CastleRights::None => BB_EMPTY,
+            CastleRights::KingSide => BitBoard::set(color.to_my_backrank(), File::H),
+            CastleRights::QueenSide => BitBoard::set(color.to_my_backrank(), File::A),
+            CastleRights::Both => {
+                BitBoard::set(color.to_my_backrank(), File::A)
+                    ^ BitBoard::set(color.to_my_backrank(), File::H)
+            }
+        }
+    }
 
     pub fn to_string(self, color: Color) -> String {
         let result = match self {

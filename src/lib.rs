@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 mod board;
+pub mod chess_;
 mod constants;
 mod engine;
 mod evaluate;
@@ -19,6 +20,7 @@ mod uci;
 mod useful_macros;
 mod utils;
 
+use arrayvec::ArrayVec;
 pub use board::*;
 pub use chess::Color::*;
 pub use chess::Piece::*;
@@ -35,13 +37,14 @@ use constants::engine_constants::*;
 pub use constants::fen::*;
 use constants::print_style::*;
 use constants::square::*;
-use constants::types::*;
+pub use constants::types::*;
 use engine::{Engine, GoCommand};
 use evaluate::*;
 use failure::Fail;
 pub use fxhash::FxHashMap as HashMap;
 pub use itertools::Itertools;
 use lazy_static::lazy_static;
+use nodrop::NoDrop;
 pub use parse::*;
 pub use paste::paste;
 pub use polyglot::*;
@@ -53,7 +56,12 @@ use std::convert::From;
 use std::env;
 use std::fmt;
 use std::fs;
+use std::mem::{self, transmute};
 use std::num::ParseIntError;
+use std::ops::{
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor,
+    BitXorAssign, Index, IndexMut, Mul, Not,
+};
 use std::str::{FromStr, ParseBoolError};
 use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::{Arc, Mutex};

@@ -1,4 +1,5 @@
 use super::*;
+use Square::*;
 
 #[rustfmt::skip]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
@@ -40,17 +41,17 @@ impl Square {
         unsafe { transmute(8 * rank.to_int() + file.to_int()) }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_rank(&self) -> Rank {
         Rank::from_index(self.to_index() >> 3)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_file(&self) -> File {
         File::from_index(self.to_index() & 7)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn up(&self) -> Option<Square> {
         if self.get_rank() == Rank::Eighth {
             None
@@ -62,7 +63,7 @@ impl Square {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn down(&self) -> Option<Square> {
         if self.get_rank() == Rank::First {
             None
@@ -74,7 +75,7 @@ impl Square {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn left(&self) -> Option<Square> {
         if self.get_file() == File::A {
             None
@@ -86,7 +87,7 @@ impl Square {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn right(&self) -> Option<Square> {
         if self.get_file() == File::H {
             None
@@ -98,7 +99,7 @@ impl Square {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn forward(&self, color: Color) -> Option<Square> {
         match color {
             Color::White => self.up(),
@@ -106,7 +107,7 @@ impl Square {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn backward(&self, color: Color) -> Option<Square> {
         match color {
             Color::White => self.down(),
@@ -114,27 +115,27 @@ impl Square {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_up(&self) -> Square {
         Square::from_rank_and_file(self.get_rank().up(), self.get_file())
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_down(&self) -> Square {
         Square::from_rank_and_file(self.get_rank().down(), self.get_file())
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_left(&self) -> Square {
         Square::from_rank_and_file(self.get_rank(), self.get_file().left())
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_right(&self) -> Square {
         Square::from_rank_and_file(self.get_rank(), self.get_file().right())
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_forward(&self, color: Color) -> Square {
         match color {
             Color::White => self.wrapping_up(),
@@ -142,7 +143,7 @@ impl Square {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_backward(&self, color: Color) -> Square {
         match color {
             Color::White => self.wrapping_down(),
@@ -152,23 +153,23 @@ impl Square {
 }
 
 impl FromStr for Square {
-    type Err = ChessError;
+    type Err = EngineError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() < 2 {
-            return Err(ChessError::InvalidSquare);
+            return Err(EngineError::InvalidSquareString { s: s.to_string() });
         }
         let ch: Vec<char> = s.chars().collect();
         match ch[0] {
             'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' => {}
             _ => {
-                return Err(ChessError::InvalidSquare);
+                return Err(EngineError::InvalidSquareString { s: s.to_string() });
             }
         }
         match ch[1] {
             '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' => {}
             _ => {
-                return Err(ChessError::InvalidSquare);
+                return Err(EngineError::InvalidSquareString { s: s.to_string() });
             }
         }
         Ok(Square::from_rank_and_file(

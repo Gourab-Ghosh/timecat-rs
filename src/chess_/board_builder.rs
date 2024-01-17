@@ -7,7 +7,7 @@ pub struct BoardBuilder {
     castle_rights: [CastleRights; 2],
     en_passant: Option<File>,
     halfmove_number: u8,
-    fullmove_count: u16,
+    fullmove_count: NumMoves,
 }
 
 impl BoardBuilder {
@@ -163,12 +163,12 @@ impl fmt::Display for BoardBuilder {
 
 impl Default for BoardBuilder {
     fn default() -> BoardBuilder {
-        BoardBuilder::from_str(STARTING_BOARD_FEN).unwrap()
+        BoardBuilder::from_str(STARTING_POSITION_FEN).unwrap()
     }
 }
 
 impl FromStr for BoardBuilder {
-    type Err = ChessError;
+    type Err = EngineError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let mut cur_rank = Rank::Eighth;
@@ -177,7 +177,7 @@ impl FromStr for BoardBuilder {
 
         let tokens: Vec<&str> = value.split(' ').collect();
         if tokens.len() < 4 {
-            return Err(ChessError::InvalidFen {
+            return Err(EngineError::BadFen {
                 fen: value.to_string(),
             });
         }
@@ -258,7 +258,7 @@ impl FromStr for BoardBuilder {
                     cur_file = cur_file.right();
                 }
                 _ => {
-                    return Err(ChessError::InvalidFen {
+                    return Err(EngineError::BadFen {
                         fen: value.to_string(),
                     });
                 }
@@ -268,7 +268,7 @@ impl FromStr for BoardBuilder {
             "w" | "W" => _ = fen.side_to_move(Color::White),
             "b" | "B" => _ = fen.side_to_move(Color::Black),
             _ => {
-                return Err(ChessError::InvalidFen {
+                return Err(EngineError::BadFen {
                     fen: value.to_string(),
                 })
             }
@@ -301,23 +301,3 @@ impl FromStr for BoardBuilder {
         Ok(fen)
     }
 }
-
-// impl From<&Board> for BoardBuilder {
-//     fn from(board: &Board) -> Self {
-//         let mut pieces = vec![];
-//         for sq in ALL_SQUARES.iter() {
-//             if let Some(piece) = board.piece_on(*sq) {
-//                 let color = board.color_on(*sq).unwrap();
-//                 pieces.push((*sq, piece, color));
-//             }
-//         }
-
-//         BoardBuilder::setup(
-//             &pieces,
-//             board.side_to_move(),
-//             board.castle_rights(Color::White),
-//             board.castle_rights(Color::Black),
-//             board.en_passant().map(|sq| sq.get_file()),
-//         )
-//     }
-// }
