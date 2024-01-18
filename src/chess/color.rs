@@ -42,6 +42,14 @@ impl Color {
     }
 
     #[inline]
+    pub const fn to_third_rank(self) -> Rank {
+        match self {
+            Self::White => Rank::Third,
+            Self::Black => Rank::Sixth,
+        }
+    }
+
+    #[inline]
     pub const fn to_fourth_rank(self) -> Rank {
         match self {
             Self::White => Rank::Fourth,

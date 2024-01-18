@@ -1,5 +1,11 @@
 use super::*;
 
+// SubBoard::is_sane
+// SubBoard::set_ep
+// SubBoard::make_move
+// PawnType::legal_ep_move
+// PawnType::legals
+
 #[derive(Clone, Debug, Fail)]
 pub enum BoardError {
     #[fail(
