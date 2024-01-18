@@ -3,7 +3,6 @@
 #![allow(clippy::enum_variant_names)]
 
 mod bitboard;
-mod board;
 mod board_builder;
 mod castle;
 mod color;
@@ -14,11 +13,11 @@ mod moves;
 mod piece;
 mod ranks;
 mod square;
+mod sub_board;
 mod zobrist;
 
 use super::*;
 pub use bitboard::*;
-pub use board::*;
 pub use board_builder::*;
 pub use castle::*;
 pub use color::*;
@@ -30,4 +29,5 @@ pub use moves::*;
 pub use piece::*;
 pub use ranks::*;
 pub use square::*;
+pub use sub_board::*;
 pub use zobrist::*;

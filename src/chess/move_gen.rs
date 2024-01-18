@@ -70,7 +70,7 @@ impl CheckType for NotInCheckType {
 impl PawnType {
     fn legal_ep_move(board: &SubBoard, source: Square, dest: Square) -> bool {
         let occupied = board.occupied()
-            ^ BitBoard::from_square(board.en_passant().unwrap())
+            ^ BitBoard::from_square(board.en_passant().unwrap().wrapping_backward(board.turn()))
             ^ BitBoard::from_square(source)
             ^ BitBoard::from_square(dest);
 
@@ -160,11 +160,15 @@ impl PieceTypeTrait for PawnType {
             }
         }
 
-        if let Some(ep_sq) = board.en_passant() {
-            let rank = get_rank_bb(ep_sq.get_rank());
-            let files = get_adjacent_files(ep_sq.get_file());
-            for src in rank & files & pieces {
-                let dest = ep_sq.wrapping_forward(color);
+        if let Some(dest) = board.en_passant() {
+            let dest_rank = dest.get_rank();
+            let rank_bb = get_rank_bb(if dest_rank.to_int() > 3 {
+                dest_rank.down()
+            } else {
+                dest_rank.up()
+            });
+            let files_bb = get_adjacent_files(dest.get_file());
+            for src in rank_bb & files_bb & pieces {
                 if PawnType::legal_ep_move(board, src, dest) {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(

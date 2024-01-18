@@ -96,9 +96,6 @@ pub fn test() -> Result<(), EngineError> {
     // parse_command(&mut engine, "go time 3000");
     parse_command(&mut engine, "go depth 13");
 
-    // let board = Board::default();
-    // println!("{}", board);
-
     // let mut all_optional_pieces = vec![None];
     // all_optional_pieces.extend_from_slice(&ALL_PIECE_TYPES.map(|piece| Some(piece)));
     // for source in ALL_SQUARES {

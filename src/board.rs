@@ -1,11 +1,5 @@
 use super::*;
 
-// SubBoard::is_sane
-// SubBoard::set_ep
-// SubBoard::make_move
-// PawnType::legal_ep_move
-// PawnType::legals
-
 #[derive(Clone, Debug, Fail)]
 pub enum BoardError {
     #[fail(
@@ -48,14 +42,12 @@ impl GameResult {
 #[derive(Clone, Debug)]
 struct BoardState {
     board: SubBoard,
-    ep_square: Option<Square>,
     num_repetitions: u8,
 }
 
 pub struct Board {
     board: SubBoard,
     stack: Vec<(BoardState, Option<Move>)>,
-    ep_square: Option<Square>,
     num_repetitions: u8,
     starting_fen: String,
     repetition_table: RepetitionTable,
@@ -66,7 +58,6 @@ impl Board {
         let mut board = Self {
             board: SubBoard::from_str(STARTING_POSITION_FEN).unwrap(),
             stack: Vec::new(),
-            ep_square: None,
             num_repetitions: 0,
             starting_fen: STARTING_POSITION_FEN.to_string(),
             repetition_table: RepetitionTable::new(),
@@ -89,7 +80,6 @@ impl Board {
             return Ok(());
         }
         self.board = SubBoard::from_str(&fen).expect("FEN not parsed properly!");
-        self.update_ep_square();
         self.repetition_table.clear();
         self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
         self.starting_fen = self.get_fen();
@@ -265,7 +255,6 @@ impl Board {
     fn get_board_state(&self) -> BoardState {
         BoardState {
             board: self.board.clone(),
-            ep_square: self.ep_square,
             num_repetitions: self.num_repetitions,
         }
     }
@@ -526,13 +515,8 @@ impl Board {
     }
 
     #[inline]
-    pub fn get_en_passant_square(&self) -> Option<Square> {
-        self.board.en_passant()
-    }
-
-    #[inline]
     pub fn has_legal_en_passant(&self) -> bool {
-        self.get_en_passant_square().is_some()
+        self.ep_square().is_some()
     }
 
     pub fn clean_castling_rights(&self) -> BitBoard {
@@ -574,15 +558,7 @@ impl Board {
 
     #[inline]
     pub fn ep_square(&self) -> Option<Square> {
-        self.ep_square
-    }
-
-    #[inline]
-    pub fn update_ep_square(&mut self) {
-        self.ep_square = self
-            .board
-            .en_passant()
-            .map(|ep_square| ep_square.forward(self.turn()).unwrap());
+        self.board.en_passant()
     }
 
     pub fn is_castling(&self, move_: Move) -> bool {
@@ -643,7 +619,6 @@ impl Board {
                 .null_move()
                 .expect("Trying to push null move while in check!")
         };
-        self.update_ep_square();
         self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
         self.stack.push((board_state, optional_move));
     }
@@ -651,7 +626,6 @@ impl Board {
     fn restore(&mut self, board_state: BoardState) {
         self.board = board_state.board;
         self.num_repetitions = board_state.num_repetitions;
-        self.ep_square = board_state.ep_square;
     }
 
     pub fn pop(&mut self) -> Option<Move> {
@@ -1095,7 +1069,6 @@ impl Clone for Board {
         Self {
             board: self.board.clone(),
             stack: Vec::new(),
-            ep_square: self.ep_square,
             num_repetitions: self.num_repetitions,
             starting_fen: STARTING_POSITION_FEN.to_string(),
             repetition_table: self.repetition_table.clone(),

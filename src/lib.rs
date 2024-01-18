@@ -53,7 +53,8 @@ use std::fs;
 use std::mem::{self, transmute};
 use std::num::ParseIntError;
 use std::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Index, IndexMut, Mul, Not,
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Index, IndexMut, Mul, Not, Shl,
+    ShlAssign, Shr, ShrAssign,
 };
 use std::str::{FromStr, ParseBoolError};
 use std::sync::atomic::{AtomicBool, AtomicUsize};

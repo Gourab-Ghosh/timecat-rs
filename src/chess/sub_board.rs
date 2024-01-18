@@ -1,5 +1,11 @@
 use super::*;
 
+// SubBoard::is_sane
+// SubBoard::set_ep
+// SubBoard::make_move
+// PawnType::legal_ep_move
+// PawnType::legals
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum BoardStatus {
     Ongoing,
@@ -219,9 +225,13 @@ impl SubBoard {
         match self.en_passant {
             None => {}
             Some(x) => {
-                if self.get_piece_mask(PieceType::Pawn)
-                    & self.occupied_co(!self.turn)
-                    & BitBoard::from_square(x)
+                let mut square_bb = BitBoard::from_square(x);
+                if self.turn == White {
+                    square_bb >>= 8;
+                } else {
+                    square_bb <<= 8;
+                }
+                if self.get_piece_mask(PieceType::Pawn) & self.occupied_co(!self.turn) & square_bb
                     == BB_EMPTY
                 {
                     return false;
@@ -372,8 +382,14 @@ impl SubBoard {
 
     fn set_ep(&mut self, sq: Square) {
         // Only set self.en_passant if the pawn can actually be captured next move.
+        let mut rank = sq.get_rank();
+        rank = if rank.to_int() > 3 {
+            rank.down()
+        } else {
+            rank.up()
+        };
         if get_adjacent_files(sq.get_file())
-            & get_rank_bb(sq.get_rank())
+            & get_rank_bb(rank)
             & self.get_piece_mask(PieceType::Pawn)
             & self.occupied_co(!self.turn)
             != BB_EMPTY
@@ -476,9 +492,9 @@ impl SubBoard {
             } else if (source_bb & get_pawn_source_double_moves()) != BB_EMPTY
                 && (dest_bb & get_pawn_dest_double_moves()) != BB_EMPTY
             {
-                result.set_ep(dest);
+                result.set_ep(dest.wrapping_backward(result.turn()));
                 result.checkers ^= get_pawn_attacks(ksq, !result.turn, dest_bb);
-            } else if Some(dest.wrapping_backward(self.turn)) == self.en_passant {
+            } else if Some(dest) == self.en_passant {
                 result.xor(
                     PieceType::Pawn,
                     BitBoard::from_square(dest.wrapping_backward(self.turn)),

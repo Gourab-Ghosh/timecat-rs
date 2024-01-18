@@ -58,7 +58,7 @@ impl BoardBuilder {
 
     pub fn get_en_passant(&self) -> Option<Square> {
         self.en_passant_file
-            .map(|f| Square::from_rank_and_file((!self.get_turn()).to_fourth_rank(), f))
+            .map(|f| Square::from_rank_and_file((!self.get_turn()).to_third_rank(), f))
     }
 
     #[inline]
@@ -176,7 +176,7 @@ impl fmt::Display for BoardBuilder {
 
         write!(f, " ")?;
         if let Some(sq) = self.get_en_passant() {
-            write!(f, "{}", sq.wrapping_forward(self.turn))?;
+            write!(f, "{}", sq)?;
         } else {
             write!(f, "-")?;
         }
