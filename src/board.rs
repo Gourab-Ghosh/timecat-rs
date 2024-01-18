@@ -43,8 +43,6 @@ impl GameResult {
 struct BoardState {
     board: SubBoard,
     ep_square: Option<Square>,
-    halfmove_clock: u8,
-    fullmove_number: NumMoves,
     num_repetitions: u8,
 }
 
@@ -52,8 +50,6 @@ pub struct Board {
     board: SubBoard,
     stack: Vec<(BoardState, Option<Move>)>,
     ep_square: Option<Square>,
-    halfmove_clock: u8,
-    fullmove_number: NumMoves,
     num_repetitions: u8,
     starting_fen: String,
     repetition_table: RepetitionTable,
@@ -65,8 +61,6 @@ impl Board {
             board: SubBoard::from_str(STARTING_POSITION_FEN).unwrap(),
             stack: Vec::new(),
             ep_square: None,
-            halfmove_clock: 0,
-            fullmove_number: 1,
             num_repetitions: 0,
             starting_fen: STARTING_POSITION_FEN.to_string(),
             repetition_table: RepetitionTable::new(),
@@ -90,9 +84,6 @@ impl Board {
         }
         self.board = SubBoard::from_str(&fen).expect("FEN not parsed properly!");
         self.update_ep_square();
-        let mut splitted_fen = fen.split(' ');
-        self.halfmove_clock = splitted_fen.nth(4).unwrap_or("0").parse().unwrap();
-        self.fullmove_number = splitted_fen.next().unwrap_or("1").parse().unwrap();
         self.repetition_table.clear();
         self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
         self.starting_fen = self.get_fen();
@@ -108,27 +99,11 @@ impl Board {
     }
 
     pub fn get_fen(&self) -> String {
-        // TODO: check later
-        let parent_class_fen = self.board.to_string();
-        let splitted_parent_class_fen = parent_class_fen.split(' ');
-        let mut fen = String::new();
-        for part in splitted_parent_class_fen.take(3) {
-            fen.push_str(part);
-            fen.push(' ');
-        }
-        fen.push_str(&format!(
-            "{} {} {}",
-            self.ep_square()
-                .map(|square| square.to_string())
-                .unwrap_or("-".to_string()),
-            self.halfmove_clock,
-            self.fullmove_number,
-        ));
-        fen
+        self.board.to_string()
     }
 
-    pub fn get_sub_board(&self) -> SubBoard {
-        self.board
+    pub fn get_sub_board(&self) -> &SubBoard {
+        &self.board
     }
 
     pub fn is_good_fen(fen: &str) -> bool {
@@ -229,7 +204,7 @@ impl Board {
     fn to_board_string(&self, use_unicode: bool) -> String {
         let mut skeleton = self.get_skeleton();
         let checkers = self.get_checkers();
-        let king_square = self.get_king_square(self.board.side_to_move());
+        let king_square = self.get_king_square(self.board.turn());
         let last_move = self.stack.last().and_then(|(_, m)| *m);
         for square in SQUARES_180 {
             let symbol = if use_unicode {
@@ -280,17 +255,15 @@ impl Board {
 
     fn get_board_state(&self) -> BoardState {
         BoardState {
-            board: self.board,
+            board: self.board.clone(),
             ep_square: self.ep_square,
-            halfmove_clock: self.halfmove_clock,
-            fullmove_number: self.fullmove_number,
             num_repetitions: self.num_repetitions,
         }
     }
 
     #[inline]
     pub fn turn(&self) -> Color {
-        self.board.side_to_move()
+        self.board.turn()
     }
 
     #[inline]
@@ -323,16 +296,14 @@ impl Board {
         self.status() == BoardStatus::Checkmate
     }
 
+    #[inline]
     pub fn gives_check(&self, move_: Move) -> bool {
-        let mut temp_board = self.board;
-        self.board.make_move(move_, &mut temp_board);
-        return temp_board.checkers() != &BB_EMPTY;
+        self.board.make_move_new(move_).checkers() != &BB_EMPTY
     }
 
+    #[inline]
     pub fn gives_checkmate(&self, move_: Move) -> bool {
-        let mut temp_board = self.board;
-        self.board.make_move(move_, &mut temp_board);
-        temp_board.status() == BoardStatus::Checkmate
+        self.board.make_move_new(move_).status() == BoardStatus::Checkmate
     }
 
     #[inline]
@@ -358,12 +329,12 @@ impl Board {
 
     #[inline]
     pub fn get_halfmove_clock(&self) -> u8 {
-        self.halfmove_clock
+        self.board.get_halfmove_clock()
     }
 
     #[inline]
     pub fn get_fullmove_number(&self) -> NumMoves {
-        self.fullmove_number
+        self.board.get_fullmove_number()
     }
 
     #[inline]
@@ -375,16 +346,15 @@ impl Board {
     pub fn is_repetition(&self, n_times: usize) -> bool {
         self.get_num_repetitions() as usize >= n_times
     }
-
+    
+    #[inline]
     pub fn gives_repetition(&self, move_: Move) -> bool {
-        let mut new_board = self.get_sub_board();
-        new_board.clone().make_move(move_, &mut new_board);
-        self.repetition_table.get_repetition(new_board.hash()) != 0
+        self.repetition_table.get_repetition(self.board.make_move_new(move_).hash()) != 0
     }
-
+    
+    #[inline]
     pub fn gives_threefold_repetition(&self, move_: Move) -> bool {
-        let new_board = self.board.make_move_new(move_);
-        self.repetition_table.get_repetition(new_board.hash()) == 2
+        self.repetition_table.get_repetition(self.board.make_move_new(move_).hash()) == 2
     }
 
     pub fn gives_claimable_threefold_repetition(&self, move_: Move) -> bool {
@@ -420,7 +390,7 @@ impl Board {
 
     #[inline]
     fn is_halfmoves(&self, n: u8) -> bool {
-        self.halfmove_clock >= n
+        self.get_halfmove_clock() >= n
     }
 
     #[inline]
@@ -539,9 +509,7 @@ impl Board {
     }
 
     pub fn is_zeroing(&self, move_: Move) -> bool {
-        let touched = get_square_bb(move_.get_source()) ^ get_square_bb(move_.get_dest());
-        return touched & self.get_piece_mask(Pawn) != BB_EMPTY
-            || (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
+        self.board.is_zeroing(move_)
     }
 
     #[inline]
@@ -572,7 +540,7 @@ impl Board {
 
     #[inline]
     pub fn get_piece_mask(&self, piece: PieceType) -> &BitBoard {
-        self.board.pieces(piece)
+        self.board.get_piece_mask(piece)
     }
 
     fn reduces_castling_rights(&self, move_: Move) -> bool {
@@ -621,13 +589,13 @@ impl Board {
     }
 
     #[inline]
-    pub fn get_num_pieces(&self) -> u32 {
+    pub fn get_num_get_piece_mask(&self) -> u32 {
         self.occupied().popcnt()
     }
 
     #[inline]
     pub fn is_endgame(&self) -> bool {
-        if self.get_num_pieces() <= ENDGAME_PIECE_THRESHOLD {
+        if self.get_num_get_piece_mask() <= ENDGAME_PIECE_THRESHOLD {
             return true;
         }
         match self.get_piece_mask(Queen).popcnt() {
@@ -655,23 +623,14 @@ impl Board {
     pub fn push(&mut self, optional_move: impl Into<Option<Move>>) {
         let optional_move = optional_move.into();
         let board_state = self.get_board_state();
-        if self.turn() == Black {
-            self.fullmove_number += 1;
-        }
-        if let Some(move_) = optional_move {
-            if self.is_zeroing(move_) {
-                self.halfmove_clock = 0;
-            } else {
-                self.halfmove_clock += 1;
-            }
-            self.board = self.board.make_move_new(move_);
+        self.board = if let Some(move_) = optional_move {
+            self.board.make_move_new(move_)
         } else {
-            self.halfmove_clock += 1;
-            self.board = self
+            self
                 .board
                 .null_move()
-                .expect("Trying to push null move while in check!");
-        }
+                .expect("Trying to push null move while in check!")
+        };
         self.update_ep_square();
         self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
         self.stack.push((board_state, optional_move));
@@ -679,8 +638,6 @@ impl Board {
 
     fn restore(&mut self, board_state: BoardState) {
         self.board = board_state.board;
-        self.halfmove_clock = board_state.halfmove_clock;
-        self.fullmove_number = board_state.fullmove_number;
         self.num_repetitions = board_state.num_repetitions;
         self.ep_square = board_state.ep_square;
     }
@@ -931,10 +888,10 @@ impl Board {
 
             if board.turn() == White {
                 let san_str = board.san_and_push(optional_move);
-                san.push(format!("{}. {}", board.fullmove_number, san_str.unwrap()));
+                san.push(format!("{}. {}", board.get_fullmove_number(), san_str.unwrap()));
             } else if san.is_empty() {
                 let san_str = board.san_and_push(optional_move);
-                san.push(format!("{}...{}", board.fullmove_number, san_str.unwrap()));
+                san.push(format!("{}...{}", board.get_fullmove_number(), san_str.unwrap()));
             } else {
                 san.push(board.san_and_push(optional_move).unwrap().to_string());
             }
@@ -1116,11 +1073,9 @@ impl Default for Board {
 impl Clone for Board {
     fn clone(&self) -> Self {
         Self {
-            board: self.board,
+            board: self.board.clone(),
             stack: Vec::new(),
             ep_square: self.ep_square,
-            halfmove_clock: self.halfmove_clock,
-            fullmove_number: self.fullmove_number,
             num_repetitions: self.num_repetitions,
             starting_fen: STARTING_POSITION_FEN.to_string(),
             repetition_table: self.repetition_table.clone(),

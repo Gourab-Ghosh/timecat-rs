@@ -9,11 +9,11 @@ trait PieceTypeTrait {
         T: CheckType,
     {
         let occupied = board.occupied();
-        let color = board.side_to_move();
+        let color = board.turn();
         let my_pieces = board.occupied_co(color);
         let ksq = board.king_square(color);
 
-        let pieces = board.pieces(Self::into_piece()) & my_pieces;
+        let pieces = board.get_piece_mask(Self::into_piece()) & my_pieces;
         let pinned = board.pinned();
         let checkers = board.checkers();
 
@@ -74,17 +74,17 @@ impl PawnType {
             ^ BitBoard::from_square(source)
             ^ BitBoard::from_square(dest);
 
-        let ksq = (board.pieces(King) & board.occupied_co(board.side_to_move())).to_square();
+        let ksq = (board.get_piece_mask(King) & board.occupied_co(board.turn())).to_square();
 
         let rooks =
-            (board.pieces(Rook) | board.pieces(Queen)) & board.occupied_co(!board.side_to_move());
+            (board.get_piece_mask(Rook) | board.get_piece_mask(Queen)) & board.occupied_co(!board.turn());
 
         if (get_rook_rays(ksq) & rooks) != BB_EMPTY && (get_rook_moves(ksq, occupied) & rooks) != BB_EMPTY {
             return false;
         }
 
         let bishops =
-            (board.pieces(Bishop) | board.pieces(Queen)) & board.occupied_co(!board.side_to_move());
+            (board.get_piece_mask(Bishop) | board.get_piece_mask(Queen)) & board.occupied_co(!board.turn());
 
         if (get_bishop_rays(ksq) & bishops) != BB_EMPTY && (get_bishop_moves(ksq, occupied) & bishops) != BB_EMPTY {
             return false;
@@ -114,11 +114,11 @@ impl PieceTypeTrait for PawnType {
         T: CheckType,
     {
         let occupied = board.occupied();
-        let color = board.side_to_move();
+        let color = board.turn();
         let my_pieces = board.occupied_co(color);
         let ksq = board.king_square(color);
 
-        let pieces = board.pieces(Self::into_piece()) & my_pieces;
+        let pieces = board.get_piece_mask(Self::into_piece()) & my_pieces;
         let pinned = board.pinned();
         let checkers = board.checkers();
 
@@ -156,8 +156,7 @@ impl PieceTypeTrait for PawnType {
             }
         }
 
-        if board.en_passant().is_some() {
-            let ep_sq = board.en_passant().unwrap();
+        if let Some(ep_sq) = board.en_passant() {
             let rank = get_rank_bb(ep_sq.get_rank());
             let files = get_adjacent_files(ep_sq.get_file());
             for src in rank & files & pieces {
@@ -211,11 +210,11 @@ impl PieceTypeTrait for KnightType {
         T: CheckType,
     {
         let occupied = board.occupied();
-        let color = board.side_to_move();
+        let color = board.turn();
         let my_pieces = board.occupied_co(color);
         let ksq = board.king_square(color);
 
-        let pieces = board.pieces(Self::into_piece()) & my_pieces;
+        let pieces = board.get_piece_mask(Self::into_piece()) & my_pieces;
         let pinned = board.pinned();
         let checkers = board.checkers();
 
@@ -277,31 +276,31 @@ impl KingType {
     #[inline]
     fn legal_king_move(board: &SubBoard, dest: Square) -> bool {
         let occupied = board.occupied()
-            ^ (board.pieces(King) & board.occupied_co(board.side_to_move()))
+            ^ (board.get_piece_mask(King) & board.occupied_co(board.turn()))
             | BitBoard::from_square(dest);
 
         let mut attackers = BB_EMPTY;
 
         let rooks =
-            (board.pieces(Rook) | board.pieces(Queen)) & board.occupied_co(!board.side_to_move());
+            (board.get_piece_mask(Rook) | board.get_piece_mask(Queen)) & board.occupied_co(!board.turn());
 
         attackers |= get_rook_moves(dest, occupied) & rooks;
 
         let bishops =
-            (board.pieces(Bishop) | board.pieces(Queen)) & board.occupied_co(!board.side_to_move());
+            (board.get_piece_mask(Bishop) | board.get_piece_mask(Queen)) & board.occupied_co(!board.turn());
 
         attackers |= get_bishop_moves(dest, occupied) & bishops;
 
         let knight_rays = get_knight_moves(dest);
-        attackers |= knight_rays & board.pieces(Knight) & board.occupied_co(!board.side_to_move());
+        attackers |= knight_rays & board.get_piece_mask(Knight) & board.occupied_co(!board.turn());
 
         let king_rays = get_king_moves(dest);
-        attackers |= king_rays & board.pieces(King) & board.occupied_co(!board.side_to_move());
+        attackers |= king_rays & board.get_piece_mask(King) & board.occupied_co(!board.turn());
 
         attackers |= get_pawn_attacks(
             dest,
-            board.side_to_move(),
-            board.pieces(Pawn) & board.occupied_co(!board.side_to_move()),
+            board.turn(),
+            board.get_piece_mask(Pawn) & board.occupied_co(!board.turn()),
         );
 
         attackers == BB_EMPTY
@@ -328,7 +327,7 @@ impl PieceTypeTrait for KingType {
         T: CheckType,
     {
         let occupied = board.occupied();
-        let color = board.side_to_move();
+        let color = board.turn();
         let ksq = board.king_square(color);
 
         let mut moves = Self::pseudo_legals(ksq, color, *occupied, mask);
@@ -411,7 +410,7 @@ impl MoveGen {
     #[inline]
     fn enumerate_moves(board: &SubBoard) -> MoveList {
         let checkers = *board.checkers();
-        let mask = !board.occupied_co(board.side_to_move());
+        let mask = !board.occupied_co(board.turn());
         let mut movelist = NoDrop::new(ArrayVec::<SquareAndBitBoard, 18>::new());
 
         if checkers == BB_EMPTY {
@@ -539,7 +538,7 @@ impl MoveGen {
     pub fn perft_test_piecewise(board: &SubBoard, depth: usize) -> usize {
         let mut iterable = MoveGen::new_legal(board);
     
-        let targets = board.occupied_co(!board.side_to_move());
+        let targets = board.occupied_co(!board.turn());
         let mut result: usize = 0;
     
         if depth == 1 {

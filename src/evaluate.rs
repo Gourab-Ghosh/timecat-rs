@@ -93,7 +93,7 @@ impl Evaluator {
     }
 
     fn king_corner_forcing_evaluation(&self, board: &Board, material_score: Score) -> Score {
-        let is_bishop_knight_endgame = board.get_num_pieces() == 4
+        let is_bishop_knight_endgame = board.get_num_get_piece_mask() == 4
             && material_score.abs() == evaluate_piece(Knight) + evaluate_piece(Bishop);
         let winning_side = if material_score.is_positive() {
             White

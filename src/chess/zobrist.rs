@@ -36,6 +36,6 @@ impl Zobrist {
 
     #[inline]
     pub fn color() -> u64 {
-        SIDE_TO_MOVE
+        TURN
     }
 }

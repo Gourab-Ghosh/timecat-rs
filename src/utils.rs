@@ -464,12 +464,12 @@ pub mod hash_utils {
     use super::*;
 
     pub trait CustomHash {
-        fn hash(self) -> u64;
+        fn hash(&self) -> u64;
     }
 
     impl CustomHash for SubBoard {
         #[inline]
-        fn hash(self) -> u64 {
+        fn hash(&self) -> u64 {
             self.get_hash().max(1)
         }
     }

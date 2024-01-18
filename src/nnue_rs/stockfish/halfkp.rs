@@ -183,14 +183,14 @@ impl SfHalfKpState<'_> {
     ///Activate the network, getting an output. The output is relative to
     ///the side to move. It usually has to be rescaled to another range.
     ///A helper [`scale_nn_to_centipawns`] is provided for centipawns.
-    pub fn activate(&mut self, side_to_move: Color) -> [i32; OUTPUTS] {
+    pub fn activate(&mut self, turn: Color) -> [i32; OUTPUTS] {
         const RELU_MIN: i8 = 0;
         const RELU_MAX: i8 = 127;
         const RELU_SCALE: i8 = 6;
 
         let mut inputs = [0; IL_OUT * 2];
         for &color in &Color::ALL {
-            let input = if color == side_to_move {
+            let input = if color == turn {
                 &mut inputs[..IL_OUT]
             } else {
                 &mut inputs[IL_OUT..]

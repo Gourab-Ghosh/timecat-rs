@@ -44,7 +44,7 @@ impl StockfishNetwork {
     }
 
     pub fn get_state(&self, sub_board: &SubBoard) -> nnue_rs::stockfish::halfkp::SfHalfKpState {
-        let kings_bitboatrd = sub_board.pieces(King);
+        let kings_bitboatrd = sub_board.get_piece_mask(King);
         let mut state = self.model.new_state(
             square_to_stockfish_square(
                 (kings_bitboatrd & sub_board.occupied_co(White)).to_square(),
@@ -70,7 +70,7 @@ impl StockfishNetwork {
 
     pub fn eval(&self, sub_board: &SubBoard) -> Score {
         let mut state = self.get_state(sub_board);
-        let color = match sub_board.side_to_move() {
+        let color = match sub_board.turn() {
             White => nnue_rs::Color::White,
             Black => nnue_rs::Color::Black,
         };

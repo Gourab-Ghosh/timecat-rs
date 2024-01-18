@@ -157,24 +157,22 @@ impl MoveSorter {
         capture_moves.next()
     }
 
-    fn see(square: Square, board: &mut SubBoard) -> Score {
+    fn see(square: Square, board: &SubBoard) -> Score {
         let least_attackers_move = match Self::get_least_attackers_move(square, board) {
             Some(move_) => move_,
             None => return 0,
         };
         let capture_piece = board.piece_type_at(square).unwrap_or(Pawn);
-        board.clone().make_move(least_attackers_move, board);
-        (evaluate_piece(capture_piece) - Self::see(square, board)).max(0)
+        (evaluate_piece(capture_piece) - Self::see(square, &board.make_move_new(least_attackers_move))).max(0)
     }
 
-    fn see_capture(square: Square, board: &mut SubBoard) -> Score {
+    fn see_capture(square: Square, board: &SubBoard) -> Score {
         let least_attackers_move = match Self::get_least_attackers_move(square, board) {
             Some(move_) => move_,
             None => return 0,
         };
         let capture_piece = board.piece_type_at(square).unwrap_or(Pawn);
-        board.clone().make_move(least_attackers_move, board);
-        evaluate_piece(capture_piece) - Self::see(square, board)
+        evaluate_piece(capture_piece) - Self::see(square, &board.make_move_new(least_attackers_move))
     }
 
     fn mvv_lva(move_: Move, best_move: Option<Move>, board: &Board) -> MoveWeight {
@@ -190,7 +188,7 @@ impl MoveSorter {
         if Some(move_) == best_move {
             return 10000;
         }
-        Self::see_capture(move_.get_dest(), &mut board.get_sub_board()) as MoveWeight
+        Self::see_capture(move_.get_dest(), board.get_sub_board()) as MoveWeight
         // Self::mvv_lva(move_, board)
     }
 
