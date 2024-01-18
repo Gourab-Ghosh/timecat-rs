@@ -80,7 +80,7 @@ impl SubBoard {
             _ => BoardStatus::Ongoing,
         }
     }
-    
+
     #[inline]
     pub fn occupied(&self) -> &BitBoard {
         &self.occupied
@@ -254,13 +254,17 @@ impl SubBoard {
             }
             // if we have castle rights, make sure we have a king on the (E, {1,8}) square,
             // depending on the color
-            if castle_rights != CastleRights::None && self.get_piece_mask(PieceType::King) & self.occupied_co(*color) != get_file_bb(File::E) & get_rank_bb(color.to_my_backrank()) {
+            if castle_rights != CastleRights::None
+                && self.get_piece_mask(PieceType::King) & self.occupied_co(*color)
+                    != get_file_bb(File::E) & get_rank_bb(color.to_my_backrank())
+            {
                 return false;
             }
         }
 
         // we must make sure the kings aren't touching
-        if get_king_moves(self.king_square(Color::White)) & self.get_piece_mask(PieceType::King) != BB_EMPTY
+        if get_king_moves(self.king_square(Color::White)) & self.get_piece_mask(PieceType::King)
+            != BB_EMPTY
         {
             return false;
         }
@@ -277,14 +281,8 @@ impl SubBoard {
             } else {
                 0
             }
-            ^ Zobrist::castles(
-                self.castle_rights[self.turn.to_index()],
-                self.turn,
-            )
-            ^ Zobrist::castles(
-                self.castle_rights[(!self.turn).to_index()],
-                !self.turn,
-            )
+            ^ Zobrist::castles(self.castle_rights[self.turn.to_index()], self.turn)
+            ^ Zobrist::castles(self.castle_rights[(!self.turn).to_index()], !self.turn)
             ^ if self.turn == Color::Black {
                 Zobrist::color()
             } else {
@@ -347,7 +345,10 @@ impl SubBoard {
 
     #[inline]
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
-        Some(Piece::new(self.piece_type_at(square)?, self.color_at(square)?))
+        Some(Piece::new(
+            self.piece_type_at(square)?,
+            self.color_at(square)?,
+        ))
     }
 
     fn remove_ep(&mut self) {
@@ -400,7 +401,7 @@ impl SubBoard {
         return touched & self.get_piece_mask(Pawn) != BB_EMPTY
             || (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
     }
-    
+
     #[inline]
     pub fn make_move(&self, m: Move, result: &mut Self) {
         *result = self.clone();
@@ -431,15 +432,9 @@ impl SubBoard {
             result.xor(captured, dest_bb, !self.turn);
         }
 
-        result.remove_their_castle_rights(CastleRights::square_to_castle_rights(
-            !self.turn,
-            dest,
-        ));
+        result.remove_their_castle_rights(CastleRights::square_to_castle_rights(!self.turn, dest));
 
-        result.remove_my_castle_rights(CastleRights::square_to_castle_rights(
-            self.turn,
-            source,
-        ));
+        result.remove_my_castle_rights(CastleRights::square_to_castle_rights(self.turn, source));
 
         let opp_king = result.get_piece_mask(PieceType::King) & result.occupied_co(!result.turn);
 
@@ -496,10 +491,10 @@ impl SubBoard {
         } else if castles {
             let my_backrank = self.turn.to_my_backrank();
             let index = dest.get_file().to_index();
-            let start = BitBoard::set(my_backrank, unsafe {
+            let start = BitBoard::from_rank_and_file(my_backrank, unsafe {
                 *CASTLE_ROOK_START.get_unchecked(index)
             });
-            let end = BitBoard::set(my_backrank, unsafe {
+            let end = BitBoard::from_rank_and_file(my_backrank, unsafe {
                 *CASTLE_ROOK_END.get_unchecked(index)
             });
             result.xor(PieceType::Rook, start, self.turn);
@@ -508,9 +503,11 @@ impl SubBoard {
         // now, lets see if we're in check or pinned
         let attackers = result.occupied_co(result.turn)
             & ((get_bishop_rays(ksq)
-                & (result.get_piece_mask(PieceType::Bishop) | result.get_piece_mask(PieceType::Queen)))
+                & (result.get_piece_mask(PieceType::Bishop)
+                    | result.get_piece_mask(PieceType::Queen)))
                 | (get_rook_rays(ksq)
-                    & (result.get_piece_mask(PieceType::Rook) | result.get_piece_mask(PieceType::Queen))));
+                    & (result.get_piece_mask(PieceType::Rook)
+                        | result.get_piece_mask(PieceType::Queen))));
 
         for sq in attackers {
             let between = between(sq, ksq) & result.occupied();
@@ -532,9 +529,11 @@ impl SubBoard {
 
         let pinners = self.occupied_co(!self.turn)
             & ((get_bishop_rays(ksq)
-                & (self.get_piece_mask(PieceType::Bishop) | self.get_piece_mask(PieceType::Queen)))
+                & (self.get_piece_mask(PieceType::Bishop)
+                    | self.get_piece_mask(PieceType::Queen)))
                 | (get_rook_rays(ksq)
-                    & (self.get_piece_mask(PieceType::Rook) | self.get_piece_mask(PieceType::Queen))));
+                    & (self.get_piece_mask(PieceType::Rook)
+                        | self.get_piece_mask(PieceType::Queen))));
 
         for sq in pinners {
             let between = between(sq, ksq) & self.occupied();
@@ -594,9 +593,9 @@ impl TryFrom<&BoardBuilder> for SubBoard {
         board.add_castle_rights(Color::White, board_builder.get_castle_rights(Color::White));
         board.add_castle_rights(Color::Black, board_builder.get_castle_rights(Color::Black));
 
-        board.halfmove_clock =  board_builder.get_halfmove_clock();
+        board.halfmove_clock = board_builder.get_halfmove_clock();
         board.fullmove_number = board_builder.get_fullmove_number();
-        
+
         board.update_pin_and_checkers_info();
 
         if board.is_sane() {

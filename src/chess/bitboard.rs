@@ -27,22 +27,24 @@ impl BitBoard {
         Self(bb)
     }
 
+    #[inline]
     pub const fn get_mask(self) -> u64 {
         self.0
     }
 
+    #[inline]
     pub fn set_mask(&mut self, mask: u64) {
         self.0 = mask;
     }
 
     #[inline]
-    pub const fn set(rank: Rank, file: File) -> BitBoard {
-        BitBoard::from_square(Square::from_rank_and_file(rank, file))
+    pub const fn from_square(sq: Square) -> BitBoard {
+        BitBoard(1u64 << sq.to_int())
     }
 
     #[inline]
-    pub const fn from_square(sq: Square) -> BitBoard {
-        BitBoard(1u64 << sq.to_int())
+    pub const fn from_rank_and_file(rank: Rank, file: File) -> BitBoard {
+        BitBoard(1u64 << ((rank.to_int() << 3) + file.to_int()))
     }
 
     #[inline]
@@ -230,7 +232,7 @@ implement_bitwise_operations!(BitXor, BitXorAssign, bitxor, bitxor_assign);
 
 impl Mul for BitBoard {
     type Output = Self;
-    
+
     fn mul(self, rhs: Self) -> Self::Output {
         Self::new(self.get_mask().wrapping_mul(rhs.get_mask()))
     }

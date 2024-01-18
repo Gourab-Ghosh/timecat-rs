@@ -76,17 +76,21 @@ impl PawnType {
 
         let ksq = (board.get_piece_mask(King) & board.occupied_co(board.turn())).to_square();
 
-        let rooks =
-            (board.get_piece_mask(Rook) | board.get_piece_mask(Queen)) & board.occupied_co(!board.turn());
+        let rooks = (board.get_piece_mask(Rook) | board.get_piece_mask(Queen))
+            & board.occupied_co(!board.turn());
 
-        if (get_rook_rays(ksq) & rooks) != BB_EMPTY && (get_rook_moves(ksq, occupied) & rooks) != BB_EMPTY {
+        if (get_rook_rays(ksq) & rooks) != BB_EMPTY
+            && (get_rook_moves(ksq, occupied) & rooks) != BB_EMPTY
+        {
             return false;
         }
 
-        let bishops =
-            (board.get_piece_mask(Bishop) | board.get_piece_mask(Queen)) & board.occupied_co(!board.turn());
+        let bishops = (board.get_piece_mask(Bishop) | board.get_piece_mask(Queen))
+            & board.occupied_co(!board.turn());
 
-        if (get_bishop_rays(ksq) & bishops) != BB_EMPTY && (get_bishop_moves(ksq, occupied) & bishops) != BB_EMPTY {
+        if (get_bishop_rays(ksq) & bishops) != BB_EMPTY
+            && (get_bishop_moves(ksq, occupied) & bishops) != BB_EMPTY
+        {
             return false;
         }
 
@@ -281,13 +285,13 @@ impl KingType {
 
         let mut attackers = BB_EMPTY;
 
-        let rooks =
-            (board.get_piece_mask(Rook) | board.get_piece_mask(Queen)) & board.occupied_co(!board.turn());
+        let rooks = (board.get_piece_mask(Rook) | board.get_piece_mask(Queen))
+            & board.occupied_co(!board.turn());
 
         attackers |= get_rook_moves(dest, occupied) & rooks;
 
-        let bishops =
-            (board.get_piece_mask(Bishop) | board.get_piece_mask(Queen)) & board.occupied_co(!board.turn());
+        let bishops = (board.get_piece_mask(Bishop) | board.get_piece_mask(Queen))
+            & board.occupied_co(!board.turn());
 
         attackers |= get_bishop_moves(dest, occupied) & bishops;
 
@@ -537,10 +541,10 @@ impl MoveGen {
 
     pub fn perft_test_piecewise(board: &SubBoard, depth: usize) -> usize {
         let mut iterable = MoveGen::new_legal(board);
-    
+
         let targets = board.occupied_co(!board.turn());
         let mut result: usize = 0;
-    
+
         if depth == 1 {
             iterable.set_iterator_mask(*targets);
             result += iterable.len();

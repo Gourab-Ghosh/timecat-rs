@@ -29,14 +29,17 @@ pub const ALL_SQUARES: [Square; NUM_SQUARES] = [
 ];
 
 impl Square {
+    #[inline]
     pub const fn to_int(self) -> u8 {
         self as u8
     }
 
+    #[inline]
     pub const fn to_index(self) -> usize {
         self as usize
     }
 
+    #[inline]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Self {
         unsafe { transmute(8 * rank.to_int() + file.to_int()) }
     }

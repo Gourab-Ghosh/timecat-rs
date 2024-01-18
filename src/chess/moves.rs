@@ -58,18 +58,30 @@ impl FromStr for Move {
     type Err = EngineError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let source = Square::from_str(s.get(0..2).ok_or(EngineError::InvalidUciMoveString { s: s.to_string() })?)?;
-        let dest = Square::from_str(s.get(2..4).ok_or(EngineError::InvalidUciMoveString { s: s.to_string() })?)?;
+        let source = Square::from_str(
+            s.get(0..2)
+                .ok_or(EngineError::InvalidUciMoveString { s: s.to_string() })?,
+        )?;
+        let dest = Square::from_str(
+            s.get(2..4)
+                .ok_or(EngineError::InvalidUciMoveString { s: s.to_string() })?,
+        )?;
 
         let mut promo = None;
         if s.len() == 5 {
-            promo = Some(match s.chars().last().ok_or(EngineError::InvalidUciMoveString { s: s.to_string() })? {
-                'q' => PieceType::Queen,
-                'r' => PieceType::Rook,
-                'n' => PieceType::Knight,
-                'b' => PieceType::Bishop,
-                _ => return Err(EngineError::InvalidUciMoveString { s: s.to_string() }),
-            });
+            promo = Some(
+                match s
+                    .chars()
+                    .last()
+                    .ok_or(EngineError::InvalidUciMoveString { s: s.to_string() })?
+                {
+                    'q' => PieceType::Queen,
+                    'r' => PieceType::Rook,
+                    'n' => PieceType::Knight,
+                    'b' => PieceType::Bishop,
+                    _ => return Err(EngineError::InvalidUciMoveString { s: s.to_string() }),
+                },
+            );
         }
 
         Ok(Self::new(source, dest, promo))

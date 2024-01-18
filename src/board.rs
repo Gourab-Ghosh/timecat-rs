@@ -152,8 +152,11 @@ impl Board {
     }
 
     pub fn piece_symbol_at(&self, square: Square) -> String {
-        let symbol = get_item_unchecked!(PIECE_SYMBOLS, self.piece_type_at(square).get_type() as usize)
-            .to_string();
+        let symbol = get_item_unchecked!(
+            PIECE_SYMBOLS,
+            self.piece_type_at(square).get_type() as usize
+        )
+        .to_string();
         if let Some(color) = self.color_at(square) {
             return match color {
                 White => symbol.to_uppercase(),
@@ -352,15 +355,19 @@ impl Board {
     pub fn is_repetition(&self, n_times: usize) -> bool {
         self.get_num_repetitions() as usize >= n_times
     }
-    
+
     #[inline]
     pub fn gives_repetition(&self, move_: Move) -> bool {
-        self.repetition_table.get_repetition(self.board.make_move_new(move_).hash()) != 0
+        self.repetition_table
+            .get_repetition(self.board.make_move_new(move_).hash())
+            != 0
     }
-    
+
     #[inline]
     pub fn gives_threefold_repetition(&self, move_: Move) -> bool {
-        self.repetition_table.get_repetition(self.board.make_move_new(move_).hash()) == 2
+        self.repetition_table
+            .get_repetition(self.board.make_move_new(move_).hash())
+            == 2
     }
 
     pub fn gives_claimable_threefold_repetition(&self, move_: Move) -> bool {
@@ -632,8 +639,7 @@ impl Board {
         self.board = if let Some(move_) = optional_move {
             self.board.make_move_new(move_)
         } else {
-            self
-                .board
+            self.board
                 .null_move()
                 .expect("Trying to push null move while in check!")
         };
@@ -894,10 +900,18 @@ impl Board {
 
             if board.turn() == White {
                 let san_str = board.san_and_push(optional_move);
-                san.push(format!("{}. {}", board.get_fullmove_number(), san_str.unwrap()));
+                san.push(format!(
+                    "{}. {}",
+                    board.get_fullmove_number(),
+                    san_str.unwrap()
+                ));
             } else if san.is_empty() {
                 let san_str = board.san_and_push(optional_move);
-                san.push(format!("{}...{}", board.get_fullmove_number(), san_str.unwrap()));
+                san.push(format!(
+                    "{}...{}",
+                    board.get_fullmove_number(),
+                    san_str.unwrap()
+                ));
             } else {
                 san.push(board.san_and_push(optional_move).unwrap().to_string());
             }

@@ -1,6 +1,6 @@
-use timecat::*;
 use std::collections::HashSet;
 use std::str::FromStr;
+use timecat::*;
 
 fn move_gen_perft_test(fen: String, depth: usize, result: usize) {
     let board: SubBoard = BoardBuilder::from_str(&fen).unwrap().try_into().unwrap();

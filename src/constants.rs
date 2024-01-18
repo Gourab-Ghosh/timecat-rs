@@ -58,8 +58,10 @@ pub mod bitboard {
         (A, 1), (B, 2), (C, 3), (D, 4), (E, 5), (F, 6), (G, 7), (H, 8),
     );
 
-    pub const BB_CORNERS: BitBoard = BitBoard::new(BB_A1.get_mask() | BB_H1.get_mask() | BB_A8.get_mask() | BB_H8.get_mask());
-    pub const BB_CENTER: BitBoard = BitBoard::new(BB_D4.get_mask() | BB_E4.get_mask() | BB_D5.get_mask() | BB_E5.get_mask());
+    pub const BB_CORNERS: BitBoard =
+        BitBoard::new(BB_A1.get_mask() | BB_H1.get_mask() | BB_A8.get_mask() | BB_H8.get_mask());
+    pub const BB_CENTER: BitBoard =
+        BitBoard::new(BB_D4.get_mask() | BB_E4.get_mask() | BB_D5.get_mask() | BB_E5.get_mask());
 
     pub const BB_LIGHT_SQUARES: BitBoard = BitBoard::new(0x55aa_55aa_55aa_55aa);
     pub const BB_DARK_SQUARES: BitBoard = BitBoard::new(0xaa55_aa55_aa55_aa55);
@@ -107,7 +109,7 @@ pub mod bitboard {
 
 pub mod square {
     use crate::Square;
-    
+
     macro_rules! generate_squares {
         [$( $square:ident ), *,] => {
             pub const SQUARES_180: [Square; 64] = [$( Square::$square ), *];

@@ -91,11 +91,13 @@ impl CastleRights {
     pub fn unmoved_rooks(self, color: Color) -> BitBoard {
         match self {
             CastleRights::None => BB_EMPTY,
-            CastleRights::KingSide => BitBoard::set(color.to_my_backrank(), File::H),
-            CastleRights::QueenSide => BitBoard::set(color.to_my_backrank(), File::A),
+            CastleRights::KingSide => BitBoard::from_rank_and_file(color.to_my_backrank(), File::H),
+            CastleRights::QueenSide => {
+                BitBoard::from_rank_and_file(color.to_my_backrank(), File::A)
+            }
             CastleRights::Both => {
-                BitBoard::set(color.to_my_backrank(), File::A)
-                    ^ BitBoard::set(color.to_my_backrank(), File::H)
+                BitBoard::from_rank_and_file(color.to_my_backrank(), File::A)
+                    ^ BitBoard::from_rank_and_file(color.to_my_backrank(), File::H)
             }
         }
     }

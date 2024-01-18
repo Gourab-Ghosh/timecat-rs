@@ -140,10 +140,11 @@ impl Evaluator {
                     .zip([num_white_pieces, num_black_pieces].iter())
                 {
                     if num_pieces == 3 {
-                        let non_king_pieces: (PieceType, PieceType) = (bb & !board.get_piece_mask(King))
-                            .map(|s| board.piece_type_at(s).unwrap())
-                            .collect_tuple()
-                            .unwrap();
+                        let non_king_pieces: (PieceType, PieceType) = (bb
+                            & !board.get_piece_mask(King))
+                        .map(|s| board.piece_type_at(s).unwrap())
+                        .collect_tuple()
+                        .unwrap();
                         if non_king_pieces == (Knight, Knight) {
                             return false;
                         }

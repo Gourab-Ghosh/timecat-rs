@@ -176,7 +176,7 @@ impl fmt::Display for BoardBuilder {
 
         write!(f, " ")?;
         if let Some(sq) = self.get_en_passant() {
-            write!(f, "{}", sq)?;
+            write!(f, "{}", sq.wrapping_forward(self.turn))?;
         } else {
             write!(f, "-")?;
         }
@@ -211,7 +211,7 @@ impl FromStr for BoardBuilder {
         let castles = tokens[2];
         let ep = tokens[3];
         let halfmove_clock = tokens.get(4).map(|s| s.parse().ok()).flatten().unwrap_or(0);
-        let fullmove_number = tokens.get(4).map(|s| s.parse().ok()).flatten().unwrap_or(1);
+        let fullmove_number = tokens.get(5).map(|s| s.parse().ok()).flatten().unwrap_or(1);
 
         for x in pieces.chars() {
             match x {
@@ -324,7 +324,9 @@ impl FromStr for BoardBuilder {
             board_builder.en_passant(Some(sq.get_file()));
         }
 
-        board_builder.halfmove_clock(halfmove_clock).fullmove_number(fullmove_number);
+        board_builder
+            .halfmove_clock(halfmove_clock)
+            .fullmove_number(fullmove_number);
 
         Ok(board_builder)
     }

@@ -731,9 +731,7 @@ pub mod cache_table_utils {
             std::mem::size_of::<CacheTableEntry<T>>()
         }
 
-        pub fn to_cache_table_and_entry_size<T: Copy + Clone + PartialEq>(
-            self,
-        ) -> (usize, usize) {
+        pub fn to_cache_table_and_entry_size<T: Copy + Clone + PartialEq>(self) -> (usize, usize) {
             let mut size = self.unwrap();
             let entry_size = Self::get_entry_size::<T>();
             size *= 2_usize.pow(20);
