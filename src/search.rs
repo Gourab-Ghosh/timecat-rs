@@ -54,7 +54,7 @@ impl SearchInfo {
         self.clock.elapsed()
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn format_info<T: fmt::Display>(desc: &str, info: T) -> String {
         format!(
             "{} {info}",
@@ -129,12 +129,12 @@ impl PVTable {
         self.length[ply] = self.length[ply + 1];
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn set_length(&mut self, ply: Ply, length: usize) {
         self.length[ply] = length;
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn reset_variables(&mut self) {
         for ply in 0..MAX_PLY {
             self.length[ply] = 0;
@@ -189,7 +189,7 @@ impl Searcher {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn is_main_threaded(&self) -> bool {
         self.id == 0
     }
@@ -337,7 +337,7 @@ impl Searcher {
         reduction.round() as Depth
     }
 
-    #[inline]
+    #[inline(always)]
     fn safe_to_apply_extensions(
         num_extensions: Depth,
         extension: Depth,

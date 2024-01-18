@@ -30,12 +30,12 @@ pub struct WeightedMoveListSorter {
 }
 
 impl WeightedMoveListSorter {
-    #[inline]
+    #[inline(always)]
     pub fn len(&self) -> usize {
         self.len
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
@@ -143,7 +143,7 @@ impl MoveSorter {
             [board.color_at(src).unwrap() as usize][dest.to_index()] += depth;
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_history_score(&self, history_move: Move, board: &Board) -> MoveWeight {
         let src = history_move.get_source();
         let dest = history_move.get_dest();
@@ -188,7 +188,7 @@ impl MoveSorter {
             .to_index()]
     }
 
-    #[inline]
+    #[inline(always)]
     fn score_capture(move_: Move, best_move: Option<Move>, board: &Board) -> MoveWeight {
         if Some(move_) == best_move {
             return 10000;

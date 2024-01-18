@@ -22,7 +22,7 @@ macro_rules! simple_enum {
         impl $name {
             pub const NUM: usize = [$(Self::$variant),*].len();
             pub const ALL: [Self; Self::NUM] = [$(Self::$variant),*];
-            #[inline]
+            #[inline(always)]
             pub fn from_index(index: usize) -> Self {
                 $(#[allow(non_upper_case_globals)]
                 const $variant: usize = $name::$variant as usize;)*

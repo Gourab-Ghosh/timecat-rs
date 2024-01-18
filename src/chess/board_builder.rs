@@ -61,12 +61,12 @@ impl BoardBuilder {
             .map(|f| Square::from_rank_and_file((!self.get_turn()).to_third_rank(), f))
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_halfmove_clock(&self) -> u8 {
         self.halfmove_clock
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_fullmove_number(&self) -> NumMoves {
         self.fullmove_number
     }

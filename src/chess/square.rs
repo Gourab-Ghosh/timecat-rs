@@ -29,32 +29,32 @@ pub const ALL_SQUARES: [Square; NUM_SQUARES] = [
 ];
 
 impl Square {
-    #[inline]
+    #[inline(always)]
     pub const fn to_int(self) -> u8 {
         self as u8
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn to_index(self) -> usize {
         self as usize
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Self {
         unsafe { transmute(8 * rank.to_int() + file.to_int()) }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_rank(&self) -> Rank {
         Rank::from_index(self.to_index() >> 3)
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_file(&self) -> File {
         File::from_index(self.to_index() & 7)
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn up(&self) -> Option<Square> {
         if self.get_rank() == Rank::Eighth {
             None
@@ -66,7 +66,7 @@ impl Square {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn down(&self) -> Option<Square> {
         if self.get_rank() == Rank::First {
             None
@@ -78,7 +78,7 @@ impl Square {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn left(&self) -> Option<Square> {
         if self.get_file() == File::A {
             None
@@ -90,7 +90,7 @@ impl Square {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn right(&self) -> Option<Square> {
         if self.get_file() == File::H {
             None
@@ -102,7 +102,7 @@ impl Square {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn forward(&self, color: Color) -> Option<Square> {
         match color {
             Color::White => self.up(),
@@ -110,7 +110,7 @@ impl Square {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn backward(&self, color: Color) -> Option<Square> {
         match color {
             Color::White => self.down(),
@@ -118,27 +118,27 @@ impl Square {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_up(&self) -> Square {
         Square::from_rank_and_file(self.get_rank().up(), self.get_file())
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_down(&self) -> Square {
         Square::from_rank_and_file(self.get_rank().down(), self.get_file())
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_left(&self) -> Square {
         Square::from_rank_and_file(self.get_rank(), self.get_file().left())
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_right(&self) -> Square {
         Square::from_rank_and_file(self.get_rank(), self.get_file().right())
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_forward(&self, color: Color) -> Square {
         match color {
             Color::White => self.wrapping_up(),
@@ -146,7 +146,7 @@ impl Square {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn wrapping_backward(&self, color: Color) -> Square {
         match color {
             Color::White => self.wrapping_down(),

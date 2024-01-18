@@ -72,7 +72,7 @@ impl SubBoard {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn status(&self) -> BoardStatus {
         let moves = MoveGen::new_legal(self).len();
         match moves {
@@ -87,32 +87,32 @@ impl SubBoard {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn occupied(&self) -> &BitBoard {
         &self.occupied
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn occupied_co(&self, color: Color) -> &BitBoard {
         unsafe { self.occupied_co.get_unchecked(color.to_index()) }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn king_square(&self, color: Color) -> Square {
         (self.get_piece_mask(PieceType::King) & self.occupied_co(color)).to_square()
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_piece_mask(&self, piece: PieceType) -> &BitBoard {
         unsafe { self.pieces.get_unchecked(piece.to_index()) }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn castle_rights(&self, color: Color) -> CastleRights {
         unsafe { *self.castle_rights.get_unchecked(color.to_index()) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn add_castle_rights(&mut self, color: Color, add: CastleRights) {
         unsafe {
             *self.castle_rights.get_unchecked_mut(color.to_index()) =
@@ -120,7 +120,7 @@ impl SubBoard {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn remove_castle_rights(&mut self, color: Color, remove: CastleRights) {
         unsafe {
             *self.castle_rights.get_unchecked_mut(color.to_index()) =
@@ -128,37 +128,37 @@ impl SubBoard {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn turn(&self) -> Color {
         self.turn
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn my_castle_rights(&self) -> CastleRights {
         self.castle_rights(self.turn())
     }
 
-    #[inline]
+    #[inline(always)]
     fn add_my_castle_rights(&mut self, add: CastleRights) {
         self.add_castle_rights(self.turn(), add);
     }
 
-    #[inline]
+    #[inline(always)]
     fn remove_my_castle_rights(&mut self, remove: CastleRights) {
         self.remove_castle_rights(self.turn(), remove);
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn their_castle_rights(&self) -> CastleRights {
         self.castle_rights(!self.turn())
     }
 
-    #[inline]
+    #[inline(always)]
     fn add_their_castle_rights(&mut self, add: CastleRights) {
         self.add_castle_rights(!self.turn(), add)
     }
 
-    #[inline]
+    #[inline(always)]
     fn remove_their_castle_rights(&mut self, remove: CastleRights) {
         self.remove_castle_rights(!self.turn(), remove);
     }
@@ -172,7 +172,7 @@ impl SubBoard {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn null_move(&self) -> Option<Self> {
         if self.checkers != BB_EMPTY {
             None
@@ -283,7 +283,7 @@ impl SubBoard {
         true
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_hash(&self) -> u64 {
         self.transposition_key
             ^ if let Some(ep) = self.en_passant {
@@ -300,12 +300,12 @@ impl SubBoard {
             }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_pawn_hash(&self) -> u64 {
         todo!()
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn piece_type_at(&self, square: Square) -> Option<PieceType> {
         // TODO: check speed on Naive Algorithm
         let opp = BitBoard::from_square(square);
@@ -342,7 +342,7 @@ impl SubBoard {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn color_at(&self, square: Square) -> Option<Color> {
         if (self.occupied_co(Color::White) & BitBoard::from_square(square)) != BB_EMPTY {
             Some(Color::White)
@@ -353,7 +353,7 @@ impl SubBoard {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
         Some(Piece::new(
             self.piece_type_at(square)?,
@@ -365,17 +365,17 @@ impl SubBoard {
         self.en_passant = None;
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn en_passant(&self) -> Option<Square> {
         self.en_passant
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_halfmove_clock(&self) -> u8 {
         self.halfmove_clock
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_fullmove_number(&self) -> NumMoves {
         self.fullmove_number
     }
@@ -398,12 +398,12 @@ impl SubBoard {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn legal(&self, m: Move) -> bool {
         MoveGen::new_legal(self).any(|x| x == m)
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn make_move_new(&self, m: Move) -> Self {
         let mut result = mem::MaybeUninit::<Self>::uninit();
         unsafe {
@@ -418,7 +418,7 @@ impl SubBoard {
             || (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn make_move(&self, m: Move, result: &mut Self) {
         *result = self.clone();
 
@@ -571,12 +571,12 @@ impl SubBoard {
         );
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn pinned(&self) -> &BitBoard {
         &self.pinned
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn checkers(&self) -> &BitBoard {
         &self.checkers
     }
@@ -647,7 +647,7 @@ impl FromStr for SubBoard {
 }
 
 impl Default for SubBoard {
-    #[inline]
+    #[inline(always)]
     fn default() -> Self {
         Self::from_str(STARTING_POSITION_FEN).unwrap()
     }

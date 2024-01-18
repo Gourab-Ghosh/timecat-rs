@@ -12,12 +12,12 @@ pub const NUM_COLORS: usize = 2;
 pub const ALL_COLORS: [Color; NUM_COLORS] = [Color::White, Color::Black];
 
 impl Color {
-    #[inline]
+    #[inline(always)]
     pub const fn to_index(self) -> usize {
         self as usize
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn to_my_backrank(self) -> Rank {
         match self {
             Self::White => Rank::First,
@@ -25,7 +25,7 @@ impl Color {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn to_their_backrank(self) -> Rank {
         match self {
             Self::White => Rank::Eighth,
@@ -33,7 +33,7 @@ impl Color {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn to_second_rank(self) -> Rank {
         match self {
             Self::White => Rank::Second,
@@ -41,7 +41,7 @@ impl Color {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn to_third_rank(self) -> Rank {
         match self {
             Self::White => Rank::Third,
@@ -49,7 +49,7 @@ impl Color {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn to_fourth_rank(self) -> Rank {
         match self {
             Self::White => Rank::Fourth,
@@ -57,7 +57,7 @@ impl Color {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn to_seventh_rank(self) -> Rank {
         match self {
             Self::White => Rank::Seventh,
@@ -69,7 +69,7 @@ impl Color {
 impl Not for Color {
     type Output = Self;
 
-    #[inline]
+    #[inline(always)]
     fn not(self) -> Self {
         if self == Self::White {
             Self::Black

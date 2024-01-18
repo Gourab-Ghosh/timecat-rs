@@ -4,7 +4,7 @@ use super::*;
 pub struct BitBoard(u64);
 
 impl fmt::Display for BitBoard {
-    #[inline]
+    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut s: String = "".to_owned();
         for x in 0..64 {
@@ -22,52 +22,52 @@ impl fmt::Display for BitBoard {
 }
 
 impl BitBoard {
-    #[inline]
+    #[inline(always)]
     pub const fn new(bb: u64) -> Self {
         Self(bb)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn get_mask(self) -> u64 {
         self.0
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn set_mask(&mut self, mask: u64) {
         self.0 = mask;
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn from_square(sq: Square) -> BitBoard {
         BitBoard(1u64 << sq.to_int())
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> BitBoard {
         BitBoard(1u64 << ((rank.to_int() << 3) + file.to_int()))
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn popcnt(self) -> u32 {
         self.get_mask().count_ones()
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn reverse_colors(self) -> BitBoard {
         BitBoard(self.get_mask().swap_bytes())
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn to_size(self, right_shift: u8) -> usize {
         (self.get_mask() >> right_shift) as usize
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn to_square_index(self) -> usize {
         self.get_mask().trailing_zeros() as usize
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn to_square(self) -> Square {
         unsafe { *ALL_SQUARES.get_unchecked(self.to_square_index()) }
     }
@@ -89,14 +89,14 @@ macro_rules! implement_bitwise_operations {
         implement_bitwise_operations!(@integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, i8);
 
         impl $assign_trait<&BitBoard> for BitBoard {
-            #[inline]
+            #[inline(always)]
             fn $assign_func(&mut self, rhs: &Self) {
                 self.$assign_func(rhs.get_mask())
             }
         }
 
         impl $assign_trait for BitBoard {
-            #[inline]
+            #[inline(always)]
             fn $assign_func(&mut self, rhs: Self) {
                 self.$assign_func(&rhs)
             }
@@ -105,7 +105,7 @@ macro_rules! implement_bitwise_operations {
         impl $direct_trait for &BitBoard {
             type Output = BitBoard;
 
-            #[inline]
+            #[inline(always)]
             fn $direct_func(self, rhs: Self) -> Self::Output {
                 self.$direct_func(rhs.get_mask())
             }
@@ -114,7 +114,7 @@ macro_rules! implement_bitwise_operations {
         impl $direct_trait for BitBoard {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn $direct_func(self, rhs: Self) -> Self::Output {
                 (&self).$direct_func(&rhs)
             }
@@ -123,7 +123,7 @@ macro_rules! implement_bitwise_operations {
         impl $direct_trait<BitBoard> for &BitBoard {
             type Output = BitBoard;
 
-            #[inline]
+            #[inline(always)]
             fn $direct_func(self, rhs: BitBoard) -> Self::Output {
                 self.$direct_func(&rhs)
             }
@@ -132,7 +132,7 @@ macro_rules! implement_bitwise_operations {
         impl $direct_trait<&BitBoard> for BitBoard {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn $direct_func(self, rhs: &Self) -> Self::Output {
                 (&self).$direct_func(rhs)
             }
@@ -141,14 +141,14 @@ macro_rules! implement_bitwise_operations {
 
     (@integer_implementation $direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident, $int_type: ident) => {
         impl $assign_trait<$int_type> for BitBoard {
-            #[inline]
+            #[inline(always)]
             fn $assign_func(&mut self, rhs: $int_type) {
                 self.set_mask(self.get_mask().$direct_func(rhs as u64))
             }
         }
 
         impl $assign_trait<&$int_type> for BitBoard {
-            #[inline]
+            #[inline(always)]
             fn $assign_func(&mut self, rhs: &$int_type) {
                 self.$assign_func(*rhs)
             }
@@ -157,7 +157,7 @@ macro_rules! implement_bitwise_operations {
         impl $direct_trait<&$int_type> for BitBoard {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn $direct_func(mut self, rhs: &$int_type) -> Self::Output {
                 self.$assign_func(rhs);
                 self
@@ -167,7 +167,7 @@ macro_rules! implement_bitwise_operations {
         impl $direct_trait<$int_type> for BitBoard {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn $direct_func(self, rhs: $int_type) -> Self::Output {
                 self.$direct_func(&rhs)
             }
@@ -176,7 +176,7 @@ macro_rules! implement_bitwise_operations {
         impl $direct_trait<&$int_type> for &BitBoard {
             type Output = BitBoard;
 
-            #[inline]
+            #[inline(always)]
             fn $direct_func(self, rhs: &$int_type) -> Self::Output {
                 (*self).$direct_func(rhs)
             }
@@ -185,21 +185,21 @@ macro_rules! implement_bitwise_operations {
         impl $direct_trait<$int_type> for &BitBoard {
             type Output = BitBoard;
 
-            #[inline]
+            #[inline(always)]
             fn $direct_func(self, rhs: $int_type) -> Self::Output {
                 (*self).$direct_func(rhs)
             }
         }
 
         impl $assign_trait<&BitBoard> for $int_type {
-            #[inline]
+            #[inline(always)]
             fn $assign_func(&mut self, rhs: &BitBoard) {
                 self.$assign_func(rhs.get_mask() as $int_type)
             }
         }
 
         impl $assign_trait<BitBoard> for $int_type {
-            #[inline]
+            #[inline(always)]
             fn $assign_func(&mut self, rhs: BitBoard) {
                 self.$assign_func(&rhs)
             }
@@ -208,7 +208,7 @@ macro_rules! implement_bitwise_operations {
         impl $direct_trait<&BitBoard> for $int_type {
             type Output = $int_type;
 
-            #[inline]
+            #[inline(always)]
             fn $direct_func(mut self, rhs: &BitBoard) -> Self::Output {
                 self.$assign_func(rhs);
                 self
@@ -218,7 +218,7 @@ macro_rules! implement_bitwise_operations {
         impl $direct_trait<BitBoard> for $int_type {
             type Output = $int_type;
 
-            #[inline]
+            #[inline(always)]
             fn $direct_func(self, rhs: BitBoard) -> Self::Output {
                 self.$direct_func(&rhs)
             }
@@ -227,7 +227,7 @@ macro_rules! implement_bitwise_operations {
         impl $direct_trait<&BitBoard> for &$int_type {
             type Output = $int_type;
 
-            #[inline]
+            #[inline(always)]
             fn $direct_func(self, rhs: &BitBoard) -> Self::Output {
                 (*self).$direct_func(rhs)
             }
@@ -236,7 +236,7 @@ macro_rules! implement_bitwise_operations {
         impl $direct_trait<BitBoard> for &$int_type {
             type Output = $int_type;
 
-            #[inline]
+            #[inline(always)]
             fn $direct_func(self, rhs: BitBoard) -> Self::Output {
                 self.$direct_func(&rhs)
             }
@@ -261,7 +261,7 @@ impl Mul for BitBoard {
 impl Not for &BitBoard {
     type Output = BitBoard;
 
-    #[inline]
+    #[inline(always)]
     fn not(self) -> BitBoard {
         BitBoard(!self.get_mask())
     }
@@ -270,7 +270,7 @@ impl Not for &BitBoard {
 impl Not for BitBoard {
     type Output = BitBoard;
 
-    #[inline]
+    #[inline(always)]
     fn not(self) -> BitBoard {
         !&self
     }
@@ -279,7 +279,7 @@ impl Not for BitBoard {
 impl Iterator for BitBoard {
     type Item = Square;
 
-    #[inline]
+    #[inline(always)]
     fn next(&mut self) -> Option<Square> {
         if self.get_mask() == 0 {
             None
