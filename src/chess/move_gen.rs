@@ -79,22 +79,18 @@ impl PawnType {
         let rooks =
             (board.pieces(Rook) | board.pieces(Queen)) & board.occupied_co(!board.side_to_move());
 
-        if (get_rook_rays(ksq) & rooks) != BB_EMPTY {
-            if (get_rook_moves(ksq, occupied) & rooks) != BB_EMPTY {
-                return false;
-            }
+        if (get_rook_rays(ksq) & rooks) != BB_EMPTY && (get_rook_moves(ksq, occupied) & rooks) != BB_EMPTY {
+            return false;
         }
 
         let bishops =
             (board.pieces(Bishop) | board.pieces(Queen)) & board.occupied_co(!board.side_to_move());
 
-        if (get_bishop_rays(ksq) & bishops) != BB_EMPTY {
-            if (get_bishop_moves(ksq, occupied) & bishops) != BB_EMPTY {
-                return false;
-            }
+        if (get_bishop_rays(ksq) & bishops) != BB_EMPTY && (get_bishop_moves(ksq, occupied) & bishops) != BB_EMPTY {
+            return false;
         }
 
-        return true;
+        true
     }
 }
 
@@ -162,7 +158,7 @@ impl PieceTypeTrait for PawnType {
 
         if board.en_passant().is_some() {
             let ep_sq = board.en_passant().unwrap();
-            let rank = get_rank(ep_sq.get_rank());
+            let rank = get_rank_bb(ep_sq.get_rank());
             let files = get_adjacent_files(ep_sq.get_file());
             for src in rank & files & pieces {
                 let dest = ep_sq.wrapping_forward(color);
@@ -205,7 +201,7 @@ impl PieceTypeTrait for KnightType {
     }
 
     #[inline]
-    fn pseudo_legals(src: Square, _color: Color, _combined: BitBoard, mask: BitBoard) -> BitBoard {
+    fn pseudo_legals(src: Square, _color: Color, _occupied: BitBoard, mask: BitBoard) -> BitBoard {
         get_knight_moves(src) & mask
     }
 
@@ -308,7 +304,7 @@ impl KingType {
             board.pieces(Pawn) & board.occupied_co(!board.side_to_move()),
         );
 
-        return attackers == BB_EMPTY;
+        attackers == BB_EMPTY
     }
 }
 
@@ -322,7 +318,7 @@ impl PieceTypeTrait for KingType {
     }
 
     #[inline]
-    fn pseudo_legals(src: Square, _color: Color, _combined: BitBoard, mask: BitBoard) -> BitBoard {
+    fn pseudo_legals(src: Square, _color: Color, _occupied: BitBoard, mask: BitBoard) -> BitBoard {
         get_king_moves(src) & mask
     }
 
@@ -397,7 +393,7 @@ impl SquareAndBitBoard {
         SquareAndBitBoard {
             square: sq,
             bitboard: bb,
-            promotion: promotion,
+            promotion,
         }
     }
 }
@@ -419,21 +415,21 @@ impl MoveGen {
         let mut movelist = NoDrop::new(ArrayVec::<SquareAndBitBoard, 18>::new());
 
         if checkers == BB_EMPTY {
-            PawnType::legals::<NotInCheckType>(&mut movelist, &board, mask);
-            KnightType::legals::<NotInCheckType>(&mut movelist, &board, mask);
-            BishopType::legals::<NotInCheckType>(&mut movelist, &board, mask);
-            RookType::legals::<NotInCheckType>(&mut movelist, &board, mask);
-            QueenType::legals::<NotInCheckType>(&mut movelist, &board, mask);
-            KingType::legals::<NotInCheckType>(&mut movelist, &board, mask);
+            PawnType::legals::<NotInCheckType>(&mut movelist, board, mask);
+            KnightType::legals::<NotInCheckType>(&mut movelist, board, mask);
+            BishopType::legals::<NotInCheckType>(&mut movelist, board, mask);
+            RookType::legals::<NotInCheckType>(&mut movelist, board, mask);
+            QueenType::legals::<NotInCheckType>(&mut movelist, board, mask);
+            KingType::legals::<NotInCheckType>(&mut movelist, board, mask);
         } else if checkers.popcnt() == 1 {
-            PawnType::legals::<InCheckType>(&mut movelist, &board, mask);
-            KnightType::legals::<InCheckType>(&mut movelist, &board, mask);
-            BishopType::legals::<InCheckType>(&mut movelist, &board, mask);
-            RookType::legals::<InCheckType>(&mut movelist, &board, mask);
-            QueenType::legals::<InCheckType>(&mut movelist, &board, mask);
-            KingType::legals::<InCheckType>(&mut movelist, &board, mask);
+            PawnType::legals::<InCheckType>(&mut movelist, board, mask);
+            KnightType::legals::<InCheckType>(&mut movelist, board, mask);
+            BishopType::legals::<InCheckType>(&mut movelist, board, mask);
+            RookType::legals::<InCheckType>(&mut movelist, board, mask);
+            QueenType::legals::<InCheckType>(&mut movelist, board, mask);
+            KingType::legals::<InCheckType>(&mut movelist, board, mask);
         } else {
-            KingType::legals::<InCheckType>(&mut movelist, &board, mask);
+            KingType::legals::<InCheckType>(&mut movelist, board, mask);
         }
 
         movelist
@@ -493,7 +489,7 @@ impl MoveGen {
     }
 
     pub fn legal_quick(board: &SubBoard, chess_move: Move) -> bool {
-        let piece = board.piece_at(chess_move.get_source()).unwrap();
+        let piece = board.piece_type_at(chess_move.get_source()).unwrap();
         match piece {
             Rook => true,
             Bishop => true,
@@ -501,7 +497,7 @@ impl MoveGen {
             Queen => true,
             Pawn => {
                 if chess_move.get_source().get_file() != chess_move.get_dest().get_file()
-                    && board.piece_at(chess_move.get_dest()).is_none()
+                    && board.piece_type_at(chess_move.get_dest()).is_none()
                 {
                     // en-passant
                     PawnType::legal_ep_move(board, chess_move.get_source(), chess_move.get_dest())

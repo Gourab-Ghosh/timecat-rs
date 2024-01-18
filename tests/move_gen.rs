@@ -1,4 +1,4 @@
-use timecat::chess_::*;
+use timecat::*;
 use std::collections::HashSet;
 use std::str::FromStr;
 

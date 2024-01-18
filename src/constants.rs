@@ -17,25 +17,25 @@ pub mod types {
 pub mod bitboard {
     use crate::{paste, BitBoard, File::*};
 
-    pub const BB_EMPTY: BitBoard = BitBoard(0);
-    pub const BB_ALL: BitBoard = BitBoard(0xffff_ffff_ffff_ffff);
+    pub const BB_EMPTY: BitBoard = BitBoard::new(0);
+    pub const BB_ALL: BitBoard = BitBoard::new(0xffff_ffff_ffff_ffff);
 
     macro_rules! generate_bitboard_constants {
         (@bb_squares $(($file:expr, $rank:expr)), *,) => {
             paste! {
                 $(
-                    pub const [<BB_$file$rank>]: BitBoard = BitBoard(1 << (8 * ($rank - 1) + $file as usize));
+                    pub const [<BB_$file$rank>]: BitBoard = BitBoard::new(1 << (8 * ($rank - 1) + $file as usize));
                 )*
                 pub const BB_SQUARES: [BitBoard; 64] = [$( [<BB_$file$rank>] ), *];
-                // const SQUARES_180: [chess::Square; 64] = [$( chess::Square::[<$file$rank>] ), *];
+                // const SQUARES_180: [Square; 64] = [$( Square::[<$file$rank>] ), *];
             }
         };
 
         (@bb_ranks_and_files $(($file:expr, $rank:expr)), *,) => {
             $(
                 paste!{
-                    pub const [<BB_RANK_$rank>]: BitBoard = BitBoard(0xff << (($rank - 1) << 3));
-                    pub const [<BB_FILE_$file>]: BitBoard = BitBoard(0x0101_0101_0101_0101 << ($rank - 1));
+                    pub const [<BB_RANK_$rank>]: BitBoard = BitBoard::new(0xff << (($rank - 1) << 3));
+                    pub const [<BB_FILE_$file>]: BitBoard = BitBoard::new(0x0101_0101_0101_0101 << ($rank - 1));
                 }
             )*
         };
@@ -58,57 +58,59 @@ pub mod bitboard {
         (A, 1), (B, 2), (C, 3), (D, 4), (E, 5), (F, 6), (G, 7), (H, 8),
     );
 
-    pub const BB_CORNERS: BitBoard = BitBoard(BB_A1.0 | BB_H1.0 | BB_A8.0 | BB_H8.0);
-    pub const BB_CENTER: BitBoard = BitBoard(BB_D4.0 | BB_E4.0 | BB_D5.0 | BB_E5.0);
+    pub const BB_CORNERS: BitBoard = BitBoard::new(BB_A1.get_mask() | BB_H1.get_mask() | BB_A8.get_mask() | BB_H8.get_mask());
+    pub const BB_CENTER: BitBoard = BitBoard::new(BB_D4.get_mask() | BB_E4.get_mask() | BB_D5.get_mask() | BB_E5.get_mask());
 
-    pub const BB_LIGHT_SQUARES: BitBoard = BitBoard(0x55aa_55aa_55aa_55aa);
-    pub const BB_DARK_SQUARES: BitBoard = BitBoard(0xaa55_aa55_aa55_aa55);
+    pub const BB_LIGHT_SQUARES: BitBoard = BitBoard::new(0x55aa_55aa_55aa_55aa);
+    pub const BB_DARK_SQUARES: BitBoard = BitBoard::new(0xaa55_aa55_aa55_aa55);
 
-    pub const BB_BACKRANKS: BitBoard = BitBoard(BB_RANK_1.0 | BB_RANK_8.0);
+    pub const BB_BACKRANKS: BitBoard = BitBoard::new(BB_RANK_1.get_mask() | BB_RANK_8.get_mask());
 
-    pub const BB_UPPER_HALF_BOARD: BitBoard = BitBoard(0xffffffff00000000);
-    pub const BB_LOWER_HALF_BOARD: BitBoard = BitBoard(0x00000000ffffffff);
-    pub const BB_LEFT_HALF_BOARD: BitBoard = BitBoard(0xf0f0f0f0f0f0f0f0);
-    pub const BB_RIGHT_HALF_BOARD: BitBoard = BitBoard(0x0f0f0f0f0f0f0f0f);
+    pub const BB_UPPER_HALF_BOARD: BitBoard = BitBoard::new(0xffffffff00000000);
+    pub const BB_LOWER_HALF_BOARD: BitBoard = BitBoard::new(0x00000000ffffffff);
+    pub const BB_LEFT_HALF_BOARD: BitBoard = BitBoard::new(0xf0f0f0f0f0f0f0f0);
+    pub const BB_RIGHT_HALF_BOARD: BitBoard = BitBoard::new(0x0f0f0f0f0f0f0f0f);
 
-    pub const CENTER_SQUARES_BB: BitBoard = BitBoard(0x0000001818000000);
-    pub const PSEUDO_CENTER_SQUARES_BB: BitBoard = BitBoard(0x00003C24243C0000);
+    pub const CENTER_SQUARES_BB: BitBoard = BitBoard::new(0x0000001818000000);
+    pub const PSEUDO_CENTER_SQUARES_BB: BitBoard = BitBoard::new(0x00003C24243C0000);
 
     pub const UPPER_BOARD_MASK: [[BitBoard; 8]; 2] = [
         [
-            BitBoard(0xffff_ffff_ffff_ff00),
-            BitBoard(0xffff_ffff_ffff_0000),
-            BitBoard(0xffff_ffff_ff00_0000),
-            BitBoard(0xffff_ffff_0000_0000),
-            BitBoard(0xffff_ff00_0000_0000),
-            BitBoard(0xffff_0000_0000_0000),
-            BitBoard(0xff00_0000_0000_0000),
-            BitBoard(0x0000_0000_0000_0000),
+            BitBoard::new(0xffff_ffff_ffff_ff00),
+            BitBoard::new(0xffff_ffff_ffff_0000),
+            BitBoard::new(0xffff_ffff_ff00_0000),
+            BitBoard::new(0xffff_ffff_0000_0000),
+            BitBoard::new(0xffff_ff00_0000_0000),
+            BitBoard::new(0xffff_0000_0000_0000),
+            BitBoard::new(0xff00_0000_0000_0000),
+            BitBoard::new(0x0000_0000_0000_0000),
         ],
         [
-            BitBoard(0x00ff_ffff_ffff_ffff),
-            BitBoard(0x0000_ffff_ffff_ffff),
-            BitBoard(0x0000_00ff_ffff_ffff),
-            BitBoard(0x0000_0000_ffff_ffff),
-            BitBoard(0x0000_0000_00ff_ffff),
-            BitBoard(0x0000_0000_0000_ffff),
-            BitBoard(0x0000_0000_0000_00ff),
-            BitBoard(0x0000_0000_0000_0000),
+            BitBoard::new(0x00ff_ffff_ffff_ffff),
+            BitBoard::new(0x0000_ffff_ffff_ffff),
+            BitBoard::new(0x0000_00ff_ffff_ffff),
+            BitBoard::new(0x0000_0000_ffff_ffff),
+            BitBoard::new(0x0000_0000_00ff_ffff),
+            BitBoard::new(0x0000_0000_0000_ffff),
+            BitBoard::new(0x0000_0000_0000_00ff),
+            BitBoard::new(0x0000_0000_0000_0000),
         ],
     ];
 
     pub const BOARD_QUARTER_MASKS: [BitBoard; 4] = [
-        BitBoard(0x0f0f_0f0f_0000_0000),
-        BitBoard(0xf0f0_f0f0_0000_0000),
-        BitBoard(0x0000_0000_0f0f_0f0f),
-        BitBoard(0x0000_0000_f0f0_f0f0),
+        BitBoard::new(0x0f0f_0f0f_0000_0000),
+        BitBoard::new(0xf0f0_f0f0_0000_0000),
+        BitBoard::new(0x0000_0000_0f0f_0f0f),
+        BitBoard::new(0x0000_0000_f0f0_f0f0),
     ];
 }
 
 pub mod square {
+    use crate::Square;
+    
     macro_rules! generate_squares {
         [$( $square:ident ), *,] => {
-            pub const SQUARES_180: [chess::Square; 64] = [$( chess::Square::$square ), *];
+            pub const SQUARES_180: [Square; 64] = [$( Square::$square ), *];
         };
     }
 
@@ -191,7 +193,7 @@ pub mod print_style {
 pub mod engine_constants {
     use super::types::*;
     use crate::{
-        evaluate_piece, CacheTableSize, Duration, GoCommand, Piece::*, TranspositionTableEntry,
+        evaluate_piece, CacheTableSize, Duration, GoCommand, PieceType::*, TranspositionTableEntry,
         UCIOptionValues,
     };
 

@@ -201,16 +201,15 @@ const POLYGLOT_RANDOM_64: [u64; 781] = [
     0xF8D626AAAF278509,
 ];
 
-fn get_polyglot_piece_value(piece: Piece, color: Color) -> usize {
-    2 * piece as usize + (1 - color as usize)
+fn get_polyglot_piece_value(piece: Piece) -> usize {
+    2 * piece.get_piece_type() as usize + (1 - piece.get_color() as usize)
 }
 
 fn polyglot_hash_from_board(board: &Board) -> u64 {
     let mut hash = 0;
     for piece_square in *board.occupied() {
         let piece = board.piece_at(piece_square).unwrap();
-        let color = board.color_at(piece_square).unwrap();
-        let piece_value = get_polyglot_piece_value(piece, color);
+        let piece_value = get_polyglot_piece_value(piece);
         let index = 64 * piece_value + piece_square.to_index();
         hash ^= POLYGLOT_RANDOM_64[index];
     }
@@ -249,8 +248,8 @@ fn get_move_from_move_int(move_int: usize) -> Result<Move, EngineError> {
         4 => Some(Queen),
         _ => Err("Invalid promotion piece")?,
     };
-    let source = Square::make_square(source_rank, source_file);
-    let dest = Square::make_square(dest_rank, dest_file);
+    let source = Square::from_rank_and_file(source_rank, source_file);
+    let dest = Square::from_rank_and_file(dest_rank, dest_file);
     Ok(Move::new(source, dest, promotion))
 }
 

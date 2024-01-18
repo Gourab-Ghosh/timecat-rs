@@ -41,7 +41,7 @@ impl GameResult {
 
 #[derive(Clone, Debug)]
 struct BoardState {
-    board: chess::Board,
+    board: SubBoard,
     ep_square: Option<Square>,
     halfmove_clock: u8,
     fullmove_number: NumMoves,
@@ -49,7 +49,7 @@ struct BoardState {
 }
 
 pub struct Board {
-    board: chess::Board,
+    board: SubBoard,
     stack: Vec<(BoardState, Option<Move>)>,
     ep_square: Option<Square>,
     halfmove_clock: u8,
@@ -62,7 +62,7 @@ pub struct Board {
 impl Board {
     pub fn new() -> Self {
         let mut board = Self {
-            board: chess::Board::from_str(STARTING_POSITION_FEN).unwrap(),
+            board: SubBoard::from_str(STARTING_POSITION_FEN).unwrap(),
             stack: Vec::new(),
             ep_square: None,
             halfmove_clock: 0,
@@ -77,9 +77,9 @@ impl Board {
         board
     }
 
-    pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
+    pub fn set_fen(&mut self, fen: &str) -> Result<(), EngineError> {
         if !Self::is_good_fen(fen) {
-            return Err(chess::Error::InvalidFen {
+            return Err(EngineError::BadFen {
                 fen: fen.to_string(),
             });
         }
@@ -88,7 +88,7 @@ impl Board {
             self.starting_fen = self.get_fen();
             return Ok(());
         }
-        self.board = chess::Board::from_str(&fen).expect("FEN not parsed properly!");
+        self.board = SubBoard::from_str(&fen).expect("FEN not parsed properly!");
         self.update_ep_square();
         let mut splitted_fen = fen.split(' ');
         self.halfmove_clock = splitted_fen.nth(4).unwrap_or("0").parse().unwrap();
@@ -100,7 +100,7 @@ impl Board {
         Ok(())
     }
 
-    pub fn from_fen(fen: &str) -> Result<Self, chess::Error> {
+    pub fn from_fen(fen: &str) -> Result<Self, EngineError> {
         let fen = simplify_fen(fen);
         let mut board = Self::new();
         board.set_fen(&fen)?;
@@ -127,13 +127,13 @@ impl Board {
         fen
     }
 
-    pub fn get_sub_board(&self) -> chess::Board {
+    pub fn get_sub_board(&self) -> SubBoard {
         self.board
     }
 
     pub fn is_good_fen(fen: &str) -> bool {
         let fen = simplify_fen(fen);
-        if chess::Board::from_str(&fen).is_err() {
+        if SubBoard::from_str(&fen).is_err() {
             return false;
         }
         let mut splitted_fen = fen.split(' ');
@@ -159,15 +159,19 @@ impl Board {
     }
 
     pub fn color_at(&self, square: Square) -> Option<Color> {
-        self.board.color_on(square)
+        self.board.color_at(square)
+    }
+
+    pub fn piece_type_at(&self, square: Square) -> Option<PieceType> {
+        self.board.piece_type_at(square)
     }
 
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
-        self.board.piece_on(square)
+        self.board.piece_at(square)
     }
 
     pub fn piece_symbol_at(&self, square: Square) -> String {
-        let symbol = get_item_unchecked!(PIECE_SYMBOLS, self.piece_at(square).get_type() as usize)
+        let symbol = get_item_unchecked!(PIECE_SYMBOLS, self.piece_type_at(square).get_type() as usize)
             .to_string();
         if let Some(color) = self.color_at(square) {
             return match color {
@@ -180,7 +184,7 @@ impl Board {
 
     pub fn piece_unicode_symbol_at(&self, square: Square, flip_color: bool) -> String {
         if let Some(color) = self.color_at(square) {
-            let piece_index = self.piece_at(square).unwrap().to_index();
+            let piece_index = self.piece_type_at(square).unwrap().to_index();
             let (white_pieces, black_pieces) = match flip_color {
                 true => (BLACK_PIECE_UNICODE_SYMBOLS, WHITE_PIECE_UNICODE_SYMBOLS),
                 false => (WHITE_PIECE_UNICODE_SYMBOLS, BLACK_PIECE_UNICODE_SYMBOLS),
@@ -291,22 +295,22 @@ impl Board {
 
     #[inline]
     pub fn occupied(&self) -> &BitBoard {
-        return self.board.combined();
+        return self.board.occupied();
     }
 
     #[inline]
     pub fn occupied_co(&self, color: Color) -> &BitBoard {
-        return self.board.color_combined(color);
+        return self.board.occupied_co(color);
     }
 
     #[inline]
     pub fn black_occupied(&self) -> &BitBoard {
-        return self.board.color_combined(Black);
+        return self.board.occupied_co(Black);
     }
 
     #[inline]
     pub fn white_occupied(&self) -> &BitBoard {
-        return self.board.color_combined(White);
+        return self.board.occupied_co(White);
     }
 
     #[inline]
@@ -552,22 +556,22 @@ impl Board {
 
     pub fn clean_castling_rights(&self) -> BitBoard {
         let white_castling_rights = match self.board.castle_rights(White) {
-            chess::CastleRights::Both => BB_A1 | BB_H1,
-            chess::CastleRights::KingSide => BB_H1,
-            chess::CastleRights::QueenSide => BB_A1,
-            chess::CastleRights::NoRights => BB_EMPTY,
+            CastleRights::Both => BB_A1 | BB_H1,
+            CastleRights::KingSide => BB_H1,
+            CastleRights::QueenSide => BB_A1,
+            CastleRights::None => BB_EMPTY,
         };
         let black_castling_rights = match self.board.castle_rights(Black) {
-            chess::CastleRights::Both => BB_A8 | BB_H8,
-            chess::CastleRights::KingSide => BB_H8,
-            chess::CastleRights::QueenSide => BB_A8,
-            chess::CastleRights::NoRights => BB_EMPTY,
+            CastleRights::Both => BB_A8 | BB_H8,
+            CastleRights::KingSide => BB_H8,
+            CastleRights::QueenSide => BB_A8,
+            CastleRights::None => BB_EMPTY,
         };
         white_castling_rights | black_castling_rights
     }
 
     #[inline]
-    pub fn get_piece_mask(&self, piece: Piece) -> &BitBoard {
+    pub fn get_piece_mask(&self, piece: PieceType) -> &BitBoard {
         self.board.pieces(piece)
     }
 
@@ -709,7 +713,7 @@ impl Board {
         self.stack.is_empty()
     }
 
-    pub fn parse_san(&self, mut san: &str) -> Result<Option<Move>, chess::Error> {
+    pub fn parse_san(&self, mut san: &str) -> Result<Option<Move>, EngineError> {
         san = san.trim();
         if san == "--" {
             return Ok(None);
@@ -720,19 +724,19 @@ impl Board {
                 return Ok(Some(move_));
             }
         }
-        Err(chess::Error::InvalidSanMove)
+        Err(EngineError::InvalidSanMoveString { s: san.to_string() })
         // Move::from_san(&self.board, &san.replace('0', "O"))
     }
 
     #[inline]
-    pub fn parse_uci(&self, uci: &str) -> Result<Option<Move>, chess::Error> {
+    pub fn parse_uci(&self, uci: &str) -> Result<Option<Move>, EngineError> {
         if uci == "0000" {
             return Ok(None);
         }
         Ok(Some(Move::from_str(uci)?))
     }
 
-    pub fn parse_move(&self, move_text: &str) -> Result<Option<Move>, chess::Error> {
+    pub fn parse_move(&self, move_text: &str) -> Result<Option<Move>, EngineError> {
         self.parse_uci(move_text).or(self.parse_san(move_text))
     }
 
@@ -789,7 +793,7 @@ impl Board {
         }
 
         let piece = self
-            .piece_at(move_.get_source())
+            .piece_type_at(move_.get_source())
             .ok_or(BoardError::InvalidSanMove {
                 move_,
                 fen: self.get_fen(),
@@ -966,18 +970,18 @@ impl Board {
         self.board.legal(move_)
     }
 
-    pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> chess::MoveGen {
-        let mut moves = chess::MoveGen::new_legal(&self.board);
+    pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGen {
+        let mut moves = MoveGen::new_legal(&self.board);
         moves.set_iterator_mask(to_bitboard);
         moves
     }
 
     #[inline]
-    pub fn generate_legal_moves(&self) -> chess::MoveGen {
-        chess::MoveGen::new_legal(&self.board)
+    pub fn generate_legal_moves(&self) -> MoveGen {
+        MoveGen::new_legal(&self.board)
     }
 
-    pub fn generate_legal_captures(&self) -> chess::MoveGen {
+    pub fn generate_legal_captures(&self) -> MoveGen {
         let targets = self.occupied_co(!self.turn());
         self.generate_masked_legal_moves(*targets)
     }
@@ -1004,7 +1008,7 @@ impl Board {
     pub fn get_material_score(&self) -> Score {
         let mut score = 0;
         let black_occupied = self.black_occupied();
-        for &piece in ALL_PIECES[..5].iter() {
+        for &piece in ALL_PIECE_TYPES[..5].iter() {
             let piece_mask = self.get_piece_mask(piece);
             if piece_mask == &BB_EMPTY {
                 continue;
@@ -1035,7 +1039,7 @@ impl Board {
 
     #[inline]
     pub fn get_masked_material_score_abs(&self, mask: &BitBoard) -> Score {
-        ALL_PIECES[..5]
+        ALL_PIECE_TYPES[..5]
             .iter()
             .map(|&piece| {
                 evaluate_piece(piece) * (self.get_piece_mask(piece) & mask).popcnt() as Score
@@ -1045,7 +1049,7 @@ impl Board {
 
     #[inline]
     pub fn get_material_score_abs(&self) -> Score {
-        ALL_PIECES[..5]
+        ALL_PIECE_TYPES[..5]
             .iter()
             .map(|&piece| evaluate_piece(piece) * self.get_piece_mask(piece).popcnt() as Score)
             .sum()
@@ -1053,7 +1057,7 @@ impl Board {
 
     #[inline]
     pub fn get_non_pawn_material_score_abs(&self) -> Score {
-        ALL_PIECES[1..5]
+        ALL_PIECE_TYPES[1..5]
             .iter()
             .map(|&piece| evaluate_piece(piece) * self.get_piece_mask(piece).popcnt() as Score)
             .sum()
@@ -1125,7 +1129,7 @@ impl Clone for Board {
 }
 
 impl FromStr for Board {
-    type Err = chess::Error;
+    type Err = EngineError;
 
     fn from_str(fen: &str) -> Result<Self, Self::Err> {
         Self::from_fen(fen)

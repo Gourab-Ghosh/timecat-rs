@@ -94,7 +94,7 @@ pub fn test() -> Result<(), EngineError> {
     parse_command(&mut engine, "go depth 13");
 
     // let mut all_optional_pieces = vec![None];
-    // all_optional_pieces.extend_from_slice(&ALL_PIECES.map(|piece| Some(piece)));
+    // all_optional_pieces.extend_from_slice(&ALL_PIECE_TYPES.map(|piece| Some(piece)));
     // for source in ALL_SQUARES {
     //     for dest in ALL_SQUARES {
     //         for &promotion in all_optional_pieces.iter() {

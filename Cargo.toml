@@ -30,7 +30,6 @@ panic = "abort"
 arrayvec = "0.7.4"
 binread = { version = "2.2.0", features = ["const_generics"] }
 bytemuck = { version = "1.14.0", features = ["min_const_generics", "derive", "extern_crate_alloc"] }
-chess = "3.2.0"
 colored = "2.1.0"
 failure = "0.1.8"
 fxhash = "0.2.1"

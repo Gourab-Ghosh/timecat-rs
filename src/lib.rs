@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 mod board;
-pub mod chess_;
+mod chess;
 mod constants;
 mod engine;
 mod evaluate;
@@ -22,13 +22,7 @@ mod utils;
 
 use arrayvec::ArrayVec;
 pub use board::*;
-pub use chess::Color::*;
-pub use chess::Piece::*;
-use chess::{
-    get_adjacent_files, get_bishop_moves, get_file as get_file_bb, get_rank as get_rank_bb,
-    get_rook_moves, BitBoard, BoardStatus, ChessMove as Move, Color, File, MoveGen, Piece, Rank,
-    Square, ALL_PIECES, ALL_SQUARES,
-};
+pub use chess::*;
 use constants::atomic::*;
 use constants::bitboard::*;
 use constants::board_representation::*;

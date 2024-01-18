@@ -1,12 +1,12 @@
 use super::*;
 
 #[derive(Copy, Clone, PartialEq, PartialOrd)]
-pub struct CacheTableEntry<T: Copy + Clone + PartialEq + PartialOrd> {
+pub struct CacheTableEntry<T: Copy + Clone + PartialEq> {
     hash: u64,
     entry: T,
 }
 
-impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTableEntry<T> {
+impl<T: Copy + Clone + PartialEq> CacheTableEntry<T> {
     #[inline]
     pub fn new(hash: u64, entry: T) -> CacheTableEntry<T> {
         CacheTableEntry { hash, entry }
@@ -37,7 +37,7 @@ macro_rules! update_overwrites_and_collisions {
     };
 }
 
-pub struct CacheTable<T: Copy + Clone + PartialEq + PartialOrd> {
+pub struct CacheTable<T: Copy + Clone + PartialEq> {
     table: Mutex<Box<[CacheTableEntry<T>]>>,
     size: Mutex<CacheTableSize>,
     default: T,
@@ -47,7 +47,7 @@ pub struct CacheTable<T: Copy + Clone + PartialEq + PartialOrd> {
     num_collisions: AtomicUsize,
 }
 
-impl<T: Copy + Clone + PartialEq + PartialOrd> CacheTable<T> {
+impl<T: Copy + Clone + PartialEq> CacheTable<T> {
     #[inline]
     fn generate_table(size: CacheTableSize, default: T) -> Box<[CacheTableEntry<T>]> {
         vec![
@@ -238,7 +238,7 @@ impl Default for TranspositionTableData {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct TranspositionTableEntry {
     optional_data: Option<TranspositionTableData>,
     best_move: Option<Move>,

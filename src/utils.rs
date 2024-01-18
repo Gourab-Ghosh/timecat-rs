@@ -24,7 +24,7 @@ pub mod piece_utils {
     use super::*;
 
     #[inline]
-    pub const fn evaluate_piece(piece: Piece) -> i16 {
+    pub const fn evaluate_piece(piece: PieceType) -> i16 {
         // never set knight and bishop values as same for knight bishop endgame
         match piece {
             Pawn => PAWN_VALUE,
@@ -36,13 +36,13 @@ pub mod piece_utils {
         }
     }
 
-    pub trait PieceType {
+    pub trait PieceTypeTrait {
         type PieceType;
 
         fn get_type(self) -> Self::PieceType;
     }
 
-    impl PieceType for Piece {
+    impl PieceTypeTrait for PieceType {
         type PieceType = u8;
 
         fn get_type(self) -> Self::PieceType {
@@ -50,7 +50,7 @@ pub mod piece_utils {
         }
     }
 
-    impl PieceType for Option<Piece> {
+    impl PieceTypeTrait for Option<PieceType> {
         type PieceType = u8;
 
         fn get_type(self) -> Self::PieceType {
@@ -75,7 +75,7 @@ pub mod move_utils {
         fn decompress(self) -> T;
     }
 
-    impl Compress for Option<Piece> {
+    impl Compress for Option<PieceType> {
         type CompressedItem = u8;
 
         fn compress(self) -> Self::CompressedItem {
@@ -83,7 +83,7 @@ pub mod move_utils {
         }
     }
 
-    impl Compress for Piece {
+    impl Compress for PieceType {
         type CompressedItem = u8;
 
         fn compress(self) -> Self::CompressedItem {
@@ -122,17 +122,17 @@ pub mod move_utils {
         }
     }
 
-    impl Decompress<Option<Piece>> for u8 {
-        fn decompress(self) -> Option<Piece> {
+    impl Decompress<Option<PieceType>> for u8 {
+        fn decompress(self) -> Option<PieceType> {
             if self == 0 {
                 return None;
             }
-            Some(get_item_unchecked!(ALL_PIECES, (self - 1) as usize))
+            Some(get_item_unchecked!(ALL_PIECE_TYPES, (self - 1) as usize))
         }
     }
 
-    impl Decompress<Option<Piece>> for u16 {
-        fn decompress(self) -> Option<Piece> {
+    impl Decompress<Option<PieceType>> for u16 {
+        fn decompress(self) -> Option<PieceType> {
             (self as u8).decompress()
         }
     }
@@ -388,7 +388,7 @@ pub mod string_utils {
         }
     }
 
-    impl Stringify for Piece {
+    impl Stringify for PieceType {
         fn stringify(&self) -> String {
             match self {
                 Pawn => "Pawn",
@@ -402,7 +402,7 @@ pub mod string_utils {
         }
     }
 
-    impl Stringify for chess::Color {
+    impl Stringify for Color {
         fn stringify(&self) -> String {
             match self {
                 White => "White",
@@ -461,11 +461,13 @@ pub mod time_utils {
 }
 
 pub mod hash_utils {
+    use super::*;
+
     pub trait CustomHash {
         fn hash(self) -> u64;
     }
 
-    impl CustomHash for chess::Board {
+    impl CustomHash for SubBoard {
         #[inline]
         fn hash(self) -> u64 {
             self.get_hash().max(1)
@@ -572,6 +574,9 @@ pub mod engine_error {
             max: Spin,
         },
 
+        #[fail(display = "Got invalid SAN move string {}! Please try again!", s)]
+        InvalidSanMoveString { s: String },
+
         #[fail(display = "Got invalid rank string {}! Please try again!", s)]
         InvalidRankString { s: String },
 
@@ -585,7 +590,7 @@ pub mod engine_error {
         InvalidUciMoveString { s: String },
 
         #[fail(display = "Invalid sub board generated:\n\n{:#?}", board)]
-        InvalidSubBoard { board: chess_::SubBoard },
+        InvalidSubBoard { board: SubBoard },
 
         #[fail(display = "{}", err_msg)]
         CustomError { err_msg: String },
@@ -662,7 +667,6 @@ pub mod engine_error {
         };
     }
 
-    impl_error_convert!(chess::Error);
     impl_error_convert!(std::io::Error);
     impl_error_convert!(std::array::TryFromSliceError);
 
@@ -723,11 +727,11 @@ pub mod cache_table_utils {
             matches!(self, Self::Exact(_))
         }
 
-        pub const fn get_entry_size<T: Copy + Clone + PartialEq + PartialOrd>() -> usize {
+        pub const fn get_entry_size<T: Copy + Clone + PartialEq>() -> usize {
             std::mem::size_of::<CacheTableEntry<T>>()
         }
 
-        pub fn to_cache_table_and_entry_size<T: Copy + Clone + PartialEq + PartialOrd>(
+        pub fn to_cache_table_and_entry_size<T: Copy + Clone + PartialEq>(
             self,
         ) -> (usize, usize) {
             let mut size = self.unwrap();
@@ -748,11 +752,11 @@ pub mod cache_table_utils {
             (size, entry_size)
         }
 
-        pub fn to_cache_table_size<T: Copy + Clone + PartialEq + PartialOrd>(self) -> usize {
+        pub fn to_cache_table_size<T: Copy + Clone + PartialEq>(self) -> usize {
             self.to_cache_table_and_entry_size::<T>().0
         }
 
-        pub fn to_cache_table_memory_size<T: Copy + Clone + PartialEq + PartialOrd>(self) -> usize {
+        pub fn to_cache_table_memory_size<T: Copy + Clone + PartialEq>(self) -> usize {
             let (size, entry_size) = self.to_cache_table_and_entry_size::<T>();
             size * entry_size / 2_usize.pow(20)
         }

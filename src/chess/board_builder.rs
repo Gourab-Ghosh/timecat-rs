@@ -6,8 +6,8 @@ pub struct BoardBuilder {
     side_to_move: Color,
     castle_rights: [CastleRights; 2],
     en_passant: Option<File>,
-    halfmove_number: u8,
-    fullmove_count: NumMoves,
+    halfmove_clock: u8,
+    fullmove_number: NumMoves,
 }
 
 impl BoardBuilder {
@@ -15,34 +15,36 @@ impl BoardBuilder {
     pub fn new() -> Self {
         Self {
             pieces: [None; 64],
-            side_to_move: Color::White,
+            side_to_move: White,
             castle_rights: [CastleRights::None, CastleRights::None],
             en_passant: None,
-            halfmove_number: 0,
-            fullmove_count: 1,
+            halfmove_clock: 0,
+            fullmove_number: 1,
         }
     }
 
-    // pub fn setup<'a>(
-    //     pieces: impl IntoIterator<Item = &'a (Square, Piece, Color)>,
-    //     side_to_move: Color,
-    //     white_castle_rights: CastleRights,
-    //     black_castle_rights: CastleRights,
-    //     en_passant: Option<File>,
-    // ) -> BoardBuilder {
-    //     let mut result = BoardBuilder {
-    //         pieces: [None; 64],
-    //         side_to_move: side_to_move,
-    //         castle_rights: [white_castle_rights, black_castle_rights],
-    //         en_passant: en_passant,
-    //     };
+    pub fn setup<'a>(
+        pieces: impl IntoIterator<Item = &'a (Square, Piece)>,
+        side_to_move: Color,
+        white_castle_rights: CastleRights,
+        black_castle_rights: CastleRights,
+        en_passant: Option<File>,
+    ) -> BoardBuilder {
+        let mut result = BoardBuilder {
+            pieces: [None; 64],
+            side_to_move,
+            castle_rights: [white_castle_rights, black_castle_rights],
+            en_passant,
+            halfmove_clock: 0,
+            fullmove_number: 1,
+        };
 
-    //     for piece in pieces.into_iter() {
-    //         result.pieces[piece.get_mask().to_index()] = Some((piece.1, piece.2));
-    //     }
+        for piece in pieces.into_iter() {
+            result.pieces[piece.0.to_index()] = Some(piece.1);
+        }
 
-    //     result
-    // }
+        result
+    }
 
     pub fn get_side_to_move(&self) -> Color {
         self.side_to_move
@@ -128,7 +130,7 @@ impl fmt::Display for BoardBuilder {
 
         write!(f, " ")?;
 
-        if self.side_to_move == Color::White {
+        if self.side_to_move == White {
             write!(f, "w ")?;
         } else {
             write!(f, "b ")?;
@@ -137,12 +139,12 @@ impl fmt::Display for BoardBuilder {
         write!(
             f,
             "{}",
-            self.castle_rights[Color::White.to_index()].to_string(Color::White)
+            self.castle_rights[White.to_index()].to_string(White)
         )?;
         write!(
             f,
             "{}",
-            self.castle_rights[Color::Black.to_index()].to_string(Color::Black)
+            self.castle_rights[Black.to_index()].to_string(Black)
         )?;
         if self.castle_rights[0] == CastleRights::None
             && self.castle_rights[1] == CastleRights::None
@@ -199,62 +201,62 @@ impl FromStr for BoardBuilder {
                 }
                 'r' => {
                     fen[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(PieceType::Rook, Color::Black));
+                        Some(Piece::new(Rook, Black));
                     cur_file = cur_file.right();
                 }
                 'R' => {
                     fen[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(PieceType::Rook, Color::White));
+                        Some(Piece::new(Rook, White));
                     cur_file = cur_file.right();
                 }
                 'n' => {
                     fen[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(PieceType::Knight, Color::Black));
+                        Some(Piece::new(Knight, Black));
                     cur_file = cur_file.right();
                 }
                 'N' => {
                     fen[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(PieceType::Knight, Color::White));
+                        Some(Piece::new(Knight, White));
                     cur_file = cur_file.right();
                 }
                 'b' => {
                     fen[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(PieceType::Bishop, Color::Black));
+                        Some(Piece::new(Bishop, Black));
                     cur_file = cur_file.right();
                 }
                 'B' => {
                     fen[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(PieceType::Bishop, Color::White));
+                        Some(Piece::new(Bishop, White));
                     cur_file = cur_file.right();
                 }
                 'p' => {
                     fen[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(PieceType::Pawn, Color::Black));
+                        Some(Piece::new(Pawn, Black));
                     cur_file = cur_file.right();
                 }
                 'P' => {
                     fen[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(PieceType::Pawn, Color::White));
+                        Some(Piece::new(Pawn, White));
                     cur_file = cur_file.right();
                 }
                 'q' => {
                     fen[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(PieceType::Queen, Color::Black));
+                        Some(Piece::new(Queen, Black));
                     cur_file = cur_file.right();
                 }
                 'Q' => {
                     fen[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(PieceType::Queen, Color::White));
+                        Some(Piece::new(Queen, White));
                     cur_file = cur_file.right();
                 }
                 'k' => {
                     fen[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(PieceType::King, Color::Black));
+                        Some(Piece::new(King, Black));
                     cur_file = cur_file.right();
                 }
                 'K' => {
                     fen[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(PieceType::King, Color::White));
+                        Some(Piece::new(King, White));
                     cur_file = cur_file.right();
                 }
                 _ => {
@@ -265,8 +267,8 @@ impl FromStr for BoardBuilder {
             }
         }
         match side {
-            "w" | "W" => _ = fen.side_to_move(Color::White),
-            "b" | "B" => _ = fen.side_to_move(Color::Black),
+            "w" | "W" => _ = fen.side_to_move(White),
+            "b" | "B" => _ = fen.side_to_move(Black),
             _ => {
                 return Err(EngineError::BadFen {
                     fen: value.to_string(),
@@ -275,23 +277,23 @@ impl FromStr for BoardBuilder {
         }
 
         if castles.contains('K') && castles.contains('Q') {
-            fen.castle_rights[Color::White.to_index()] = CastleRights::Both;
+            fen.castle_rights[White.to_index()] = CastleRights::Both;
         } else if castles.contains('K') {
-            fen.castle_rights[Color::White.to_index()] = CastleRights::KingSide;
+            fen.castle_rights[White.to_index()] = CastleRights::KingSide;
         } else if castles.contains('Q') {
-            fen.castle_rights[Color::White.to_index()] = CastleRights::QueenSide;
+            fen.castle_rights[White.to_index()] = CastleRights::QueenSide;
         } else {
-            fen.castle_rights[Color::White.to_index()] = CastleRights::None;
+            fen.castle_rights[White.to_index()] = CastleRights::None;
         }
 
         if castles.contains('k') && castles.contains('q') {
-            fen.castle_rights[Color::Black.to_index()] = CastleRights::Both;
+            fen.castle_rights[Black.to_index()] = CastleRights::Both;
         } else if castles.contains('k') {
-            fen.castle_rights[Color::Black.to_index()] = CastleRights::KingSide;
+            fen.castle_rights[Black.to_index()] = CastleRights::KingSide;
         } else if castles.contains('q') {
-            fen.castle_rights[Color::Black.to_index()] = CastleRights::QueenSide;
+            fen.castle_rights[Black.to_index()] = CastleRights::QueenSide;
         } else {
-            fen.castle_rights[Color::Black.to_index()] = CastleRights::None;
+            fen.castle_rights[Black.to_index()] = CastleRights::None;
         }
 
         if let Ok(sq) = Square::from_str(ep) {
@@ -299,5 +301,31 @@ impl FromStr for BoardBuilder {
         }
 
         Ok(fen)
+    }
+}
+
+impl From<&SubBoard> for BoardBuilder {
+    fn from(board: &SubBoard) -> Self {
+        let mut pieces = vec![];
+        for sq in ALL_SQUARES.iter() {
+            if let Some(piece) = board.piece_type_at(*sq) {
+                let color = board.color_at(*sq).unwrap();
+                pieces.push((*sq, Piece::new(piece, color)));
+            }
+        }
+
+        BoardBuilder::setup(
+            &pieces,
+            board.side_to_move(),
+            board.castle_rights(White),
+            board.castle_rights(Black),
+            board.en_passant().map(|sq| sq.get_file()),
+        )
+    }
+}
+
+impl From<SubBoard> for BoardBuilder {
+    fn from(board: SubBoard) -> Self {
+        (&board).into()
     }
 }

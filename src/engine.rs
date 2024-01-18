@@ -110,13 +110,13 @@ impl Engine {
         }
     }
 
-    pub fn set_fen(&mut self, fen: &str) -> Result<(), chess::Error> {
+    pub fn set_fen(&mut self, fen: &str) -> Result<(), EngineError> {
         let result = self.board.set_fen(fen);
         self.reset_variables();
         result
     }
 
-    pub fn from_fen(fen: &str) -> Result<Self, chess::Error> {
+    pub fn from_fen(fen: &str) -> Result<Self, EngineError> {
         Ok(Engine::new(Board::from_fen(fen)?))
     }
 

@@ -66,6 +66,7 @@ impl CastleRights {
     }
 
     /// Add some castle rights, and return a new `CastleRights`.
+    #[warn(clippy::should_implement_trait)]
     pub fn add(self, add: CastleRights) -> CastleRights {
         CastleRights::from_index(self.to_index() | add.to_index())
     }

@@ -23,12 +23,12 @@ impl Evaluator {
     }
 
     #[allow(unused_variables)]
-    pub fn activate_nnue(&mut self, piece: Piece, color: Color, square: Square) {
+    pub fn activate_nnue(&mut self, piece: PieceType, color: Color, square: Square) {
         // self.stockfish_network.activate();
     }
 
     #[allow(unused_variables)]
-    pub fn deactivate_nnue(&mut self, piece: Piece, color: Color, square: Square) {
+    pub fn deactivate_nnue(&mut self, piece: PieceType, color: Color, square: Square) {
         // self.stockfish_network.activate();
     }
 
@@ -40,7 +40,7 @@ impl Evaluator {
     ) -> Score {
         let winning_side_king_square = board.get_king_square(winning_side);
         let losing_side_king_square = board.get_king_square(!winning_side);
-        let mut least_distant_corner = Square::default();
+        let mut least_distant_corner = Square::D4;
         if is_bishop_knight_endgame {
             let is_light_squared_bishop =
                 board.get_piece_mask(Bishop) & BB_LIGHT_SQUARES != BB_EMPTY;
@@ -116,14 +116,14 @@ impl Evaluator {
             if num_pieces < 5 {
                 if num_white_pieces == 2 && num_black_pieces == 2 {
                     let non_king_white_piece = board
-                        .piece_at(
+                        .piece_type_at(
                             (white_occupied & !board.get_piece_mask(King))
                                 .next()
                                 .unwrap(),
                         )
                         .unwrap();
                     let non_king_black_piece = board
-                        .piece_at(
+                        .piece_type_at(
                             (black_occupied & !board.get_piece_mask(King))
                                 .next()
                                 .unwrap(),
@@ -140,8 +140,8 @@ impl Evaluator {
                     .zip([num_white_pieces, num_black_pieces].iter())
                 {
                     if num_pieces == 3 {
-                        let non_king_pieces: (Piece, Piece) = (bb & !board.get_piece_mask(King))
-                            .map(|s| board.piece_at(s).unwrap())
+                        let non_king_pieces: (PieceType, PieceType) = (bb & !board.get_piece_mask(King))
+                            .map(|s| board.piece_type_at(s).unwrap())
                             .collect_tuple()
                             .unwrap();
                         if non_king_pieces == (Knight, Knight) {

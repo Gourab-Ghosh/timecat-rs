@@ -27,6 +27,13 @@ impl PieceType {
     pub fn to_index(self) -> usize {
         self as usize
     }
+
+    pub fn to_string(self, color: Color) -> String {
+        match color {
+            Color::White => format!("{self}").to_uppercase(),
+            Color::Black => format!("{self}"),
+        }
+    }
 }
 
 impl fmt::Display for PieceType {
@@ -71,10 +78,7 @@ impl fmt::Display for Piece {
         write!(
             f,
             "{}",
-            match self.color {
-                Color::White => self.type_.to_string().to_uppercase(),
-                Color::Black => self.type_.to_string(),
-            }
+            self.type_.to_string(self.color),
         )
     }
 }

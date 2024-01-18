@@ -1,9 +1,18 @@
 use super::*;
 
-#[derive(Clone, Copy, Default, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct WeightedMove {
     pub weight: MoveWeight,
     pub move_: Move,
+}
+
+impl Default for WeightedMove {
+    fn default() -> Self {
+        Self {
+            weight: 0,
+            move_: Move::new(Square::A1, Square::A1, None),
+        }
+    }
 }
 
 impl WeightedMove {
@@ -130,7 +139,7 @@ impl MoveSorter {
         let depth = (depth as MoveWeight).pow(2);
         let src = history_move.get_source();
         let dest = history_move.get_dest();
-        self.history_move_scores[board.piece_at(src).unwrap().to_index()]
+        self.history_move_scores[board.piece_type_at(src).unwrap().to_index()]
             [board.color_at(src).unwrap() as usize][dest.to_index()] += depth;
     }
 
@@ -138,32 +147,32 @@ impl MoveSorter {
     pub fn get_history_score(&self, history_move: Move, board: &Board) -> MoveWeight {
         let src = history_move.get_source();
         let dest = history_move.get_dest();
-        self.history_move_scores[board.piece_at(src).unwrap().to_index()]
+        self.history_move_scores[board.piece_type_at(src).unwrap().to_index()]
             [board.color_at(src).unwrap() as usize][dest.to_index()]
     }
 
-    fn get_least_attackers_move(square: Square, board: &chess::Board) -> Option<Move> {
-        let mut capture_moves = chess::MoveGen::new_legal(board);
+    fn get_least_attackers_move(square: Square, board: &SubBoard) -> Option<Move> {
+        let mut capture_moves = MoveGen::new_legal(board);
         capture_moves.set_iterator_mask(get_square_bb(square));
         capture_moves.next()
     }
 
-    fn see(square: Square, board: &mut chess::Board) -> Score {
+    fn see(square: Square, board: &mut SubBoard) -> Score {
         let least_attackers_move = match Self::get_least_attackers_move(square, board) {
             Some(move_) => move_,
             None => return 0,
         };
-        let capture_piece = board.piece_on(square).unwrap_or(Pawn);
+        let capture_piece = board.piece_type_at(square).unwrap_or(Pawn);
         board.clone().make_move(least_attackers_move, board);
         (evaluate_piece(capture_piece) - Self::see(square, board)).max(0)
     }
 
-    fn see_capture(square: Square, board: &mut chess::Board) -> Score {
+    fn see_capture(square: Square, board: &mut SubBoard) -> Score {
         let least_attackers_move = match Self::get_least_attackers_move(square, board) {
             Some(move_) => move_,
             None => return 0,
         };
-        let capture_piece = board.piece_on(square).unwrap_or(Pawn);
+        let capture_piece = board.piece_type_at(square).unwrap_or(Pawn);
         board.clone().make_move(least_attackers_move, board);
         evaluate_piece(capture_piece) - Self::see(square, board)
     }
@@ -172,8 +181,8 @@ impl MoveSorter {
         if best_move == Some(move_) {
             return 10000;
         }
-        MVV_LVA[board.piece_at(move_.get_source()).unwrap().to_index()]
-            [board.piece_at(move_.get_dest()).unwrap_or(Pawn).to_index()]
+        MVV_LVA[board.piece_type_at(move_.get_source()).unwrap().to_index()]
+            [board.piece_type_at(move_.get_dest()).unwrap_or(Pawn).to_index()]
     }
 
     #[inline]
@@ -190,7 +199,7 @@ impl MoveSorter {
         source: Square,
         dest: Square,
     ) -> Option<MoveWeight> {
-        let moving_piece = board.piece_at(source).unwrap();
+        let moving_piece = board.piece_type_at(source).unwrap();
         if moving_piece != Pawn {
             let losing_color = !board.get_winning_side().unwrap_or(White);
             let losing_king_square = board.get_king_square(losing_color);
@@ -263,7 +272,7 @@ impl MoveSorter {
         let move_made_sub_board = board.get_sub_board().make_move_new(move_);
         // check
         let checkers = *move_made_sub_board.checkers();
-        let moving_piece = board.piece_at(source).unwrap();
+        let moving_piece = board.piece_type_at(source).unwrap();
         if checkers != BB_EMPTY {
             return -127000000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
@@ -276,7 +285,7 @@ impl MoveSorter {
             return 120000000 + history_score;
         }
         MAX_MOVES_PER_POSITION as MoveWeight
-            - chess::MoveGen::new_legal(&move_made_sub_board).len() as MoveWeight
+            - MoveGen::new_legal(&move_made_sub_board).len() as MoveWeight
     }
 
     pub fn get_weighted_moves_sorted(

@@ -3,8 +3,6 @@ use super::*;
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
 pub struct BitBoard(u64);
 
-pub const BB_EMPTY: BitBoard = BitBoard(0);
-
 impl fmt::Display for BitBoard {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -1,4 +1,4 @@
-use timecat::chess_::*;
+use timecat::*;
 
 #[test]
 fn test_to_square() {

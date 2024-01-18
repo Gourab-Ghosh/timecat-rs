@@ -1,5 +1,12 @@
 use super::*;
 
+#[derive(Copy, Clone, PartialEq, PartialOrd, Debug)]
+pub enum BoardStatus {
+    Ongoing,
+    Stalemate,
+    Checkmate,
+}
+
 #[derive(Eq, Clone, Copy, Debug)]
 pub struct SubBoard {
     pieces: [BitBoard; NUM_PIECE_TYPES],
@@ -59,6 +66,21 @@ impl SubBoard {
         }
     }
 
+    #[inline]
+    pub fn status(&self) -> BoardStatus {
+        let moves = MoveGen::new_legal(self).len();
+        match moves {
+            0 => {
+                if self.checkers == BB_EMPTY {
+                    BoardStatus::Stalemate
+                } else {
+                    BoardStatus::Checkmate
+                }
+            }
+            _ => BoardStatus::Ongoing,
+        }
+    }
+    
     #[inline]
     pub fn occupied(&self) -> &BitBoard {
         &self.occupied
@@ -161,10 +183,8 @@ impl SubBoard {
         // make sure there is no square with multiple pieces on it
         for x in ALL_PIECE_TYPES.iter() {
             for y in ALL_PIECE_TYPES.iter() {
-                if *x != *y {
-                    if self.pieces(*x) & self.pieces(*y) != BB_EMPTY {
-                        return false;
-                    }
+                if *x != *y && self.pieces(*x) & self.pieces(*y) != BB_EMPTY {
+                    return false;
                 }
             }
         }
@@ -233,12 +253,8 @@ impl SubBoard {
             }
             // if we have castle rights, make sure we have a king on the (E, {1,8}) square,
             // depending on the color
-            if castle_rights != CastleRights::None {
-                if self.pieces(PieceType::King) & self.occupied_co(*color)
-                    != get_file(File::E) & get_rank(color.to_my_backrank())
-                {
-                    return false;
-                }
+            if castle_rights != CastleRights::None && self.pieces(PieceType::King) & self.occupied_co(*color) != get_file_bb(File::E) & get_rank_bb(color.to_my_backrank()) {
+                return false;
             }
         }
 
@@ -249,7 +265,7 @@ impl SubBoard {
         }
 
         // it checks out
-        return true;
+        true
     }
 
     #[inline]
@@ -281,7 +297,7 @@ impl SubBoard {
     }
 
     #[inline]
-    pub fn piece_at(&self, square: Square) -> Option<PieceType> {
+    pub fn piece_type_at(&self, square: Square) -> Option<PieceType> {
         // TODO: check speed on Naive Algorithm
         let opp = BitBoard::from_square(square);
         if self.occupied() & opp == BB_EMPTY {
@@ -318,7 +334,7 @@ impl SubBoard {
     }
 
     #[inline]
-    pub fn color_on(&self, square: Square) -> Option<Color> {
+    pub fn color_at(&self, square: Square) -> Option<Color> {
         if (self.occupied_co(Color::White) & BitBoard::from_square(square)) != BB_EMPTY {
             Some(Color::White)
         } else if (self.occupied_co(Color::Black) & BitBoard::from_square(square)) != BB_EMPTY {
@@ -326,6 +342,11 @@ impl SubBoard {
         } else {
             None
         }
+    }
+
+    #[inline]
+    pub fn piece_at(&self, square: Square) -> Option<Piece> {
+        Some(Piece::new(self.piece_type_at(square)?, self.color_at(square)?))
     }
 
     fn remove_ep(&mut self) {
@@ -340,7 +361,7 @@ impl SubBoard {
     fn set_ep(&mut self, sq: Square) {
         // Only set self.en_passant if the pawn can actually be captured next move.
         if get_adjacent_files(sq.get_file())
-            & get_rank(sq.get_rank())
+            & get_rank_bb(sq.get_rank())
             & self.pieces(PieceType::Pawn)
             & self.occupied_co(!self.side_to_move)
             != BB_EMPTY
@@ -349,10 +370,10 @@ impl SubBoard {
         }
     }
 
-    // #[inline]
-    // pub fn legal(&self, m: Move) -> bool {
-    //     MoveGen::new_legal(&self).find(|x| *x == m).is_some()
-    // }
+    #[inline]
+    pub fn legal(&self, m: Move) -> bool {
+        MoveGen::new_legal(self).any(|x| x == m)
+    }
 
     #[inline]
     pub fn make_move_new(&self, m: Move) -> Self {
@@ -375,11 +396,11 @@ impl SubBoard {
         let source_bb = BitBoard::from_square(source);
         let dest_bb = BitBoard::from_square(dest);
         let move_bb = source_bb ^ dest_bb;
-        let moved = self.piece_at(source).unwrap();
+        let moved = self.piece_type_at(source).unwrap();
 
         result.xor(moved, source_bb, self.side_to_move);
         result.xor(moved, dest_bb, self.side_to_move);
-        if let Some(captured) = self.piece_at(dest) {
+        if let Some(captured) = self.piece_type_at(dest) {
             result.xor(captured, dest_bb, !self.side_to_move);
         }
 
@@ -576,7 +597,7 @@ impl FromStr for SubBoard {
     type Err = EngineError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Ok(BoardBuilder::from_str(value)?.try_into()?)
+        BoardBuilder::from_str(value)?.try_into()
     }
 }
 
@@ -584,5 +605,12 @@ impl Default for SubBoard {
     #[inline]
     fn default() -> Self {
         Self::from_str(STARTING_POSITION_FEN).unwrap()
+    }
+}
+
+impl fmt::Display for SubBoard {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let fen: BoardBuilder = self.into();
+        write!(f, "{}", fen)
     }
 }
