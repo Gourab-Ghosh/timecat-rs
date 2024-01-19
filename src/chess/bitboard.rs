@@ -71,6 +71,11 @@ impl BitBoard {
     pub fn to_square(self) -> Square {
         unsafe { *ALL_SQUARES.get_unchecked(self.to_square_index()) }
     }
+
+    #[inline(always)]
+    pub fn wrapping_mul(self, rhs: Self) -> Self {
+        Self::new(self.0.wrapping_mul(rhs.0))
+    }
 }
 
 macro_rules! implement_bitwise_operations {
@@ -246,17 +251,9 @@ macro_rules! implement_bitwise_operations {
 implement_bitwise_operations!(BitAnd, BitAndAssign, bitand, bitand_assign);
 implement_bitwise_operations!(BitOr, BitOrAssign, bitor, bitor_assign);
 implement_bitwise_operations!(BitXor, BitXorAssign, bitxor, bitxor_assign);
+implement_bitwise_operations!(Mul, MulAssign, mul, mul_assign);
 implement_bitwise_operations!(Shl, ShlAssign, shl, shl_assign);
 implement_bitwise_operations!(Shr, ShrAssign, shr, shr_assign);
-
-impl Mul for BitBoard {
-    type Output = Self;
-
-    #[inline(always)]
-    fn mul(self, rhs: Self) -> Self::Output {
-        Self::new(self.0.wrapping_mul(rhs.0))
-    }
-}
 
 impl Not for &BitBoard {
     type Output = BitBoard;

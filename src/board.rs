@@ -405,7 +405,7 @@ impl Board {
         match occupied.popcnt() {
             1 => true,
             2 => {
-                (self.get_piece_mask(Rook) | self.get_piece_mask(Queen) | self.get_piece_mask(Pawn))
+                (self.get_piece_mask(Rook) ^ self.get_piece_mask(Queen) ^ self.get_piece_mask(Pawn))
                     & occupied
                     == BB_EMPTY
             }
@@ -415,7 +415,7 @@ impl Board {
 
     #[inline(always)]
     pub fn has_non_pawn_material(&self) -> bool {
-        &(self.get_piece_mask(Pawn) | self.get_piece_mask(King)) != self.occupied()
+        &(self.get_piece_mask(Pawn) ^ self.get_piece_mask(King)) != self.occupied()
     }
 
     #[inline(always)]
@@ -495,7 +495,7 @@ impl Board {
         let file = square.get_file();
         pawn_mask
             & self.occupied_co(!self_color)
-            & (get_adjacent_files(file) | get_file_bb(file))
+            & (get_adjacent_files(file) ^ get_file_bb(file))
             & get_upper_board_mask(square.get_rank(), self_color)
             == BB_EMPTY
     }
@@ -521,18 +521,18 @@ impl Board {
 
     pub fn clean_castling_rights(&self) -> BitBoard {
         let white_castling_rights = match self.board.castle_rights(White) {
-            CastleRights::Both => BB_A1 | BB_H1,
+            CastleRights::Both => BB_A1 ^ BB_H1,
             CastleRights::KingSide => BB_H1,
             CastleRights::QueenSide => BB_A1,
             CastleRights::None => BB_EMPTY,
         };
         let black_castling_rights = match self.board.castle_rights(Black) {
-            CastleRights::Both => BB_A8 | BB_H8,
+            CastleRights::Both => BB_A8 ^ BB_H8,
             CastleRights::KingSide => BB_H8,
             CastleRights::QueenSide => BB_A8,
             CastleRights::None => BB_EMPTY,
         };
-        white_castling_rights | black_castling_rights
+        white_castling_rights ^ black_castling_rights
     }
 
     #[inline(always)]
@@ -590,19 +590,19 @@ impl Board {
         match self.get_piece_mask(Queen).popcnt() {
             0 => {
                 (self.get_piece_mask(Rook)
-                    | self.get_piece_mask(Bishop)
-                    | self.get_piece_mask(Knight))
+                    ^ self.get_piece_mask(Bishop)
+                    ^ self.get_piece_mask(Knight))
                 .popcnt()
                     <= 4
             }
             1 => {
                 self.get_piece_mask(Rook).popcnt() <= 2
-                    && self.get_piece_mask(Bishop) | self.get_piece_mask(Knight) == BB_EMPTY
+                    && self.get_piece_mask(Bishop) ^ self.get_piece_mask(Knight) == BB_EMPTY
             }
             2 => {
                 self.get_piece_mask(Rook)
-                    | self.get_piece_mask(Bishop)
-                    | self.get_piece_mask(Knight)
+                    ^ self.get_piece_mask(Bishop)
+                    ^ self.get_piece_mask(Knight)
                     == BB_EMPTY
             }
             _ => false,
@@ -935,7 +935,7 @@ impl Board {
     pub fn generate_legal_captures(&self) -> MoveGen {
         let mut targets = *self.occupied_co(!self.turn());
         if let Some(ep_square) = self.ep_square() {
-            targets |= get_square_bb(ep_square)
+            targets ^= get_square_bb(ep_square)
         }
         self.generate_masked_legal_moves(targets)
     }

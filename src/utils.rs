@@ -686,6 +686,7 @@ pub mod engine_error {
 pub mod bitboard_utils {
     use super::*;
 
+    #[inline(always)]
     pub fn get_queen_moves(sq: Square, blockers: BitBoard) -> BitBoard {
         get_rook_moves(sq, blockers) | get_bishop_moves(sq, blockers)
     }
@@ -712,17 +713,21 @@ pub mod cache_table_utils {
             }
         }
 
+        #[inline(always)]
         pub fn is_min(&self) -> bool {
             matches!(self, Self::Min(_))
         }
 
+        #[inline(always)]
         pub fn is_max(&self) -> bool {
             matches!(self, Self::Max(_))
         }
 
+        #[inline(always)]
         pub fn is_round(&self) -> bool {
             matches!(self, Self::Round(_))
         }
+        #[inline(always)]
         pub fn is_exact(&self) -> bool {
             matches!(self, Self::Exact(_))
         }
@@ -750,6 +755,7 @@ pub mod cache_table_utils {
             (size, entry_size)
         }
 
+        #[inline(always)]
         pub fn to_cache_table_size<T: Copy + Clone + PartialEq>(self) -> usize {
             self.to_cache_table_and_entry_size::<T>().0
         }
@@ -782,6 +788,7 @@ pub mod classes {
             }
         }
 
+        #[inline(always)]
         pub fn get_repetition(&self, key: u64) -> u8 {
             *self.count_map.get(&key).unwrap_or(&0) as u8
         }
@@ -806,6 +813,7 @@ pub mod classes {
             *count_entry -= 1;
         }
 
+        #[inline(always)]
         pub fn clear(&mut self) {
             self.count_map.clear();
         }
@@ -815,7 +823,6 @@ pub mod classes {
 pub mod info_utils {
     use super::*;
 
-    #[inline(always)]
     pub fn format_info<T: fmt::Display>(desc: &str, info: T) -> String {
         let desc = desc
             .trim()
@@ -841,6 +848,7 @@ pub mod info_utils {
         println!("{to_print}");
     }
 
+    #[inline(always)]
     pub fn println_info<T: fmt::Display>(desc: &str, info: T) {
         if is_in_debug_mode() {
             force_println_info(desc, info);
@@ -924,14 +932,17 @@ pub mod pv_utils {
         return pv_string.trim().to_string();
     }
 
+    #[inline(always)]
     pub fn get_pv_as_san(board: &Board, pv: &[Option<Move>]) -> String {
         get_pv_as_algebraic(board, pv, false)
     }
 
+    #[inline(always)]
     pub fn get_pv_as_lan(board: &Board, pv: &[Option<Move>]) -> String {
         get_pv_as_algebraic(board, pv, true)
     }
 
+    #[inline(always)]
     pub fn get_pv_string(board: &Board, pv: &[Option<Move>]) -> String {
         if is_in_console_mode() {
             get_pv_as_algebraic(board, pv, use_long_algebraic_notation())

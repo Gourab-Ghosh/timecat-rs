@@ -46,7 +46,7 @@ impl Square {
 
     #[inline(always)]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Self {
-        unsafe { transmute((rank.to_int() << 3) | file.to_int()) }
+        unsafe { transmute((rank.to_int() << 3) ^ file.to_int()) }
     }
 
     #[inline(always)]

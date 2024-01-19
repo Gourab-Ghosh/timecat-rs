@@ -76,7 +76,7 @@ impl PawnType {
 
         let ksq = (board.get_piece_mask(King) & board.occupied_co(board.turn())).to_square();
 
-        let rooks = (board.get_piece_mask(Rook) | board.get_piece_mask(Queen))
+        let rooks = (board.get_piece_mask(Rook) ^ board.get_piece_mask(Queen))
             & board.occupied_co(!board.turn());
 
         if (get_rook_rays(ksq) & rooks) != BB_EMPTY
@@ -85,7 +85,7 @@ impl PawnType {
             return false;
         }
 
-        let bishops = (board.get_piece_mask(Bishop) | board.get_piece_mask(Queen))
+        let bishops = (board.get_piece_mask(Bishop) ^ board.get_piece_mask(Queen))
             & board.occupied_co(!board.turn());
 
         if (get_bishop_rays(ksq) & bishops) != BB_EMPTY
@@ -289,12 +289,12 @@ impl KingType {
 
         let mut attackers = BB_EMPTY;
 
-        let rooks = (board.get_piece_mask(Rook) | board.get_piece_mask(Queen))
+        let rooks = (board.get_piece_mask(Rook) ^ board.get_piece_mask(Queen))
             & board.occupied_co(!board.turn());
 
         attackers |= get_rook_moves(dest, occupied) & rooks;
 
-        let bishops = (board.get_piece_mask(Bishop) | board.get_piece_mask(Queen))
+        let bishops = (board.get_piece_mask(Bishop) ^ board.get_piece_mask(Queen))
             & board.occupied_co(!board.turn());
 
         attackers |= get_bishop_moves(dest, occupied) & bishops;

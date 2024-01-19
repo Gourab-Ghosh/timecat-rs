@@ -59,14 +59,14 @@ pub mod bitboard {
     );
 
     pub const BB_CORNERS: BitBoard =
-        BitBoard::new(BB_A1.get_mask() | BB_H1.get_mask() | BB_A8.get_mask() | BB_H8.get_mask());
+        BitBoard::new(BB_A1.get_mask() ^ BB_H1.get_mask() ^ BB_A8.get_mask() ^ BB_H8.get_mask());
     pub const BB_CENTER: BitBoard =
-        BitBoard::new(BB_D4.get_mask() | BB_E4.get_mask() | BB_D5.get_mask() | BB_E5.get_mask());
+        BitBoard::new(BB_D4.get_mask() ^ BB_E4.get_mask() ^ BB_D5.get_mask() ^ BB_E5.get_mask());
 
     pub const BB_LIGHT_SQUARES: BitBoard = BitBoard::new(0x55aa_55aa_55aa_55aa);
     pub const BB_DARK_SQUARES: BitBoard = BitBoard::new(0xaa55_aa55_aa55_aa55);
 
-    pub const BB_BACKRANKS: BitBoard = BitBoard::new(BB_RANK_1.get_mask() | BB_RANK_8.get_mask());
+    pub const BB_BACKRANKS: BitBoard = BitBoard::new(BB_RANK_1.get_mask() ^ BB_RANK_8.get_mask());
 
     pub const BB_UPPER_HALF_BOARD: BitBoard = BitBoard::new(0xffffffff00000000);
     pub const BB_LOWER_HALF_BOARD: BitBoard = BitBoard::new(0x00000000ffffffff);
