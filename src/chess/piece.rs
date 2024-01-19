@@ -20,14 +20,17 @@ pub const NUM_PROMOTION_PIECES: usize = 4;
 pub const PROMOTION_PIECES: [PieceType; NUM_PROMOTION_PIECES] = [Queen, Knight, Rook, Bishop];
 
 impl PieceType {
+    #[inline(always)]
     pub fn to_int(self) -> u8 {
         self as u8
     }
 
+    #[inline(always)]
     pub fn to_index(self) -> usize {
         self as usize
     }
 
+    #[inline(always)]
     pub fn to_string(self, color: Color) -> String {
         match color {
             Color::White => format!("{self}").to_uppercase(),
@@ -60,14 +63,17 @@ pub struct Piece {
 }
 
 impl Piece {
+    #[inline(always)]
     pub fn new(type_: PieceType, color: Color) -> Self {
         Self { type_, color }
     }
 
+    #[inline(always)]
     pub fn get_piece_type(self) -> PieceType {
         self.type_
     }
 
+    #[inline(always)]
     pub fn get_color(self) -> Color {
         self.color
     }

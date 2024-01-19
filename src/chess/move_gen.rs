@@ -419,27 +419,27 @@ impl MoveGen {
     fn enumerate_moves(board: &SubBoard) -> MoveList {
         let checkers = *board.checkers();
         let mask = !board.occupied_co(board.turn());
-        let mut movelist = NoDrop::new(ArrayVec::<SquareAndBitBoard, 18>::new());
+        let mut move_list = NoDrop::new(ArrayVec::<SquareAndBitBoard, 18>::new());
 
         if checkers == BB_EMPTY {
-            PawnType::legals::<NotInCheckType>(&mut movelist, board, mask);
-            KnightType::legals::<NotInCheckType>(&mut movelist, board, mask);
-            BishopType::legals::<NotInCheckType>(&mut movelist, board, mask);
-            RookType::legals::<NotInCheckType>(&mut movelist, board, mask);
-            QueenType::legals::<NotInCheckType>(&mut movelist, board, mask);
-            KingType::legals::<NotInCheckType>(&mut movelist, board, mask);
+            PawnType::legals::<NotInCheckType>(&mut move_list, board, mask);
+            KnightType::legals::<NotInCheckType>(&mut move_list, board, mask);
+            BishopType::legals::<NotInCheckType>(&mut move_list, board, mask);
+            RookType::legals::<NotInCheckType>(&mut move_list, board, mask);
+            QueenType::legals::<NotInCheckType>(&mut move_list, board, mask);
+            KingType::legals::<NotInCheckType>(&mut move_list, board, mask);
         } else if checkers.popcnt() == 1 {
-            PawnType::legals::<InCheckType>(&mut movelist, board, mask);
-            KnightType::legals::<InCheckType>(&mut movelist, board, mask);
-            BishopType::legals::<InCheckType>(&mut movelist, board, mask);
-            RookType::legals::<InCheckType>(&mut movelist, board, mask);
-            QueenType::legals::<InCheckType>(&mut movelist, board, mask);
-            KingType::legals::<InCheckType>(&mut movelist, board, mask);
+            PawnType::legals::<InCheckType>(&mut move_list, board, mask);
+            KnightType::legals::<InCheckType>(&mut move_list, board, mask);
+            BishopType::legals::<InCheckType>(&mut move_list, board, mask);
+            RookType::legals::<InCheckType>(&mut move_list, board, mask);
+            QueenType::legals::<InCheckType>(&mut move_list, board, mask);
+            KingType::legals::<InCheckType>(&mut move_list, board, mask);
         } else {
-            KingType::legals::<InCheckType>(&mut movelist, board, mask);
+            KingType::legals::<InCheckType>(&mut move_list, board, mask);
         }
 
-        movelist
+        move_list
     }
 
     #[inline(always)]
@@ -536,8 +536,8 @@ impl MoveGen {
             iterable.len()
         } else {
             for m in iterable {
-                let bresult = board.make_move_new(m);
-                result += MoveGen::perft_test(&bresult, depth - 1);
+                let board_result = board.make_move_new(m);
+                result += MoveGen::perft_test(&board_result, depth - 1);
             }
             result
         }
@@ -558,18 +558,18 @@ impl MoveGen {
         } else {
             iterable.set_iterator_mask(*targets);
             for x in &mut iterable {
-                let mut bresult = mem::MaybeUninit::<SubBoard>::uninit();
+                let mut board_result = mem::MaybeUninit::<SubBoard>::uninit();
                 unsafe {
-                    board.make_move(x, &mut *bresult.as_mut_ptr());
-                    result += MoveGen::perft_test(&*bresult.as_ptr(), depth - 1);
+                    board.make_move(x, &mut *board_result.as_mut_ptr());
+                    result += MoveGen::perft_test(&*board_result.as_ptr(), depth - 1);
                 }
             }
             iterable.set_iterator_mask(!BB_EMPTY);
             for x in &mut iterable {
-                let mut bresult = mem::MaybeUninit::<SubBoard>::uninit();
+                let mut board_result = mem::MaybeUninit::<SubBoard>::uninit();
                 unsafe {
-                    board.make_move(x, &mut *bresult.as_mut_ptr());
-                    result += MoveGen::perft_test(&*bresult.as_ptr(), depth - 1);
+                    board.make_move(x, &mut *board_result.as_mut_ptr());
+                    result += MoveGen::perft_test(&*board_result.as_ptr(), depth - 1);
                 }
             }
             result

@@ -143,7 +143,7 @@ macro_rules! implement_bitwise_operations {
         impl $assign_trait<$int_type> for BitBoard {
             #[inline(always)]
             fn $assign_func(&mut self, rhs: $int_type) {
-                self.0 = self.0.$direct_func(rhs as u64)
+                *self = self.$direct_func(rhs)
             }
         }
 
@@ -154,22 +154,21 @@ macro_rules! implement_bitwise_operations {
             }
         }
 
-        impl $direct_trait<&$int_type> for BitBoard {
-            type Output = Self;
-
-            #[inline(always)]
-            fn $direct_func(mut self, rhs: &$int_type) -> Self::Output {
-                self.$assign_func(rhs);
-                self
-            }
-        }
-
         impl $direct_trait<$int_type> for BitBoard {
             type Output = Self;
 
             #[inline(always)]
             fn $direct_func(self, rhs: $int_type) -> Self::Output {
-                self.$direct_func(&rhs)
+                Self::new(self.0.$direct_func(rhs as u64))
+            }
+        }
+
+        impl $direct_trait<&$int_type> for BitBoard {
+            type Output = Self;
+
+            #[inline(always)]
+            fn $direct_func(self, rhs: &$int_type) -> Self::Output {
+                self.$direct_func(*rhs)
             }
         }
 
@@ -253,6 +252,7 @@ implement_bitwise_operations!(Shr, ShrAssign, shr, shr_assign);
 impl Mul for BitBoard {
     type Output = Self;
 
+    #[inline(always)]
     fn mul(self, rhs: Self) -> Self::Output {
         Self::new(self.0.wrapping_mul(rhs.0))
     }

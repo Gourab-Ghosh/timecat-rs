@@ -36,14 +36,18 @@ if "--update" in args:
 is_error_free = True if {"--disable-check", "--no-check"}.intersection(args) else not os.system("cargo check")
 
 if is_error_free:
-    build_command = "cargo build"
+    is_test = "--test" in args
+    build_or_test_command = "cargo test" if is_test else "cargo build"
     is_release = "--debug" not in args
     if is_release:
-        build_command += " --release"
+        build_or_test_command += " --release"
         update_environment_variables()
         # update_environment_variables("-Ofast", "-mavx2", "-funroll-loops")
         # update_environment_variables("-mavx2", "-funroll-loops")
-    if not os.system(build_command):
+    if is_test:
+        os.system(build_or_test_command)
+        sys.exit(0)
+    if not os.system(build_or_test_command):
         executable = "timecat.exe" if sys.platform == "win32" else "timecat"
         file_to_run = "\"" + os.path.join(current_path, "target", "release" if is_release else "debug", executable) + "\""
         need_to_run = True

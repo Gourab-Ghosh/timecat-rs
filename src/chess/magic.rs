@@ -19,24 +19,25 @@ pub fn get_rook_rays(sq: Square) -> BitBoard {
 
 /// Get the moves for a rook on a particular square, given blockers blocking my movement.
 #[inline(always)]
+#[cfg(not(target_feature = "bmi2"))]
 pub fn get_rook_moves(sq: Square, blockers: BitBoard) -> BitBoard {
     unsafe {
         let magic: Magic = *MAGIC_NUMBERS
             .get_unchecked(ROOK)
-            .get_unchecked(sq.to_int() as usize);
+            .get_unchecked(sq.to_index());
         *MOVES.get_unchecked(
             (magic.offset as usize)
-                + (magic.magic_number * (blockers & magic.mask)).to_size(magic.rightshift),
+                + (magic.magic_number * (blockers & magic.mask)).to_size(magic.right_shift),
         ) & get_rook_rays(sq)
     }
 }
 
 /// Get the moves for a rook on a particular square, given blockers blocking my movement.
-#[cfg(target_feature = "bmi2")]
 #[inline(always)]
-pub fn get_rook_moves_bmi(sq: Square, blockers: BitBoard) -> BitBoard {
+#[cfg(target_feature = "bmi2")]
+pub fn get_rook_moves(sq: Square, blockers: BitBoard) -> BitBoard {
     unsafe {
-        let bmi2_magic = *ROOK_BMI_MASK.get_unchecked(sq.to_int() as usize);
+        let bmi2_magic = *ROOK_BMI_MASK.get_unchecked(sq.to_index());
         let index = (_pext_u64(blockers.get_mask(), bmi2_magic.blockers_mask.get_mask()) as usize)
             + (bmi2_magic.offset as usize);
         let result = _pdep_u64(
@@ -49,14 +50,15 @@ pub fn get_rook_moves_bmi(sq: Square, blockers: BitBoard) -> BitBoard {
 
 /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
 #[inline(always)]
+#[cfg(not(target_feature = "bmi2"))]
 pub fn get_bishop_moves(sq: Square, blockers: BitBoard) -> BitBoard {
     unsafe {
         let magic: Magic = *MAGIC_NUMBERS
             .get_unchecked(BISHOP)
-            .get_unchecked(sq.to_int() as usize);
+            .get_unchecked(sq.to_index());
         *MOVES.get_unchecked(
             (magic.offset as usize)
-                + (magic.magic_number * (blockers & magic.mask)).to_size(magic.rightshift),
+                + (magic.magic_number * (blockers & magic.mask)).to_size(magic.right_shift),
         ) & get_bishop_rays(sq)
     }
 }
@@ -64,9 +66,9 @@ pub fn get_bishop_moves(sq: Square, blockers: BitBoard) -> BitBoard {
 /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
 #[inline(always)]
 #[cfg(target_feature = "bmi2")]
-pub fn get_bishop_moves_bmi(sq: Square, blockers: BitBoard) -> BitBoard {
+pub fn get_bishop_moves(sq: Square, blockers: BitBoard) -> BitBoard {
     unsafe {
-        let bmi2_magic = *BISHOP_BMI_MASK.get_unchecked(sq.to_int() as usize);
+        let bmi2_magic = *BISHOP_BMI_MASK.get_unchecked(sq.to_index());
         let index = (_pext_u64(blockers.get_mask(), bmi2_magic.blockers_mask.get_mask()) as usize)
             + (bmi2_magic.offset as usize);
         let result = _pdep_u64(

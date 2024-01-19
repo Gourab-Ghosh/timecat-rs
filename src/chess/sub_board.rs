@@ -29,6 +29,7 @@ pub struct SubBoard {
 }
 
 impl PartialEq for SubBoard {
+    #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         self.transposition_key_components()
             .eq(&other.transposition_key_components())
@@ -36,6 +37,7 @@ impl PartialEq for SubBoard {
 }
 
 impl SubBoard {
+    #[inline(always)]
     fn transposition_key_components(
         &self,
     ) -> (
@@ -56,6 +58,7 @@ impl SubBoard {
 }
 
 impl SubBoard {
+    #[inline(always)]
     fn new_empty() -> Self {
         Self {
             pieces: [BB_EMPTY; NUM_PIECE_TYPES],
