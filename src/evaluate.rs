@@ -168,7 +168,7 @@ impl Evaluator {
         if Self::is_easily_winning_position(board, material_score) {
             return self.king_corner_forcing_evaluation(board, material_score);
         }
-        let mut nnue_eval = self.stockfish_network.eval(&board.get_sub_board());
+        let mut nnue_eval = self.stockfish_network.eval(board.get_sub_board());
         if nnue_eval.abs() > WINNING_SCORE_THRESHOLD {
             let multiplier = match_interpolate!(
                 0,

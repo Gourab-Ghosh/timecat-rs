@@ -210,8 +210,8 @@ impl FromStr for BoardBuilder {
         let side = tokens[1];
         let castles = tokens[2];
         let ep = tokens[3];
-        let halfmove_clock = tokens.get(4).map(|s| s.parse().ok()).flatten().unwrap_or(0);
-        let fullmove_number = tokens.get(5).map(|s| s.parse().ok()).flatten().unwrap_or(1);
+        let halfmove_clock = tokens.get(4).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let fullmove_number = tokens.get(5).and_then(|s| s.parse().ok()).unwrap_or(1);
 
         for x in pieces.chars() {
             match x {

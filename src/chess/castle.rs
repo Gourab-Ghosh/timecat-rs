@@ -42,8 +42,8 @@ impl CastleRights {
         self.to_index() & 2 == 2
     }
 
-    pub fn square_to_castle_rights(color: Color, sq: Square) -> CastleRights {
-        CastleRights::from_index(unsafe {
+    pub fn square_to_castle_rights(color: Color, sq: Square) -> Self {
+        Self::from_index(unsafe {
             *CASTLES_PER_SQUARE
                 .get_unchecked(color.to_index())
                 .get_unchecked(sq.to_index())
@@ -61,14 +61,8 @@ impl CastleRights {
     }
 
     /// Remove castle rights, and return a new `CastleRights`.
-    pub fn remove(self, remove: CastleRights) -> CastleRights {
-        CastleRights::from_index(self.to_index() & !remove.to_index())
-    }
-
-    /// Add some castle rights, and return a new `CastleRights`.
-    #[warn(clippy::should_implement_trait)]
-    pub fn add(self, add: CastleRights) -> CastleRights {
-        CastleRights::from_index(self.to_index() | add.to_index())
+    pub fn remove(self, remove: Self) -> Self {
+        Self::from_index(self.to_index() & !remove.to_index())
     }
 
     /// Convert `CastleRights` to `usize` for table lookups
@@ -77,12 +71,12 @@ impl CastleRights {
     }
 
     /// Convert `usize` to `CastleRights`.  Panic if invalid number.
-    pub fn from_index(i: usize) -> CastleRights {
+    pub fn from_index(i: usize) -> Self {
         match i {
-            0 => CastleRights::None,
-            1 => CastleRights::KingSide,
-            2 => CastleRights::QueenSide,
-            3 => CastleRights::Both,
+            0 => Self::None,
+            1 => Self::KingSide,
+            2 => Self::QueenSide,
+            3 => Self::Both,
             _ => unreachable!(),
         }
     }
@@ -90,12 +84,12 @@ impl CastleRights {
     /// Which rooks can we "guarantee" we haven't moved yet?
     pub fn unmoved_rooks(self, color: Color) -> BitBoard {
         match self {
-            CastleRights::None => BB_EMPTY,
-            CastleRights::KingSide => BitBoard::from_rank_and_file(color.to_my_backrank(), File::H),
-            CastleRights::QueenSide => {
+            Self::None => BB_EMPTY,
+            Self::KingSide => BitBoard::from_rank_and_file(color.to_my_backrank(), File::H),
+            Self::QueenSide => {
                 BitBoard::from_rank_and_file(color.to_my_backrank(), File::A)
             }
-            CastleRights::Both => {
+            Self::Both => {
                 BitBoard::from_rank_and_file(color.to_my_backrank(), File::A)
                     ^ BitBoard::from_rank_and_file(color.to_my_backrank(), File::H)
             }
@@ -104,10 +98,10 @@ impl CastleRights {
 
     pub fn to_string(self, color: Color) -> String {
         let result = match self {
-            CastleRights::None => "",
-            CastleRights::KingSide => "k",
-            CastleRights::QueenSide => "q",
-            CastleRights::Both => "kq",
+            Self::None => "",
+            Self::KingSide => "k",
+            Self::QueenSide => "q",
+            Self::Both => "kq",
         };
 
         if color == Color::White {
@@ -119,11 +113,40 @@ impl CastleRights {
 
     /// Given a square of a rook, which side is it on?
     /// Note: It is invalid to pass in a non-rook square.  The code may panic.
-    pub fn rook_square_to_castle_rights(square: Square) -> CastleRights {
+    pub fn rook_square_to_castle_rights(square: Square) -> Self {
         match square.get_file() {
-            File::A => CastleRights::QueenSide,
-            File::H => CastleRights::KingSide,
+            File::A => Self::QueenSide,
+            File::H => Self::KingSide,
             _ => unreachable!(),
         }
+    }
+}
+
+impl Add for CastleRights {
+    type Output = Self;
+
+    #[allow(clippy::suspicious_arithmetic_impl)]
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::from_index(self.to_index() | rhs.to_index())
+    }
+}
+
+impl AddAssign for CastleRights {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
+impl Sub for CastleRights {
+    type Output = Self;
+    
+    fn sub(self, rhs: Self) -> Self::Output {
+        self.remove(rhs)
+    }
+}
+
+impl SubAssign for CastleRights {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
     }
 }

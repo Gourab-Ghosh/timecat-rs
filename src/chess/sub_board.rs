@@ -403,7 +403,6 @@ impl SubBoard {
         MoveGen::new_legal(self).any(|x| x == m)
     }
 
-    #[inline(always)]
     pub fn make_move_new(&self, m: Move) -> Self {
         let mut result = mem::MaybeUninit::<Self>::uninit();
         unsafe {

@@ -1070,7 +1070,7 @@ impl Clone for Board {
             board: self.board.clone(),
             stack: Vec::new(),
             num_repetitions: self.num_repetitions,
-            starting_fen: STARTING_POSITION_FEN.to_string(),
+            starting_fen: self.starting_fen.clone(),
             repetition_table: self.repetition_table.clone(),
         }
     }
