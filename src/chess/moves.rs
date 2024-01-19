@@ -75,10 +75,10 @@ impl FromStr for Move {
                     .last()
                     .ok_or(EngineError::InvalidUciMoveString { s: s.to_string() })?
                 {
-                    'q' => PieceType::Queen,
-                    'r' => PieceType::Rook,
-                    'n' => PieceType::Knight,
-                    'b' => PieceType::Bishop,
+                    'q' => Queen,
+                    'r' => Rook,
+                    'n' => Knight,
+                    'b' => Bishop,
                     _ => return Err(EngineError::InvalidUciMoveString { s: s.to_string() }),
                 },
             );

@@ -278,3 +278,10 @@ pub mod engine_constants {
 pub mod atomic {
     pub const MEMORY_ORDERING: std::sync::atomic::Ordering = std::sync::atomic::Ordering::Relaxed;
 }
+
+pub mod color {
+    use crate::Color;
+
+    pub const NUM_COLORS: usize = 2;
+    pub const ALL_COLORS: [Color; NUM_COLORS] = [Color::White, Color::Black];
+}

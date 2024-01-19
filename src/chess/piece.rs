@@ -33,8 +33,8 @@ impl PieceType {
     #[inline(always)]
     pub fn to_string(self, color: Color) -> String {
         match color {
-            Color::White => format!("{self}").to_uppercase(),
-            Color::Black => format!("{self}"),
+            White => format!("{self}").to_uppercase(),
+            Black => format!("{self}"),
         }
     }
 }
@@ -45,12 +45,12 @@ impl fmt::Display for PieceType {
             f,
             "{}",
             match self {
-                Self::Pawn => "p",
-                Self::Knight => "n",
-                Self::Bishop => "b",
-                Self::Rook => "r",
-                Self::Queen => "q",
-                Self::King => "k",
+                Pawn => "p",
+                Knight => "n",
+                Bishop => "b",
+                Rook => "r",
+                Queen => "q",
+                King => "k",
             }
         )
     }

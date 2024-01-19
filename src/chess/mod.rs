@@ -5,7 +5,6 @@
 mod bitboard;
 mod board_builder;
 mod castle;
-mod color;
 mod files;
 mod magic;
 mod move_gen;
@@ -20,7 +19,6 @@ use super::*;
 pub use bitboard::*;
 pub use board_builder::*;
 pub use castle::*;
-pub use color::*;
 pub use files::*;
 pub use itertools::*;
 pub use magic::*;

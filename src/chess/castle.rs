@@ -113,7 +113,7 @@ impl CastleRights {
             Self::Both => "kq",
         };
 
-        if color == Color::White {
+        if color == White {
             result.to_uppercase()
         } else {
             result.to_string()

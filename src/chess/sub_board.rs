@@ -43,7 +43,7 @@ impl SubBoard {
     ) -> (
         [bitboard::BitBoard; 6],
         [bitboard::BitBoard; 2],
-        color::Color,
+        Color,
         [castle::CastleRights; 2],
         Option<square::Square>,
     ) {
@@ -102,7 +102,7 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn king_square(&self, color: Color) -> Square {
-        (self.get_piece_mask(PieceType::King) & self.occupied_co(color)).to_square()
+        (self.get_piece_mask(King) & self.occupied_co(color)).to_square()
     }
 
     #[inline(always)]
@@ -200,7 +200,7 @@ impl SubBoard {
         }
 
         // make sure the colors don't overlap, either
-        if self.occupied_co(Color::White) & self.occupied_co(Color::Black) != BB_EMPTY {
+        if self.occupied_co(White) & self.occupied_co(Black) != BB_EMPTY {
             return false;
         }
 
@@ -215,12 +215,12 @@ impl SubBoard {
         }
 
         // make sure there is exactly one white king
-        if (self.get_piece_mask(PieceType::King) & self.occupied_co(Color::White)).popcnt() != 1 {
+        if (self.get_piece_mask(King) & self.occupied_co(White)).popcnt() != 1 {
             return false;
         }
 
         // make sure there is exactly one black king
-        if (self.get_piece_mask(PieceType::King) & self.occupied_co(Color::Black)).popcnt() != 1 {
+        if (self.get_piece_mask(King) & self.occupied_co(Black)).popcnt() != 1 {
             return false;
         }
 
@@ -234,7 +234,7 @@ impl SubBoard {
                 } else {
                     square_bb <<= 8;
                 }
-                if self.get_piece_mask(PieceType::Pawn) & self.occupied_co(!self.turn) & square_bb
+                if self.get_piece_mask(Pawn) & self.occupied_co(!self.turn) & square_bb
                     == BB_EMPTY
                 {
                     return false;
@@ -259,7 +259,7 @@ impl SubBoard {
             // the castle rights object will tell us which rooks shouldn't have moved yet.
             // verify there are rooks on all those squares
             if castle_rights.unmoved_rooks(*color)
-                & self.get_piece_mask(PieceType::Rook)
+                & self.get_piece_mask(Rook)
                 & self.occupied_co(*color)
                 != castle_rights.unmoved_rooks(*color)
             {
@@ -268,7 +268,7 @@ impl SubBoard {
             // if we have castle rights, make sure we have a king on the (E, {1,8}) square,
             // depending on the color
             if castle_rights != CastleRights::None
-                && self.get_piece_mask(PieceType::King) & self.occupied_co(*color)
+                && self.get_piece_mask(King) & self.occupied_co(*color)
                     != get_file_bb(File::E) & get_rank_bb(color.to_my_backrank())
             {
                 return false;
@@ -276,7 +276,7 @@ impl SubBoard {
         }
 
         // we must make sure the kings aren't touching
-        if get_king_moves(self.king_square(Color::White)) & self.get_piece_mask(PieceType::King)
+        if get_king_moves(self.king_square(White)) & self.get_piece_mask(King)
             != BB_EMPTY
         {
             return false;
@@ -296,7 +296,7 @@ impl SubBoard {
             }
             ^ Zobrist::castles(self.castle_rights[self.turn.to_index()], self.turn)
             ^ Zobrist::castles(self.castle_rights[(!self.turn).to_index()], !self.turn)
-            ^ if self.turn == Color::Black {
+            ^ if self.turn == Black {
                 Zobrist::color()
             } else {
                 0
@@ -322,35 +322,35 @@ impl SubBoard {
                     return p;
                 }
             } */
-            if (self.get_piece_mask(PieceType::Pawn)
-                ^ self.get_piece_mask(PieceType::Knight)
-                ^ self.get_piece_mask(PieceType::Bishop))
+            if (self.get_piece_mask(Pawn)
+                ^ self.get_piece_mask(Knight)
+                ^ self.get_piece_mask(Bishop))
                 & opp
                 != BB_EMPTY
             {
-                if self.get_piece_mask(PieceType::Pawn) & opp != BB_EMPTY {
-                    Some(PieceType::Pawn)
-                } else if self.get_piece_mask(PieceType::Knight) & opp != BB_EMPTY {
-                    Some(PieceType::Knight)
+                if self.get_piece_mask(Pawn) & opp != BB_EMPTY {
+                    Some(Pawn)
+                } else if self.get_piece_mask(Knight) & opp != BB_EMPTY {
+                    Some(Knight)
                 } else {
-                    Some(PieceType::Bishop)
+                    Some(Bishop)
                 }
-            } else if self.get_piece_mask(PieceType::Rook) & opp != BB_EMPTY {
-                Some(PieceType::Rook)
-            } else if self.get_piece_mask(PieceType::Queen) & opp != BB_EMPTY {
-                Some(PieceType::Queen)
+            } else if self.get_piece_mask(Rook) & opp != BB_EMPTY {
+                Some(Rook)
+            } else if self.get_piece_mask(Queen) & opp != BB_EMPTY {
+                Some(Queen)
             } else {
-                Some(PieceType::King)
+                Some(King)
             }
         }
     }
 
     #[inline(always)]
     pub fn color_at(&self, square: Square) -> Option<Color> {
-        if (self.occupied_co(Color::White) & BitBoard::from_square(square)) != BB_EMPTY {
-            Some(Color::White)
-        } else if (self.occupied_co(Color::Black) & BitBoard::from_square(square)) != BB_EMPTY {
-            Some(Color::Black)
+        if (self.occupied_co(White) & BitBoard::from_square(square)) != BB_EMPTY {
+            Some(White)
+        } else if (self.occupied_co(Black) & BitBoard::from_square(square)) != BB_EMPTY {
+            Some(Black)
         } else {
             None
         }
@@ -393,7 +393,7 @@ impl SubBoard {
         };
         if get_adjacent_files(sq.get_file())
             & get_rank_bb(rank)
-            & self.get_piece_mask(PieceType::Pawn)
+            & self.get_piece_mask(Pawn)
             & self.occupied_co(!self.turn)
             != BB_EMPTY
         {
@@ -453,9 +453,9 @@ impl SubBoard {
 
         result.remove_my_castle_rights(CastleRights::square_to_castle_rights(self.turn, source));
 
-        let opp_king = result.get_piece_mask(PieceType::King) & result.occupied_co(!result.turn);
+        let opp_king = result.get_piece_mask(King) & result.occupied_co(!result.turn);
 
-        let castles = moved == PieceType::King && (move_bb & get_castle_moves()) == move_bb;
+        let castles = moved == King && (move_bb & get_castle_moves()) == move_bb;
 
         let ksq = opp_king.to_square();
 
@@ -480,15 +480,15 @@ impl SubBoard {
             File::F,
         ];
 
-        if moved == PieceType::Knight {
+        if moved == Knight {
             result.checkers ^= get_knight_moves(ksq) & dest_bb;
-        } else if moved == PieceType::Pawn {
-            if let Some(PieceType::Knight) = m.get_promotion() {
-                result.xor(PieceType::Pawn, dest_bb, self.turn);
-                result.xor(PieceType::Knight, dest_bb, self.turn);
+        } else if moved == Pawn {
+            if let Some(Knight) = m.get_promotion() {
+                result.xor(Pawn, dest_bb, self.turn);
+                result.xor(Knight, dest_bb, self.turn);
                 result.checkers ^= get_knight_moves(ksq) & dest_bb;
             } else if let Some(promotion) = m.get_promotion() {
-                result.xor(PieceType::Pawn, dest_bb, self.turn);
+                result.xor(Pawn, dest_bb, self.turn);
                 result.xor(promotion, dest_bb, self.turn);
             } else if (source_bb & get_pawn_source_double_moves()) != BB_EMPTY
                 && (dest_bb & get_pawn_dest_double_moves()) != BB_EMPTY
@@ -497,7 +497,7 @@ impl SubBoard {
                 result.checkers ^= get_pawn_attacks(ksq, !result.turn, dest_bb);
             } else if Some(dest) == self.ep_square {
                 result.xor(
-                    PieceType::Pawn,
+                    Pawn,
                     BitBoard::from_square(dest.wrapping_backward(self.turn)),
                     !self.turn,
                 );
@@ -514,17 +514,17 @@ impl SubBoard {
             let end = BitBoard::from_rank_and_file(my_backrank, unsafe {
                 *CASTLE_ROOK_END.get_unchecked(index)
             });
-            result.xor(PieceType::Rook, start, self.turn);
-            result.xor(PieceType::Rook, end, self.turn);
+            result.xor(Rook, start, self.turn);
+            result.xor(Rook, end, self.turn);
         }
         // now, lets see if we're in check or pinned
         let attackers = result.occupied_co(result.turn)
             & ((get_bishop_rays(ksq)
-                & (result.get_piece_mask(PieceType::Bishop)
-                    | result.get_piece_mask(PieceType::Queen)))
+                & (result.get_piece_mask(Bishop)
+                    | result.get_piece_mask(Queen)))
                 | (get_rook_rays(ksq)
-                    & (result.get_piece_mask(PieceType::Rook)
-                        | result.get_piece_mask(PieceType::Queen))));
+                    & (result.get_piece_mask(Rook)
+                        | result.get_piece_mask(Queen))));
 
         for sq in attackers {
             let between = between(sq, ksq) & result.occupied();
@@ -542,15 +542,15 @@ impl SubBoard {
         self.pinned = BB_EMPTY;
         self.checkers = BB_EMPTY;
 
-        let ksq = (self.get_piece_mask(PieceType::King) & self.occupied_co(self.turn)).to_square();
+        let ksq = (self.get_piece_mask(King) & self.occupied_co(self.turn)).to_square();
 
         let pinners = self.occupied_co(!self.turn)
             & ((get_bishop_rays(ksq)
-                & (self.get_piece_mask(PieceType::Bishop)
-                    | self.get_piece_mask(PieceType::Queen)))
+                & (self.get_piece_mask(Bishop)
+                    | self.get_piece_mask(Queen)))
                 | (get_rook_rays(ksq)
-                    & (self.get_piece_mask(PieceType::Rook)
-                        | self.get_piece_mask(PieceType::Queen))));
+                    & (self.get_piece_mask(Rook)
+                        | self.get_piece_mask(Queen))));
 
         for sq in pinners {
             let between = between(sq, ksq) & self.occupied();
@@ -563,12 +563,12 @@ impl SubBoard {
 
         self.checkers ^= get_knight_moves(ksq)
             & self.occupied_co(!self.turn)
-            & self.get_piece_mask(PieceType::Knight);
+            & self.get_piece_mask(Knight);
 
         self.checkers ^= get_pawn_attacks(
             ksq,
             self.turn,
-            self.occupied_co(!self.turn) & self.get_piece_mask(PieceType::Pawn),
+            self.occupied_co(!self.turn) & self.get_piece_mask(Pawn),
         );
     }
 
@@ -607,8 +607,8 @@ impl TryFrom<&BoardBuilder> for SubBoard {
             board.turn = !board.turn;
         }
 
-        board.add_castle_rights(Color::White, board_builder.get_castle_rights(Color::White));
-        board.add_castle_rights(Color::Black, board_builder.get_castle_rights(Color::Black));
+        board.add_castle_rights(White, board_builder.get_castle_rights(White));
+        board.add_castle_rights(Black, board_builder.get_castle_rights(Black));
 
         board.halfmove_clock = board_builder.get_halfmove_clock();
         board.fullmove_number = board_builder.get_fullmove_number();
