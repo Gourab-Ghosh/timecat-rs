@@ -20,48 +20,48 @@ impl Color {
     #[inline(always)]
     pub const fn to_my_backrank(self) -> Rank {
         match self {
-            Self::White => Rank::First,
-            Self::Black => Rank::Eighth,
+            White => Rank::First,
+            Black => Rank::Eighth,
         }
     }
 
     #[inline(always)]
     pub const fn to_their_backrank(self) -> Rank {
         match self {
-            Self::White => Rank::Eighth,
-            Self::Black => Rank::First,
+            White => Rank::Eighth,
+            Black => Rank::First,
         }
     }
 
     #[inline(always)]
     pub const fn to_second_rank(self) -> Rank {
         match self {
-            Self::White => Rank::Second,
-            Self::Black => Rank::Seventh,
+            White => Rank::Second,
+            Black => Rank::Seventh,
         }
     }
 
     #[inline(always)]
     pub const fn to_third_rank(self) -> Rank {
         match self {
-            Self::White => Rank::Third,
-            Self::Black => Rank::Sixth,
+            White => Rank::Third,
+            Black => Rank::Sixth,
         }
     }
 
     #[inline(always)]
     pub const fn to_fourth_rank(self) -> Rank {
         match self {
-            Self::White => Rank::Fourth,
-            Self::Black => Rank::Fifth,
+            White => Rank::Fourth,
+            Black => Rank::Fifth,
         }
     }
 
     #[inline(always)]
     pub const fn to_seventh_rank(self) -> Rank {
         match self {
-            Self::White => Rank::Seventh,
-            Self::Black => Rank::Second,
+            White => Rank::Seventh,
+            Black => Rank::Second,
         }
     }
 }
@@ -71,10 +71,9 @@ impl Not for Color {
 
     #[inline(always)]
     fn not(self) -> Self {
-        if self == Self::White {
-            Self::Black
-        } else {
-            Self::White
+        match self {
+            White => Black,
+            Black => White,
         }
     }
 }

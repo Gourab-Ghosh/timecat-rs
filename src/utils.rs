@@ -688,7 +688,7 @@ pub mod bitboard_utils {
 
     #[inline(always)]
     pub fn get_queen_moves(sq: Square, blockers: BitBoard) -> BitBoard {
-        get_rook_moves(sq, blockers) | get_bishop_moves(sq, blockers)
+        get_rook_moves(sq, blockers) ^ get_bishop_moves(sq, blockers)
     }
 }
 

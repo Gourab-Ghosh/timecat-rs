@@ -287,12 +287,10 @@ impl KingType {
             ^ (board.get_piece_mask(King) & board.occupied_co(board.turn()))
             | BitBoard::from_square(dest);
 
-        let mut attackers = BB_EMPTY;
-
         let rooks = (board.get_piece_mask(Rook) ^ board.get_piece_mask(Queen))
             & board.occupied_co(!board.turn());
 
-        attackers |= get_rook_moves(dest, occupied) & rooks;
+        let mut attackers = get_rook_moves(dest, occupied) & rooks;
 
         let bishops = (board.get_piece_mask(Bishop) ^ board.get_piece_mask(Queen))
             & board.occupied_co(!board.turn());
@@ -300,7 +298,9 @@ impl KingType {
         attackers |= get_bishop_moves(dest, occupied) & bishops;
 
         let knight_rays = get_knight_moves(dest);
-        attackers |= knight_rays & board.get_piece_mask(Knight) & board.occupied_co(!board.turn());
+
+        // Using ^ because knight moves bitboard do not collide with rook and bishop moves bitboard
+        attackers ^= knight_rays & board.get_piece_mask(Knight) & board.occupied_co(!board.turn());
 
         let king_rays = get_king_moves(dest);
         attackers |= king_rays & board.get_piece_mask(King) & board.occupied_co(!board.turn());
