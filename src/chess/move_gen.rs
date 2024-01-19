@@ -70,7 +70,7 @@ impl CheckType for NotInCheckType {
 impl PawnType {
     fn legal_ep_move(board: &SubBoard, source: Square, dest: Square) -> bool {
         let occupied = board.occupied()
-            ^ BitBoard::from_square(board.en_passant().unwrap().wrapping_backward(board.turn()))
+            ^ BitBoard::from_square(board.ep_square().unwrap().wrapping_backward(board.turn()))
             ^ BitBoard::from_square(source)
             ^ BitBoard::from_square(dest);
 
@@ -160,7 +160,7 @@ impl PieceTypeTrait for PawnType {
             }
         }
 
-        if let Some(dest) = board.en_passant() {
+        if let Some(dest) = board.ep_square() {
             let dest_rank = dest.get_rank();
             let rank_bb = get_rank_bb(if dest_rank.to_int() > 3 {
                 dest_rank.down()

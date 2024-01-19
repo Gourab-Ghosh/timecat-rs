@@ -5,7 +5,7 @@ pub struct BoardBuilder {
     pieces: [Option<Piece>; 64],
     turn: Color,
     castle_rights: [CastleRights; 2],
-    en_passant_file: Option<File>,
+    ep_file: Option<File>,
     halfmove_clock: u8,
     fullmove_number: NumMoves,
 }
@@ -17,7 +17,7 @@ impl BoardBuilder {
             pieces: [None; 64],
             turn: White,
             castle_rights: [CastleRights::None, CastleRights::None],
-            en_passant_file: None,
+            ep_file: None,
             halfmove_clock: 0,
             fullmove_number: 1,
         }
@@ -28,7 +28,7 @@ impl BoardBuilder {
         turn: Color,
         white_castle_rights: CastleRights,
         black_castle_rights: CastleRights,
-        en_passant_file: Option<File>,
+        ep_file: Option<File>,
         halfmove_clock: u8,
         fullmove_number: u16,
     ) -> BoardBuilder {
@@ -36,7 +36,7 @@ impl BoardBuilder {
             pieces: [None; 64],
             turn,
             castle_rights: [white_castle_rights, black_castle_rights],
-            en_passant_file,
+            ep_file,
             halfmove_clock,
             fullmove_number,
         };
@@ -57,7 +57,7 @@ impl BoardBuilder {
     }
 
     pub fn get_en_passant(&self) -> Option<Square> {
-        self.en_passant_file
+        self.ep_file
             .map(|f| Square::from_rank_and_file((!self.get_turn()).to_third_rank(), f))
     }
 
@@ -91,8 +91,8 @@ impl BoardBuilder {
         self
     }
 
-    pub fn en_passant_file(&mut self, file: Option<File>) -> &mut Self {
-        self.en_passant_file = file;
+    pub fn ep_file(&mut self, file: Option<File>) -> &mut Self {
+        self.ep_file = file;
         self
     }
 
@@ -321,7 +321,7 @@ impl FromStr for BoardBuilder {
         }
 
         if let Ok(sq) = Square::from_str(ep) {
-            board_builder.en_passant_file(Some(sq.get_file()));
+            board_builder.ep_file(Some(sq.get_file()));
         }
 
         board_builder
@@ -347,7 +347,7 @@ impl From<&SubBoard> for BoardBuilder {
             board.turn(),
             board.castle_rights(White),
             board.castle_rights(Black),
-            board.en_passant().map(|sq| sq.get_file()),
+            board.ep_square().map(|sq| sq.get_file()),
             board.get_halfmove_clock(),
             board.get_fullmove_number(),
         )

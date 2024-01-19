@@ -143,7 +143,7 @@ macro_rules! implement_bitwise_operations {
         impl $assign_trait<$int_type> for BitBoard {
             #[inline(always)]
             fn $assign_func(&mut self, rhs: $int_type) {
-                *self = self.$direct_func(rhs)
+                self.0 = self.0.$direct_func(rhs as u64)
             }
         }
 

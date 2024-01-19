@@ -558,7 +558,7 @@ impl Board {
 
     #[inline(always)]
     pub fn ep_square(&self) -> Option<Square> {
-        self.board.en_passant()
+        self.board.ep_square()
     }
 
     pub fn is_castling(&self, move_: Move) -> bool {
@@ -933,8 +933,11 @@ impl Board {
     }
 
     pub fn generate_legal_captures(&self) -> MoveGen {
-        let targets = self.occupied_co(!self.turn());
-        self.generate_masked_legal_moves(*targets)
+        let mut targets = *self.occupied_co(!self.turn());
+        if let Some(ep_square) = self.ep_square() {
+            targets |= get_square_bb(ep_square)
+        }
+        self.generate_masked_legal_moves(targets)
     }
 
     #[inline(always)]

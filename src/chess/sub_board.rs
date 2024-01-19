@@ -20,7 +20,7 @@ pub struct SubBoard {
     occupied: BitBoard,
     turn: Color,
     castle_rights: [CastleRights; NUM_COLORS],
-    en_passant: Option<Square>,
+    ep_square: Option<Square>,
     pinned: BitBoard,
     checkers: BitBoard,
     transposition_key: u64,
@@ -52,7 +52,7 @@ impl SubBoard {
             self.occupied_co,
             self.turn,
             self.castle_rights,
-            self.en_passant,
+            self.ep_square,
         )
     }
 }
@@ -69,7 +69,7 @@ impl SubBoard {
             pinned: BB_EMPTY,
             checkers: BB_EMPTY,
             transposition_key: 0,
-            en_passant: None,
+            ep_square: None,
             halfmove_clock: 0,
             fullmove_number: 1,
         }
@@ -224,8 +224,8 @@ impl SubBoard {
             return false;
         }
 
-        // make sure the en_passant square has a pawn on it of the right color
-        match self.en_passant {
+        // make sure the en passant square has a pawn on it of the right color
+        match self.ep_square {
             None => {}
             Some(x) => {
                 let mut square_bb = BitBoard::from_square(x);
@@ -289,7 +289,7 @@ impl SubBoard {
     #[inline(always)]
     pub fn get_hash(&self) -> u64 {
         self.transposition_key
-            ^ if let Some(ep) = self.en_passant {
+            ^ if let Some(ep) = self.ep_square {
                 Zobrist::en_passant(ep.get_file(), !self.turn)
             } else {
                 0
@@ -365,12 +365,12 @@ impl SubBoard {
     }
 
     fn remove_ep(&mut self) {
-        self.en_passant = None;
+        self.ep_square = None;
     }
 
     #[inline(always)]
-    pub fn en_passant(&self) -> Option<Square> {
-        self.en_passant
+    pub fn ep_square(&self) -> Option<Square> {
+        self.ep_square
     }
 
     #[inline(always)]
@@ -384,7 +384,7 @@ impl SubBoard {
     }
 
     fn set_ep(&mut self, sq: Square) {
-        // Only set self.en_passant if the pawn can actually be captured next move.
+        // Only set self.ep_square if the pawn can actually be captured next move.
         let mut rank = sq.get_rank();
         rank = if rank.to_int() > 3 {
             rank.down()
@@ -397,7 +397,7 @@ impl SubBoard {
             & self.occupied_co(!self.turn)
             != BB_EMPTY
         {
-            self.en_passant = Some(sq);
+            self.ep_square = Some(sq);
         }
     }
 
@@ -495,7 +495,7 @@ impl SubBoard {
             {
                 result.set_ep(dest.wrapping_backward(result.turn()));
                 result.checkers ^= get_pawn_attacks(ksq, !result.turn, dest_bb);
-            } else if Some(dest) == self.en_passant {
+            } else if Some(dest) == self.ep_square {
                 result.xor(
                     PieceType::Pawn,
                     BitBoard::from_square(dest.wrapping_backward(self.turn)),
