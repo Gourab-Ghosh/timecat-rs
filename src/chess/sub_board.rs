@@ -418,7 +418,6 @@ impl SubBoard {
             || (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
     }
 
-    #[inline(always)]
     pub fn make_move(&self, m: Move, result: &mut Self) {
         *result = self.clone();
 

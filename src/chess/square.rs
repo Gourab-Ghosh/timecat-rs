@@ -40,8 +40,13 @@ impl Square {
     }
 
     #[inline(always)]
+    pub const fn from_index(index: u8) -> Self {
+        unsafe { transmute(index & 63) }
+    }
+
+    #[inline(always)]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Self {
-        unsafe { transmute(8 * rank.to_int() + file.to_int()) }
+        unsafe { transmute((rank.to_int() << 3) | file.to_int()) }
     }
 
     #[inline(always)]
@@ -162,7 +167,7 @@ impl FromStr for Square {
         if s.len() < 2 {
             return Err(EngineError::InvalidSquareString { s: s.to_string() });
         }
-        let ch: Vec<char> = s.chars().collect();
+        let ch = s.to_lowercase().chars().collect_vec();
         match ch[0] {
             'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' => {}
             _ => {

@@ -56,7 +56,7 @@ impl FromStr for File {
     type Err = EngineError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.trim() {
+        match s.to_lowercase().trim() {
             "a" => Ok(File::A),
             "b" => Ok(File::B),
             "c" => Ok(File::C),

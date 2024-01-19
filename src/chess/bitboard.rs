@@ -8,7 +8,7 @@ impl fmt::Display for BitBoard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut s: String = "".to_owned();
         for x in 0..64 {
-            if self.get_mask() & (1u64 << x) == (1u64 << x) {
+            if self.0 & (1u64 << x) == (1u64 << x) {
                 s.push_str("X ");
             } else {
                 s.push_str(". ");
@@ -49,22 +49,22 @@ impl BitBoard {
 
     #[inline(always)]
     pub const fn popcnt(self) -> u32 {
-        self.get_mask().count_ones()
+        self.0.count_ones()
     }
 
     #[inline(always)]
     pub const fn reverse_colors(self) -> BitBoard {
-        BitBoard(self.get_mask().swap_bytes())
+        BitBoard(self.0.swap_bytes())
     }
 
     #[inline(always)]
     pub const fn to_size(self, right_shift: u8) -> usize {
-        (self.get_mask() >> right_shift) as usize
+        (self.0 >> right_shift) as usize
     }
 
     #[inline(always)]
     pub const fn to_square_index(self) -> usize {
-        self.get_mask().trailing_zeros() as usize
+        self.0.trailing_zeros() as usize
     }
 
     #[inline(always)]
@@ -91,7 +91,7 @@ macro_rules! implement_bitwise_operations {
         impl $assign_trait<&BitBoard> for BitBoard {
             #[inline(always)]
             fn $assign_func(&mut self, rhs: &Self) {
-                self.$assign_func(rhs.get_mask())
+                self.$assign_func(rhs.0)
             }
         }
 
@@ -107,7 +107,7 @@ macro_rules! implement_bitwise_operations {
 
             #[inline(always)]
             fn $direct_func(self, rhs: Self) -> Self::Output {
-                self.$direct_func(rhs.get_mask())
+                self.$direct_func(rhs.0)
             }
         }
 
@@ -143,7 +143,7 @@ macro_rules! implement_bitwise_operations {
         impl $assign_trait<$int_type> for BitBoard {
             #[inline(always)]
             fn $assign_func(&mut self, rhs: $int_type) {
-                self.set_mask(self.get_mask().$direct_func(rhs as u64))
+                self.0 = self.0.$direct_func(rhs as u64)
             }
         }
 
@@ -194,7 +194,7 @@ macro_rules! implement_bitwise_operations {
         impl $assign_trait<&BitBoard> for $int_type {
             #[inline(always)]
             fn $assign_func(&mut self, rhs: &BitBoard) {
-                self.$assign_func(rhs.get_mask() as $int_type)
+                self.$assign_func(rhs.0 as $int_type)
             }
         }
 
@@ -254,7 +254,7 @@ impl Mul for BitBoard {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        Self::new(self.get_mask().wrapping_mul(rhs.get_mask()))
+        Self::new(self.0.wrapping_mul(rhs.0))
     }
 }
 
@@ -263,7 +263,7 @@ impl Not for &BitBoard {
 
     #[inline(always)]
     fn not(self) -> BitBoard {
-        BitBoard(!self.get_mask())
+        BitBoard(!self.0)
     }
 }
 
@@ -281,7 +281,7 @@ impl Iterator for BitBoard {
 
     #[inline(always)]
     fn next(&mut self) -> Option<Square> {
-        if self.get_mask() == 0 {
+        if self.0 == 0 {
             None
         } else {
             let result = self.to_square();
