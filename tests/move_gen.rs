@@ -143,10 +143,30 @@ generate_move_gen_functions!(
     8,
     20625698,
 );
-generate_move_gen_functions!(move_gen_perft_19, "8/P1k5/K7/8/8/8/8/8 w - - 0 1", 8, 8110830);
-generate_move_gen_functions!(move_gen_perft_20, "8/8/8/8/8/k7/p1K5/8 b - - 0 1", 8, 8110830);
-generate_move_gen_functions!(move_gen_perft_21, "K1k5/8/P7/8/8/8/8/8 w - - 0 1", 11, 85822924);
-generate_move_gen_functions!(move_gen_perft_22, "8/8/8/8/8/p7/8/k1K5 b - - 0 1", 11, 85822924);
+generate_move_gen_functions!(
+    move_gen_perft_19,
+    "8/P1k5/K7/8/8/8/8/8 w - - 0 1",
+    8,
+    8110830
+);
+generate_move_gen_functions!(
+    move_gen_perft_20,
+    "8/8/8/8/8/k7/p1K5/8 b - - 0 1",
+    8,
+    8110830
+);
+generate_move_gen_functions!(
+    move_gen_perft_21,
+    "K1k5/8/P7/8/8/8/8/8 w - - 0 1",
+    11,
+    85822924
+);
+generate_move_gen_functions!(
+    move_gen_perft_22,
+    "8/8/8/8/8/p7/8/k1K5 b - - 0 1",
+    11,
+    85822924
+);
 generate_move_gen_functions!(
     move_gen_perft_23,
     "8/k1P5/8/1K6/8/8/8/8 w - - 0 1",

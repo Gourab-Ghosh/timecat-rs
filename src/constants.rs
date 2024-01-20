@@ -15,7 +15,7 @@ pub mod types {
 }
 
 pub mod bitboard_and_square {
-    use crate::{paste, BitBoard, Square, File::*};
+    use crate::{paste, BitBoard, File::*, Square};
 
     pub const BB_EMPTY: BitBoard = BitBoard::new(0);
     pub const BB_ALL: BitBoard = BitBoard::new(0xffff_ffff_ffff_ffff);
