@@ -1,28 +1,26 @@
 use super::*;
 
 pub fn format_info<T: fmt::Display>(desc: &str, info: T) -> String {
-    let desc = desc
+    let mut desc = desc
         .trim()
         .trim_end_matches(':')
-        .colorize(INFO_MESSAGE_STYLE);
+        .to_string();
+    if !is_in_console_mode() {
+        desc = desc.to_lowercase();
+    }
+    desc = desc.colorize(INFO_MESSAGE_STYLE);
     if is_in_console_mode() {
         format!("{desc}: {info}")
     } else {
-        format!("{desc} {info}")
+        format!(
+            "{} {desc} {info}",
+            "info string".colorize(INFO_MESSAGE_STYLE),
+        )
     }
 }
 
 pub fn force_println_info<T: fmt::Display>(desc: &str, info: T) {
-    let formatted_info = format_info(desc, info);
-    let to_print = if is_in_console_mode() {
-        formatted_info
-    } else {
-        format!(
-            "{} {formatted_info}",
-            "info string".colorize(INFO_MESSAGE_STYLE)
-        )
-    };
-    println!("{to_print}");
+    println!("{}", format_info(desc, info));
 }
 
 #[inline(always)]
