@@ -95,9 +95,7 @@ impl CastleRights {
         match self {
             Self::None => BB_EMPTY,
             Self::KingSide => BitBoard::from_rank_and_file(color.to_my_backrank(), File::H),
-            Self::QueenSide => {
-                BitBoard::from_rank_and_file(color.to_my_backrank(), File::A)
-            }
+            Self::QueenSide => BitBoard::from_rank_and_file(color.to_my_backrank(), File::A),
             Self::Both => {
                 BitBoard::from_rank_and_file(color.to_my_backrank(), File::A)
                     ^ BitBoard::from_rank_and_file(color.to_my_backrank(), File::H)
@@ -151,7 +149,7 @@ impl AddAssign for CastleRights {
 
 impl Sub for CastleRights {
     type Output = Self;
-    
+
     #[inline(always)]
     fn sub(self, rhs: Self) -> Self::Output {
         self.remove(rhs)

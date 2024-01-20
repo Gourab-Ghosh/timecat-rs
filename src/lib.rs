@@ -4,6 +4,7 @@ mod board;
 mod chess;
 mod constants;
 mod engine;
+mod error;
 mod evaluate;
 mod nnue;
 mod nnue_rs;
@@ -25,8 +26,8 @@ pub use board::*;
 pub use chess::*;
 use constants::atomic::*;
 use constants::bitboard::*;
-use constants::color::*;
 use constants::board_representation::*;
+use constants::color::*;
 use constants::description::*;
 use constants::engine_constants::*;
 pub use constants::fen::*;
@@ -34,6 +35,7 @@ use constants::print_style::*;
 use constants::square::*;
 pub use constants::types::*;
 use engine::{Engine, GoCommand};
+pub use error::*;
 use evaluate::*;
 use failure::Fail;
 pub use fxhash::FxHashMap as HashMap;
@@ -49,42 +51,27 @@ use sort::*;
 use std::cmp::Ordering;
 use std::convert::From;
 use std::env;
+use std::error::Error;
 use std::fmt;
 use std::fs;
 use std::mem::{self, transmute};
 use std::num::ParseIntError;
 use std::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Index, IndexMut, Mul, MulAssign, Not, Shl,
-    ShlAssign, Shr, ShrAssign, Add, AddAssign, Sub, SubAssign,
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Index,
+    IndexMut, Mul, MulAssign, Not, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 use std::str::{FromStr, ParseBoolError};
 use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
-// pub use syzygy::*;
-use std::error::Error;
 use tests::test;
 use timer::Timer;
 use tt::*;
 use uci::*;
-pub use utils::bitboard_utils::*;
-pub use utils::cache_table_utils::*;
-pub use utils::classes::*;
-pub use utils::color::*;
-pub use utils::engine_error::*;
-pub use utils::engine_utils::*;
-pub use utils::global_utils::*;
-pub use utils::hash_utils::*;
-pub use utils::info_utils::*;
-pub use utils::io_utils::*;
-pub use utils::move_utils::*;
-pub use utils::piece_utils::*;
-pub use utils::pv_utils::*;
-pub use utils::square_utils::*;
-pub use utils::string_utils::*;
-pub use utils::time_utils::*;
+pub use utils::*;
 
+// pub use syzygy::*;
 // pub use std::hint;
 // pub use std::num;
 

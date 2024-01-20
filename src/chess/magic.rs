@@ -27,7 +27,8 @@ pub fn get_rook_moves(sq: Square, blockers: BitBoard) -> BitBoard {
             .get_unchecked(sq.to_index());
         *MOVES.get_unchecked(
             (magic.offset as usize)
-                + (magic.magic_number.wrapping_mul(blockers & magic.mask)).to_size(magic.right_shift),
+                + (magic.magic_number.wrapping_mul(blockers & magic.mask))
+                    .to_size(magic.right_shift),
         ) & get_rook_rays(sq)
     }
 }
@@ -58,7 +59,8 @@ pub fn get_bishop_moves(sq: Square, blockers: BitBoard) -> BitBoard {
             .get_unchecked(sq.to_index());
         *MOVES.get_unchecked(
             (magic.offset as usize)
-                + (magic.magic_number.wrapping_mul(blockers & magic.mask)).to_size(magic.right_shift),
+                + (magic.magic_number.wrapping_mul(blockers & magic.mask))
+                    .to_size(magic.right_shift),
         ) & get_bishop_rays(sq)
     }
 }
@@ -77,6 +79,11 @@ pub fn get_bishop_moves(sq: Square, blockers: BitBoard) -> BitBoard {
         );
         return BitBoard::new(result);
     }
+}
+
+#[inline(always)]
+pub fn get_queen_moves(sq: Square, blockers: BitBoard) -> BitBoard {
+    get_rook_moves(sq, blockers) ^ get_bishop_moves(sq, blockers)
 }
 
 /// Get the king moves for a particular square.

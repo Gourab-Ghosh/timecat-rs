@@ -234,8 +234,7 @@ impl SubBoard {
                 } else {
                     square_bb <<= 8;
                 }
-                if self.get_piece_mask(Pawn) & self.occupied_co(!self.turn) & square_bb
-                    == BB_EMPTY
+                if self.get_piece_mask(Pawn) & self.occupied_co(!self.turn) & square_bb == BB_EMPTY
                 {
                     return false;
                 }
@@ -276,9 +275,7 @@ impl SubBoard {
         }
 
         // we must make sure the kings aren't touching
-        if get_king_moves(self.king_square(White)) & self.get_piece_mask(King)
-            != BB_EMPTY
-        {
+        if get_king_moves(self.king_square(White)) & self.get_piece_mask(King) != BB_EMPTY {
             return false;
         }
 
@@ -520,11 +517,9 @@ impl SubBoard {
         // now, lets see if we're in check or pinned
         let attackers = result.occupied_co(result.turn)
             & ((get_bishop_rays(ksq)
-                & (result.get_piece_mask(Bishop)
-                    | result.get_piece_mask(Queen)))
+                & (result.get_piece_mask(Bishop) | result.get_piece_mask(Queen)))
                 | (get_rook_rays(ksq)
-                    & (result.get_piece_mask(Rook)
-                        | result.get_piece_mask(Queen))));
+                    & (result.get_piece_mask(Rook) | result.get_piece_mask(Queen))));
 
         for sq in attackers {
             let between = between(sq, ksq) & result.occupied();
@@ -545,12 +540,8 @@ impl SubBoard {
         let ksq = (self.get_piece_mask(King) & self.occupied_co(self.turn)).to_square();
 
         let pinners = self.occupied_co(!self.turn)
-            & ((get_bishop_rays(ksq)
-                & (self.get_piece_mask(Bishop)
-                    | self.get_piece_mask(Queen)))
-                | (get_rook_rays(ksq)
-                    & (self.get_piece_mask(Rook)
-                        | self.get_piece_mask(Queen))));
+            & ((get_bishop_rays(ksq) & (self.get_piece_mask(Bishop) | self.get_piece_mask(Queen)))
+                | (get_rook_rays(ksq) & (self.get_piece_mask(Rook) | self.get_piece_mask(Queen))));
 
         for sq in pinners {
             let between = between(sq, ksq) & self.occupied();
@@ -561,9 +552,8 @@ impl SubBoard {
             }
         }
 
-        self.checkers ^= get_knight_moves(ksq)
-            & self.occupied_co(!self.turn)
-            & self.get_piece_mask(Knight);
+        self.checkers ^=
+            get_knight_moves(ksq) & self.occupied_co(!self.turn) & self.get_piece_mask(Knight);
 
         self.checkers ^= get_pawn_attacks(
             ksq,
