@@ -1,10 +1,7 @@
 use super::*;
 
 pub fn format_info<T: fmt::Display>(desc: &str, info: T) -> String {
-    let mut desc = desc
-        .trim()
-        .trim_end_matches(':')
-        .to_string();
+    let mut desc = desc.trim().trim_end_matches(':').to_string();
     if !is_in_console_mode() {
         desc = desc.to_lowercase();
     }

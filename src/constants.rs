@@ -268,7 +268,8 @@ pub mod piece {
     use PieceType::*;
 
     pub const NUM_PIECE_TYPES: usize = 6;
-    pub const ALL_PIECE_TYPES: [PieceType; NUM_PIECE_TYPES] = [Pawn, Knight, Bishop, Rook, Queen, King];
+    pub const ALL_PIECE_TYPES: [PieceType; NUM_PIECE_TYPES] =
+        [Pawn, Knight, Bishop, Rook, Queen, King];
     pub const NUM_PROMOTION_PIECES: usize = 4;
     pub const PROMOTION_PIECES: [PieceType; NUM_PROMOTION_PIECES] = [Queen, Knight, Rook, Bishop];
 }

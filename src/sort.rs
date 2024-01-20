@@ -150,8 +150,8 @@ impl MoveSorter {
         let src = history_move.get_source();
         let dest = history_move.get_dest();
         let piece = board.piece_at(src).unwrap();
-        self.history_move_scores[piece.get_piece_type().to_index()]
-            [piece.get_color().to_index()][dest.to_index()]
+        self.history_move_scores[piece.get_piece_type().to_index()][piece.get_color().to_index()]
+            [dest.to_index()]
     }
 
     fn get_least_attackers_move(square: Square, board: &SubBoard) -> Option<Move> {
