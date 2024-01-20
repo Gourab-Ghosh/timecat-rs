@@ -262,3 +262,13 @@ pub mod color {
     pub const NUM_COLORS: usize = 2;
     pub const ALL_COLORS: [Color; NUM_COLORS] = [Color::White, Color::Black];
 }
+
+pub mod piece {
+    use crate::PieceType;
+    use PieceType::*;
+
+    pub const NUM_PIECE_TYPES: usize = 6;
+    pub const ALL_PIECE_TYPES: [PieceType; NUM_PIECE_TYPES] = [Pawn, Knight, Bishop, Rook, Queen, King];
+    pub const NUM_PROMOTION_PIECES: usize = 4;
+    pub const PROMOTION_PIECES: [PieceType; NUM_PROMOTION_PIECES] = [Queen, Knight, Rook, Bishop];
+}

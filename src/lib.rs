@@ -34,6 +34,7 @@ pub use constants::fen::*;
 use constants::print_style::*;
 use constants::square::*;
 pub use constants::types::*;
+pub use constants::piece::*;
 use engine::{Engine, GoCommand};
 pub use error::*;
 use evaluate::*;
