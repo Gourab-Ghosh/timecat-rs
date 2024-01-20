@@ -12,19 +12,6 @@ pub enum Rank {
     Eighth,
 }
 
-pub const NUM_RANKS: usize = 8;
-
-pub const ALL_RANKS: [Rank; NUM_RANKS] = [
-    Rank::First,
-    Rank::Second,
-    Rank::Third,
-    Rank::Fourth,
-    Rank::Fifth,
-    Rank::Sixth,
-    Rank::Seventh,
-    Rank::Eighth,
-];
-
 impl Rank {
     #[inline(always)]
     pub const fn from_index(i: usize) -> Rank {

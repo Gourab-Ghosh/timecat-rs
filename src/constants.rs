@@ -14,20 +14,22 @@ pub mod types {
     pub type ColoredStringFunction = fn(colored::ColoredString) -> colored::ColoredString;
 }
 
-pub mod bitboard {
-    use crate::{paste, BitBoard, File::*};
+pub mod bitboard_and_square {
+    use crate::{paste, BitBoard, Square, File::*};
 
     pub const BB_EMPTY: BitBoard = BitBoard::new(0);
     pub const BB_ALL: BitBoard = BitBoard::new(0xffff_ffff_ffff_ffff);
+    pub const NUM_SQUARES: usize = 64;
 
-    macro_rules! generate_bitboard_constants {
+    macro_rules! generate_bitboard_and_square_constants {
         (@bb_squares $(($file:expr, $rank:expr)), *,) => {
             paste! {
                 $(
                     pub const [<BB_$file$rank>]: BitBoard = BitBoard::new(1 << (8 * ($rank - 1) + $file as usize));
                 )*
-                pub const BB_SQUARES: [BitBoard; 64] = [$( [<BB_$file$rank>] ), *];
-                // const SQUARES_180: [Square; 64] = [$( Square::[<$file$rank>] ), *];
+                pub const ALL_SQUARES: [Square; NUM_SQUARES] = [$( Square::[<$file$rank>] ), *];
+                pub const BB_SQUARES: [BitBoard; NUM_SQUARES] = [$( [<BB_$file$rank>] ), *];
+                // const SQUARES_180: [Square; NUM_SQUARES] = [$( Square::[<$file$rank>] ), *];
             }
         };
 
@@ -41,8 +43,14 @@ pub mod bitboard {
         };
     }
 
+    macro_rules! generate_squares_180 {
+        [$( $square:ident ), *,] => {
+            pub const SQUARES_180: [Square; NUM_SQUARES] = [$( Square::$square ), *];
+        };
+    }
+
     #[rustfmt::skip]
-    generate_bitboard_constants!(
+    generate_bitboard_and_square_constants!(
         @bb_squares
         (A, 1), (B, 1), (C, 1), (D, 1), (E, 1), (F, 1), (G, 1), (H, 1),
         (A, 2), (B, 2), (C, 2), (D, 2), (E, 2), (F, 2), (G, 2), (H, 2),
@@ -53,10 +61,21 @@ pub mod bitboard {
         (A, 7), (B, 7), (C, 7), (D, 7), (E, 7), (F, 7), (G, 7), (H, 7),
         (A, 8), (B, 8), (C, 8), (D, 8), (E, 8), (F, 8), (G, 8), (H, 8),
     );
-    generate_bitboard_constants!(
+    generate_bitboard_and_square_constants!(
         @bb_ranks_and_files
         (A, 1), (B, 2), (C, 3), (D, 4), (E, 5), (F, 6), (G, 7), (H, 8),
     );
+    #[rustfmt::skip]
+    generate_squares_180![
+        A8, B8, C8, D8, E8, F8, G8, H8,
+        A7, B7, C7, D7, E7, F7, G7, H7,
+        A6, B6, C6, D6, E6, F6, G6, H6,
+        A5, B5, C5, D5, E5, F5, G5, H5,
+        A4, B4, C4, D4, E4, F4, G4, H4,
+        A3, B3, C3, D3, E3, F3, G3, H3,
+        A2, B2, C2, D2, E2, F2, G2, H2,
+        A1, B1, C1, D1, E1, F1, G1, H1,
+    ];
 
     pub const BB_CORNERS: BitBoard =
         BitBoard::new(BB_A1.get_mask() ^ BB_H1.get_mask() ^ BB_A8.get_mask() ^ BB_H8.get_mask());
@@ -104,28 +123,6 @@ pub mod bitboard {
         BitBoard::new(0xf0f0_f0f0_0000_0000),
         BitBoard::new(0x0000_0000_0f0f_0f0f),
         BitBoard::new(0x0000_0000_f0f0_f0f0),
-    ];
-}
-
-pub mod square {
-    use crate::Square;
-
-    macro_rules! generate_squares {
-        [$( $square:ident ), *,] => {
-            pub const SQUARES_180: [Square; 64] = [$( Square::$square ), *];
-        };
-    }
-
-    #[rustfmt::skip]
-    generate_squares![
-        A8, B8, C8, D8, E8, F8, G8, H8,
-        A7, B7, C7, D7, E7, F7, G7, H7,
-        A6, B6, C6, D6, E6, F6, G6, H6,
-        A5, B5, C5, D5, E5, F5, G5, H5,
-        A4, B4, C4, D4, E4, F4, G4, H4,
-        A3, B3, C3, D3, E3, F3, G3, H3,
-        A2, B2, C2, D2, E2, F2, G2, H2,
-        A1, B1, C1, D1, E1, F1, G1, H1,
     ];
 }
 
@@ -272,4 +269,36 @@ pub mod piece {
         [Pawn, Knight, Bishop, Rook, Queen, King];
     pub const NUM_PROMOTION_PIECES: usize = 4;
     pub const PROMOTION_PIECES: [PieceType; NUM_PROMOTION_PIECES] = [Queen, Knight, Rook, Bishop];
+}
+
+pub mod ranks {
+    use crate::Rank;
+
+    pub const NUM_RANKS: usize = 8;
+    pub const ALL_RANKS: [Rank; NUM_RANKS] = [
+        Rank::First,
+        Rank::Second,
+        Rank::Third,
+        Rank::Fourth,
+        Rank::Fifth,
+        Rank::Sixth,
+        Rank::Seventh,
+        Rank::Eighth,
+    ];
+}
+
+pub mod files {
+    use crate::File;
+
+    pub const NUM_FILES: usize = 8;
+    pub const ALL_FILES: [File; NUM_FILES] = [
+        File::A,
+        File::B,
+        File::C,
+        File::D,
+        File::E,
+        File::F,
+        File::G,
+        File::H,
+    ];
 }
