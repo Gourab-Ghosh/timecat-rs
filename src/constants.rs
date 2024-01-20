@@ -131,10 +131,9 @@ pub mod square {
 
 pub mod board_representation {
     pub const EMPTY_SPACE_SYMBOL: &str = " ";
-    pub const PIECE_SYMBOLS: [&str; 7] = [EMPTY_SPACE_SYMBOL, "p", "n", "b", "r", "q", "k"];
+    pub const EMPTY_SPACE_UNICODE_SYMBOL: &str = " ";
     pub const WHITE_PIECE_UNICODE_SYMBOLS: [&str; 6] = ["♙", "♘", "♗", "♖", "♕", "♔"];
     pub const BLACK_PIECE_UNICODE_SYMBOLS: [&str; 6] = ["♟", "♞", "♝", "♜", "♛", "♚"];
-    pub const EMPTY_SPACE_UNICODE_SYMBOL: &str = " ";
 }
 
 pub mod fen {

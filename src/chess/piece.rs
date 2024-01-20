@@ -81,6 +81,6 @@ impl Piece {
 
 impl fmt::Display for Piece {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.type_.to_string(self.color),)
+        write!(f, "{}", self.type_.to_string(self.color))
     }
 }

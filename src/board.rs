@@ -142,28 +142,20 @@ impl Board {
     }
 
     pub fn piece_symbol_at(&self, square: Square) -> String {
-        let symbol = get_item_unchecked!(
-            PIECE_SYMBOLS,
-            self.piece_type_at(square).get_type() as usize
-        )
-        .to_string();
-        if let Some(color) = self.color_at(square) {
-            return match color {
-                White => symbol.to_uppercase(),
-                Black => symbol.to_lowercase(),
-            };
+        match self.piece_at(square) {
+            Some(piece) => piece.to_string(),
+            None => EMPTY_SPACE_SYMBOL.to_string(),
         }
-        symbol
     }
 
     pub fn piece_unicode_symbol_at(&self, square: Square, flip_color: bool) -> String {
-        if let Some(color) = self.color_at(square) {
-            let piece_index = self.piece_type_at(square).unwrap().to_index();
+        if let Some(piece) = self.piece_at(square) {
+            let piece_index = piece.get_piece_type().to_index();
             let (white_pieces, black_pieces) = match flip_color {
                 true => (BLACK_PIECE_UNICODE_SYMBOLS, WHITE_PIECE_UNICODE_SYMBOLS),
                 false => (WHITE_PIECE_UNICODE_SYMBOLS, BLACK_PIECE_UNICODE_SYMBOLS),
             };
-            return match color {
+            return match piece.get_color() {
                 White => get_item_unchecked!(white_pieces, piece_index),
                 Black => get_item_unchecked!(black_pieces, piece_index),
             }

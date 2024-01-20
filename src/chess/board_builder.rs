@@ -336,9 +336,8 @@ impl From<&SubBoard> for BoardBuilder {
     fn from(board: &SubBoard) -> Self {
         let mut pieces = vec![];
         for square in ALL_SQUARES.into_iter() {
-            if let Some(piece) = board.piece_type_at(square) {
-                let color = board.color_at(square).unwrap();
-                pieces.push((square, Piece::new(piece, color)));
+            if let Some(piece) = board.piece_at(square) {
+                pieces.push((square, piece));
             }
         }
 

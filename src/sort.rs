@@ -98,6 +98,7 @@ impl FromIterator<WeightedMove> for WeightedMoveListSorter {
 #[derive(Debug, Clone)]
 pub struct MoveSorter {
     killer_moves: [[Option<Move>; NUM_KILLER_MOVES]; MAX_PLY],
+    // TODO: change this into 64 x 12 array
     history_move_scores: [[[MoveWeight; 64]; 2]; 6],
     follow_pv: bool,
     score_pv: bool,
@@ -139,16 +140,18 @@ impl MoveSorter {
         let depth = (depth as MoveWeight).pow(2);
         let src = history_move.get_source();
         let dest = history_move.get_dest();
-        self.history_move_scores[board.piece_type_at(src).unwrap().to_index()]
-            [board.color_at(src).unwrap() as usize][dest.to_index()] += depth;
+        let piece = board.piece_at(src).unwrap();
+        self.history_move_scores[piece.get_piece_type().to_index()]
+            [piece.get_color().to_index()][dest.to_index()] += depth;
     }
 
     #[inline(always)]
     pub fn get_history_score(&self, history_move: Move, board: &Board) -> MoveWeight {
         let src = history_move.get_source();
         let dest = history_move.get_dest();
-        self.history_move_scores[board.piece_type_at(src).unwrap().to_index()]
-            [board.color_at(src).unwrap() as usize][dest.to_index()]
+        let piece = board.piece_at(src).unwrap();
+        self.history_move_scores[piece.get_piece_type().to_index()]
+            [piece.get_color().to_index()][dest.to_index()]
     }
 
     fn get_least_attackers_move(square: Square, board: &SubBoard) -> Option<Move> {
