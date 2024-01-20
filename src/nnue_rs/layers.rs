@@ -117,9 +117,9 @@ mod tests {
             let bit_input = rng.next();
             let mut inputs = [0; 64];
             let mut bit_dense_inputs = [false; 64];
-            for (i, (sq, sq2)) in inputs.iter_mut().zip(&mut bit_dense_inputs).enumerate() {
-                *sq2 = ((bit_input >> i) & 1) != 0;
-                *sq = *sq2 as i8;
+            for (i, (square, square2)) in inputs.iter_mut().zip(&mut bit_dense_inputs).enumerate() {
+                *square2 = ((bit_input >> i) & 1) != 0;
+                *square = *square2 as i8;
             }
 
             let mut dense_output = [0; OUTPUTS];

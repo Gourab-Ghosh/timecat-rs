@@ -175,8 +175,8 @@ impl fmt::Display for BoardBuilder {
         }
 
         write!(f, " ")?;
-        if let Some(sq) = self.get_en_passant() {
-            write!(f, "{}", sq)?;
+        if let Some(square) = self.get_en_passant() {
+            write!(f, "{}", square)?;
         } else {
             write!(f, "-")?;
         }
@@ -320,8 +320,8 @@ impl FromStr for BoardBuilder {
             board_builder.castle_rights[Black.to_index()] = CastleRights::None;
         }
 
-        if let Ok(sq) = Square::from_str(ep) {
-            board_builder.ep_file(Some(sq.get_file()));
+        if let Ok(square) = Square::from_str(ep) {
+            board_builder.ep_file(Some(square.get_file()));
         }
 
         board_builder
@@ -335,10 +335,10 @@ impl FromStr for BoardBuilder {
 impl From<&SubBoard> for BoardBuilder {
     fn from(board: &SubBoard) -> Self {
         let mut pieces = vec![];
-        for sq in ALL_SQUARES.iter() {
-            if let Some(piece) = board.piece_type_at(*sq) {
-                let color = board.color_at(*sq).unwrap();
-                pieces.push((*sq, Piece::new(piece, color)));
+        for square in ALL_SQUARES.into_iter() {
+            if let Some(piece) = board.piece_type_at(square) {
+                let color = board.color_at(square).unwrap();
+                pieces.push((square, Piece::new(piece, color)));
             }
         }
 
@@ -347,7 +347,7 @@ impl From<&SubBoard> for BoardBuilder {
             board.turn(),
             board.castle_rights(White),
             board.castle_rights(Black),
-            board.ep_square().map(|sq| sq.get_file()),
+            board.ep_square().map(|square| square.get_file()),
             board.get_halfmove_clock(),
             board.get_fullmove_number(),
         )

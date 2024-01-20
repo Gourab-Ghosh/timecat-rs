@@ -396,9 +396,9 @@ pub struct SquareAndBitBoard {
 }
 
 impl SquareAndBitBoard {
-    fn new(sq: Square, bb: BitBoard, promotion: bool) -> SquareAndBitBoard {
+    fn new(square: Square, bb: BitBoard, promotion: bool) -> SquareAndBitBoard {
         SquareAndBitBoard {
-            square: sq,
+            square: square,
             bitboard: bb,
             promotion,
         }

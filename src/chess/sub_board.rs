@@ -380,21 +380,21 @@ impl SubBoard {
         self.fullmove_number
     }
 
-    fn set_ep(&mut self, sq: Square) {
+    fn set_ep(&mut self, square: Square) {
         // Only set self.ep_square if the pawn can actually be captured next move.
-        let mut rank = sq.get_rank();
+        let mut rank = square.get_rank();
         rank = if rank.to_int() > 3 {
             rank.down()
         } else {
             rank.up()
         };
-        if get_adjacent_files(sq.get_file())
+        if get_adjacent_files(square.get_file())
             & get_rank_bb(rank)
             & self.get_piece_mask(Pawn)
             & self.occupied_co(!self.turn)
             != BB_EMPTY
         {
-            self.ep_square = Some(sq);
+            self.ep_square = Some(square);
         }
     }
 
@@ -521,10 +521,10 @@ impl SubBoard {
                 | (get_rook_rays(ksq)
                     & (result.get_piece_mask(Rook) | result.get_piece_mask(Queen))));
 
-        for sq in attackers {
-            let between = between(sq, ksq) & result.occupied();
+        for square in attackers {
+            let between = between(square, ksq) & result.occupied();
             if between == BB_EMPTY {
-                result.checkers ^= BitBoard::from_square(sq);
+                result.checkers ^= BitBoard::from_square(square);
             } else if between.popcnt() == 1 {
                 result.pinned ^= between;
             }
@@ -543,10 +543,10 @@ impl SubBoard {
             & ((get_bishop_rays(ksq) & (self.get_piece_mask(Bishop) | self.get_piece_mask(Queen)))
                 | (get_rook_rays(ksq) & (self.get_piece_mask(Rook) | self.get_piece_mask(Queen))));
 
-        for sq in pinners {
-            let between = between(sq, ksq) & self.occupied();
+        for square in pinners {
+            let between = between(square, ksq) & self.occupied();
             if between == BB_EMPTY {
-                self.checkers ^= BitBoard::from_square(sq);
+                self.checkers ^= BitBoard::from_square(square);
             } else if between.popcnt() == 1 {
                 self.pinned ^= between;
             }
@@ -579,11 +579,11 @@ impl TryFrom<&BoardBuilder> for SubBoard {
     fn try_from(board_builder: &BoardBuilder) -> Result<Self, Self::Error> {
         let mut board = SubBoard::new_empty();
 
-        for sq in ALL_SQUARES.iter() {
-            if let Some(piece) = board_builder[*sq] {
+        for square in ALL_SQUARES.into_iter() {
+            if let Some(piece) = board_builder[square] {
                 board.xor(
                     piece.get_piece_type(),
-                    BitBoard::from_square(*sq),
+                    BitBoard::from_square(square),
                     piece.get_color(),
                 );
             }

@@ -45,11 +45,11 @@ impl CastleRights {
     }
 
     #[inline(always)]
-    pub fn square_to_castle_rights(color: Color, sq: Square) -> Self {
+    pub fn square_to_castle_rights(color: Color, square: Square) -> Self {
         Self::from_index(unsafe {
             *CASTLES_PER_SQUARE
                 .get_unchecked(color.to_index())
-                .get_unchecked(sq.to_index())
+                .get_unchecked(square.to_index())
         } as usize)
     }
 
