@@ -172,26 +172,6 @@ impl Board {
         EMPTY_SPACE_UNICODE_SYMBOL.to_string()
     }
 
-    fn get_skeleton(&self) -> String {
-        let skeleton = String::from(BOARD_SKELETON.trim_matches('\n'));
-        let mut colored_skeleton = String::new();
-        fn get_colored_char(c: char) -> String {
-            let mut _char = c.to_string();
-            let styles = if "+-|".contains(c) {
-                BOARD_SKELETON_STYLE
-            } else if "abcdefghABCDEFGH12345678".contains(c) {
-                BOARD_LABEL_STYLE
-            } else {
-                &[]
-            };
-            _char.colorize(styles)
-        }
-        for c in skeleton.chars() {
-            colored_skeleton.push_str(&get_colored_char(c));
-        }
-        colored_skeleton
-    }
-
     pub fn get_checkers(&self) -> BitBoard {
         return *self.board.checkers();
     }
@@ -201,7 +181,7 @@ impl Board {
     }
 
     fn to_board_string(&self, use_unicode: bool) -> String {
-        let mut skeleton = self.get_skeleton();
+        let mut skeleton = get_board_skeleton();
         let checkers = self.get_checkers();
         let king_square = self.get_king_square(self.board.turn());
         let last_move = self.stack.last().and_then(|(_, m)| *m);
@@ -478,9 +458,9 @@ impl Board {
                 let source = move_.get_source();
                 let dest = move_.get_dest();
                 ep_square == dest
-                    && self.get_piece_mask(Pawn) & get_square_bb(source) != BB_EMPTY
+                    && self.get_piece_mask(Pawn).contains(source)
                     && [7, 9].contains(&dest.to_int().abs_diff(source.to_int()))
-                    && self.occupied() & get_square_bb(dest) == BB_EMPTY
+                    && !self.occupied().contains(dest)
             }
             None => false,
         }
@@ -489,7 +469,7 @@ impl Board {
     pub fn is_passed_pawn(&self, square: Square) -> bool {
         let pawn_mask = self.get_piece_mask(Pawn);
         let self_color = self.turn();
-        if pawn_mask & self.occupied_co(self_color) & get_square_bb(square) == BB_EMPTY {
+        if !(pawn_mask & self.occupied_co(self_color)).contains(square) {
             return false;
         }
         let file = square.get_file();
@@ -562,19 +542,17 @@ impl Board {
     }
 
     pub fn is_castling(&self, move_: Move) -> bool {
-        if (self.get_piece_mask(King) & get_square_bb(move_.get_source())) != BB_EMPTY {
-            let rank_diff = move_
-                .get_source()
-                .get_file()
-                .to_index()
-                .abs_diff(move_.get_dest().get_file().to_index());
-            return rank_diff > 1
-                || self.get_piece_mask(Rook)
-                    & self.occupied_co(self.turn())
-                    & get_square_bb(move_.get_dest())
-                    != BB_EMPTY;
+        if !self.get_piece_mask(King).contains(move_.get_source()) {
+            return false;
         }
-        false
+        let rank_diff = move_
+            .get_source()
+            .get_file()
+            .to_index()
+            .abs_diff(move_.get_dest().get_file().to_index());
+        rank_diff > 1
+            || (self.get_piece_mask(Rook) & self.occupied_co(self.turn()))
+                .contains(move_.get_dest())
     }
 
     #[inline(always)]

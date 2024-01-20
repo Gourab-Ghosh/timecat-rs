@@ -31,17 +31,17 @@ pub fn flip_board_fen(fen: &str) -> Result<String, EngineError> {
 }
 
 pub trait CustomColorize {
-    fn colorize(&self, styles_functions: &[ColoredStringFunction]) -> String;
+    fn colorize(&self, style_functions: &[ColoredStringFunction]) -> String;
 }
 
 impl<T: ToString> CustomColorize for T {
-    fn colorize(&self, styles_functions: &[ColoredStringFunction]) -> String {
+    fn colorize(&self, style_functions: &[ColoredStringFunction]) -> String {
         let self_string = self.to_string();
-        if styles_functions.is_empty() || !is_colored_output() {
+        if style_functions.is_empty() || !is_colored_output() {
             return self_string;
         }
         let mut colorized_string = self_string.as_str().into();
-        for &func in styles_functions {
+        for &func in style_functions {
             colorized_string = func(colorized_string);
         }
         colorized_string.to_string()

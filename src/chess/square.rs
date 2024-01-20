@@ -40,8 +40,13 @@ impl Square {
     }
 
     #[inline(always)]
-    pub const fn from_index(index: u8) -> Self {
+    pub const fn from_int(index: u8) -> Self {
         unsafe { transmute(index & 63) }
+    }
+
+    #[inline(always)]
+    pub const fn from_index(index: usize) -> Self {
+        Self::from_int(index as u8)
     }
 
     #[inline(always)]

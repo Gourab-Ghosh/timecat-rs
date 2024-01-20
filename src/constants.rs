@@ -177,6 +177,7 @@ pub mod print_style {
 
     generate_constants!(WHITE_PIECES_STYLE, [white, bold]);
     generate_constants!(BLACK_PIECES_STYLE, [purple, bold]);
+    generate_constants!(BITBOARD_OCCUPIED_SQUARE_STYLE, [white, bold]);
     generate_constants!(BOARD_SKELETON_STYLE, [green]);
     generate_constants!(BOARD_LABEL_STYLE, [red, bold]);
     generate_constants!(INFO_MESSAGE_STYLE, [bright_cyan, bold]);

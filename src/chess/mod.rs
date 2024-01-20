@@ -2,7 +2,6 @@
 #![allow(dead_code)]
 #![allow(clippy::enum_variant_names)]
 
-mod bitboard;
 mod board_builder;
 mod castle;
 mod files;
@@ -16,7 +15,6 @@ mod sub_board;
 mod zobrist;
 
 use super::*;
-pub use bitboard::*;
 pub use board_builder::*;
 pub use castle::*;
 pub use files::*;

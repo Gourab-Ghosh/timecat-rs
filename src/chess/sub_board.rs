@@ -41,11 +41,11 @@ impl SubBoard {
     fn transposition_key_components(
         &self,
     ) -> (
-        [bitboard::BitBoard; 6],
-        [bitboard::BitBoard; 2],
+        [BitBoard; 6],
+        [BitBoard; 2],
         Color,
-        [castle::CastleRights; 2],
-        Option<square::Square>,
+        [CastleRights; 2],
+        Option<Square>,
     ) {
         (
             self.pieces,

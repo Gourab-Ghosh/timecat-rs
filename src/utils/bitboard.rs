@@ -3,24 +3,6 @@ use super::*;
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
 pub struct BitBoard(u64);
 
-impl fmt::Display for BitBoard {
-    #[inline(always)]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut s: String = "".to_owned();
-        for x in 0..64 {
-            if self.0 & (1u64 << x) == (1u64 << x) {
-                s.push_str("X ");
-            } else {
-                s.push_str(". ");
-            }
-            if x % 8 == 7 {
-                s.push('\n');
-            }
-        }
-        write!(f, "{}", s)
-    }
-}
-
 impl BitBoard {
     #[inline(always)]
     pub const fn new(bb: u64) -> Self {
@@ -38,13 +20,13 @@ impl BitBoard {
     }
 
     #[inline(always)]
-    pub const fn from_square(sq: Square) -> BitBoard {
-        BitBoard(1u64 << sq.to_int())
+    pub const fn from_square(square: Square) -> Self {
+        Self(1 << square.to_int())
     }
 
     #[inline(always)]
-    pub const fn from_rank_and_file(rank: Rank, file: File) -> BitBoard {
-        BitBoard(1u64 << ((rank.to_int() << 3) + file.to_int()))
+    pub const fn from_rank_and_file(rank: Rank, file: File) -> Self {
+        Self(1 << ((rank.to_int() << 3) + file.to_int()))
     }
 
     #[inline(always)]
@@ -53,8 +35,8 @@ impl BitBoard {
     }
 
     #[inline(always)]
-    pub const fn reverse_colors(self) -> BitBoard {
-        BitBoard(self.0.swap_bytes())
+    pub const fn reverse_colors(self) -> Self {
+        Self(self.0.swap_bytes())
     }
 
     #[inline(always)]
@@ -73,8 +55,13 @@ impl BitBoard {
     }
 
     #[inline(always)]
-    pub fn wrapping_mul(self, rhs: Self) -> Self {
-        Self::new(self.0.wrapping_mul(rhs.0))
+    pub const fn wrapping_mul(self, rhs: Self) -> Self {
+        Self(self.0.wrapping_mul(rhs.0))
+    }
+
+    #[inline(always)]
+    pub fn contains(self, square: Square) -> bool {
+        self & get_square_bb(square) != BB_EMPTY
     }
 }
 
@@ -164,7 +151,7 @@ macro_rules! implement_bitwise_operations {
 
             #[inline(always)]
             fn $direct_func(self, rhs: $int_type) -> Self::Output {
-                Self::new(self.0.$direct_func(rhs as u64))
+                Self(self.0.$direct_func(rhs as u64))
             }
         }
 
@@ -281,9 +268,30 @@ impl Iterator for BitBoard {
         if self.0 == 0 {
             None
         } else {
-            let result = self.to_square();
-            *self ^= BitBoard::from_square(result);
-            Some(result)
+            let square_index = self.to_square_index();
+            let square = Square::from_index(square_index);
+            self.0 ^= 1 << square_index;
+            Some(square)
         }
+    }
+}
+
+impl fmt::Display for BitBoard {
+    #[inline(always)]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut skeleton = get_board_skeleton();
+        let occupied_symbol = "X".colorize(BITBOARD_OCCUPIED_SQUARE_STYLE);
+        for square in SQUARES_180 {
+            skeleton = skeleton.replacen(
+                'O',
+                if self.contains(square) {
+                    &occupied_symbol
+                } else {
+                    " "
+                },
+                1,
+            );
+        }
+        write!(f, "{skeleton}")
     }
 }

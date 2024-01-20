@@ -60,7 +60,7 @@ impl Evaluator {
                 .iter()
                 .zip([Square::A8, Square::H8, Square::A1, Square::H1].iter())
             {
-                if bb & get_square_bb(losing_side_king_square) != BB_EMPTY {
+                if bb.contains(losing_side_king_square) {
                     least_distant_corner = corner_square;
                     break;
                 }

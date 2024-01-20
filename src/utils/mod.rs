@@ -1,3 +1,5 @@
+mod bitboard;
+mod board_utils;
 mod cache_table;
 mod cache_table_utils;
 mod classes;
@@ -15,6 +17,8 @@ mod string_utils;
 mod time_utils;
 
 use super::*;
+pub use bitboard::*;
+pub use board_utils::*;
 pub use cache_table::*;
 pub use cache_table_utils::*;
 pub use classes::*;
