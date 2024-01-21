@@ -24,7 +24,7 @@ trait PieceMoves {
         };
 
         for src in pieces & !pinned {
-            let moves = Self::pseudo_legals(src, color, *occupied, mask) & check_mask;
+            let moves = Self::pseudo_legals(src, color, occupied, mask) & check_mask;
             if moves != BB_EMPTY {
                 unsafe {
                     move_list.push_unchecked(SquareAndBitBoard::new(src, moves, false));
@@ -34,7 +34,7 @@ trait PieceMoves {
 
         if !T::IN_CHECK {
             for src in pieces & pinned {
-                let moves = Self::pseudo_legals(src, color, *occupied, mask) & line(src, ksq);
+                let moves = Self::pseudo_legals(src, color, occupied, mask) & line(src, ksq);
                 if moves != BB_EMPTY {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(src, moves, false));
@@ -133,7 +133,7 @@ impl PieceMoves for PawnMoves {
         };
 
         for src in pieces & !pinned {
-            let moves = Self::pseudo_legals(src, color, *occupied, mask) & check_mask;
+            let moves = Self::pseudo_legals(src, color, occupied, mask) & check_mask;
             if moves != BB_EMPTY {
                 unsafe {
                     move_list.push_unchecked(SquareAndBitBoard::new(
@@ -147,7 +147,7 @@ impl PieceMoves for PawnMoves {
 
         if !T::IN_CHECK {
             for src in pieces & pinned {
-                let moves = Self::pseudo_legals(src, color, *occupied, mask) & line(ksq, src);
+                let moves = Self::pseudo_legals(src, color, occupied, mask) & line(ksq, src);
                 if moves != BB_EMPTY {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(
@@ -230,7 +230,7 @@ impl PieceMoves for KnightMoves {
             let check_mask = between(checkers.to_square(), ksq) ^ checkers;
 
             for src in pieces & !pinned {
-                let moves = Self::pseudo_legals(src, color, *occupied, mask & check_mask);
+                let moves = Self::pseudo_legals(src, color, occupied, mask & check_mask);
                 if moves != BB_EMPTY {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(src, moves, false));
@@ -239,7 +239,7 @@ impl PieceMoves for KnightMoves {
             }
         } else {
             for src in pieces & !pinned {
-                let moves = Self::pseudo_legals(src, color, *occupied, mask);
+                let moves = Self::pseudo_legals(src, color, occupied, mask);
                 if moves != BB_EMPTY {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(src, moves, false));
@@ -338,7 +338,7 @@ impl PieceMoves for KingMoves {
         let color = board.turn();
         let ksq = board.king_square(color);
 
-        let mut moves = Self::pseudo_legals(ksq, color, *occupied, mask);
+        let mut moves = Self::pseudo_legals(ksq, color, occupied, mask);
 
         let copy = moves;
         for dest in copy {
@@ -417,7 +417,7 @@ pub struct MoveGen {
 impl MoveGen {
     #[inline(always)]
     fn enumerate_moves(board: &SubBoard) -> MoveList {
-        let checkers = *board.checkers();
+        let checkers = board.checkers();
         let mask = !board.occupied_co(board.turn());
         let mut move_list = NoDrop::new(ArrayVec::<SquareAndBitBoard, 18>::new());
 
@@ -550,13 +550,13 @@ impl MoveGen {
         let mut result: usize = 0;
 
         if depth == 1 {
-            iterable.set_iterator_mask(*targets);
+            iterable.set_iterator_mask(targets);
             result += iterable.len();
             iterable.set_iterator_mask(!targets);
             result += iterable.len();
             result
         } else {
-            iterable.set_iterator_mask(*targets);
+            iterable.set_iterator_mask(targets);
             for x in &mut iterable {
                 let mut board_result = mem::MaybeUninit::<SubBoard>::uninit();
                 unsafe {

@@ -165,7 +165,7 @@ impl Board {
     }
 
     pub fn get_checkers(&self) -> BitBoard {
-        return *self.sub_board.checkers();
+        self.sub_board.checkers()
     }
 
     pub fn get_king_square(&self, color: Color) -> Square {
@@ -237,23 +237,23 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn occupied(&self) -> &BitBoard {
-        return self.sub_board.occupied();
+    pub fn occupied(&self) -> BitBoard {
+        self.sub_board.occupied()
     }
 
     #[inline(always)]
-    pub fn occupied_co(&self, color: Color) -> &BitBoard {
-        return self.sub_board.occupied_co(color);
+    pub fn occupied_co(&self, color: Color) -> BitBoard {
+        self.sub_board.occupied_co(color)
     }
 
     #[inline(always)]
-    pub fn black_occupied(&self) -> &BitBoard {
-        return self.sub_board.occupied_co(Black);
+    pub fn black_occupied(&self) -> BitBoard {
+        self.sub_board.occupied_co(Black)
     }
 
     #[inline(always)]
-    pub fn white_occupied(&self) -> &BitBoard {
-        return self.sub_board.occupied_co(White);
+    pub fn white_occupied(&self) -> BitBoard {
+        self.sub_board.occupied_co(White)
     }
 
     #[inline(always)]
@@ -268,7 +268,7 @@ impl Board {
 
     #[inline(always)]
     pub fn gives_check(&self, move_: Move) -> bool {
-        self.sub_board.make_move_new(move_).checkers() != &BB_EMPTY
+        self.sub_board.make_move_new(move_).checkers() != BB_EMPTY
     }
 
     #[inline(always)]
@@ -387,7 +387,7 @@ impl Board {
 
     #[inline(always)]
     pub fn has_non_pawn_material(&self) -> bool {
-        &(self.get_piece_mask(Pawn) ^ self.get_piece_mask(King)) != self.occupied()
+        (self.get_piece_mask(Pawn) ^ self.get_piece_mask(King)) != self.occupied()
     }
 
     #[inline(always)]
@@ -400,7 +400,7 @@ impl Board {
         if non_king_pieces_mask.popcnt() > 32 {
             return false;
         }
-        let bishop_bitboard = *self.get_piece_mask(Bishop);
+        let bishop_bitboard = self.get_piece_mask(Bishop);
         if non_king_pieces_mask != bishop_bitboard {
             return false;
         }
@@ -413,7 +413,7 @@ impl Board {
             2 => true,
             3 => [Pawn, Rook, Queen]
                 .into_iter()
-                .all(|piece| self.get_piece_mask(piece) == &BB_EMPTY),
+                .all(|piece| self.get_piece_mask(piece) == BB_EMPTY),
             _ => self.has_only_same_colored_bishop(),
         }
     }
@@ -508,7 +508,7 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn get_piece_mask(&self, piece: PieceType) -> &BitBoard {
+    pub fn get_piece_mask(&self, piece: PieceType) -> BitBoard {
         self.sub_board.get_piece_mask(piece)
     }
 
@@ -864,7 +864,7 @@ impl Board {
         for s in san {
             san_string += &(s + " ");
         }
-        return san_string.trim().to_string();
+        san_string.trim().to_string()
     }
 
     /// Returns a string representing the game in Portable Game Notation (PGN).
@@ -903,7 +903,7 @@ impl Board {
     }
 
     pub fn generate_legal_captures(&self) -> MoveGen {
-        let mut targets = *self.occupied_co(!self.turn());
+        let mut targets = self.occupied_co(!self.turn());
         if let Some(ep_square) = self.ep_square() {
             targets ^= get_square_bb(ep_square)
         }
@@ -934,7 +934,7 @@ impl Board {
         let black_occupied = self.black_occupied();
         for &piece in ALL_PIECE_TYPES[..5].iter() {
             let piece_mask = self.get_piece_mask(piece);
-            if piece_mask == &BB_EMPTY {
+            if piece_mask == BB_EMPTY {
                 continue;
             }
             score += (piece_mask.popcnt() as Score
@@ -962,7 +962,7 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn get_masked_material_score_abs(&self, mask: &BitBoard) -> Score {
+    pub fn get_masked_material_score_abs(&self, mask: BitBoard) -> Score {
         ALL_PIECE_TYPES[..5]
             .iter()
             .map(|&piece| {

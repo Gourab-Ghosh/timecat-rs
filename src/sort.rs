@@ -277,7 +277,7 @@ impl MoveSorter {
         }
         let move_made_sub_board = board.get_sub_board().make_move_new(move_);
         // check
-        let checkers = *move_made_sub_board.checkers();
+        let checkers = move_made_sub_board.checkers();
         let moving_piece = board.piece_type_at(source).unwrap();
         if checkers != BB_EMPTY {
             return -127000000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;

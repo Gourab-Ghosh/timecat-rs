@@ -229,7 +229,7 @@ fn test_masked_move_gen() {
             .unwrap();
 
     let mut capture_moves = MoveGen::new_legal(&board);
-    let targets = *board.occupied_co(!board.turn());
+    let targets = board.occupied_co(!board.turn());
     capture_moves.set_iterator_mask(targets);
 
     let expected = vec![
