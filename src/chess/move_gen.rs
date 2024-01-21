@@ -458,10 +458,10 @@ impl MoveGen {
         }
     }
 
-    pub fn remove_move(&mut self, chess_move: Move) -> bool {
+    pub fn remove_move(&mut self, move_: Move) -> bool {
         for x in 0..self.moves.len() {
-            if self.moves[x].square == chess_move.get_source() {
-                self.moves[x].bitboard &= !BitBoard::from_square(chess_move.get_dest());
+            if self.moves[x].square == move_.get_source() {
+                self.moves[x].bitboard &= !BitBoard::from_square(move_.get_dest());
                 return true;
             }
         }
@@ -495,34 +495,34 @@ impl MoveGen {
         }
     }
 
-    pub fn legal_quick(board: &SubBoard, chess_move: Move) -> bool {
-        let piece = board.piece_type_at(chess_move.get_source()).unwrap();
+    pub fn is_legal_quick(board: &SubBoard, move_: Move) -> bool {
+        let piece = board.piece_type_at(move_.get_source()).unwrap();
         match piece {
             Rook => true,
             Bishop => true,
             Knight => true,
             Queen => true,
             Pawn => {
-                if chess_move.get_source().get_file() != chess_move.get_dest().get_file()
-                    && board.piece_type_at(chess_move.get_dest()).is_none()
+                if move_.get_source().get_file() != move_.get_dest().get_file()
+                    && board.piece_type_at(move_.get_dest()).is_none()
                 {
                     // en-passant
-                    PawnType::legal_ep_move(board, chess_move.get_source(), chess_move.get_dest())
+                    PawnType::legal_ep_move(board, move_.get_source(), move_.get_dest())
                 } else {
                     true
                 }
             }
             King => {
-                let bb = between(chess_move.get_source(), chess_move.get_dest());
+                let bb = between(move_.get_source(), move_.get_dest());
                 if bb.popcnt() == 1 {
                     // castles
                     if !KingType::legal_king_move(board, bb.to_square()) {
                         false
                     } else {
-                        KingType::legal_king_move(board, chess_move.get_dest())
+                        KingType::legal_king_move(board, move_.get_dest())
                     }
                 } else {
-                    KingType::legal_king_move(board, chess_move.get_dest())
+                    KingType::legal_king_move(board, move_.get_dest())
                 }
             }
         }
