@@ -14,7 +14,10 @@ impl Compress for Option<PieceType> {
     type CompressedItem = u8;
 
     fn compress(self) -> Self::CompressedItem {
-        self.get_type() as Self::CompressedItem
+        match self {
+            Some(piece) => piece as Self::CompressedItem + 1,
+            None => 0,
+        }
     }
 }
 

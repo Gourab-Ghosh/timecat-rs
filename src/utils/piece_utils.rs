@@ -12,28 +12,3 @@ pub const fn evaluate_piece(piece: PieceType) -> i16 {
         King => 20 * PAWN_VALUE,
     }
 }
-
-pub trait PieceTypeTrait {
-    type PieceType;
-
-    fn get_type(self) -> Self::PieceType;
-}
-
-impl PieceTypeTrait for PieceType {
-    type PieceType = u8;
-
-    fn get_type(self) -> Self::PieceType {
-        Some(self).get_type()
-    }
-}
-
-impl PieceTypeTrait for Option<PieceType> {
-    type PieceType = u8;
-
-    fn get_type(self) -> Self::PieceType {
-        match self {
-            Some(piece) => piece.to_index() as Self::PieceType + 1,
-            None => 0,
-        }
-    }
-}

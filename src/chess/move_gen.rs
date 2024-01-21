@@ -1,12 +1,12 @@
 use super::*;
 
-trait PieceTypeTrait {
+trait PieceMoves {
     fn is(piece: PieceType) -> bool;
     fn into_piece() -> PieceType;
     fn pseudo_legals(src: Square, color: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard;
     fn legals<T>(move_list: &mut MoveList, board: &SubBoard, mask: BitBoard)
     where
-        T: CheckType,
+        T: CheckMoves,
     {
         let occupied = board.occupied();
         let color = board.turn();
@@ -45,29 +45,29 @@ trait PieceTypeTrait {
     }
 }
 
-struct PawnType;
-struct BishopType;
-struct KnightType;
-struct RookType;
-struct QueenType;
-struct KingType;
+struct PawnMoves;
+struct BishopMoves;
+struct KnightMoves;
+struct RookMoves;
+struct QueenMoves;
+struct KingMoves;
 
-trait CheckType {
+trait CheckMoves {
     const IN_CHECK: bool;
 }
 
-struct InCheckType;
-struct NotInCheckType;
+struct InCheckMoves;
+struct NotInCheckMoves;
 
-impl CheckType for InCheckType {
+impl CheckMoves for InCheckMoves {
     const IN_CHECK: bool = true;
 }
 
-impl CheckType for NotInCheckType {
+impl CheckMoves for NotInCheckMoves {
     const IN_CHECK: bool = false;
 }
 
-impl PawnType {
+impl PawnMoves {
     fn legal_ep_move(board: &SubBoard, source: Square, dest: Square) -> bool {
         let occupied = board.occupied()
             ^ BitBoard::from_square(board.ep_square().unwrap().wrapping_backward(board.turn()))
@@ -98,7 +98,7 @@ impl PawnType {
     }
 }
 
-impl PieceTypeTrait for PawnType {
+impl PieceMoves for PawnMoves {
     fn is(piece: PieceType) -> bool {
         piece == Pawn
     }
@@ -115,7 +115,7 @@ impl PieceTypeTrait for PawnType {
     #[inline(always)]
     fn legals<T>(move_list: &mut MoveList, board: &SubBoard, mask: BitBoard)
     where
-        T: CheckType,
+        T: CheckMoves,
     {
         let occupied = board.occupied();
         let color = board.turn();
@@ -169,7 +169,7 @@ impl PieceTypeTrait for PawnType {
             });
             let files_bb = get_adjacent_files(dest.get_file());
             for src in rank_bb & files_bb & pieces {
-                if PawnType::legal_ep_move(board, src, dest) {
+                if PawnMoves::legal_ep_move(board, src, dest) {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(
                             src,
@@ -183,7 +183,7 @@ impl PieceTypeTrait for PawnType {
     }
 }
 
-impl PieceTypeTrait for BishopType {
+impl PieceMoves for BishopMoves {
     fn is(piece: PieceType) -> bool {
         piece == Bishop
     }
@@ -198,7 +198,7 @@ impl PieceTypeTrait for BishopType {
     }
 }
 
-impl PieceTypeTrait for KnightType {
+impl PieceMoves for KnightMoves {
     fn is(piece: PieceType) -> bool {
         piece == Knight
     }
@@ -215,7 +215,7 @@ impl PieceTypeTrait for KnightType {
     #[inline(always)]
     fn legals<T>(move_list: &mut MoveList, board: &SubBoard, mask: BitBoard)
     where
-        T: CheckType,
+        T: CheckMoves,
     {
         let occupied = board.occupied();
         let color = board.turn();
@@ -250,7 +250,7 @@ impl PieceTypeTrait for KnightType {
     }
 }
 
-impl PieceTypeTrait for RookType {
+impl PieceMoves for RookMoves {
     fn is(piece: PieceType) -> bool {
         piece == Rook
     }
@@ -265,7 +265,7 @@ impl PieceTypeTrait for RookType {
     }
 }
 
-impl PieceTypeTrait for QueenType {
+impl PieceMoves for QueenMoves {
     fn is(piece: PieceType) -> bool {
         piece == Queen
     }
@@ -280,7 +280,7 @@ impl PieceTypeTrait for QueenType {
     }
 }
 
-impl KingType {
+impl KingMoves {
     #[inline(always)]
     fn legal_king_move(board: &SubBoard, dest: Square) -> bool {
         let occupied = board.occupied()
@@ -315,7 +315,7 @@ impl KingType {
     }
 }
 
-impl PieceTypeTrait for KingType {
+impl PieceMoves for KingMoves {
     fn is(piece: PieceType) -> bool {
         piece == King
     }
@@ -332,7 +332,7 @@ impl PieceTypeTrait for KingType {
     #[inline(always)]
     fn legals<T>(move_list: &mut MoveList, board: &SubBoard, mask: BitBoard)
     where
-        T: CheckType,
+        T: CheckMoves,
     {
         let occupied = board.occupied();
         let color = board.turn();
@@ -342,7 +342,7 @@ impl PieceTypeTrait for KingType {
 
         let copy = moves;
         for dest in copy {
-            if !KingType::legal_king_move(board, dest) {
+            if !KingMoves::legal_king_move(board, dest) {
                 moves ^= BitBoard::from_square(dest);
             }
         }
@@ -361,8 +361,8 @@ impl PieceTypeTrait for KingType {
             {
                 let middle = ksq.wrapping_right();
                 let right = middle.wrapping_right();
-                if KingType::legal_king_move(board, middle)
-                    && KingType::legal_king_move(board, right)
+                if KingMoves::legal_king_move(board, middle)
+                    && KingMoves::legal_king_move(board, right)
                 {
                     moves ^= BitBoard::from_square(right);
                 }
@@ -373,8 +373,8 @@ impl PieceTypeTrait for KingType {
             {
                 let middle = ksq.wrapping_left();
                 let left = middle.wrapping_left();
-                if KingType::legal_king_move(board, middle)
-                    && KingType::legal_king_move(board, left)
+                if KingMoves::legal_king_move(board, middle)
+                    && KingMoves::legal_king_move(board, left)
                 {
                     moves ^= BitBoard::from_square(left);
                 }
@@ -422,21 +422,21 @@ impl MoveGen {
         let mut move_list = NoDrop::new(ArrayVec::<SquareAndBitBoard, 18>::new());
 
         if checkers == BB_EMPTY {
-            PawnType::legals::<NotInCheckType>(&mut move_list, board, mask);
-            KnightType::legals::<NotInCheckType>(&mut move_list, board, mask);
-            BishopType::legals::<NotInCheckType>(&mut move_list, board, mask);
-            RookType::legals::<NotInCheckType>(&mut move_list, board, mask);
-            QueenType::legals::<NotInCheckType>(&mut move_list, board, mask);
-            KingType::legals::<NotInCheckType>(&mut move_list, board, mask);
+            PawnMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
+            KnightMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
+            BishopMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
+            RookMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
+            QueenMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
+            KingMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
         } else if checkers.popcnt() == 1 {
-            PawnType::legals::<InCheckType>(&mut move_list, board, mask);
-            KnightType::legals::<InCheckType>(&mut move_list, board, mask);
-            BishopType::legals::<InCheckType>(&mut move_list, board, mask);
-            RookType::legals::<InCheckType>(&mut move_list, board, mask);
-            QueenType::legals::<InCheckType>(&mut move_list, board, mask);
-            KingType::legals::<InCheckType>(&mut move_list, board, mask);
+            PawnMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
+            KnightMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
+            BishopMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
+            RookMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
+            QueenMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
+            KingMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
         } else {
-            KingType::legals::<InCheckType>(&mut move_list, board, mask);
+            KingMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
         }
 
         move_list
@@ -507,7 +507,7 @@ impl MoveGen {
                     && board.piece_type_at(move_.get_dest()).is_none()
                 {
                     // en-passant
-                    PawnType::legal_ep_move(board, move_.get_source(), move_.get_dest())
+                    PawnMoves::legal_ep_move(board, move_.get_source(), move_.get_dest())
                 } else {
                     true
                 }
@@ -516,13 +516,13 @@ impl MoveGen {
                 let bb = between(move_.get_source(), move_.get_dest());
                 if bb.popcnt() == 1 {
                     // castles
-                    if !KingType::legal_king_move(board, bb.to_square()) {
+                    if !KingMoves::legal_king_move(board, bb.to_square()) {
                         false
                     } else {
-                        KingType::legal_king_move(board, move_.get_dest())
+                        KingMoves::legal_king_move(board, move_.get_dest())
                     }
                 } else {
-                    KingType::legal_king_move(board, move_.get_dest())
+                    KingMoves::legal_king_move(board, move_.get_dest())
                 }
             }
         }
