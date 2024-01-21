@@ -41,12 +41,12 @@ impl GameResult {
 
 #[derive(Clone, Debug)]
 struct BoardState {
-    board: SubBoard,
+    sub_board: SubBoard,
     num_repetitions: u8,
 }
 
 pub struct Board {
-    board: SubBoard,
+    sub_board: SubBoard,
     stack: Vec<(BoardState, Option<Move>)>,
     num_repetitions: u8,
     starting_fen: String,
@@ -55,17 +55,17 @@ pub struct Board {
 
 impl Board {
     pub fn new() -> Self {
-        let mut board = Self {
-            board: SubBoard::from_str(STARTING_POSITION_FEN).unwrap(),
+        let mut sub_board = Self {
+            sub_board: SubBoard::from_str(STARTING_POSITION_FEN).unwrap(),
             stack: Vec::new(),
             num_repetitions: 0,
             starting_fen: STARTING_POSITION_FEN.to_string(),
             repetition_table: RepetitionTable::new(),
         };
-        board.num_repetitions = board
+        sub_board.num_repetitions = sub_board
             .repetition_table
-            .insert_and_get_repetition(board.hash());
-        board
+            .insert_and_get_repetition(sub_board.hash());
+        sub_board
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<(), EngineError> {
@@ -79,7 +79,7 @@ impl Board {
             self.starting_fen = self.get_fen();
             return Ok(());
         }
-        self.board = SubBoard::from_str(&fen).expect("FEN not parsed properly!");
+        self.sub_board = SubBoard::from_str(&fen).expect("FEN not parsed properly!");
         self.repetition_table.clear();
         self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
         self.starting_fen = self.get_fen();
@@ -89,17 +89,17 @@ impl Board {
 
     pub fn from_fen(fen: &str) -> Result<Self, EngineError> {
         let fen = simplify_fen(fen);
-        let mut board = Self::new();
-        board.set_fen(&fen)?;
-        Ok(board)
+        let mut sub_board = Self::new();
+        sub_board.set_fen(&fen)?;
+        Ok(sub_board)
     }
 
     pub fn get_fen(&self) -> String {
-        self.board.to_string()
+        self.sub_board.to_string()
     }
 
     pub fn get_sub_board(&self) -> &SubBoard {
-        &self.board
+        &self.sub_board
     }
 
     pub fn is_good_fen(fen: &str) -> bool {
@@ -130,15 +130,15 @@ impl Board {
     }
 
     pub fn color_at(&self, square: Square) -> Option<Color> {
-        self.board.color_at(square)
+        self.sub_board.color_at(square)
     }
 
     pub fn piece_type_at(&self, square: Square) -> Option<PieceType> {
-        self.board.piece_type_at(square)
+        self.sub_board.piece_type_at(square)
     }
 
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
-        self.board.piece_at(square)
+        self.sub_board.piece_at(square)
     }
 
     pub fn piece_symbol_at(&self, square: Square) -> String {
@@ -165,17 +165,17 @@ impl Board {
     }
 
     pub fn get_checkers(&self) -> BitBoard {
-        return *self.board.checkers();
+        return *self.sub_board.checkers();
     }
 
     pub fn get_king_square(&self, color: Color) -> Square {
-        self.board.king_square(color)
+        self.sub_board.king_square(color)
     }
 
     fn to_board_string(&self, use_unicode: bool) -> String {
         let mut skeleton = get_board_skeleton();
         let checkers = self.get_checkers();
-        let king_square = self.get_king_square(self.board.turn());
+        let king_square = self.get_king_square(self.sub_board.turn());
         let last_move = self.stack.last().and_then(|(_, m)| *m);
         for square in SQUARES_180 {
             let symbol = if use_unicode {
@@ -226,34 +226,34 @@ impl Board {
 
     fn get_board_state(&self) -> BoardState {
         BoardState {
-            board: self.board.clone(),
+            sub_board: self.sub_board.clone(),
             num_repetitions: self.num_repetitions,
         }
     }
 
     #[inline(always)]
     pub fn turn(&self) -> Color {
-        self.board.turn()
+        self.sub_board.turn()
     }
 
     #[inline(always)]
     pub fn occupied(&self) -> &BitBoard {
-        return self.board.occupied();
+        return self.sub_board.occupied();
     }
 
     #[inline(always)]
     pub fn occupied_co(&self, color: Color) -> &BitBoard {
-        return self.board.occupied_co(color);
+        return self.sub_board.occupied_co(color);
     }
 
     #[inline(always)]
     pub fn black_occupied(&self) -> &BitBoard {
-        return self.board.occupied_co(Black);
+        return self.sub_board.occupied_co(Black);
     }
 
     #[inline(always)]
     pub fn white_occupied(&self) -> &BitBoard {
-        return self.board.occupied_co(White);
+        return self.sub_board.occupied_co(White);
     }
 
     #[inline(always)]
@@ -268,17 +268,17 @@ impl Board {
 
     #[inline(always)]
     pub fn gives_check(&self, move_: Move) -> bool {
-        self.board.make_move_new(move_).checkers() != &BB_EMPTY
+        self.sub_board.make_move_new(move_).checkers() != &BB_EMPTY
     }
 
     #[inline(always)]
     pub fn gives_checkmate(&self, move_: Move) -> bool {
-        self.board.make_move_new(move_).status() == BoardStatus::Checkmate
+        self.sub_board.make_move_new(move_).status() == BoardStatus::Checkmate
     }
 
     #[inline(always)]
     pub fn status(&self) -> BoardStatus {
-        self.board.status()
+        self.sub_board.status()
     }
 
     pub fn result(&self) -> GameResult {
@@ -299,12 +299,12 @@ impl Board {
 
     #[inline(always)]
     pub fn get_halfmove_clock(&self) -> u8 {
-        self.board.get_halfmove_clock()
+        self.sub_board.get_halfmove_clock()
     }
 
     #[inline(always)]
     pub fn get_fullmove_number(&self) -> NumMoves {
-        self.board.get_fullmove_number()
+        self.sub_board.get_fullmove_number()
     }
 
     #[inline(always)]
@@ -320,20 +320,20 @@ impl Board {
     #[inline(always)]
     pub fn gives_repetition(&self, move_: Move) -> bool {
         self.repetition_table
-            .get_repetition(self.board.make_move_new(move_).hash())
+            .get_repetition(self.sub_board.make_move_new(move_).hash())
             != 0
     }
 
     #[inline(always)]
     pub fn gives_threefold_repetition(&self, move_: Move) -> bool {
         self.repetition_table
-            .get_repetition(self.board.make_move_new(move_).hash())
+            .get_repetition(self.sub_board.make_move_new(move_).hash())
             == 2
     }
 
     pub fn gives_claimable_threefold_repetition(&self, move_: Move) -> bool {
         //TODO: check if this is correct
-        let new_board = self.board.make_move_new(move_);
+        let new_board = self.sub_board.make_move_new(move_);
         MoveGen::new_legal(&new_board).any(|m| {
             let hash = new_board.make_move_new(m).hash();
             self.repetition_table.get_repetition(hash) == 2
@@ -483,7 +483,7 @@ impl Board {
     }
 
     pub fn is_zeroing(&self, move_: Move) -> bool {
-        self.board.is_zeroing(move_)
+        self.sub_board.is_zeroing(move_)
     }
 
     #[inline(always)]
@@ -492,13 +492,13 @@ impl Board {
     }
 
     pub fn clean_castling_rights(&self) -> BitBoard {
-        let white_castling_rights = match self.board.castle_rights(White) {
+        let white_castling_rights = match self.sub_board.castle_rights(White) {
             CastleRights::Both => BB_A1 ^ BB_H1,
             CastleRights::KingSide => BB_H1,
             CastleRights::QueenSide => BB_A1,
             CastleRights::None => BB_EMPTY,
         };
-        let black_castling_rights = match self.board.castle_rights(Black) {
+        let black_castling_rights = match self.sub_board.castle_rights(Black) {
             CastleRights::Both => BB_A8 ^ BB_H8,
             CastleRights::KingSide => BB_H8,
             CastleRights::QueenSide => BB_A8,
@@ -509,7 +509,7 @@ impl Board {
 
     #[inline(always)]
     pub fn get_piece_mask(&self, piece: PieceType) -> &BitBoard {
-        self.board.get_piece_mask(piece)
+        self.sub_board.get_piece_mask(piece)
     }
 
     fn reduces_castling_rights(&self, move_: Move) -> bool {
@@ -530,7 +530,7 @@ impl Board {
 
     #[inline(always)]
     pub fn ep_square(&self) -> Option<Square> {
-        self.board.ep_square()
+        self.sub_board.ep_square()
     }
 
     pub fn is_castling(&self, move_: Move) -> bool {
@@ -582,10 +582,10 @@ impl Board {
     pub fn push(&mut self, optional_move: impl Into<Option<Move>>) {
         let optional_move = optional_move.into();
         let board_state = self.get_board_state();
-        self.board = if let Some(move_) = optional_move {
-            self.board.make_move_new(move_)
+        self.sub_board = if let Some(move_) = optional_move {
+            self.sub_board.make_move_new(move_)
         } else {
-            self.board
+            self.sub_board
                 .null_move()
                 .expect("Trying to push null move while in check!")
         };
@@ -594,7 +594,7 @@ impl Board {
     }
 
     fn restore(&mut self, board_state: BoardState) {
-        self.board = board_state.board;
+        self.sub_board = board_state.sub_board;
         self.num_repetitions = board_state.num_repetitions;
     }
 
@@ -638,7 +638,7 @@ impl Board {
             }
         }
         Err(EngineError::InvalidSanMoveString { s: san.to_string() })
-        // Move::from_san(&self.board, &san.replace('0', "O"))
+        // Move::from_san(&self.sub_board, &san.replace('0', "O"))
     }
 
     #[inline(always)]
@@ -888,18 +888,18 @@ impl Board {
 
     #[inline(always)]
     pub fn is_legal(&self, move_: Move) -> bool {
-        self.board.legal(move_)
+        self.sub_board.legal(move_)
     }
 
     pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGen {
-        let mut moves = MoveGen::new_legal(&self.board);
+        let mut moves = MoveGen::new_legal(&self.sub_board);
         moves.set_iterator_mask(to_bitboard);
         moves
     }
 
     #[inline(always)]
     pub fn generate_legal_moves(&self) -> MoveGen {
-        MoveGen::new_legal(&self.board)
+        MoveGen::new_legal(&self.sub_board)
     }
 
     pub fn generate_legal_captures(&self) -> MoveGen {
@@ -912,12 +912,12 @@ impl Board {
 
     #[inline(always)]
     pub fn hash(&self) -> u64 {
-        self.board.hash()
+        self.sub_board.hash()
     }
 
     #[inline(always)]
     pub fn get_pawn_hash(&self) -> u64 {
-        self.board.get_pawn_hash()
+        self.sub_board.get_pawn_hash()
     }
 
     #[inline(always)]
@@ -1040,7 +1040,7 @@ impl Default for Board {
 impl Clone for Board {
     fn clone(&self) -> Self {
         Self {
-            board: self.board.clone(),
+            sub_board: self.sub_board.clone(),
             stack: Vec::new(),
             num_repetitions: self.num_repetitions,
             starting_fen: self.starting_fen.clone(),

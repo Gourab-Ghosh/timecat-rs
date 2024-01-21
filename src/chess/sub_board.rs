@@ -55,9 +55,7 @@ impl SubBoard {
             self.ep_square,
         )
     }
-}
 
-impl SubBoard {
     #[inline(always)]
     fn new_empty() -> Self {
         Self {
