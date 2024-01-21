@@ -1,11 +1,5 @@
 use super::*;
 
-// SubBoard::is_sane
-// SubBoard::set_ep
-// SubBoard::make_move
-// PawnType::legal_ep_move
-// PawnType::legals
-
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum BoardStatus {
     Ongoing,
@@ -15,17 +9,17 @@ pub enum BoardStatus {
 
 #[derive(Eq, Clone, Debug)]
 pub struct SubBoard {
-    pieces: [BitBoard; NUM_PIECE_TYPES],
-    occupied_co: [BitBoard; NUM_COLORS],
-    occupied: BitBoard,
-    turn: Color,
-    castle_rights: [CastleRights; NUM_COLORS],
-    ep_square: Option<Square>,
-    pinned: BitBoard,
-    checkers: BitBoard,
-    transposition_key: u64,
-    halfmove_clock: u8,
-    fullmove_number: NumMoves,
+    _pieces: [BitBoard; NUM_PIECE_TYPES],
+    _occupied_co: [BitBoard; NUM_COLORS],
+    _occupied: BitBoard,
+    _turn: Color,
+    _castle_rights: [CastleRights; NUM_COLORS],
+    _ep_square: Option<Square>,
+    _pinned: BitBoard,
+    _checkers: BitBoard,
+    _transposition_key: u64,
+    _halfmove_clock: u8,
+    _fullmove_number: NumMoves,
 }
 
 impl PartialEq for SubBoard {
@@ -48,28 +42,28 @@ impl SubBoard {
         Option<Square>,
     ) {
         (
-            self.pieces,
-            self.occupied_co,
-            self.turn,
-            self.castle_rights,
-            self.ep_square,
+            self._pieces,
+            self._occupied_co,
+            self._turn,
+            self._castle_rights,
+            self._ep_square,
         )
     }
 
     #[inline(always)]
     fn new_empty() -> Self {
         Self {
-            pieces: [BB_EMPTY; NUM_PIECE_TYPES],
-            occupied_co: [BB_EMPTY; NUM_COLORS],
-            occupied: BB_EMPTY,
-            turn: White,
-            castle_rights: [CastleRights::None; NUM_COLORS],
-            pinned: BB_EMPTY,
-            checkers: BB_EMPTY,
-            transposition_key: 0,
-            ep_square: None,
-            halfmove_clock: 0,
-            fullmove_number: 1,
+            _pieces: [BB_EMPTY; NUM_PIECE_TYPES],
+            _occupied_co: [BB_EMPTY; NUM_COLORS],
+            _occupied: BB_EMPTY,
+            _turn: White,
+            _castle_rights: [CastleRights::None; NUM_COLORS],
+            _pinned: BB_EMPTY,
+            _checkers: BB_EMPTY,
+            _transposition_key: 0,
+            _ep_square: None,
+            _halfmove_clock: 0,
+            _fullmove_number: 1,
         }
     }
 
@@ -78,7 +72,7 @@ impl SubBoard {
         let moves = MoveGen::new_legal(self).len();
         match moves {
             0 => {
-                if self.checkers == BB_EMPTY {
+                if self._checkers == BB_EMPTY {
                     BoardStatus::Stalemate
                 } else {
                     BoardStatus::Checkmate
@@ -90,12 +84,12 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn occupied(&self) -> &BitBoard {
-        &self.occupied
+        &self._occupied
     }
 
     #[inline(always)]
     pub fn occupied_co(&self, color: Color) -> &BitBoard {
-        unsafe { self.occupied_co.get_unchecked(color.to_index()) }
+        unsafe { self._occupied_co.get_unchecked(color.to_index()) }
     }
 
     #[inline(always)]
@@ -105,18 +99,18 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn get_piece_mask(&self, piece: PieceType) -> &BitBoard {
-        unsafe { self.pieces.get_unchecked(piece.to_index()) }
+        unsafe { self._pieces.get_unchecked(piece.to_index()) }
     }
 
     #[inline(always)]
     pub fn castle_rights(&self, color: Color) -> CastleRights {
-        unsafe { *self.castle_rights.get_unchecked(color.to_index()) }
+        unsafe { *self._castle_rights.get_unchecked(color.to_index()) }
     }
 
     #[inline(always)]
     fn add_castle_rights(&mut self, color: Color, add: CastleRights) {
         unsafe {
-            *self.castle_rights.get_unchecked_mut(color.to_index()) =
+            *self._castle_rights.get_unchecked_mut(color.to_index()) =
                 self.castle_rights(color).add(add);
         }
     }
@@ -124,64 +118,64 @@ impl SubBoard {
     #[inline(always)]
     fn remove_castle_rights(&mut self, color: Color, remove: CastleRights) {
         unsafe {
-            *self.castle_rights.get_unchecked_mut(color.to_index()) =
+            *self._castle_rights.get_unchecked_mut(color.to_index()) =
                 self.castle_rights(color).remove(remove);
         }
     }
 
     #[inline(always)]
     pub fn turn(&self) -> Color {
-        self.turn
+        self._turn
     }
 
     #[inline(always)]
     pub fn my_castle_rights(&self) -> CastleRights {
-        self.castle_rights(self.turn())
+        self.castle_rights(self._turn)
     }
 
     #[inline(always)]
     fn add_my_castle_rights(&mut self, add: CastleRights) {
-        self.add_castle_rights(self.turn(), add);
+        self.add_castle_rights(self._turn, add);
     }
 
     #[inline(always)]
     fn remove_my_castle_rights(&mut self, remove: CastleRights) {
-        self.remove_castle_rights(self.turn(), remove);
+        self.remove_castle_rights(self._turn, remove);
     }
 
     #[inline(always)]
     pub fn their_castle_rights(&self) -> CastleRights {
-        self.castle_rights(!self.turn())
+        self.castle_rights(!self._turn)
     }
 
     #[inline(always)]
     fn add_their_castle_rights(&mut self, add: CastleRights) {
-        self.add_castle_rights(!self.turn(), add)
+        self.add_castle_rights(!self._turn, add)
     }
 
     #[inline(always)]
     fn remove_their_castle_rights(&mut self, remove: CastleRights) {
-        self.remove_castle_rights(!self.turn(), remove);
+        self.remove_castle_rights(!self._turn, remove);
     }
 
     fn xor(&mut self, piece: PieceType, bb: BitBoard, color: Color) {
         unsafe {
-            *self.pieces.get_unchecked_mut(piece.to_index()) ^= bb;
-            *self.occupied_co.get_unchecked_mut(color.to_index()) ^= bb;
-            self.occupied ^= bb;
-            self.transposition_key ^= Zobrist::piece(piece, bb.to_square(), color);
+            *self._pieces.get_unchecked_mut(piece.to_index()) ^= bb;
+            *self._occupied_co.get_unchecked_mut(color.to_index()) ^= bb;
+            self._occupied ^= bb;
+            self._transposition_key ^= Zobrist::piece(piece, bb.to_square(), color);
         }
     }
 
     #[inline(always)]
     pub fn null_move(&self) -> Option<Self> {
-        if self.checkers != BB_EMPTY {
+        if self._checkers != BB_EMPTY {
             None
         } else {
             let mut result = self.to_owned();
-            result.turn = !result.turn;
+            result._turn = !result._turn;
             result.remove_ep();
-            result.halfmove_clock += 1;
+            result._halfmove_clock += 1;
             result.update_pin_and_checkers_info();
             Some(result)
         }
@@ -208,7 +202,7 @@ impl SubBoard {
             .fold(BB_EMPTY, |cur, next| cur | self.get_piece_mask(*next));
 
         // make sure that's equal to the occupied bitboard
-        if occupied != *self.occupied() {
+        if occupied != self._occupied {
             return false;
         }
 
@@ -223,16 +217,16 @@ impl SubBoard {
         }
 
         // make sure the en passant square has a pawn on it of the right color
-        match self.ep_square {
+        match self._ep_square {
             None => {}
             Some(x) => {
                 let mut square_bb = BitBoard::from_square(x);
-                if self.turn == White {
+                if self._turn == White {
                     square_bb >>= 8;
                 } else {
                     square_bb <<= 8;
                 }
-                if self.get_piece_mask(Pawn) & self.occupied_co(!self.turn) & square_bb == BB_EMPTY
+                if self.get_piece_mask(Pawn) & self.occupied_co(!self._turn) & square_bb == BB_EMPTY
                 {
                     return false;
                 }
@@ -240,10 +234,10 @@ impl SubBoard {
         }
 
         // make sure my opponent is not currently in check (because that would be illegal)
-        let mut board_copy = self.clone();
-        board_copy.turn = !board_copy.turn;
+        let mut board_copy = self.to_owned();
+        board_copy._turn = !board_copy._turn;
         board_copy.update_pin_and_checkers_info();
-        if board_copy.checkers != BB_EMPTY {
+        if board_copy._checkers != BB_EMPTY {
             return false;
         }
 
@@ -283,15 +277,15 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn get_hash(&self) -> u64 {
-        self.transposition_key
-            ^ if let Some(ep) = self.ep_square {
-                Zobrist::en_passant(ep.get_file(), !self.turn)
+        self._transposition_key
+            ^ if let Some(ep) = self._ep_square {
+                Zobrist::en_passant(ep.get_file(), !self._turn)
             } else {
                 0
             }
-            ^ Zobrist::castles(self.castle_rights[self.turn.to_index()], self.turn)
-            ^ Zobrist::castles(self.castle_rights[(!self.turn).to_index()], !self.turn)
-            ^ if self.turn == Black {
+            ^ Zobrist::castles(self._castle_rights[self._turn.to_index()], self._turn)
+            ^ Zobrist::castles(self._castle_rights[(!self._turn).to_index()], !self._turn)
+            ^ if self._turn == Black {
                 Zobrist::color()
             } else {
                 0
@@ -307,7 +301,7 @@ impl SubBoard {
     pub fn piece_type_at(&self, square: Square) -> Option<PieceType> {
         // TODO: check speed on Naive Algorithm
         let opp = BitBoard::from_square(square);
-        if self.occupied() & opp == BB_EMPTY {
+        if self._occupied & opp == BB_EMPTY {
             None
         } else {
             //naive algorithm
@@ -360,26 +354,26 @@ impl SubBoard {
     }
 
     fn remove_ep(&mut self) {
-        self.ep_square = None;
+        self._ep_square = None;
     }
 
     #[inline(always)]
     pub fn ep_square(&self) -> Option<Square> {
-        self.ep_square
+        self._ep_square
     }
 
     #[inline(always)]
     pub fn get_halfmove_clock(&self) -> u8 {
-        self.halfmove_clock
+        self._halfmove_clock
     }
 
     #[inline(always)]
     pub fn get_fullmove_number(&self) -> NumMoves {
-        self.fullmove_number
+        self._fullmove_number
     }
 
     fn set_ep(&mut self, square: Square) {
-        // Only set self.ep_square if the pawn can actually be captured next move.
+        // Only set self._ep_square if the pawn can actually be captured next move.
         let mut rank = square.get_rank();
         rank = if rank.to_int() > 3 {
             rank.down()
@@ -389,10 +383,10 @@ impl SubBoard {
         if get_adjacent_files(square.get_file())
             & get_rank_bb(rank)
             & self.get_piece_mask(Pawn)
-            & self.occupied_co(!self.turn)
+            & self.occupied_co(!self._turn)
             != BB_EMPTY
         {
-            self.ep_square = Some(square);
+            self._ep_square = Some(square);
         }
     }
 
@@ -412,24 +406,24 @@ impl SubBoard {
     pub fn is_zeroing(&self, move_: Move) -> bool {
         let touched = get_square_bb(move_.get_source()) ^ get_square_bb(move_.get_dest());
         return touched & self.get_piece_mask(Pawn) != BB_EMPTY
-            || (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
+            || (touched & self.occupied_co(!self._turn)) != BB_EMPTY;
     }
 
     pub fn make_move(&self, m: Move, result: &mut Self) {
-        *result = self.clone();
+        *result = self.to_owned();
 
         if result.is_zeroing(m) {
-            result.halfmove_clock = 0;
+            result._halfmove_clock = 0;
         } else {
-            result.halfmove_clock += 1;
+            result._halfmove_clock += 1;
         }
-        if result.turn() == Black {
-            result.fullmove_number += 1;
+        if result._turn == Black {
+            result._fullmove_number += 1;
         }
 
         result.remove_ep();
-        result.checkers = BB_EMPTY;
-        result.pinned = BB_EMPTY;
+        result._checkers = BB_EMPTY;
+        result._pinned = BB_EMPTY;
         let source = m.get_source();
         let dest = m.get_dest();
 
@@ -438,17 +432,17 @@ impl SubBoard {
         let move_bb = source_bb ^ dest_bb;
         let moved = self.piece_type_at(source).unwrap();
 
-        result.xor(moved, source_bb, self.turn);
-        result.xor(moved, dest_bb, self.turn);
+        result.xor(moved, source_bb, self._turn);
+        result.xor(moved, dest_bb, self._turn);
         if let Some(captured) = self.piece_type_at(dest) {
-            result.xor(captured, dest_bb, !self.turn);
+            result.xor(captured, dest_bb, !self._turn);
         }
 
-        result.remove_their_castle_rights(CastleRights::square_to_castle_rights(!self.turn, dest));
+        result.remove_their_castle_rights(CastleRights::square_to_castle_rights(!self._turn, dest));
 
-        result.remove_my_castle_rights(CastleRights::square_to_castle_rights(self.turn, source));
+        result.remove_my_castle_rights(CastleRights::square_to_castle_rights(self._turn, source));
 
-        let opp_king = result.get_piece_mask(King) & result.occupied_co(!result.turn);
+        let opp_king = result.get_piece_mask(King) & result.occupied_co(!result._turn);
 
         let castles = moved == King && (move_bb & get_castle_moves()) == move_bb;
 
@@ -476,32 +470,32 @@ impl SubBoard {
         ];
 
         if moved == Knight {
-            result.checkers ^= get_knight_moves(ksq) & dest_bb;
+            result._checkers ^= get_knight_moves(ksq) & dest_bb;
         } else if moved == Pawn {
             if let Some(Knight) = m.get_promotion() {
-                result.xor(Pawn, dest_bb, self.turn);
-                result.xor(Knight, dest_bb, self.turn);
-                result.checkers ^= get_knight_moves(ksq) & dest_bb;
+                result.xor(Pawn, dest_bb, self._turn);
+                result.xor(Knight, dest_bb, self._turn);
+                result._checkers ^= get_knight_moves(ksq) & dest_bb;
             } else if let Some(promotion) = m.get_promotion() {
-                result.xor(Pawn, dest_bb, self.turn);
-                result.xor(promotion, dest_bb, self.turn);
+                result.xor(Pawn, dest_bb, self._turn);
+                result.xor(promotion, dest_bb, self._turn);
             } else if (source_bb & get_pawn_source_double_moves()) != BB_EMPTY
                 && (dest_bb & get_pawn_dest_double_moves()) != BB_EMPTY
             {
-                result.set_ep(dest.wrapping_backward(result.turn()));
-                result.checkers ^= get_pawn_attacks(ksq, !result.turn, dest_bb);
-            } else if Some(dest) == self.ep_square {
+                result.set_ep(dest.wrapping_backward(result._turn));
+                result._checkers ^= get_pawn_attacks(ksq, !result._turn, dest_bb);
+            } else if Some(dest) == self._ep_square {
                 result.xor(
                     Pawn,
-                    BitBoard::from_square(dest.wrapping_backward(self.turn)),
-                    !self.turn,
+                    BitBoard::from_square(dest.wrapping_backward(self._turn)),
+                    !self._turn,
                 );
-                result.checkers ^= get_pawn_attacks(ksq, !result.turn, dest_bb);
+                result._checkers ^= get_pawn_attacks(ksq, !result._turn, dest_bb);
             } else {
-                result.checkers ^= get_pawn_attacks(ksq, !result.turn, dest_bb);
+                result._checkers ^= get_pawn_attacks(ksq, !result._turn, dest_bb);
             }
         } else if castles {
-            let my_backrank = self.turn.to_my_backrank();
+            let my_backrank = self._turn.to_my_backrank();
             let index = dest.get_file().to_index();
             let start = BitBoard::from_rank_and_file(my_backrank, unsafe {
                 *CASTLE_ROOK_START.get_unchecked(index)
@@ -509,65 +503,65 @@ impl SubBoard {
             let end = BitBoard::from_rank_and_file(my_backrank, unsafe {
                 *CASTLE_ROOK_END.get_unchecked(index)
             });
-            result.xor(Rook, start, self.turn);
-            result.xor(Rook, end, self.turn);
+            result.xor(Rook, start, self._turn);
+            result.xor(Rook, end, self._turn);
         }
         // now, lets see if we're in check or pinned
-        let attackers = result.occupied_co(result.turn)
+        let attackers = result.occupied_co(result._turn)
             & ((get_bishop_rays(ksq)
                 & (result.get_piece_mask(Bishop) | result.get_piece_mask(Queen)))
                 | (get_rook_rays(ksq)
                     & (result.get_piece_mask(Rook) | result.get_piece_mask(Queen))));
 
         for square in attackers {
-            let between = between(square, ksq) & result.occupied();
+            let between = between(square, ksq) & result._occupied;
             if between == BB_EMPTY {
-                result.checkers ^= BitBoard::from_square(square);
+                result._checkers ^= BitBoard::from_square(square);
             } else if between.popcnt() == 1 {
-                result.pinned ^= between;
+                result._pinned ^= between;
             }
         }
 
-        result.turn = !result.turn;
+        result._turn = !result._turn;
     }
 
     fn update_pin_and_checkers_info(&mut self) {
-        self.pinned = BB_EMPTY;
-        self.checkers = BB_EMPTY;
+        self._pinned = BB_EMPTY;
+        self._checkers = BB_EMPTY;
 
-        let ksq = (self.get_piece_mask(King) & self.occupied_co(self.turn)).to_square();
+        let ksq = (self.get_piece_mask(King) & self.occupied_co(self._turn)).to_square();
 
-        let pinners = self.occupied_co(!self.turn)
+        let pinners = self.occupied_co(!self._turn)
             & ((get_bishop_rays(ksq) & (self.get_piece_mask(Bishop) | self.get_piece_mask(Queen)))
                 | (get_rook_rays(ksq) & (self.get_piece_mask(Rook) | self.get_piece_mask(Queen))));
 
         for square in pinners {
-            let between = between(square, ksq) & self.occupied();
+            let between = between(square, ksq) & self._occupied;
             if between == BB_EMPTY {
-                self.checkers ^= BitBoard::from_square(square);
+                self._checkers ^= BitBoard::from_square(square);
             } else if between.popcnt() == 1 {
-                self.pinned ^= between;
+                self._pinned ^= between;
             }
         }
 
-        self.checkers ^=
-            get_knight_moves(ksq) & self.occupied_co(!self.turn) & self.get_piece_mask(Knight);
+        self._checkers ^=
+            get_knight_moves(ksq) & self.occupied_co(!self._turn) & self.get_piece_mask(Knight);
 
-        self.checkers ^= get_pawn_attacks(
+        self._checkers ^= get_pawn_attacks(
             ksq,
-            self.turn,
-            self.occupied_co(!self.turn) & self.get_piece_mask(Pawn),
+            self._turn,
+            self.occupied_co(!self._turn) & self.get_piece_mask(Pawn),
         );
     }
 
     #[inline(always)]
     pub fn pinned(&self) -> &BitBoard {
-        &self.pinned
+        &self._pinned
     }
 
     #[inline(always)]
     pub fn checkers(&self) -> &BitBoard {
-        &self.checkers
+        &self._checkers
     }
 }
 
@@ -587,19 +581,19 @@ impl TryFrom<&BoardBuilder> for SubBoard {
             }
         }
 
-        board.turn = board_builder.get_turn();
+        board._turn = board_builder.get_turn();
 
         if let Some(ep) = board_builder.get_en_passant() {
-            board.turn = !board.turn;
+            board._turn = !board._turn;
             board.set_ep(ep);
-            board.turn = !board.turn;
+            board._turn = !board._turn;
         }
 
         board.add_castle_rights(White, board_builder.get_castle_rights(White));
         board.add_castle_rights(Black, board_builder.get_castle_rights(Black));
 
-        board.halfmove_clock = board_builder.get_halfmove_clock();
-        board.fullmove_number = board_builder.get_fullmove_number();
+        board._halfmove_clock = board_builder.get_halfmove_clock();
+        board._fullmove_number = board_builder.get_fullmove_number();
 
         board.update_pin_and_checkers_info();
 
