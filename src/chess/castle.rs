@@ -8,7 +8,7 @@ pub enum CastleRights {
     Both,
 }
 
-const CASTLES_PER_SQUARE: [[u8; 64]; 2] = [
+const CASTLES_PER_SQUARE: [[usize; 64]; 2] = [
     [
         2, 0, 0, 0, 3, 0, 0, 1, // 1
         0, 0, 0, 0, 0, 0, 0, 0, // 2
@@ -33,53 +33,49 @@ const CASTLES_PER_SQUARE: [[u8; 64]; 2] = [
 
 impl CastleRights {
     /// Can I castle kingside?
-    /// #[inline(always)]
-    pub fn has_kingside(self) -> bool {
+    #[inline(always)]
+    pub const fn has_kingside(self) -> bool {
         self.to_index() & 1 == 1
     }
 
     /// Can I castle queenside?
-    /// #[inline(always)]
-    pub fn has_queenside(self) -> bool {
+    #[inline(always)]
+    pub const fn has_queenside(self) -> bool {
         self.to_index() & 2 == 2
     }
 
     #[inline(always)]
     pub fn square_to_castle_rights(color: Color, square: Square) -> Self {
-        Self::from_index(unsafe {
-            *CASTLES_PER_SQUARE
-                .get_unchecked(color.to_index())
-                .get_unchecked(square.to_index())
-        } as usize)
+        Self::from_index(get_item_unchecked!(CASTLES_PER_SQUARE, color.to_index(), square.to_index()))
     }
 
     /// What squares need to be empty to castle kingside?
-    /// #[inline(always)]
+    #[inline(always)]
     pub fn kingside_squares(self, color: Color) -> BitBoard {
-        unsafe { *KINGSIDE_CASTLE_SQUARES.get_unchecked(color.to_index()) }
+        get_item_unchecked!(KINGSIDE_CASTLE_SQUARES, color.to_index())
     }
 
     /// What squares need to be empty to castle queenside?
-    /// #[inline(always)]
+    #[inline(always)]
     pub fn queenside_squares(self, color: Color) -> BitBoard {
-        unsafe { *QUEENSIDE_CASTLE_SQUARES.get_unchecked(color.to_index()) }
+        get_item_unchecked!(QUEENSIDE_CASTLE_SQUARES, color.to_index())
     }
 
     /// Remove castle rights, and return a new `CastleRights`.
-    /// #[inline(always)]
-    pub fn remove(self, remove: Self) -> Self {
+    #[inline(always)]
+    pub const fn remove(self, remove: Self) -> Self {
         Self::from_index(self.to_index() & !remove.to_index())
     }
 
     /// Convert `CastleRights` to `usize` for table lookups
-    /// #[inline(always)]
-    pub fn to_index(self) -> usize {
+    #[inline(always)]
+    pub const fn to_index(self) -> usize {
         self as usize
     }
 
     /// Convert `usize` to `CastleRights`.  Panic if invalid number.
-    /// #[inline(always)]
-    pub fn from_index(i: usize) -> Self {
+    #[inline(always)]
+    pub const fn from_index(i: usize) -> Self {
         match i {
             0 => Self::None,
             1 => Self::KingSide,
@@ -90,7 +86,7 @@ impl CastleRights {
     }
 
     /// Which rooks can we "guarantee" we haven't moved yet?
-    /// #[inline(always)]
+    #[inline(always)]
     pub fn unmoved_rooks(self, color: Color) -> BitBoard {
         match self {
             Self::None => BB_EMPTY,
@@ -120,7 +116,7 @@ impl CastleRights {
 
     /// Given a square of a rook, which side is it on?
     /// Note: It is invalid to pass in a non-rook square.  The code may panic.
-    /// #[inline(always)]
+    #[inline(always)]
     pub fn rook_square_to_castle_rights(square: Square) -> Self {
         match square.get_file() {
             File::A => Self::QueenSide,

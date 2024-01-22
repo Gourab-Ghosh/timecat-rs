@@ -111,13 +111,7 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
 
     #[inline(always)]
     pub fn get(&self, hash: u64) -> Option<T> {
-        let entry = unsafe {
-            *self
-                .table
-                .lock()
-                .unwrap()
-                .get_unchecked(self.get_index(hash))
-        };
+        let entry = get_item_unchecked!(self.table.lock().unwrap(), self.get_index(hash));
         if entry.hash == hash {
             Some(entry.entry)
         } else {
@@ -128,7 +122,7 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
     #[inline(always)]
     pub fn add(&self, hash: u64, entry: T) {
         let mut table = self.table.lock().unwrap();
-        let e = unsafe { table.get_unchecked_mut(self.get_index(hash)) };
+        let e = get_item_unchecked_mut!(table, self.get_index(hash));
         let e_hash = e.get_hash();
         let e_entry = e.get_entry();
         *e = CacheTableEntry { hash, entry };
@@ -139,7 +133,7 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
     #[inline(always)]
     pub fn replace_if<F: Fn(T) -> bool>(&self, hash: u64, entry: T, replace: F) {
         let mut table = self.table.lock().unwrap();
-        let e = unsafe { table.get_unchecked_mut(self.get_index(hash)) };
+        let e = get_item_unchecked_mut!(table, self.get_index(hash));
         if replace(e.entry) {
             let e_hash = e.get_hash();
             let e_entry = e.get_entry();
