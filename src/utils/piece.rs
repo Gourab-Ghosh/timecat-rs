@@ -13,12 +13,12 @@ pub enum PieceType {
 
 impl PieceType {
     #[inline(always)]
-    pub fn to_int(self) -> u8 {
+    pub const fn to_int(self) -> u8 {
         self as u8
     }
 
     #[inline(always)]
-    pub fn to_index(self) -> usize {
+    pub const fn to_index(self) -> usize {
         self as usize
     }
 
@@ -27,6 +27,19 @@ impl PieceType {
         match color {
             White => format!("{self}").to_uppercase(),
             Black => format!("{self}"),
+        }
+    }
+
+    #[inline(always)]
+    pub const fn evaluate(self) -> i16 {
+        // never reset knight and bishop values as some logic depends on the current values in knight bishop endgame
+        match self {
+            Pawn => PAWN_VALUE,
+            Knight => (32 * PAWN_VALUE) / 10,
+            Bishop => (33 * PAWN_VALUE) / 10,
+            Rook => 5 * PAWN_VALUE,
+            Queen => 9 * PAWN_VALUE,
+            King => 20 * PAWN_VALUE,
         }
     }
 }

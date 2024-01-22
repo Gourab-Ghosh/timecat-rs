@@ -939,7 +939,7 @@ impl Board {
             }
             score += (piece_mask.popcnt() as Score
                 - 2 * (piece_mask & black_occupied).popcnt() as Score)
-                * evaluate_piece(piece);
+                * piece.evaluate();
         }
         score
     }
@@ -966,7 +966,7 @@ impl Board {
         ALL_PIECE_TYPES[..5]
             .iter()
             .map(|&piece| {
-                evaluate_piece(piece) * (self.get_piece_mask(piece) & mask).popcnt() as Score
+                piece.evaluate() * (self.get_piece_mask(piece) & mask).popcnt() as Score
             })
             .sum()
     }
@@ -975,7 +975,7 @@ impl Board {
     pub fn get_material_score_abs(&self) -> Score {
         ALL_PIECE_TYPES[..5]
             .iter()
-            .map(|&piece| evaluate_piece(piece) * self.get_piece_mask(piece).popcnt() as Score)
+            .map(|&piece| piece.evaluate() * self.get_piece_mask(piece).popcnt() as Score)
             .sum()
     }
 
@@ -983,7 +983,7 @@ impl Board {
     pub fn get_non_pawn_material_score_abs(&self) -> Score {
         ALL_PIECE_TYPES[1..5]
             .iter()
-            .map(|&piece| evaluate_piece(piece) * self.get_piece_mask(piece).popcnt() as Score)
+            .map(|&piece| piece.evaluate() * self.get_piece_mask(piece).popcnt() as Score)
             .sum()
     }
 

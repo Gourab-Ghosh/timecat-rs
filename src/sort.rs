@@ -157,7 +157,7 @@ impl MoveSorter {
     fn get_least_attackers_move(square: Square, board: &SubBoard) -> Option<Move> {
         let mut capture_moves = MoveGen::new_legal(board);
         capture_moves.set_iterator_mask(square.to_bitboard());
-        capture_moves.next()
+        capture_moves.next() // No need to find least attacker as the moves are already sorted
     }
 
     fn see(square: Square, board: &SubBoard) -> Score {
@@ -166,7 +166,7 @@ impl MoveSorter {
             None => return 0,
         };
         let capture_piece = board.piece_type_at(square).unwrap_or(Pawn);
-        (evaluate_piece(capture_piece)
+        (capture_piece.evaluate()
             - Self::see(square, &board.make_move_new(least_attackers_move)))
         .max(0)
     }
@@ -177,7 +177,7 @@ impl MoveSorter {
             None => return 0,
         };
         let capture_piece = board.piece_type_at(square).unwrap_or(Pawn);
-        evaluate_piece(capture_piece)
+        capture_piece.evaluate()
             - Self::see(square, &board.make_move_new(least_attackers_move))
     }
 

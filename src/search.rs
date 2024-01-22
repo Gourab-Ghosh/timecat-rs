@@ -625,9 +625,9 @@ impl Searcher {
                 return beta;
             }
             // delta pruning
-            let mut delta = evaluate_piece(Queen);
+            let mut delta = Queen.evaluate();
             if let Some(piece) = move_.get_promotion() {
-                delta += evaluate_piece(piece) - PAWN_VALUE;
+                delta += piece.evaluate() - PAWN_VALUE;
             }
             if score + delta < alpha {
                 return alpha;

@@ -230,8 +230,8 @@ pub mod engine_constants {
     pub const COMMUNICATION_CHECK_INTERVAL: Duration = Duration::from_millis(1);
 
     pub const INITIAL_MATERIAL_SCORE_ABS: Score = 16 * PAWN_VALUE
-        + 4 * (evaluate_piece(Knight) + evaluate_piece(Bishop) + evaluate_piece(Rook))
-        + 2 * evaluate_piece(Queen);
+        + 4 * (Knight.evaluate() + Bishop.evaluate() + Rook.evaluate())
+        + 2 * Queen.evaluate();
     pub const MAX_MATERIAL_SCORE: Score = INITIAL_MATERIAL_SCORE_ABS / 2;
     pub const WINNING_SCORE_THRESHOLD: Score = 15 * PAWN_VALUE;
 
