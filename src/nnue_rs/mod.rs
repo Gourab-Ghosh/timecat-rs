@@ -2,6 +2,7 @@
 //!`nnue-rs` is an [NNUE](https://www.chessprogramming.org/NNUE) inference library written in Rust.
 
 #![allow(clippy::extra_unused_type_parameters)]
+#![allow(dead_code)]
 
 pub mod layers;
 pub mod ops;

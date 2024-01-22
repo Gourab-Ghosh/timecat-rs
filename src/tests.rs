@@ -94,7 +94,7 @@ pub fn test() -> Result<(), EngineError> {
     // engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170")?; // check for saving mate score
     // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12")?; // weird results in 3 secs in my pc
     // parse_command(&mut engine, "go time 3000");
-    parse_command(&mut engine, "go depth 12");
+    parse_command(&mut engine, "go depth 13");
 
     // println!("{}", BitBoard::new(123456));
 

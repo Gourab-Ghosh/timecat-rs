@@ -473,7 +473,7 @@ impl Board {
     }
 
     pub fn is_capture(&self, move_: Move) -> bool {
-        let touched = get_square_bb(move_.get_source()) ^ get_square_bb(move_.get_dest());
+        let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
         (touched & self.occupied_co(!self.turn())) != BB_EMPTY || self.is_en_passant(move_)
     }
 
@@ -514,7 +514,7 @@ impl Board {
 
     fn reduces_castling_rights(&self, move_: Move) -> bool {
         let cr = self.clean_castling_rights();
-        let touched = get_square_bb(move_.get_source()) ^ get_square_bb(move_.get_dest());
+        let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
         let touched_cr = touched & cr;
         let kings = self.get_piece_mask(King);
         let touched_kings_cr = touched_cr & kings;
@@ -727,13 +727,13 @@ impl Board {
             let mut others = BB_EMPTY;
             let from_mask = self.get_piece_mask(piece)
                 & self.occupied_co(self.turn())
-                & !get_square_bb(move_.get_source());
-            let to_mask = get_square_bb(move_.get_dest());
+                & !move_.get_source().to_bitboard();
+            let to_mask = move_.get_dest().to_bitboard();
             for candidate in self
                 .generate_masked_legal_moves(to_mask)
-                .filter(|m| get_square_bb(m.get_source()) & from_mask != BB_EMPTY)
+                .filter(|m| m.get_source().to_bitboard() & from_mask != BB_EMPTY)
             {
-                others |= get_square_bb(candidate.get_source());
+                others |= candidate.get_source().to_bitboard();
             }
 
             // Disambiguate.
@@ -905,7 +905,7 @@ impl Board {
     pub fn generate_legal_captures(&self) -> MoveGen {
         let mut targets = self.occupied_co(!self.turn());
         if let Some(ep_square) = self.ep_square() {
-            targets ^= get_square_bb(ep_square)
+            targets ^= ep_square.to_bitboard()
         }
         self.generate_masked_legal_moves(targets)
     }

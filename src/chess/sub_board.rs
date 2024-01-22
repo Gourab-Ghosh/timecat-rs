@@ -405,7 +405,7 @@ impl SubBoard {
     }
 
     pub fn is_zeroing(&self, move_: Move) -> bool {
-        let touched = get_square_bb(move_.get_source()) ^ get_square_bb(move_.get_dest());
+        let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
         return touched & self.get_piece_mask(Pawn) != BB_EMPTY
             || (touched & self.occupied_co(!self.turn())) != BB_EMPTY;
     }

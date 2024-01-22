@@ -468,6 +468,10 @@ impl MoveGen {
         false
     }
 
+    pub fn get_iterator_mask(&self) -> BitBoard {
+        self.iterator_mask
+    }
+
     pub fn set_iterator_mask(&mut self, mask: BitBoard) {
         self.iterator_mask = mask;
         self.index = 0;

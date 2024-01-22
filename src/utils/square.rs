@@ -149,6 +149,11 @@ impl Square {
             Black => self.wrapping_up(),
         }
     }
+
+    #[inline(always)]
+    pub fn to_bitboard(self) -> BitBoard {
+        get_item_unchecked!(BB_SQUARES, self.to_index())
+    }
 }
 
 impl FromStr for Square {

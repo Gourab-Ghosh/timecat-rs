@@ -37,7 +37,7 @@ impl IoReader {
 
     pub fn read_line_once(&self) -> Option<String> {
         if !self.received_input.load(MEMORY_ORDERING) {
-            thread::sleep(Duration::from_millis(1));
+            thread::sleep(COMMUNICATION_CHECK_INTERVAL);
             return None;
         }
         let mut user_input = self.user_input.lock().unwrap();

@@ -133,13 +133,6 @@ impl PVTable {
     pub fn set_length(&mut self, ply: Ply, length: usize) {
         self.length[ply] = length;
     }
-
-    #[inline(always)]
-    pub fn reset_variables(&mut self) {
-        for ply in 0..MAX_PLY {
-            self.length[ply] = 0;
-        }
-    }
 }
 
 impl Default for PVTable {

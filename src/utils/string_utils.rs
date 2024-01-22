@@ -69,7 +69,7 @@ impl StringifyScore for Score {
             let mut mate_string = String::from(if self.is_positive() { "M" } else { "-M" });
             let mate_distance = (CHECKMATE_SCORE - self.abs() + 1) / 2;
             mate_string += &mate_distance.to_string();
-            return mate_string;
+            return mate_string.colorize(CHECKMATE_SCORE_STYLE);
         }
         let to_return = self as f64 / PAWN_VALUE as f64;
         if to_return % 1.0 == 0.0 {

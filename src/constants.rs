@@ -1,3 +1,5 @@
+use super::*;
+
 pub mod description {
     pub const ENGINE_NAME: &str = "Timecat";
     pub const ENGINE_AUTHOR: &str = "Gourab Ghosh";
@@ -15,7 +17,8 @@ pub mod types {
 }
 
 pub mod bitboard_and_square {
-    use crate::{paste, BitBoard, File::*, Square};
+    use super::*;
+    use File::*;
 
     pub const BB_EMPTY: BitBoard = BitBoard::new(0);
     pub const BB_ALL: BitBoard = BitBoard::new(0xffff_ffff_ffff_ffff);
@@ -140,7 +143,7 @@ pub mod fen {
 }
 
 pub mod print_style {
-    use crate::ColoredStringFunction;
+    use super::*;
 
     macro_rules! generate_constants {
         ($constant_name:ident, [$( $func_name:ident ), *]) => {
@@ -167,11 +170,7 @@ pub mod print_style {
 }
 
 pub mod engine_constants {
-    use super::types::*;
-    use crate::{
-        evaluate_piece, CacheTableSize, Duration, GoCommand, PieceType::*, TranspositionTableEntry,
-        UCIOptionValues,
-    };
+    use super::*;
 
     pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
     pub const NUM_THREADS_UCI: UCIOptionValues<usize> = UCIOptionValues::new(1, 1, 1024);
@@ -228,7 +227,7 @@ pub mod engine_constants {
 
     pub const FOLLOW_PV: bool = true;
     pub const PRINT_MOVE_INFO_DURATION_THRESHOLD: Duration = Duration::from_millis(1000);
-    pub const COMMUNICATION_CHECK_INTERVAL: Duration = Duration::from_millis(100);
+    pub const COMMUNICATION_CHECK_INTERVAL: Duration = Duration::from_millis(1);
 
     pub const INITIAL_MATERIAL_SCORE_ABS: Score = 16 * PAWN_VALUE
         + 4 * (evaluate_piece(Knight) + evaluate_piece(Bishop) + evaluate_piece(Rook))
@@ -254,15 +253,14 @@ pub mod atomic {
 }
 
 pub mod color {
-    use crate::Color;
+    use super::*;
 
     pub const NUM_COLORS: usize = 2;
     pub const ALL_COLORS: [Color; NUM_COLORS] = [Color::White, Color::Black];
 }
 
 pub mod piece {
-    use crate::PieceType;
-    use PieceType::*;
+    use super::*;
 
     pub const NUM_PIECE_TYPES: usize = 6;
     pub const ALL_PIECE_TYPES: [PieceType; NUM_PIECE_TYPES] =
@@ -272,7 +270,7 @@ pub mod piece {
 }
 
 pub mod ranks {
-    use crate::Rank;
+    use super::*;
 
     pub const NUM_RANKS: usize = 8;
     pub const ALL_RANKS: [Rank; NUM_RANKS] = [
@@ -288,7 +286,7 @@ pub mod ranks {
 }
 
 pub mod files {
-    use crate::File;
+    use super::*;
 
     pub const NUM_FILES: usize = 8;
     pub const ALL_FILES: [File; NUM_FILES] = [
