@@ -1,11 +1,19 @@
 use super::*;
 
-pub fn measure_time<T>(func: impl Fn() -> T) -> T {
-    let clock = Instant::now();
-    let res = func();
-    if is_in_console_mode() {
-        println!();
+pub trait MeasureTime<T>: Fn() -> T {
+    fn run_and_measure_time(&self) -> (T, Duration) {
+        let clock = Instant::now();
+        (self(), clock.elapsed())
     }
-    println_info("Run Time", clock.elapsed().stringify());
-    res
+
+    fn run_and_print_time(&self) -> T {
+        let (res, time_taken) = self.run_and_measure_time();
+        if is_in_console_mode() {
+            println!();
+        }
+        println_info("Run Time", time_taken.stringify());
+        res
+    }
 }
+
+impl<T, Func: Fn() -> T> MeasureTime<T> for Func {}

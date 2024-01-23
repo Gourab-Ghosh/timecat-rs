@@ -588,7 +588,7 @@ impl Parser {
 
     pub fn uci_loop() {
         set_console_mode(false, false);
-        measure_time(Self::main_loop);
+        Self::main_loop.run_and_print_time();
     }
 
     pub fn parse_args_and_run_main_loop(args: &[&str]) {
@@ -617,7 +617,7 @@ impl Parser {
             return;
         }
         if args.contains(&"--test") {
-            measure_time(test).unwrap();
+            test.run_and_print_time().unwrap();
             return;
         }
         if args.contains(&"-c") || args.contains(&"--command") {
@@ -633,7 +633,7 @@ impl Parser {
             return;
         }
         print_engine_info();
-        measure_time(Self::main_loop);
+        Self::main_loop.run_and_print_time();
     }
 
     pub fn get_help_text() -> String {
