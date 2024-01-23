@@ -227,7 +227,8 @@ impl SubBoard {
                 } else {
                     square_bb <<= 8;
                 }
-                if self.get_piece_mask(Pawn) & self.occupied_co(!self.turn()) & square_bb == BB_EMPTY
+                if self.get_piece_mask(Pawn) & self.occupied_co(!self.turn()) & square_bb
+                    == BB_EMPTY
                 {
                     return false;
                 }
@@ -439,7 +440,8 @@ impl SubBoard {
             result.xor(captured, dest_bb, !self.turn());
         }
 
-        result.remove_their_castle_rights(CastleRights::square_to_castle_rights(!self.turn(), dest));
+        result
+            .remove_their_castle_rights(CastleRights::square_to_castle_rights(!self.turn(), dest));
 
         result.remove_my_castle_rights(CastleRights::square_to_castle_rights(self.turn(), source));
 

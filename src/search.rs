@@ -667,6 +667,9 @@ impl Searcher {
 
     pub fn get_pv_from_t_table(&self) -> Vec<Option<Move>> {
         extract_pv_from_t_table(&mut self.initial_board.clone())
+            .into_iter()
+            .map_into()
+            .collect_vec()
     }
 
     pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {

@@ -972,9 +972,7 @@ impl Board {
     pub fn get_masked_material_score_abs(&self, mask: BitBoard) -> Score {
         ALL_PIECE_TYPES[..5]
             .iter()
-            .map(|&piece| {
-                piece.evaluate() * (self.get_piece_mask(piece) & mask).popcnt() as Score
-            })
+            .map(|&piece| piece.evaluate() * (self.get_piece_mask(piece) & mask).popcnt() as Score)
             .sum()
     }
 

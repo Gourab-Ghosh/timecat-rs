@@ -2,25 +2,23 @@ use super::*;
 
 #[derive(Default, Debug, Clone)]
 pub struct RepetitionTable {
-    count_map: HashMap<u64, usize>,
+    count_map: HashMap<u64, u8>,
 }
 
 impl RepetitionTable {
     pub fn new() -> Self {
-        Self {
-            count_map: HashMap::default(),
-        }
+        Self::default()
     }
 
     #[inline(always)]
     pub fn get_repetition(&self, key: u64) -> u8 {
-        *self.count_map.get(&key).unwrap_or(&0) as u8
+        self.count_map.get(&key).copied().unwrap_or_default()
     }
 
     pub fn insert_and_get_repetition(&mut self, key: u64) -> u8 {
         let count_entry = self.count_map.entry(key).or_insert(0);
         *count_entry += 1;
-        *count_entry as u8
+        *count_entry
     }
 
     pub fn remove(&mut self, key: u64) {

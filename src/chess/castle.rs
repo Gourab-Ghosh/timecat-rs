@@ -46,7 +46,11 @@ impl CastleRights {
 
     #[inline(always)]
     pub fn square_to_castle_rights(color: Color, square: Square) -> Self {
-        Self::from_index(get_item_unchecked!(CASTLES_PER_SQUARE, color.to_index(), square.to_index()))
+        Self::from_index(get_item_unchecked!(
+            CASTLES_PER_SQUARE,
+            color.to_index(),
+            square.to_index()
+        ))
     }
 
     /// What squares need to be empty to castle kingside?

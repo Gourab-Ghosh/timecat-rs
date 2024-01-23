@@ -51,9 +51,7 @@ impl Evaluator {
             };
             least_distant_corner = *least_distant_corners
                 .iter()
-                .min_by_key(|&&corner_square| {
-                    square_distance(corner_square, losing_side_king_square)
-                })
+                .min_by_key(|&&corner_square| corner_square.distance(losing_side_king_square))
                 .unwrap();
         } else {
             for (bb, &corner_square) in BOARD_QUARTER_MASKS
@@ -67,7 +65,7 @@ impl Evaluator {
             }
         }
         let king_distance_score =
-            7 - square_distance(winning_side_king_square, losing_side_king_square) as Score;
+            7 - winning_side_king_square.distance(losing_side_king_square) as Score;
         let losing_king_rank_distance_score = 15
             - losing_side_king_square
                 .get_rank()
@@ -82,7 +80,7 @@ impl Evaluator {
             losing_king_rank_distance_score.pow(2) + losing_king_file_distance_score.pow(2);
         let losing_king_opponent_pieces_score = board
             .occupied_co(winning_side)
-            .map(|square| 7 - square_distance(square, losing_side_king_square))
+            .map(|square| 7 - square.distance(losing_side_king_square))
             .sum::<u8>() as Score;
         10 * (10 * king_distance_score + 2 * losing_king_corner_score)
             + losing_king_opponent_pieces_score

@@ -146,12 +146,12 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
     }
 
     #[inline(always)]
-    fn is_safe_to_do_bitwise_and(size: usize) -> bool {
+    const fn is_safe_to_do_bitwise_and(size: usize) -> bool {
         size.count_ones() == 1 && size > 1
     }
 
     #[inline(always)]
-    fn get_mask(table: &[CacheTableEntry<T>]) -> usize {
+    const fn get_mask(table: &[CacheTableEntry<T>]) -> usize {
         if Self::is_safe_to_do_bitwise_and(table.len()) {
             table.len() - 1
         } else {
@@ -235,7 +235,7 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
     }
 
     #[inline(always)]
-    pub fn get_table(&self) -> &Mutex<Box<[CacheTableEntry<T>]>> {
+    pub const fn get_table(&self) -> &Mutex<Box<[CacheTableEntry<T>]>> {
         &self.table
     }
 

@@ -166,9 +166,8 @@ impl MoveSorter {
             None => return 0,
         };
         let capture_piece = board.piece_type_at(square).unwrap_or(Pawn);
-        (capture_piece.evaluate()
-            - Self::see(square, &board.make_move_new(least_attackers_move)))
-        .max(0)
+        (capture_piece.evaluate() - Self::see(square, &board.make_move_new(least_attackers_move)))
+            .max(0)
     }
 
     fn see_capture(square: Square, board: &SubBoard) -> Score {
@@ -177,8 +176,7 @@ impl MoveSorter {
             None => return 0,
         };
         let capture_piece = board.piece_type_at(square).unwrap_or(Pawn);
-        capture_piece.evaluate()
-            - Self::see(square, &board.make_move_new(least_attackers_move))
+        capture_piece.evaluate() - Self::see(square, &board.make_move_new(least_attackers_move))
     }
 
     fn mvv_lva(move_: Move, best_move: Option<Move>, board: &Board) -> MoveWeight {
@@ -210,10 +208,10 @@ impl MoveSorter {
             let losing_color = !board.get_winning_side().unwrap_or(White);
             let losing_king_square = board.get_king_square(losing_color);
             if losing_king_square == source {
-                return Some(-100 * square_distance(source, Square::E4) as MoveWeight);
+                return Some(-100 * source.distance(Square::E4) as MoveWeight);
             }
-            let source_distance = square_distance(source, losing_king_square);
-            let dest_distance = square_distance(dest, losing_king_square);
+            let source_distance = source.distance(losing_king_square);
+            let dest_distance = dest.distance(losing_king_square);
             if dest_distance < source_distance {
                 return Some(
                     50 * match moving_piece {

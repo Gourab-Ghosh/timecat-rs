@@ -1,10 +1,10 @@
 use super::*;
 
-pub fn extract_pv_from_t_table(board: &mut Board) -> Vec<Option<Move>> {
+pub fn extract_pv_from_t_table(board: &mut Board) -> Vec<Move> {
     let mut pv = Vec::new();
     let best_move = TRANSPOSITION_TABLE.read_best_move(board.hash());
     if let Some(best_move) = best_move {
-        pv.push(Some(best_move));
+        pv.push(best_move);
         board.push(best_move);
         pv.append(&mut extract_pv_from_t_table(board));
         board.pop();

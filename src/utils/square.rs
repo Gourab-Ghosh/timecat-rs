@@ -154,6 +154,19 @@ impl Square {
     pub fn to_bitboard(self) -> BitBoard {
         get_item_unchecked!(BB_SQUARES, self.to_index())
     }
+
+    #[inline(always)]
+    pub fn mirror(self) -> Square {
+        get_item_unchecked!(SQUARES_180, self.to_index())
+    }
+
+    pub fn distance(self, other: Square) -> u8 {
+        let (file1, rank1) = (self.get_file(), self.get_rank());
+        let (file2, rank2) = (other.get_file(), other.get_rank());
+        let file_distance = (file1 as i8).abs_diff(file2 as i8);
+        let rank_distance = (rank1 as i8).abs_diff(rank2 as i8);
+        file_distance.max(rank_distance)
+    }
 }
 
 impl FromStr for Square {
