@@ -522,6 +522,7 @@ impl MoveGenerator {
             if get_item_unchecked!(self.square_and_bitboard_array, j).bitboard & self.iterator_mask
                 != BB_EMPTY
             {
+                // unsafe { self.square_and_bitboard_array.swap_unchecked(i, j) };
                 self.square_and_bitboard_array.swap(i, j);
                 i += 1;
             }
