@@ -135,7 +135,12 @@ impl MoveSorter {
         let src = history_move.get_source();
         let dest = history_move.get_dest();
         let piece = board.piece_at(src).unwrap();
-        *get_item_unchecked_mut!(self.history_move_scores, piece.get_piece_type().to_index(), piece.get_color().to_index(), dest.to_index()) += depth;
+        *get_item_unchecked_mut!(
+            self.history_move_scores,
+            piece.get_piece_type().to_index(),
+            piece.get_color().to_index(),
+            dest.to_index()
+        ) += depth;
     }
 
     #[inline(always)]
@@ -143,7 +148,12 @@ impl MoveSorter {
         let src = history_move.get_source();
         let dest = history_move.get_dest();
         let piece = board.piece_at(src).unwrap();
-        *get_item_unchecked!(self.history_move_scores, piece.get_piece_type().to_index(), piece.get_color().to_index(), dest.to_index())
+        *get_item_unchecked!(
+            self.history_move_scores,
+            piece.get_piece_type().to_index(),
+            piece.get_color().to_index(),
+            dest.to_index()
+        )
     }
 
     fn get_least_attackers_move(square: Square, board: &SubBoard) -> Option<Move> {
@@ -175,10 +185,14 @@ impl MoveSorter {
         if best_move == Some(move_) {
             return 10000;
         }
-        *get_item_unchecked!(MVV_LVA, board.piece_type_at(move_.get_source()).unwrap().to_index(), board
-            .piece_type_at(move_.get_dest())
-            .unwrap_or(Pawn)
-            .to_index())
+        *get_item_unchecked!(
+            MVV_LVA,
+            board.piece_type_at(move_.get_source()).unwrap().to_index(),
+            board
+                .piece_type_at(move_.get_dest())
+                .unwrap_or(Pawn)
+                .to_index()
+        )
     }
 
     #[inline(always)]
@@ -241,7 +255,10 @@ impl MoveSorter {
         if board.is_capture(move_) {
             return 126000000 + Self::score_capture(move_, None, board);
         }
-        for (idx, &optional_move) in get_item_unchecked!(self.killer_moves, ply).iter().enumerate() {
+        for (idx, &optional_move) in get_item_unchecked!(self.killer_moves, ply)
+            .iter()
+            .enumerate()
+        {
             if optional_move == Some(move_) {
                 return 125000000 - idx as MoveWeight;
             }

@@ -28,7 +28,11 @@ macro_rules! get_item_unchecked {
         unsafe { $vec.get_unchecked($index1).get_unchecked($index2) }
     };
     ($vec:expr, $index1:expr, $index2:expr, $index3:expr) => {
-        unsafe { $vec.get_unchecked($index1).get_unchecked($index2).get_unchecked($index3) }
+        unsafe {
+            $vec.get_unchecked($index1)
+                .get_unchecked($index2)
+                .get_unchecked($index3)
+        }
     };
 }
 
@@ -41,7 +45,11 @@ macro_rules! get_item_unchecked_mut {
         unsafe { $vec.get_unchecked_mut($index1).get_unchecked_mut($index2) }
     };
     ($vec:expr, $index1:expr, $index2:expr, $index3:expr) => {
-        unsafe { $vec.get_unchecked_mut($index1).get_unchecked_mut($index2).get_unchecked_mut($index3) }
+        unsafe {
+            $vec.get_unchecked_mut($index1)
+                .get_unchecked_mut($index2)
+                .get_unchecked_mut($index3)
+        }
     };
 }
 

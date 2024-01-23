@@ -285,8 +285,14 @@ impl SubBoard {
             } else {
                 0
             }
-            ^ Zobrist::castles(*get_item_unchecked!(self._castle_rights, self.turn().to_index()), self.turn())
-            ^ Zobrist::castles(*get_item_unchecked!(self._castle_rights, (!self.turn()).to_index()), !self.turn())
+            ^ Zobrist::castles(
+                *get_item_unchecked!(self._castle_rights, self.turn().to_index()),
+                self.turn(),
+            )
+            ^ Zobrist::castles(
+                *get_item_unchecked!(self._castle_rights, (!self.turn()).to_index()),
+                !self.turn(),
+            )
             ^ if self.turn() == Black {
                 Zobrist::color()
             } else {

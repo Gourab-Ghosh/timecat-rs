@@ -124,7 +124,8 @@ impl PVTable {
     pub fn update_table(&mut self, ply: Ply, move_: Move) {
         *get_item_unchecked_mut!(self.table, ply, ply) = Some(move_);
         for next_ply in (ply + 1)..*get_item_unchecked!(self.length, ply + 1) {
-            *get_item_unchecked_mut!(self.table, ply, next_ply) = *get_item_unchecked!(self.table, ply + 1, next_ply);
+            *get_item_unchecked_mut!(self.table, ply, next_ply) =
+                *get_item_unchecked!(self.table, ply + 1, next_ply);
         }
         self.set_length(ply, *get_item_unchecked!(self.length, ply + 1));
     }
