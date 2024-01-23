@@ -605,18 +605,22 @@ impl Board {
         optional_move
     }
 
-    pub fn get_all_moves(&self) -> Vec<Option<Move>> {
-        self.stack.iter().map(|(_, m)| *m).collect_vec()
+    #[inline(always)]
+    pub fn get_all_moves(&self) -> Vec<&Option<Move>> {
+        self.stack.iter().map(|(_, m)| m).collect_vec()
     }
 
-    pub fn get_last_move(&self) -> Option<Move> {
-        self.stack.last().unwrap().1
+    #[inline(always)]
+    pub fn get_last_move(&self) -> Option<Option<Move>> {
+        self.stack.last().map(|(_, m)| *m)
     }
 
+    #[inline(always)]
     pub fn contains_null_move(&self) -> bool {
         self.stack.iter().any(|(_, m)| m.is_none())
     }
 
+    #[inline(always)]
     pub fn get_ply(&self) -> usize {
         self.stack.len()
     }
@@ -649,6 +653,7 @@ impl Board {
         Ok(Some(Move::from_str(uci)?))
     }
 
+    #[inline(always)]
     pub fn parse_move(&self, move_text: &str) -> Result<Option<Move>, EngineError> {
         self.parse_uci(move_text).or(self.parse_san(move_text))
     }
@@ -659,6 +664,7 @@ impl Board {
         Ok(move_)
     }
 
+    #[inline(always)]
     pub fn push_sans(&mut self, sans: &str) -> Result<Vec<Option<Move>>, EngineError> {
         remove_double_spaces_and_trim(sans)
             .split(' ')
@@ -677,6 +683,7 @@ impl Board {
         self.push_uci(s).unwrap();
     }
 
+    #[inline(always)]
     pub fn push_uci_moves(&mut self, uci_moves: &str) -> Result<Vec<Option<Move>>, EngineError> {
         remove_double_spaces_and_trim(uci_moves)
             .split(' ')

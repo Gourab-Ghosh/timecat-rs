@@ -7,7 +7,7 @@ pub enum GoCommand {
     Depth(Depth),
     // Nodes(usize),
     // Mate(usize),
-    // Ponder,
+    Ponder,
     // SearchMoves(Vec<Move>),
     Timed {
         wtime: Duration,

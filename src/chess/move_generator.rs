@@ -389,7 +389,7 @@ impl PieceMoves for KingMoves {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub struct SquareAndBitBoard {
+struct SquareAndBitBoard {
     square: Square,
     bitboard: BitBoard,
     promotion: bool,
@@ -405,7 +405,7 @@ impl SquareAndBitBoard {
     }
 }
 
-pub type MoveList = NoDrop<ArrayVec<SquareAndBitBoard, 18>>;
+type MoveList = NoDrop<ArrayVec<SquareAndBitBoard, 18>>;
 
 pub struct MoveGenerator {
     moves: MoveList,

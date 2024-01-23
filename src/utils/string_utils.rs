@@ -1,5 +1,6 @@
 use super::*;
 
+#[inline(always)]
 pub fn remove_double_spaces_and_trim(s: &str) -> String {
     s.trim()
         .chars()
@@ -7,6 +8,7 @@ pub fn remove_double_spaces_and_trim(s: &str) -> String {
         .join("")
 }
 
+#[inline(always)]
 pub fn simplify_fen(fen: &str) -> String {
     remove_double_spaces_and_trim(fen)
 }

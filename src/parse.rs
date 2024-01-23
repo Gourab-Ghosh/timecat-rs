@@ -93,7 +93,8 @@ impl Go {
             "movetime" => Ok(GoCommand::from_millis(
                 commands.get(2).ok_or(UnknownCommand)?.parse()?,
             )),
-            "infinite" | "ponder" => Ok(GoCommand::Infinite),
+            "infinite" => Ok(GoCommand::Infinite),
+            "ponder" => Ok(GoCommand::Ponder),
             _ => Ok(GoCommand::Timed {
                 wtime: extract_time!(commands, "wtime").ok_or(WTimeNotMentioned)?,
                 btime: extract_time!(commands, "btime").ok_or(BTimeNotMentioned)?,
