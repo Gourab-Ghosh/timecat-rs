@@ -196,6 +196,7 @@ pub mod engine_constants {
     );
     pub const DEFAULT_USE_OWN_BOOK: bool = false;
     pub const DEFAULT_DEBUG_MODE: bool = true;
+    pub const DEFAULT_CHESS960_MODE: bool = false;
 
     pub const MAX_PLY: usize = 255;
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;

@@ -9,6 +9,7 @@ static NUM_THREADS: AtomicUsize = AtomicUsize::new(NUM_THREADS_UCI.get_default()
 static MOVE_OVERHEAD: Mutex<Duration> = Mutex::new(MOVE_OVERHEAD_UCI.get_default());
 static USE_OWN_BOOK: AtomicBool = AtomicBool::new(DEFAULT_USE_OWN_BOOK);
 static DEBUG_MODE: AtomicBool = AtomicBool::new(DEFAULT_DEBUG_MODE);
+static CHESS960_MODE: AtomicBool = AtomicBool::new(DEFAULT_CHESS960_MODE);
 
 fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
     if !is_in_debug_mode() {
@@ -141,4 +142,14 @@ pub fn clear_all_hash_tables() {
     TRANSPOSITION_TABLE.clear();
     EVALUATOR.clear();
     print_info::<&str>("All hash tables are cleared!", None);
+}
+
+#[inline(always)]
+pub fn is_in_chess960_mode() -> bool {
+    CHESS960_MODE.load(MEMORY_ORDERING)
+}
+
+pub fn set_chess960_mode(b: bool) {
+    CHESS960_MODE.store(b, MEMORY_ORDERING);
+    print_info("Debug Mode is set to", b);
 }
