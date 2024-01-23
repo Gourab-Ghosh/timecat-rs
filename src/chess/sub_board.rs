@@ -69,7 +69,7 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn status(&self) -> BoardStatus {
-        let moves = MoveGen::new_legal(self).len();
+        let moves = MoveGenerator::new_legal(self).len();
         match moves {
             0 => {
                 if self.checkers() == BB_EMPTY {
@@ -393,7 +393,7 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn legal(&self, move_: Move) -> bool {
-        MoveGen::new_legal(self).contains(&move_)
+        MoveGenerator::new_legal(self).contains(&move_)
     }
 
     pub fn make_move_new(&self, move_: Move) -> Self {

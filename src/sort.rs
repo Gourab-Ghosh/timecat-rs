@@ -155,7 +155,7 @@ impl MoveSorter {
     }
 
     fn get_least_attackers_move(square: Square, board: &SubBoard) -> Option<Move> {
-        let mut capture_moves = MoveGen::new_legal(board);
+        let mut capture_moves = MoveGenerator::new_legal(board);
         capture_moves.set_iterator_mask(square.to_bitboard());
         capture_moves.next() // No need to find least attacker as the moves are already sorted
     }
@@ -291,7 +291,7 @@ impl MoveSorter {
             return 120000000 + history_score;
         }
         MAX_MOVES_PER_POSITION as MoveWeight
-            - MoveGen::new_legal(&move_made_sub_board).len() as MoveWeight
+            - MoveGenerator::new_legal(&move_made_sub_board).len() as MoveWeight
     }
 
     pub fn get_weighted_moves_sorted(

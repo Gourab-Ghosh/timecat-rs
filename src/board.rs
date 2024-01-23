@@ -334,7 +334,7 @@ impl Board {
     pub fn gives_claimable_threefold_repetition(&self, move_: Move) -> bool {
         //TODO: check if this is correct
         let new_board = self.sub_board.make_move_new(move_);
-        MoveGen::new_legal(&new_board).any(|m| {
+        MoveGenerator::new_legal(&new_board).any(|m| {
             let hash = new_board.make_move_new(m).hash();
             self.repetition_table.get_repetition(hash) == 2
         })
@@ -891,18 +891,18 @@ impl Board {
         self.sub_board.legal(move_)
     }
 
-    pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGen {
-        let mut moves = MoveGen::new_legal(&self.sub_board);
+    pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGenerator {
+        let mut moves = MoveGenerator::new_legal(&self.sub_board);
         moves.set_iterator_mask(to_bitboard);
         moves
     }
 
     #[inline(always)]
-    pub fn generate_legal_moves(&self) -> MoveGen {
-        MoveGen::new_legal(&self.sub_board)
+    pub fn generate_legal_moves(&self) -> MoveGenerator {
+        MoveGenerator::new_legal(&self.sub_board)
     }
 
-    pub fn generate_legal_captures(&self) -> MoveGen {
+    pub fn generate_legal_captures(&self) -> MoveGenerator {
         let mut targets = self.occupied_co(!self.turn());
         if let Some(ep_square) = self.ep_square() {
             targets ^= ep_square.to_bitboard()

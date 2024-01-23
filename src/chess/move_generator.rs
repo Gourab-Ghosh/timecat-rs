@@ -407,14 +407,14 @@ impl SquareAndBitBoard {
 
 pub type MoveList = NoDrop<ArrayVec<SquareAndBitBoard, 18>>;
 
-pub struct MoveGen {
+pub struct MoveGenerator {
     moves: MoveList,
     promotion_index: usize,
     iterator_mask: BitBoard,
     index: usize,
 }
 
-impl MoveGen {
+impl MoveGenerator {
     #[inline(always)]
     fn enumerate_moves(board: &SubBoard) -> MoveList {
         let checkers = board.checkers();
@@ -443,9 +443,9 @@ impl MoveGen {
     }
 
     #[inline(always)]
-    pub fn new_legal(board: &SubBoard) -> MoveGen {
-        MoveGen {
-            moves: MoveGen::enumerate_moves(board),
+    pub fn new_legal(board: &SubBoard) -> MoveGenerator {
+        MoveGenerator {
+            moves: MoveGenerator::enumerate_moves(board),
             promotion_index: 0,
             iterator_mask: !BB_EMPTY,
             index: 0,
@@ -533,7 +533,7 @@ impl MoveGen {
     }
 
     pub fn perft_test(board: &SubBoard, depth: usize) -> usize {
-        let iterable = MoveGen::new_legal(board);
+        let iterable = MoveGenerator::new_legal(board);
 
         let mut result: usize = 0;
         if depth == 1 {
@@ -541,14 +541,14 @@ impl MoveGen {
         } else {
             for m in iterable {
                 let board_result = board.make_move_new(m);
-                result += MoveGen::perft_test(&board_result, depth - 1);
+                result += MoveGenerator::perft_test(&board_result, depth - 1);
             }
             result
         }
     }
 
     pub fn perft_test_piecewise(board: &SubBoard, depth: usize) -> usize {
-        let mut iterable = MoveGen::new_legal(board);
+        let mut iterable = MoveGenerator::new_legal(board);
 
         let targets = board.occupied_co(!board.turn());
         let mut result: usize = 0;
@@ -565,7 +565,7 @@ impl MoveGen {
                 let mut board_result = mem::MaybeUninit::<SubBoard>::uninit();
                 unsafe {
                     board.make_move(x, &mut *board_result.as_mut_ptr());
-                    result += MoveGen::perft_test(&*board_result.as_ptr(), depth - 1);
+                    result += MoveGenerator::perft_test(&*board_result.as_ptr(), depth - 1);
                 }
             }
             iterable.set_iterator_mask(!BB_EMPTY);
@@ -573,7 +573,7 @@ impl MoveGen {
                 let mut board_result = mem::MaybeUninit::<SubBoard>::uninit();
                 unsafe {
                     board.make_move(x, &mut *board_result.as_mut_ptr());
-                    result += MoveGen::perft_test(&*board_result.as_ptr(), depth - 1);
+                    result += MoveGenerator::perft_test(&*board_result.as_ptr(), depth - 1);
                 }
             }
             result
@@ -581,7 +581,7 @@ impl MoveGen {
     }
 }
 
-impl ExactSizeIterator for MoveGen {
+impl ExactSizeIterator for MoveGenerator {
     fn len(&self) -> usize {
         let mut result = 0;
         for i in 0..self.moves.len() {
@@ -599,7 +599,7 @@ impl ExactSizeIterator for MoveGen {
     }
 }
 
-impl Iterator for MoveGen {
+impl Iterator for MoveGenerator {
     type Item = Move;
 
     fn size_hint(&self) -> (usize, Option<usize>) {

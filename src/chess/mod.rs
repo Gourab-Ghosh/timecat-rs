@@ -5,7 +5,7 @@
 mod board_builder;
 mod castle;
 mod magic;
-mod move_gen;
+mod move_generator;
 mod sub_board;
 mod zobrist;
 
@@ -14,6 +14,6 @@ pub use board_builder::*;
 pub use castle::*;
 pub use itertools::*;
 pub use magic::*;
-pub use move_gen::*;
+pub use move_generator::*;
 pub use sub_board::*;
 pub use zobrist::*;
