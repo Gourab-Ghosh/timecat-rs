@@ -74,7 +74,7 @@ impl StockfishNetwork {
             White => nnue_rs::Color::White,
             Black => nnue_rs::Color::Black,
         };
-        let score = (state.activate(color)[0] / 16) as Score;
+        let score = (get_item_unchecked!(state.activate(color), 0) / 16) as Score;
         if color == nnue_rs::Color::White {
             score
         } else {

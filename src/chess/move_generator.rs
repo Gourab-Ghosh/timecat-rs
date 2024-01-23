@@ -24,20 +24,20 @@ trait PieceMoves {
         };
 
         for src in pieces & !pinned {
-            let moves = Self::pseudo_legals(src, color, occupied, mask) & check_mask;
-            if moves != BB_EMPTY {
+            let square_and_bitboard_array = Self::pseudo_legals(src, color, occupied, mask) & check_mask;
+            if square_and_bitboard_array != BB_EMPTY {
                 unsafe {
-                    move_list.push_unchecked(SquareAndBitBoard::new(src, moves, false));
+                    move_list.push_unchecked(SquareAndBitBoard::new(src, square_and_bitboard_array, false));
                 }
             }
         }
 
         if !T::IN_CHECK {
             for src in pieces & pinned {
-                let moves = Self::pseudo_legals(src, color, occupied, mask) & line(src, ksq);
-                if moves != BB_EMPTY {
+                let square_and_bitboard_array = Self::pseudo_legals(src, color, occupied, mask) & line(src, ksq);
+                if square_and_bitboard_array != BB_EMPTY {
                     unsafe {
-                        move_list.push_unchecked(SquareAndBitBoard::new(src, moves, false));
+                        move_list.push_unchecked(SquareAndBitBoard::new(src, square_and_bitboard_array, false));
                     }
                 }
             }
@@ -133,12 +133,12 @@ impl PieceMoves for PawnMoves {
         };
 
         for src in pieces & !pinned {
-            let moves = Self::pseudo_legals(src, color, occupied, mask) & check_mask;
-            if moves != BB_EMPTY {
+            let square_and_bitboard_array = Self::pseudo_legals(src, color, occupied, mask) & check_mask;
+            if square_and_bitboard_array != BB_EMPTY {
                 unsafe {
                     move_list.push_unchecked(SquareAndBitBoard::new(
                         src,
-                        moves,
+                        square_and_bitboard_array,
                         src.get_rank() == color.to_seventh_rank(),
                     ));
                 }
@@ -147,12 +147,12 @@ impl PieceMoves for PawnMoves {
 
         if !T::IN_CHECK {
             for src in pieces & pinned {
-                let moves = Self::pseudo_legals(src, color, occupied, mask) & line(ksq, src);
-                if moves != BB_EMPTY {
+                let square_and_bitboard_array = Self::pseudo_legals(src, color, occupied, mask) & line(ksq, src);
+                if square_and_bitboard_array != BB_EMPTY {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(
                             src,
-                            moves,
+                            square_and_bitboard_array,
                             src.get_rank() == color.to_seventh_rank(),
                         ));
                     }
@@ -230,19 +230,19 @@ impl PieceMoves for KnightMoves {
             let check_mask = between(checkers.to_square(), ksq) ^ checkers;
 
             for src in pieces & !pinned {
-                let moves = Self::pseudo_legals(src, color, occupied, mask & check_mask);
-                if moves != BB_EMPTY {
+                let square_and_bitboard_array = Self::pseudo_legals(src, color, occupied, mask & check_mask);
+                if square_and_bitboard_array != BB_EMPTY {
                     unsafe {
-                        move_list.push_unchecked(SquareAndBitBoard::new(src, moves, false));
+                        move_list.push_unchecked(SquareAndBitBoard::new(src, square_and_bitboard_array, false));
                     }
                 }
             }
         } else {
             for src in pieces & !pinned {
-                let moves = Self::pseudo_legals(src, color, occupied, mask);
-                if moves != BB_EMPTY {
+                let square_and_bitboard_array = Self::pseudo_legals(src, color, occupied, mask);
+                if square_and_bitboard_array != BB_EMPTY {
                     unsafe {
-                        move_list.push_unchecked(SquareAndBitBoard::new(src, moves, false));
+                        move_list.push_unchecked(SquareAndBitBoard::new(src, square_and_bitboard_array, false));
                     }
                 }
             }
@@ -299,7 +299,7 @@ impl KingMoves {
 
         let knight_rays = get_knight_moves(dest);
 
-        // Using ^ because knight moves bitboard do not collide with rook and bishop moves bitboard
+        // Using ^ because knight square_and_bitboard_array bitboard do not collide with rook and bishop square_and_bitboard_array bitboard
         attackers ^= knight_rays & board.get_piece_mask(Knight) & board.occupied_co(!board.turn());
 
         let king_rays = get_king_moves(dest);
@@ -338,12 +338,12 @@ impl PieceMoves for KingMoves {
         let color = board.turn();
         let ksq = board.king_square(color);
 
-        let mut moves = Self::pseudo_legals(ksq, color, occupied, mask);
+        let mut square_and_bitboard_array = Self::pseudo_legals(ksq, color, occupied, mask);
 
-        let copy = moves;
+        let copy = square_and_bitboard_array;
         for dest in copy {
             if !KingMoves::legal_king_move(board, dest) {
-                moves ^= BitBoard::from_square(dest);
+                square_and_bitboard_array ^= BitBoard::from_square(dest);
             }
         }
 
@@ -364,7 +364,7 @@ impl PieceMoves for KingMoves {
                 if KingMoves::legal_king_move(board, middle)
                     && KingMoves::legal_king_move(board, right)
                 {
-                    moves ^= BitBoard::from_square(right);
+                    square_and_bitboard_array ^= BitBoard::from_square(right);
                 }
             }
 
@@ -376,19 +376,19 @@ impl PieceMoves for KingMoves {
                 if KingMoves::legal_king_move(board, middle)
                     && KingMoves::legal_king_move(board, left)
                 {
-                    moves ^= BitBoard::from_square(left);
+                    square_and_bitboard_array ^= BitBoard::from_square(left);
                 }
             }
         }
-        if moves != BB_EMPTY {
+        if square_and_bitboard_array != BB_EMPTY {
             unsafe {
-                move_list.push_unchecked(SquareAndBitBoard::new(ksq, moves, false));
+                move_list.push_unchecked(SquareAndBitBoard::new(ksq, square_and_bitboard_array, false));
             }
         }
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct SquareAndBitBoard {
     square: Square,
     bitboard: BitBoard,
@@ -405,10 +405,10 @@ impl SquareAndBitBoard {
     }
 }
 
-type MoveList = NoDrop<ArrayVec<SquareAndBitBoard, 18>>;
+type MoveList = ArrayVec<SquareAndBitBoard, 18>;
 
 pub struct MoveGenerator {
-    moves: MoveList,
+    square_and_bitboard_array: MoveList,
     promotion_index: usize,
     iterator_mask: BitBoard,
     index: usize,
@@ -419,7 +419,7 @@ impl MoveGenerator {
     fn enumerate_moves(board: &SubBoard) -> MoveList {
         let checkers = board.checkers();
         let mask = !board.occupied_co(board.turn());
-        let mut move_list = NoDrop::new(ArrayVec::<SquareAndBitBoard, 18>::new());
+        let mut move_list = ArrayVec::new();
 
         if checkers == BB_EMPTY {
             PawnMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
@@ -445,7 +445,7 @@ impl MoveGenerator {
     #[inline(always)]
     pub fn new_legal(board: &SubBoard) -> MoveGenerator {
         MoveGenerator {
-            moves: MoveGenerator::enumerate_moves(board),
+            square_and_bitboard_array: MoveGenerator::enumerate_moves(board),
             promotion_index: 0,
             iterator_mask: !BB_EMPTY,
             index: 0,
@@ -453,15 +453,16 @@ impl MoveGenerator {
     }
 
     pub fn remove_mask(&mut self, mask: BitBoard) {
-        for x in 0..self.moves.len() {
-            self.moves[x].bitboard &= !mask;
+        for x in 0..self.square_and_bitboard_array.len() {
+            get_item_unchecked_mut!(self.square_and_bitboard_array, x).bitboard &= !mask;
         }
     }
 
     pub fn remove_move(&mut self, move_: Move) -> bool {
-        for x in 0..self.moves.len() {
-            if self.moves[x].square == move_.get_source() {
-                self.moves[x].bitboard &= !BitBoard::from_square(move_.get_dest());
+        for x in 0..self.square_and_bitboard_array.len() {
+            let square_and_bitboard = get_item_unchecked_mut!(self.square_and_bitboard_array, x);
+            if square_and_bitboard.square == move_.get_source() {
+                square_and_bitboard.bitboard &= !BitBoard::from_square(move_.get_dest());
                 return true;
             }
         }
@@ -477,23 +478,21 @@ impl MoveGenerator {
         self.index = 0;
 
         // the iterator portion of this struct relies on the invariant that
-        // the bitboards at the beginning of the moves[] array are the only
+        // the bitboards at the beginning of the square_and_bitboard_array[] array are the only
         // ones used.  As a result, we must partition the list such that the
         // assumption is true.
 
-        // first, find the first non-used moves index, and store that in i
+        // first, find the first non-used square_and_bitboard_array index, and store that in i
         let mut i = 0;
-        while i < self.moves.len() && self.moves[i].bitboard & self.iterator_mask != BB_EMPTY {
+        while i < self.square_and_bitboard_array.len() && self.square_and_bitboard_array[i].bitboard & self.iterator_mask != BB_EMPTY {
             i += 1;
         }
 
-        // next, find each element past i where the moves are used, and store
+        // next, find each element past i where the square_and_bitboard_array are used, and store
         // that in i.  Then, increment i to point to a new unused slot.
-        for j in (i + 1)..self.moves.len() {
-            if self.moves[j].bitboard & self.iterator_mask != BB_EMPTY {
-                let backup = self.moves[i];
-                self.moves[i] = self.moves[j];
-                self.moves[j] = backup;
+        for j in (i + 1)..self.square_and_bitboard_array.len() {
+            if self.square_and_bitboard_array[j].bitboard & self.iterator_mask != BB_EMPTY {
+                self.square_and_bitboard_array.swap(i, j);
                 i += 1;
             }
         }
@@ -584,15 +583,17 @@ impl MoveGenerator {
 impl ExactSizeIterator for MoveGenerator {
     fn len(&self) -> usize {
         let mut result = 0;
-        for i in 0..self.moves.len() {
-            if self.moves[i].bitboard & self.iterator_mask == BB_EMPTY {
+        for i in 0..self.square_and_bitboard_array.len() {
+            let square_and_bitboard = get_item_unchecked!(self.square_and_bitboard_array, i);
+            let bitboard_and_iterator_mask = square_and_bitboard.bitboard & self.iterator_mask;
+            if bitboard_and_iterator_mask == BB_EMPTY {
                 break;
             }
-            if self.moves[i].promotion {
-                result += ((self.moves[i].bitboard & self.iterator_mask).popcnt() as usize)
+            if square_and_bitboard.promotion {
+                result += (bitboard_and_iterator_mask.popcnt() as usize)
                     * NUM_PROMOTION_PIECES;
             } else {
-                result += (self.moves[i].bitboard & self.iterator_mask).popcnt() as usize;
+                result += bitboard_and_iterator_mask.popcnt() as usize;
             }
         }
         result
@@ -608,41 +609,42 @@ impl Iterator for MoveGenerator {
     }
 
     fn next(&mut self) -> Option<Move> {
-        if self.index >= self.moves.len()
-            || self.moves[self.index].bitboard & self.iterator_mask == BB_EMPTY
+        let square_and_bitboard_array_len = self.square_and_bitboard_array.len();
+        let square_and_bitboard = get_item_unchecked_mut!(self.square_and_bitboard_array, self.index);
+
+        if self.index >= square_and_bitboard_array_len
+            || square_and_bitboard.bitboard & self.iterator_mask == BB_EMPTY
         {
             // are we done?
             None
-        } else if self.moves[self.index].promotion {
-            let moves = &mut self.moves[self.index];
+        } else if square_and_bitboard.promotion {
 
-            let dest = (moves.bitboard & self.iterator_mask).to_square();
+            let dest = (square_and_bitboard.bitboard & self.iterator_mask).to_square();
 
             // deal with potential promotions for this pawn
             let result = Move::new(
-                moves.square,
+                square_and_bitboard.square,
                 dest,
-                Some(PROMOTION_PIECES[self.promotion_index]),
+                Some(*get_item_unchecked!(PROMOTION_PIECES, self.promotion_index)),
             );
             self.promotion_index += 1;
             if self.promotion_index >= NUM_PROMOTION_PIECES {
-                moves.bitboard ^= BitBoard::from_square(dest);
+                square_and_bitboard.bitboard ^= BitBoard::from_square(dest);
                 self.promotion_index = 0;
-                if moves.bitboard & self.iterator_mask == BB_EMPTY {
+                if square_and_bitboard.bitboard & self.iterator_mask == BB_EMPTY {
                     self.index += 1;
                 }
             }
             Some(result)
         } else {
             // not a promotion move, so its a 'normal' move as far as this function is concerned
-            let moves = &mut self.moves[self.index];
-            let dest = (moves.bitboard & self.iterator_mask).to_square();
+            let dest = (square_and_bitboard.bitboard & self.iterator_mask).to_square();
 
-            moves.bitboard ^= BitBoard::from_square(dest);
-            if moves.bitboard & self.iterator_mask == BB_EMPTY {
+            square_and_bitboard.bitboard ^= BitBoard::from_square(dest);
+            if square_and_bitboard.bitboard & self.iterator_mask == BB_EMPTY {
                 self.index += 1;
             }
-            Some(Move::new(moves.square, dest, None))
+            Some(Move::new(square_and_bitboard.square, dest, None))
         }
     }
 }

@@ -118,20 +118,20 @@ impl PVTable {
     }
 
     pub fn get_pv(&self, ply: Ply) -> &[Option<Move>] {
-        &self.table[ply][0..self.length[ply]]
+        get_item_unchecked!(self.table, ply, 0..*self.length.get_unchecked(ply))
     }
 
     pub fn update_table(&mut self, ply: Ply, move_: Move) {
-        self.table[ply][ply] = Some(move_);
-        for next_ply in (ply + 1)..self.length[ply + 1] {
-            self.table[ply][next_ply] = self.table[ply + 1][next_ply];
+        *get_item_unchecked_mut!(self.table, ply, ply) = Some(move_);
+        for next_ply in (ply + 1)..*get_item_unchecked!(self.length, ply + 1) {
+            *get_item_unchecked_mut!(self.table, ply, next_ply) = *get_item_unchecked!(self.table, ply + 1, next_ply);
         }
-        self.length[ply] = self.length[ply + 1];
+        self.set_length(ply, *get_item_unchecked!(self.length, ply + 1));
     }
 
     #[inline(always)]
     pub fn set_length(&mut self, ply: Ply, length: usize) {
-        self.length[ply] = length;
+        *get_item_unchecked_mut!(self.length, ply) = length;
     }
 }
 

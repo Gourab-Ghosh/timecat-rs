@@ -152,12 +152,12 @@ impl Square {
 
     #[inline(always)]
     pub fn to_bitboard(self) -> BitBoard {
-        get_item_unchecked!(BB_SQUARES, self.to_index())
+        *get_item_unchecked!(BB_SQUARES, self.to_index())
     }
 
     #[inline(always)]
     pub fn mirror(self) -> Square {
-        get_item_unchecked!(SQUARES_180, self.to_index())
+        *get_item_unchecked!(SQUARES_180, self.to_index())
     }
 
     pub fn distance(self, other: Square) -> u8 {

@@ -970,7 +970,7 @@ impl Board {
 
     #[inline(always)]
     pub fn get_masked_material_score_abs(&self, mask: BitBoard) -> Score {
-        ALL_PIECE_TYPES[..5]
+        get_item_unchecked!(ALL_PIECE_TYPES, ..5)
             .iter()
             .map(|&piece| piece.evaluate() * (self.get_piece_mask(piece) & mask).popcnt() as Score)
             .sum()
@@ -978,7 +978,7 @@ impl Board {
 
     #[inline(always)]
     pub fn get_material_score_abs(&self) -> Score {
-        ALL_PIECE_TYPES[..5]
+        get_item_unchecked!(ALL_PIECE_TYPES, ..5)
             .iter()
             .map(|&piece| piece.evaluate() * self.get_piece_mask(piece).popcnt() as Score)
             .sum()
@@ -986,7 +986,7 @@ impl Board {
 
     #[inline(always)]
     pub fn get_non_pawn_material_score_abs(&self) -> Score {
-        ALL_PIECE_TYPES[1..5]
+        get_item_unchecked!(ALL_PIECE_TYPES, 1..5)
             .iter()
             .map(|&piece| piece.evaluate() * self.get_piece_mask(piece).popcnt() as Score)
             .sum()

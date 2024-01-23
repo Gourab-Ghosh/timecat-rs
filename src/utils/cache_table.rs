@@ -193,7 +193,7 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
 
     #[inline(always)]
     pub fn get(&self, hash: u64) -> Option<T> {
-        let entry = get_item_unchecked!(self.table.lock().unwrap(), self.get_index(hash));
+        let entry = *get_item_unchecked!(self.table.lock().unwrap(), self.get_index(hash));
         if entry.hash == hash {
             Some(entry.entry)
         } else {

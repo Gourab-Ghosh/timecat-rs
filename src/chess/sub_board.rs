@@ -184,9 +184,9 @@ impl SubBoard {
 
     pub fn is_sane(&self) -> bool {
         // make sure there is no square with multiple pieces on it
-        for x in ALL_PIECE_TYPES.iter() {
-            for y in ALL_PIECE_TYPES.iter() {
-                if *x != *y && self.get_piece_mask(*x) & self.get_piece_mask(*y) != BB_EMPTY {
+        for &x in ALL_PIECE_TYPES.iter() {
+            for &y in ALL_PIECE_TYPES.iter() {
+                if x != y && self.get_piece_mask(x) & self.get_piece_mask(y) != BB_EMPTY {
                     return false;
                 }
             }
@@ -200,7 +200,7 @@ impl SubBoard {
         // grab all the pieces by OR'ing together each piece() BitBoard
         let occupied = ALL_PIECE_TYPES
             .iter()
-            .fold(BB_EMPTY, |cur, next| cur | self.get_piece_mask(*next));
+            .fold(BB_EMPTY, |cur, &next| cur | self.get_piece_mask(next));
 
         // make sure that's equal to the occupied bitboard
         if occupied != self.occupied() {
@@ -245,23 +245,23 @@ impl SubBoard {
 
         // for each color, verify that, if they have castle rights, that they haven't moved their
         // rooks or king
-        for color in ALL_COLORS.iter() {
+        for &color in ALL_COLORS.iter() {
             // get the castle rights
-            let castle_rights = self.castle_rights(*color);
+            let castle_rights = self.castle_rights(color);
 
             // the castle rights object will tell us which rooks shouldn't have moved yet.
             // verify there are rooks on all those squares
-            if castle_rights.unmoved_rooks(*color)
+            if castle_rights.unmoved_rooks(color)
                 & self.get_piece_mask(Rook)
-                & self.occupied_co(*color)
-                != castle_rights.unmoved_rooks(*color)
+                & self.occupied_co(color)
+                != castle_rights.unmoved_rooks(color)
             {
                 return false;
             }
             // if we have castle rights, make sure we have a king on the (E, {1,8}) square,
             // depending on the color
             if castle_rights != CastleRights::None
-                && self.get_piece_mask(King) & self.occupied_co(*color)
+                && self.get_piece_mask(King) & self.occupied_co(color)
                     != get_file_bb(File::E) & get_rank_bb(color.to_my_backrank())
             {
                 return false;
@@ -285,8 +285,8 @@ impl SubBoard {
             } else {
                 0
             }
-            ^ Zobrist::castles(self._castle_rights[self.turn().to_index()], self.turn())
-            ^ Zobrist::castles(self._castle_rights[(!self.turn()).to_index()], !self.turn())
+            ^ Zobrist::castles(*get_item_unchecked!(self._castle_rights, self.turn().to_index()), self.turn())
+            ^ Zobrist::castles(*get_item_unchecked!(self._castle_rights, (!self.turn()).to_index()), !self.turn())
             ^ if self.turn() == Black {
                 Zobrist::color()
             } else {
@@ -308,8 +308,8 @@ impl SubBoard {
         } else {
             //naive algorithm
             /*
-            for p in ALL_PIECE_TYPES {
-                if self.get_piece_mask(*p) & opp {
+            for &p in ALL_PIECE_TYPES {
+                if self.get_piece_mask(p) & opp {
                     return p;
                 }
             } */

@@ -51,7 +51,7 @@ impl BitBoard {
 
     #[inline(always)]
     pub fn to_square(self) -> Square {
-        get_item_unchecked!(ALL_SQUARES, self.to_square_index())
+        *get_item_unchecked!(ALL_SQUARES, self.to_square_index())
     }
 
     #[inline(always)]

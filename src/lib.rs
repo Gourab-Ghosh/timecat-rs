@@ -43,7 +43,6 @@ use failure::Fail;
 pub use fxhash::FxHashMap as HashMap;
 pub use itertools::Itertools;
 use lazy_static::lazy_static;
-use nodrop::NoDrop;
 pub use parse::*;
 pub use paste::paste;
 pub use polyglot::*;

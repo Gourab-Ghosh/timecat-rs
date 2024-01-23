@@ -124,9 +124,9 @@ impl IndexMut<Square> for BoardBuilder {
 impl fmt::Display for BoardBuilder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut count = 0;
-        for rank in ALL_RANKS.iter().rev() {
-            for file in ALL_FILES.iter() {
-                let square = Square::from_rank_and_file(*rank, *file).to_index();
+        for &rank in ALL_RANKS.iter().rev() {
+            for &file in ALL_FILES.iter() {
+                let square = Square::from_rank_and_file(rank, file).to_index();
 
                 if self.pieces[square].is_some() && count != 0 {
                     write!(f, "{}", count)?;
@@ -144,7 +144,7 @@ impl fmt::Display for BoardBuilder {
                 write!(f, "{}", count)?;
             }
 
-            if *rank != Rank::First {
+            if rank != Rank::First {
                 write!(f, "/")?;
             }
             count = 0;

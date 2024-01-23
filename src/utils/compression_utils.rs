@@ -65,7 +65,7 @@ impl Decompress<Option<PieceType>> for u8 {
         if self == 0 {
             return None;
         }
-        Some(get_item_unchecked!(ALL_PIECE_TYPES, (self - 1) as usize))
+        Some(*get_item_unchecked!(ALL_PIECE_TYPES, (self - 1) as usize))
     }
 }
 
@@ -77,7 +77,7 @@ impl Decompress<Option<PieceType>> for u16 {
 
 impl Decompress<Square> for u16 {
     fn decompress(self) -> Square {
-        get_item_unchecked!(ALL_SQUARES, self as usize)
+        *get_item_unchecked!(ALL_SQUARES, self as usize)
     }
 }
 

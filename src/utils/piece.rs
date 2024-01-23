@@ -69,17 +69,17 @@ pub struct Piece {
 
 impl Piece {
     #[inline(always)]
-    pub fn new(type_: PieceType, color: Color) -> Self {
+    pub const fn new(type_: PieceType, color: Color) -> Self {
         Self { type_, color }
     }
 
     #[inline(always)]
-    pub fn get_piece_type(self) -> PieceType {
+    pub const fn get_piece_type(self) -> PieceType {
         self.type_
     }
 
     #[inline(always)]
-    pub fn get_color(self) -> Color {
+    pub const fn get_color(self) -> Color {
         self.color
     }
 }

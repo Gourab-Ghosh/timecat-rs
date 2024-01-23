@@ -22,17 +22,26 @@ macro_rules! generator {
 #[macro_export]
 macro_rules! get_item_unchecked {
     ($vec:expr, $index:expr) => {
-        unsafe { *$vec.get_unchecked($index) }
+        unsafe { $vec.get_unchecked($index) }
     };
     ($vec:expr, $index1:expr, $index2:expr) => {
-        unsafe { *$vec.get_unchecked($index1).get_unchecked($index2) }
+        unsafe { $vec.get_unchecked($index1).get_unchecked($index2) }
+    };
+    ($vec:expr, $index1:expr, $index2:expr, $index3:expr) => {
+        unsafe { $vec.get_unchecked($index1).get_unchecked($index2).get_unchecked($index3) }
     };
 }
 
 #[macro_export]
 macro_rules! get_item_unchecked_mut {
     ($vec:expr, $index:expr) => {
-        unsafe { &mut *$vec.get_unchecked_mut($index) }
+        unsafe { $vec.get_unchecked_mut($index) }
+    };
+    ($vec:expr, $index1:expr, $index2:expr) => {
+        unsafe { $vec.get_unchecked_mut($index1).get_unchecked_mut($index2) }
+    };
+    ($vec:expr, $index1:expr, $index2:expr, $index3:expr) => {
+        unsafe { $vec.get_unchecked_mut($index1).get_unchecked_mut($index2).get_unchecked_mut($index3) }
     };
 }
 

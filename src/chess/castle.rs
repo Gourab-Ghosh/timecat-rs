@@ -46,7 +46,7 @@ impl CastleRights {
 
     #[inline(always)]
     pub fn square_to_castle_rights(color: Color, square: Square) -> Self {
-        Self::from_index(get_item_unchecked!(
+        Self::from_index(*get_item_unchecked!(
             CASTLES_PER_SQUARE,
             color.to_index(),
             square.to_index()
@@ -56,13 +56,13 @@ impl CastleRights {
     /// What squares need to be empty to castle kingside?
     #[inline(always)]
     pub fn kingside_squares(self, color: Color) -> BitBoard {
-        get_item_unchecked!(KINGSIDE_CASTLE_SQUARES, color.to_index())
+        *get_item_unchecked!(KINGSIDE_CASTLE_SQUARES, color.to_index())
     }
 
     /// What squares need to be empty to castle queenside?
     #[inline(always)]
     pub fn queenside_squares(self, color: Color) -> BitBoard {
-        get_item_unchecked!(QUEENSIDE_CASTLE_SQUARES, color.to_index())
+        *get_item_unchecked!(QUEENSIDE_CASTLE_SQUARES, color.to_index())
     }
 
     /// Remove castle rights, and return a new `CastleRights`.
