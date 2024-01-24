@@ -53,13 +53,13 @@ enum UCIOptionType {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct UCIOptionSpinValues<T: Clone + Copy + IntoSpin> {
+pub struct SpinValue<T: Clone + Copy + IntoSpin> {
     default: T,
     min: T,
     max: T,
 }
 
-impl<T: Clone + Copy + IntoSpin> UCIOptionSpinValues<T> {
+impl<T: Clone + Copy + IntoSpin> SpinValue<T> {
     #[inline(always)]
     pub const fn new(default: T, min: T, max: T) -> Self {
         Self { default, min, max }
@@ -104,7 +104,7 @@ impl UCIOption {
 
     fn new_spin<T: Clone + Copy + IntoSpin>(
         name: &str,
-        values: UCIOptionSpinValues<T>,
+        values: SpinValue<T>,
         function: fn(Spin),
     ) -> Self {
         UCIOption::new(
@@ -194,11 +194,11 @@ impl fmt::Display for UCIOption {
     }
 }
 
-pub struct UCIOptionsVec {
+pub struct UCIOptions {
     options: Mutex<Vec<UCIOption>>,
 }
 
-impl UCIOptionsVec {
+impl UCIOptions {
     fn new() -> Self {
         Self {
             options: Mutex::new(get_uci_options()),
@@ -234,14 +234,14 @@ impl UCIOptionsVec {
     }
 }
 
-impl Default for UCIOptionsVec {
+impl Default for UCIOptions {
     fn default() -> Self {
         Self::new()
     }
 }
 
 fn get_uci_options() -> Vec<UCIOption> {
-    let t_table_size_uci = UCIOptionSpinValues::new(
+    let t_table_size_uci = SpinValue::new(
         UCI_DEFAULT_STATE.get_t_table_size(),
         CacheTableSize::Exact(1),
         CacheTableSize::Exact({
@@ -257,14 +257,14 @@ fn get_uci_options() -> Vec<UCIOption> {
         }),
     );
 
-    let move_overhead_uci = UCIOptionSpinValues::new(
+    let move_overhead_uci = SpinValue::new(
         UCI_DEFAULT_STATE.get_move_overhead(),
         Duration::from_secs(0),
         Duration::MAX,
     );
     
     let options = vec![
-        UCIOption::new_spin("Threads", UCIOptionSpinValues::new(UCI_DEFAULT_STATE.get_num_threads(), 1, 1024), |value| {
+        UCIOption::new_spin("Threads", SpinValue::new(UCI_DEFAULT_STATE.get_num_threads(), 1, 1024), |value| {
             UCI_STATE.set_num_threads(value as usize, true)
         })
         .add_alternate_name("Thread"),

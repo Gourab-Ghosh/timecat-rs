@@ -80,7 +80,7 @@ lazy_static! {
     pub static ref TRANSPOSITION_TABLE: TranspositionTable = TranspositionTable::default();
     pub static ref EVALUATOR: Evaluator = Evaluator::default();
     pub static ref IO_READER: IoReader = IoReader::default();
-    pub static ref UCI_OPTIONS: UCIOptionsVec = UCIOptionsVec::default();
+    pub static ref UCI_OPTIONS: UCIOptions = UCIOptions::default();
 }
 
 pub static UCI_STATE: EngineUCIState = EngineUCIState::new();
