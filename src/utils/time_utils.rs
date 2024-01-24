@@ -8,7 +8,7 @@ pub trait MeasureTime<T>: Fn() -> T {
 
     fn run_and_print_time(&self) -> T {
         let (res, time_taken) = self.run_and_measure_time();
-        if is_in_console_mode() {
+        if UCI_STATE.is_in_console_mode() {
             println!();
         }
         println_info("Run Time", time_taken.stringify());

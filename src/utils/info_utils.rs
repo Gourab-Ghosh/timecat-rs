@@ -2,11 +2,11 @@ use super::*;
 
 pub fn format_info<T: fmt::Display>(desc: &str, info: T) -> String {
     let mut desc = desc.trim().trim_end_matches(':').to_string();
-    if !is_in_console_mode() {
+    if !UCI_STATE.is_in_console_mode() {
         desc = desc.to_lowercase();
     }
     desc = desc.colorize(INFO_MESSAGE_STYLE);
-    if is_in_console_mode() {
+    if UCI_STATE.is_in_console_mode() {
         format!("{desc}: {info}")
     } else {
         format!(
@@ -22,7 +22,7 @@ pub fn force_println_info<T: fmt::Display>(desc: &str, info: T) {
 
 #[inline(always)]
 pub fn println_info<T: fmt::Display>(desc: &str, info: T) {
-    if is_in_debug_mode() {
+    if UCI_STATE.is_in_debug_mode() {
         force_println_info(desc, info);
     }
 }
@@ -56,7 +56,7 @@ pub fn print_cache_table_info(
     let mut to_print = format!(
         "{name} initialization complete with {table_len} entries taking {table_size} space."
     );
-    if !is_in_console_mode() {
+    if !UCI_STATE.is_in_console_mode() {
         to_print = "info string ".to_string() + to_print.trim();
     }
     println!("{}", to_print.colorize(INFO_MESSAGE_STYLE));

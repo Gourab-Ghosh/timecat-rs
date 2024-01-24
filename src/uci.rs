@@ -241,22 +241,44 @@ impl Default for UCIOptionsVec {
 }
 
 fn get_uci_options() -> Vec<UCIOption> {
+    let t_table_size_uci = UCIOptionSpinValues::new(
+        UCI_DEFAULT_STATE.get_t_table_size(),
+        CacheTableSize::Exact(1),
+        CacheTableSize::Exact({
+            let transposition_table_entry_size =
+                CacheTableSize::get_entry_size::<TranspositionTableEntry>();
+            let evaluator_entry_size = CacheTableSize::get_entry_size::<Score>();
+            let max_size = if transposition_table_entry_size > evaluator_entry_size {
+                transposition_table_entry_size
+            } else {
+                evaluator_entry_size
+            };
+            (usize::MAX >> 21) / max_size // Assuming that Evaluator and Transposition Table will take same amount of space, so 21 not 20.
+        }),
+    );
+
+    let move_overhead_uci = UCIOptionSpinValues::new(
+        UCI_DEFAULT_STATE.get_move_overhead(),
+        Duration::from_secs(0),
+        Duration::MAX,
+    );
+    
     let options = vec![
-        UCIOption::new_spin("Threads", NUM_THREADS_UCI, |value| {
-            set_num_threads(value as usize, true)
+        UCIOption::new_spin("Threads", UCIOptionSpinValues::new(UCI_DEFAULT_STATE.get_num_threads(), 1, 1024), |value| {
+            UCI_STATE.set_num_threads(value as usize, true)
         })
         .add_alternate_name("Thread"),
-        UCIOption::new_spin("Hash", T_TABLE_SIZE_UCI, |value| {
-            set_t_table_size(CacheTableSize::Exact(value as usize))
+        UCIOption::new_spin("Hash", t_table_size_uci, |value| {
+            UCI_STATE.set_t_table_size(CacheTableSize::Exact(value as usize))
         }),
         UCIOption::new_button("Clear Hash", clear_all_hash_tables),
-        UCIOption::new_spin("Move Overhead", MOVE_OVERHEAD_UCI, |value| {
-            set_move_overhead(Duration::from_millis(value as u64))
+        UCIOption::new_spin("Move Overhead", move_overhead_uci, |value| {
+            UCI_STATE.set_move_overhead(Duration::from_millis(value as u64))
         }),
         // UCIOption::new_check(
         //     "OwnBook",
         //     DEFAULT_USE_OWN_BOOK,
-        //     set_using_own_book,
+        //     UCI_STATE.set_using_own_book,
         // ),
     ];
     options

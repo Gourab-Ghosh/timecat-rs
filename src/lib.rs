@@ -30,7 +30,6 @@ use constants::board_representation::*;
 use constants::color::*;
 use constants::description::*;
 use constants::engine_constants::*;
-use constants::uci_constants::*;
 pub use constants::fen::*;
 pub use constants::files::*;
 pub use constants::piece::*;
@@ -83,3 +82,5 @@ lazy_static! {
     pub static ref IO_READER: IoReader = IoReader::default();
     pub static ref UCI_OPTIONS: UCIOptionsVec = UCIOptionsVec::default();
 }
+
+pub static UCI_STATE: EngineUCIState = EngineUCIState::new();

@@ -149,7 +149,7 @@ impl Engine {
                 "stop" => stopper.store(true, MEMORY_ORDERING),
                 "quit" | "exit" => {
                     stopper.store(true, MEMORY_ORDERING);
-                    set_engine_termination(true);
+                    UCI_STATE.set_engine_termination(true);
                 }
                 _ => {}
             }
@@ -158,7 +158,7 @@ impl Engine {
 
     pub fn go(&self, command: GoCommand, print_info: bool) -> GoResponse {
         self.reset_variables();
-        let num_threads = get_num_threads().max(1);
+        let num_threads = UCI_STATE.get_num_threads().max(1);
         let mut join_handles = vec![];
         for id in 1..num_threads {
             let join_handle = thread::spawn({

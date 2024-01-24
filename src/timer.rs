@@ -66,7 +66,7 @@ impl Timer {
         if self.max_time == Duration::MAX {
             return false;
         }
-        self.stop_search = self.time_elapsed() + get_move_overhead() >= self.max_time;
+        self.stop_search = self.time_elapsed() + UCI_STATE.get_move_overhead() >= self.max_time;
         self.stop_search
     }
 

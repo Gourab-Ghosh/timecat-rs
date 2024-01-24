@@ -75,7 +75,7 @@ pub fn test() -> Result<(), EngineError> {
     // parse_command(&mut engine, "go perft 6");
 
     let mut engine = Engine::default();
-    // set_num_threads(2, true);
+    // UCI_STATE.set_num_threads(2, true);
     // engine.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88")?; // test if engine can find mate in 3
     // engine.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111")?; // test t_table -> nodes initially: 3203606
     // engine.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105")?; // gives incomplete pv line
@@ -96,8 +96,8 @@ pub fn test() -> Result<(), EngineError> {
     // parse_command(&mut engine, "go time 3000");
     parse_command(&mut engine, "go depth 13");
 
-    // ENGINE_UCI_CURRENT_STATE.set_chess960_mode(true);
-    // println!("{}", ENGINE_UCI_CURRENT_STATE.is_in_chess960_mode());
+    // UCI_STATE.set_chess960_mode(true);
+    // println!("{}", UCI_STATE.is_in_chess960_mode());
     
     // println!("{}", BitBoard::new(123456));
 

@@ -64,7 +64,7 @@ impl TranspositionTable {
 
     pub fn new() -> Self {
         Self {
-            table: Self::generate_new_table(get_t_table_size()),
+            table: Self::generate_new_table(UCI_STATE.get_t_table_size()),
         }
     }
 
@@ -175,7 +175,7 @@ impl TranspositionTable {
     }
 
     pub fn reset_size(&self) {
-        self.set_size(get_t_table_size());
+        self.set_size(UCI_STATE.get_t_table_size());
     }
 }
 

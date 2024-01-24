@@ -16,10 +16,10 @@ fn main() {
         std::env::set_var("RUST_BACKTRACE", "1");
     }
     if !std::io::stdin().is_terminal() {
-        set_console_mode(false, false);
+        UCI_STATE.set_console_mode(false, false);
     }
     if !std::io::stdout().is_terminal() {
-        set_colored_output(false, false);
+        UCI_STATE.set_colored_output(false, false);
     }
     Parser::parse_args_and_run_main_loop(&args);
 }

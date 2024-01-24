@@ -50,8 +50,8 @@ pub fn get_pv_as_lan(board: &Board, pv: &[Option<Move>]) -> String {
 
 #[inline(always)]
 pub fn get_pv_string(board: &Board, pv: &[Option<Move>]) -> String {
-    if is_in_console_mode() {
-        get_pv_as_algebraic(board, pv, use_long_algebraic_notation())
+    if UCI_STATE.is_in_console_mode() {
+        get_pv_as_algebraic(board, pv, UCI_STATE.use_long_algebraic_notation())
     } else {
         get_pv_as_uci(pv)
     }

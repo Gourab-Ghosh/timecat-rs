@@ -100,7 +100,7 @@ impl EngineError {
     pub fn stringify_with_optional_raw_input(&self, optional_raw_input: Option<&str>) -> String {
         match self {
             Self::UnknownCommand => {
-                let command_type = if is_in_console_mode() {
+                let command_type = if UCI_STATE.is_in_console_mode() {
                     "Console"
                 } else {
                     "UCI"

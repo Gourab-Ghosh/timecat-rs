@@ -39,7 +39,7 @@ pub trait CustomColorize {
 impl<T: ToString> CustomColorize for T {
     fn colorize(&self, style_functions: &[ColoredStringFunction]) -> String {
         let self_string = self.to_string();
-        if style_functions.is_empty() || !is_colored_output() {
+        if style_functions.is_empty() || !UCI_STATE.is_colored_output() {
             return self_string;
         }
         let mut colorized_string = self_string.as_str().into();
@@ -100,7 +100,7 @@ impl StringifyScore for Score {
 
 impl Stringify for Score {
     fn stringify(&self) -> String {
-        if is_in_console_mode() {
+        if UCI_STATE.is_in_console_mode() {
             self.stringify_score()
         } else {
             self.stringify_score_uci()
@@ -139,8 +139,8 @@ impl StringifyMove for Option<Move> {
     }
 
     fn stringify_move(self, board: &Board) -> Result<String, BoardError> {
-        if is_in_console_mode() {
-            self.algebraic(board, use_long_algebraic_notation())
+        if UCI_STATE.is_in_console_mode() {
+            self.algebraic(board, UCI_STATE.use_long_algebraic_notation())
         } else {
             Ok(self.uci())
         }
@@ -251,7 +251,7 @@ impl Stringify for Color {
 
 impl Stringify for Duration {
     fn stringify(&self) -> String {
-        if !is_in_console_mode() {
+        if !UCI_STATE.is_in_console_mode() {
             return self.as_millis().to_string();
         }
         if self < &Duration::from_secs(1) {
