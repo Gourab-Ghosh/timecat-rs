@@ -169,12 +169,12 @@ pub mod print_style {
     generate_constants!(WARNING_MESSAGE_STYLE, [bright_yellow, bold]);
 }
 
-pub mod engine_constants {
+pub mod uci_constants {
     use super::*;
 
     pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
-    pub const NUM_THREADS_UCI: UCIOptionValues<usize> = UCIOptionValues::new(1, 1, 1024);
-    pub const T_TABLE_SIZE_UCI: UCIOptionValues<CacheTableSize> = UCIOptionValues::new(
+    pub const NUM_THREADS_UCI: UCIOptionSpinValues<usize> = UCIOptionSpinValues::new(1, 1, 1024);
+    pub const T_TABLE_SIZE_UCI: UCIOptionSpinValues<CacheTableSize> = UCIOptionSpinValues::new(
         CacheTableSize::Exact(16),
         CacheTableSize::Exact(1),
         CacheTableSize::Exact({
@@ -189,7 +189,7 @@ pub mod engine_constants {
             (usize::MAX >> 21) / max_size // Assuming that Evaluator and Transposition Table will take same amount of space, so 21 not 20.
         }),
     );
-    pub const MOVE_OVERHEAD_UCI: UCIOptionValues<Duration> = UCIOptionValues::new(
+    pub const MOVE_OVERHEAD_UCI: UCIOptionSpinValues<Duration> = UCIOptionSpinValues::new(
         Duration::from_millis(100),
         Duration::from_secs(0),
         Duration::MAX,
@@ -197,6 +197,10 @@ pub mod engine_constants {
     pub const DEFAULT_USE_OWN_BOOK: bool = false;
     pub const DEFAULT_DEBUG_MODE: bool = true;
     pub const DEFAULT_CHESS960_MODE: bool = false;
+}
+
+pub mod engine_constants {
+    use super::*;
 
     pub const MAX_PLY: usize = 255;
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;

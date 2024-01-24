@@ -19,7 +19,7 @@ fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
     println!("{to_print}");
 }
 
-struct EngineUCIState {
+pub struct EngineUCIState {
     _terminate_engine: AtomicBool,
     _colored_output: AtomicBool,
     _console_mode: AtomicBool,
@@ -32,7 +32,7 @@ struct EngineUCIState {
     _chess960_mode: AtomicBool,
 }
 
-const ENGINE_UCI_DEFAULT_STATE: EngineUCIState = EngineUCIState {
+pub const ENGINE_UCI_DEFAULT_STATE: EngineUCIState = EngineUCIState {
     _terminate_engine: AtomicBool::new(false),
     _colored_output: AtomicBool::new(true),
     _console_mode: AtomicBool::new(true),
@@ -93,6 +93,7 @@ impl EngineUCIState {
     }
 
     pub fn set_t_table_size(&self, size: CacheTableSize) {
+        //TODO: modify such that T Table and evaluation function takes same amount of space
         *self._t_table_size.lock().unwrap() = size;
         TRANSPOSITION_TABLE.reset_size();
         if is_in_debug_mode() {

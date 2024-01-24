@@ -53,25 +53,29 @@ enum UCIOptionType {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct UCIOptionValues<T: Clone + Copy + IntoSpin> {
+pub struct UCIOptionSpinValues<T: Clone + Copy + IntoSpin> {
     default: T,
     min: T,
     max: T,
 }
 
-impl<T: Clone + Copy + IntoSpin> UCIOptionValues<T> {
+impl<T: Clone + Copy + IntoSpin> UCIOptionSpinValues<T> {
+    #[inline(always)]
     pub const fn new(default: T, min: T, max: T) -> Self {
         Self { default, min, max }
     }
 
+    #[inline(always)]
     pub const fn get_default(self) -> T {
         self.default
     }
 
+    #[inline(always)]
     pub const fn get_min(self) -> T {
         self.min
     }
 
+    #[inline(always)]
     pub const fn get_max(self) -> T {
         self.max
     }
@@ -87,20 +91,20 @@ pub struct UCIOption {
 impl UCIOption {
     fn new(name: &str, option_type: UCIOptionType) -> Self {
         Self {
-            name: name.to_owned(),
+            name: name.trim().to_lowercase(),
             alternate_names: vec![],
             option_type,
         }
     }
 
     fn add_alternate_name(mut self, name: &str) -> Self {
-        self.alternate_names.push(name.to_lowercase().to_string());
+        self.alternate_names.push(name.trim().to_lowercase());
         self
     }
 
     fn new_spin<T: Clone + Copy + IntoSpin>(
         name: &str,
-        values: UCIOptionValues<T>,
+        values: UCIOptionSpinValues<T>,
         function: fn(Spin),
     ) -> Self {
         UCIOption::new(
