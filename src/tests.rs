@@ -96,6 +96,9 @@ pub fn test() -> Result<(), EngineError> {
     // parse_command(&mut engine, "go time 3000");
     parse_command(&mut engine, "go depth 13");
 
+    // ENGINE_UCI_CURRENT_STATE.set_chess960_mode(true);
+    // println!("{}", ENGINE_UCI_CURRENT_STATE.is_in_chess960_mode());
+    
     // println!("{}", BitBoard::new(123456));
 
     // let mut all_optional_pieces = vec![None];

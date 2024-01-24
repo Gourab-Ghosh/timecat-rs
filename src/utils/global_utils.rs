@@ -45,6 +45,8 @@ pub const ENGINE_UCI_DEFAULT_STATE: EngineUCIState = EngineUCIState {
     _chess960_mode: AtomicBool::new(false),
 };
 
+pub static ENGINE_UCI_CURRENT_STATE: EngineUCIState = EngineUCIState::new();
+
 impl Default for EngineUCIState {
     fn default() -> Self {
         ENGINE_UCI_DEFAULT_STATE
@@ -52,6 +54,10 @@ impl Default for EngineUCIState {
 }
 
 impl EngineUCIState {
+    pub const fn new() -> Self {
+        ENGINE_UCI_DEFAULT_STATE
+    }
+    
     #[inline(always)]
     pub fn terminate_engine(&self) -> bool {
         self._terminate_engine.load(MEMORY_ORDERING)
