@@ -605,7 +605,7 @@ impl Parser {
                 .nth(1)
                 .unwrap_or(&"")
                 .parse()
-                .unwrap_or(UCI_DEFAULT_STATE.get_num_threads());
+                .unwrap_or(DEFAULT_UCI_STATE.get_num_threads());
             UCI_STATE.set_num_threads(num_threads, false);
         }
         if args.contains(&"--help") {

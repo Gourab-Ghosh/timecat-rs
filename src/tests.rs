@@ -97,7 +97,9 @@ pub fn test() -> Result<(), EngineError> {
     parse_command(&mut engine, "go depth 13");
 
     // UCI_STATE.set_chess960_mode(true);
+    // DEFAULT_UCI_STATE.set_chess960_mode(true);
     // println!("{}", UCI_STATE.is_in_chess960_mode());
+    // println!("{}", DEFAULT_UCI_STATE.is_in_chess960_mode());
     
     // println!("{}", BitBoard::new(123456));
 

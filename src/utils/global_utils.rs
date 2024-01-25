@@ -32,7 +32,7 @@ pub struct EngineUCIState {
     _chess960_mode: AtomicBool,
 }
 
-pub const UCI_DEFAULT_STATE: EngineUCIState = EngineUCIState {
+pub const DEFAULT_UCI_STATE: EngineUCIState = EngineUCIState {
     _terminate_engine: AtomicBool::new(false),
     _colored_output: AtomicBool::new(true),
     _console_mode: AtomicBool::new(true),
@@ -47,7 +47,7 @@ pub const UCI_DEFAULT_STATE: EngineUCIState = EngineUCIState {
 
 impl EngineUCIState {
     pub const fn new() -> Self {
-        UCI_DEFAULT_STATE
+        DEFAULT_UCI_STATE
     }
     
     #[inline(always)]
