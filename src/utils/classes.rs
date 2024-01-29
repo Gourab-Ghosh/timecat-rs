@@ -59,9 +59,10 @@ pub struct RepetitionTable {
 
 impl RepetitionTable {
     pub fn new() -> Self {
+        let size = REPETITION_TABLE_SIZE << 20;
         Self {
-            count_map: vec![0; REPETITION_TABLE_SIZE].into_boxed_slice(),
-            mask: REPETITION_TABLE_SIZE - 1,
+            count_map: vec![0; size].into_boxed_slice(),
+            mask: size - 1,
         }
     }
 
