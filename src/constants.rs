@@ -172,6 +172,7 @@ pub mod print_style {
 pub mod engine_constants {
     use super::*;
 
+    pub const REPETITION_TABLE_SIZE: usize = 1 << 20; // Should be in power of 2
     pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
     
     pub const MAX_PLY: usize = 255;

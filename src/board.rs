@@ -39,33 +39,23 @@ impl GameResult {
     }
 }
 
-#[derive(Clone, Debug)]
-struct BoardState {
-    sub_board: SubBoard,
-    num_repetitions: u8,
-}
-
 pub struct Board {
     sub_board: SubBoard,
-    stack: Vec<(BoardState, Option<Move>)>,
-    num_repetitions: u8,
+    stack: Vec<(SubBoard, Option<Move>)>,
     starting_fen: String,
     repetition_table: RepetitionTable,
 }
 
 impl Board {
     pub fn new() -> Self {
-        let mut sub_board = Self {
+        let mut board = Self {
             sub_board: SubBoard::from_str(STARTING_POSITION_FEN).unwrap(),
             stack: Vec::new(),
-            num_repetitions: 0,
             starting_fen: STARTING_POSITION_FEN.to_string(),
             repetition_table: RepetitionTable::new(),
         };
-        sub_board.num_repetitions = sub_board
-            .repetition_table
-            .insert_and_get_repetition(sub_board.hash());
-        sub_board
+        board.repetition_table.insert(board.hash());
+        board
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<(), EngineError> {
@@ -81,7 +71,7 @@ impl Board {
         }
         self.sub_board = SubBoard::from_str(&fen).expect("FEN not parsed properly!");
         self.repetition_table.clear();
-        self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
+        self.repetition_table.insert(self.hash());
         self.starting_fen = self.get_fen();
         self.stack.clear();
         Ok(())
@@ -224,13 +214,6 @@ impl Board {
         self.to_board_string(true)
     }
 
-    fn get_board_state(&self) -> BoardState {
-        BoardState {
-            sub_board: self.sub_board.clone(),
-            num_repetitions: self.num_repetitions,
-        }
-    }
-
     #[inline(always)]
     pub fn turn(&self) -> Color {
         self.sub_board.turn()
@@ -309,7 +292,7 @@ impl Board {
 
     #[inline(always)]
     pub fn get_num_repetitions(&self) -> u8 {
-        self.num_repetitions
+        self.repetition_table.get_repetition(self.hash())
     }
 
     #[inline(always)]
@@ -581,7 +564,7 @@ impl Board {
 
     pub fn push(&mut self, optional_move: impl Into<Option<Move>>) {
         let optional_move = optional_move.into();
-        let board_state = self.get_board_state();
+        let sub_board_copy = self.sub_board.clone();
         self.sub_board = if let Some(move_) = optional_move {
             self.sub_board.make_move_new(move_)
         } else {
@@ -589,19 +572,14 @@ impl Board {
                 .null_move()
                 .expect("Trying to push null move while in check!")
         };
-        self.num_repetitions = self.repetition_table.insert_and_get_repetition(self.hash());
-        self.stack.push((board_state, optional_move));
-    }
-
-    fn restore(&mut self, board_state: BoardState) {
-        self.sub_board = board_state.sub_board;
-        self.num_repetitions = board_state.num_repetitions;
+        self.repetition_table.insert(self.hash());
+        self.stack.push((sub_board_copy, optional_move));
     }
 
     pub fn pop(&mut self) -> Option<Move> {
-        let (board_state, optional_move) = self.stack.pop().unwrap();
+        let (sub_board, optional_move) = self.stack.pop().unwrap();
         self.repetition_table.remove(self.hash());
-        self.restore(board_state);
+        self.sub_board = sub_board;
         optional_move
     }
 
@@ -1047,7 +1025,6 @@ impl Clone for Board {
         Self {
             sub_board: self.sub_board.clone(),
             stack: Vec::new(),
-            num_repetitions: self.num_repetitions,
             starting_fen: self.starting_fen.clone(),
             repetition_table: self.repetition_table.clone(),
         }
