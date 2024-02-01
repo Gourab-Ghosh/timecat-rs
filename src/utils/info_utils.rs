@@ -1,6 +1,6 @@
 use super::*;
 
-pub fn format_info<T: fmt::Display>(desc: &str, info: T) -> String {
+pub fn format_info<T: fmt::Display>(desc: &str, info: T, add_info_string: bool) -> String {
     let mut desc = desc.trim().trim_end_matches(':').to_string();
     if !UCI_STATE.is_in_console_mode() {
         desc = desc.to_lowercase();
@@ -9,15 +9,18 @@ pub fn format_info<T: fmt::Display>(desc: &str, info: T) -> String {
     if UCI_STATE.is_in_console_mode() {
         format!("{desc}: {info}")
     } else {
-        format!(
-            "{} {desc} {info}",
-            "info string".colorize(INFO_MESSAGE_STYLE),
-        )
+        let mut formatted_info = format!(
+            "{desc} {info}",
+        );
+        if add_info_string {
+            formatted_info = "info string".colorize(INFO_MESSAGE_STYLE) + &formatted_info
+        }
+        formatted_info
     }
 }
 
 pub fn force_println_info<T: fmt::Display>(desc: &str, info: T) {
-    println!("{}", format_info(desc, info));
+    println!("{}", format_info(desc, info, true));
 }
 
 #[inline(always)]

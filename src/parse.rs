@@ -138,13 +138,13 @@ impl Go {
             );
         } else {
             let mut move_text =
-                format_info("bestmove", best_move.stringify_move(&engine.board).unwrap());
+                format_info("bestmove", best_move.stringify_move(&engine.board).unwrap(), false);
             if let Some(ponder_move) = response.get_ponder_move() {
                 move_text += " ";
                 let mut new_board = engine.board.clone();
                 new_board.push(best_move);
                 move_text +=
-                    &format_info("ponder", ponder_move.stringify_move(&new_board).unwrap());
+                    &format_info("ponder", ponder_move.stringify_move(&new_board).unwrap(), false);
             }
             println!("{}", move_text);
         }
