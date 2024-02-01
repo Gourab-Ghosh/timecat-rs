@@ -427,12 +427,7 @@ impl Searcher {
                 let r = 1920 + (depth as i32) * 2368;
                 let reduced_depth = (((depth as u32) * 4096 - (r as u32)) / 4096) as Depth;
                 self.push(None);
-                let score = -self.alpha_beta(
-                    reduced_depth,
-                    -beta,
-                    -beta + 1,
-                    enable_timer,
-                )?;
+                let score = -self.alpha_beta(reduced_depth, -beta, -beta + 1, enable_timer)?;
                 self.pop();
                 if score >= beta {
                     return Some(beta);
@@ -519,19 +514,9 @@ impl Searcher {
                     score = alpha + 1;
                 }
                 if score > alpha {
-                    score = -self.alpha_beta(
-                        depth - 1,
-                        -alpha - 1,
-                        -alpha,
-                        enable_timer,
-                    )?;
+                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha, enable_timer)?;
                     if score > alpha && score < beta {
-                        score = -self.alpha_beta(
-                            depth - 1,
-                            -beta,
-                            -alpha,
-                            enable_timer,
-                        )?;
+                        score = -self.alpha_beta(depth - 1, -beta, -alpha, enable_timer)?;
                     }
                 }
             }

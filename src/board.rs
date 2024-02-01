@@ -201,7 +201,11 @@ impl Board {
                 String::new(),
                 format_info("Fen", self.get_fen(), true),
                 format_info("Transposition Key", self.hash().stringify(), true),
-                format_info("Checkers", checkers.stringify().colorize(CHECKERS_STYLE), true),
+                format_info(
+                    "Checkers",
+                    checkers.stringify().colorize(CHECKERS_STYLE),
+                    true,
+                ),
                 format_info("Current Evaluation", self.evaluate().stringify(), true),
             ]
             .join("\n"),

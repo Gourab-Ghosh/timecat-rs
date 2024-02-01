@@ -95,24 +95,20 @@ pub fn self_play(
         engine.board.get_pgn(),
     );
     println!(
-        "\n{}:\n\n{:?}",
+        "\n{}:\n\n[{}]",
         "Time taken for all moves".colorize(INFO_MESSAGE_STYLE),
         time_taken_vec
             .iter()
             .map(|x| (x * 1000.0).round() / 1000.0)
-            .collect_vec(),
+            .join(", "),
     );
     println!(
-        "\n{}:\n\n{}\n",
+        "\n{}:\n\n[{}]\n",
         "Prediction Scores".colorize(INFO_MESSAGE_STYLE),
-        format!(
-            "{:?}",
-            prediction_score_vec
-                .iter()
-                .map(|&score| score.stringify())
-                .collect_vec()
-        )
-        .replace('\"', ""),
+        prediction_score_vec
+            .iter()
+            .map(|&score| score.stringify())
+            .join(", "),
     );
     if let GoCommand::Depth(depth) = go_command {
         println_info("Depth Searched", format!("{}", depth));

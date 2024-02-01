@@ -263,11 +263,13 @@ fn get_uci_options() -> Vec<UCIOption> {
         Duration::from_secs(0),
         Duration::MAX,
     );
-    
+
     let options = vec![
-        UCIOption::new_spin("Threads", SpinValue::new(default_uci_state.get_num_threads(), 1, 1024), |value| {
-            UCI_STATE.set_num_threads(value as usize, true)
-        })
+        UCIOption::new_spin(
+            "Threads",
+            SpinValue::new(default_uci_state.get_num_threads(), 1, 1024),
+            |value| UCI_STATE.set_num_threads(value as usize, true),
+        )
         .add_alternate_name("Thread"),
         UCIOption::new_spin("Hash", t_table_size_uci, |value| {
             UCI_STATE.set_t_table_size(CacheTableSize::Exact(value as usize))

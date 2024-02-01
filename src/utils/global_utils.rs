@@ -53,7 +53,7 @@ impl EngineUCIState {
             _chess960_mode: AtomicBool::new(false),
         }
     }
-    
+
     #[inline(always)]
     pub fn terminate_engine(&self) -> bool {
         self._terminate_engine.load(MEMORY_ORDERING)

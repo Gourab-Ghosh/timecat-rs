@@ -137,14 +137,20 @@ impl Go {
                 best_move.stringify_move(&engine.board).unwrap(),
             );
         } else {
-            let mut move_text =
-                format_info("bestmove", best_move.stringify_move(&engine.board).unwrap(), false);
+            let mut move_text = format_info(
+                "bestmove",
+                best_move.stringify_move(&engine.board).unwrap(),
+                false,
+            );
             if let Some(ponder_move) = response.get_ponder_move() {
                 move_text += " ";
                 let mut new_board = engine.board.clone();
                 new_board.push(best_move);
-                move_text +=
-                    &format_info("ponder", ponder_move.stringify_move(&new_board).unwrap(), false);
+                move_text += &format_info(
+                    "ponder",
+                    ponder_move.stringify_move(&new_board).unwrap(),
+                    false,
+                );
             }
             println!("{}", move_text);
         }
@@ -464,7 +470,13 @@ impl Parser {
             "reset board" => engine
                 .set_fen(STARTING_POSITION_FEN)
                 .map_err(EngineError::from),
-            "stop" => if UCI_STATE.is_in_console_mode() { Err(EngineNotRunning) } else { Ok(()) },
+            "stop" => {
+                if UCI_STATE.is_in_console_mode() {
+                    Err(EngineNotRunning)
+                } else {
+                    Ok(())
+                }
+            }
             "help" => {
                 println!("{}", Self::get_help_text());
                 Ok(())

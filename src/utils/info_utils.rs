@@ -9,9 +9,7 @@ pub fn format_info<T: fmt::Display>(desc: &str, info: T, add_info_string: bool) 
     if UCI_STATE.is_in_console_mode() {
         format!("{desc}: {info}")
     } else {
-        let mut formatted_info = format!(
-            "{desc} {info}",
-        );
+        let mut formatted_info = format!("{desc} {info}",);
         if add_info_string {
             formatted_info = "info string".colorize(INFO_MESSAGE_STYLE) + &formatted_info
         }

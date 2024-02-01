@@ -174,7 +174,7 @@ pub mod engine_constants {
 
     pub const REPETITION_TABLE_SIZE: usize = 4; // Should be in power of 2 (in MB)
     pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
-    
+
     pub const MAX_PLY: usize = 255;
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;
