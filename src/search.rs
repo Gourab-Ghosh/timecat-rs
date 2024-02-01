@@ -285,9 +285,9 @@ impl Searcher {
             let clock = Instant::now();
             self.push(move_);
             if move_index == 0
-                || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, 0, enable_timer)? > alpha
+                || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, enable_timer)? > alpha
             {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, 0, enable_timer)?;
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, enable_timer)?;
                 max_score = max_score.max(score);
             }
             self.pop();
@@ -331,21 +331,11 @@ impl Searcher {
         reduction.round() as Depth
     }
 
-    #[inline(always)]
-    fn safe_to_apply_extensions(
-        num_extensions: Depth,
-        extension: Depth,
-        max_extension: Depth,
-    ) -> bool {
-        num_extensions + extension <= max_extension
-    }
-
     fn alpha_beta(
         &mut self,
         mut depth: Depth,
         mut alpha: Score,
         mut beta: Score,
-        mut num_extensions: Depth,
         enable_timer: bool,
     ) -> Option<Score> {
         self.pv_table.set_length(self.ply, self.ply);
@@ -366,25 +356,11 @@ impl Searcher {
                 return Some(mate_score);
             }
         }
-        let is_endgame = self.board.is_endgame();
         let checkers = self.board.get_checkers();
-        let num_checkers = checkers.popcnt();
-        let check_extension = if num_checkers > 0 {
-            let mut extension = num_checkers;
-            if !is_endgame {
-                extension += 1;
-            }
-            extension
-        } else {
-            0
-        } as Depth;
-        let max_extension = self.current_depth;
-        if Self::safe_to_apply_extensions(num_extensions, check_extension, max_extension) {
-            depth += check_extension;
-            num_extensions += check_extension;
+        if depth > 10 {
+            depth += checkers.popcnt() as Depth;
         }
         let min_depth = self.move_sorter.is_following_pv() as Depth;
-        num_extensions = num_extensions.max(min_depth);
         depth = depth.max(min_depth);
         let is_pv_node = alpha != beta - 1;
         let key = self.board.hash();
@@ -455,7 +431,6 @@ impl Searcher {
                     reduced_depth,
                     -beta,
                     -beta + 1,
-                    num_extensions,
                     enable_timer,
                 )?;
                 self.pop();
@@ -526,7 +501,7 @@ impl Searcher {
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, num_extensions, enable_timer)?;
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, enable_timer)?;
             } else {
                 if safe_to_apply_lmr {
                     let lmr_reduction = Self::get_lmr_reduction(depth, move_index, is_pv_node);
@@ -535,7 +510,6 @@ impl Searcher {
                             depth - 1 - lmr_reduction,
                             -alpha - 1,
                             -alpha,
-                            num_extensions,
                             enable_timer,
                         )?
                     } else {
@@ -549,7 +523,6 @@ impl Searcher {
                         depth - 1,
                         -alpha - 1,
                         -alpha,
-                        num_extensions,
                         enable_timer,
                     )?;
                     if score > alpha && score < beta {
@@ -557,7 +530,6 @@ impl Searcher {
                             depth - 1,
                             -beta,
                             -alpha,
-                            num_extensions,
                             enable_timer,
                         )?;
                     }
