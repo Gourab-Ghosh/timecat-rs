@@ -57,6 +57,12 @@ pub struct RepetitionTable {
     mask: usize,
 }
 
+impl Default for RepetitionTable {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RepetitionTable {
     pub fn new() -> Self {
         let size = REPETITION_TABLE_SIZE << 20;

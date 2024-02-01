@@ -32,22 +32,26 @@ pub struct EngineUCIState {
     _chess960_mode: AtomicBool,
 }
 
-pub const DEFAULT_UCI_STATE: EngineUCIState = EngineUCIState {
-    _terminate_engine: AtomicBool::new(false),
-    _colored_output: AtomicBool::new(true),
-    _console_mode: AtomicBool::new(true),
-    _t_table_size: Mutex::new(CacheTableSize::Exact(16)),
-    _long_algebraic_notation: AtomicBool::new(false),
-    _num_threads: AtomicUsize::new(1),
-    _move_overhead: Mutex::new(Duration::from_millis(100)),
-    _use_own_book: AtomicBool::new(false),
-    _debug_mode: AtomicBool::new(true),
-    _chess960_mode: AtomicBool::new(false),
-};
+impl Default for EngineUCIState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl EngineUCIState {
     pub const fn new() -> Self {
-        DEFAULT_UCI_STATE
+        EngineUCIState {
+            _terminate_engine: AtomicBool::new(false),
+            _colored_output: AtomicBool::new(true),
+            _console_mode: AtomicBool::new(true),
+            _t_table_size: Mutex::new(CacheTableSize::Exact(16)),
+            _long_algebraic_notation: AtomicBool::new(false),
+            _num_threads: AtomicUsize::new(1),
+            _move_overhead: Mutex::new(Duration::from_millis(100)),
+            _use_own_book: AtomicBool::new(false),
+            _debug_mode: AtomicBool::new(true),
+            _chess960_mode: AtomicBool::new(false),
+        }
     }
     
     #[inline(always)]

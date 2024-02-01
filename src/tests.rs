@@ -95,11 +95,6 @@ pub fn test() -> Result<(), EngineError> {
     // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12")?; // weird results in 3 secs in my pc
     // parse_command(&mut engine, "go time 3000");
     parse_command(&mut engine, "go depth 13");
-
-    // UCI_STATE.set_chess960_mode(true);
-    // DEFAULT_UCI_STATE.set_chess960_mode(true);
-    // println!("{}", UCI_STATE.is_in_chess960_mode());
-    // println!("{}", DEFAULT_UCI_STATE.is_in_chess960_mode());
     
     // println!("{}", BitBoard::new(123456));
 

@@ -464,7 +464,7 @@ impl Parser {
             "reset board" => engine
                 .set_fen(STARTING_POSITION_FEN)
                 .map_err(EngineError::from),
-            "stop" => Err(EngineNotRunning),
+            "stop" => if UCI_STATE.is_in_console_mode() { Err(EngineNotRunning) } else { Ok(()) },
             "help" => {
                 println!("{}", Self::get_help_text());
                 Ok(())
@@ -605,7 +605,7 @@ impl Parser {
                 .nth(1)
                 .unwrap_or(&"")
                 .parse()
-                .unwrap_or(DEFAULT_UCI_STATE.get_num_threads());
+                .unwrap_or(EngineUCIState::default().get_num_threads());
             UCI_STATE.set_num_threads(num_threads, false);
         }
         if args.contains(&"--help") {

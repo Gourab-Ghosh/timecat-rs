@@ -241,8 +241,9 @@ impl Default for UCIOptions {
 }
 
 fn get_uci_options() -> Vec<UCIOption> {
+    let default_uci_state = EngineUCIState::default();
     let t_table_size_uci = SpinValue::new(
-        DEFAULT_UCI_STATE.get_t_table_size(),
+        default_uci_state.get_t_table_size(),
         CacheTableSize::Exact(1),
         CacheTableSize::Exact({
             let transposition_table_entry_size =
@@ -258,13 +259,13 @@ fn get_uci_options() -> Vec<UCIOption> {
     );
 
     let move_overhead_uci = SpinValue::new(
-        DEFAULT_UCI_STATE.get_move_overhead(),
+        default_uci_state.get_move_overhead(),
         Duration::from_secs(0),
         Duration::MAX,
     );
     
     let options = vec![
-        UCIOption::new_spin("Threads", SpinValue::new(DEFAULT_UCI_STATE.get_num_threads(), 1, 1024), |value| {
+        UCIOption::new_spin("Threads", SpinValue::new(default_uci_state.get_num_threads(), 1, 1024), |value| {
             UCI_STATE.set_num_threads(value as usize, true)
         })
         .add_alternate_name("Thread"),
