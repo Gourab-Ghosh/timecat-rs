@@ -701,7 +701,8 @@ impl Searcher {
             search_time = search_time
                 .checked_sub(UCI_STATE.get_move_overhead())
                 .unwrap_or_default()
-                .min(Duration::from_secs(self.board.get_fullmove_number() as u64) / 2);
+                .min(Duration::from_secs(self.board.get_fullmove_number() as u64) / 2)
+                .min(self_time / 3);
             return GoCommand::MoveTime(search_time);
         }
         panic!("Expected Timed Command!");
