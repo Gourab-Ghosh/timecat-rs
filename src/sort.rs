@@ -181,10 +181,7 @@ impl MoveSorter {
         capture_piece.evaluate() - Self::see(square, &board.make_move_new(least_attackers_move))
     }
 
-    fn mvv_lva(move_: Move, best_move: Option<Move>, board: &Board) -> MoveWeight {
-        if best_move == Some(move_) {
-            return 10000;
-        }
+    fn mvv_lva(move_: Move, board: &Board) -> MoveWeight {
         *get_item_unchecked!(
             MVV_LVA,
             board.piece_type_at(move_.get_source()).unwrap().to_index(),

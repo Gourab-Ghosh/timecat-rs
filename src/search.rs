@@ -691,6 +691,7 @@ impl Searcher {
                 .checked_sub(self_time)
                 .unwrap_or_default()
                 .min(self_time / 2);
+            // min time to save after making the move
             let min_time_saving = (self_time / 2).min(Duration::from_secs(3));
             let mut search_time = self_time
                 .checked_sub(opponent_time_advantage.max(min_time_saving))
@@ -699,8 +700,9 @@ impl Searcher {
                 + new_inc
                 + self_time_advantage_bonus;
             search_time = search_time
+                .min(min_time_saving)
                 .min(Duration::from_secs(self.board.get_fullmove_number() as u64) / 2)
-                .min(self_time / 3);
+                .max(Duration::from_millis(100));
             return GoCommand::MoveTime(search_time);
         }
         panic!("Expected Timed Command!");

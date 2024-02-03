@@ -47,7 +47,7 @@ impl EngineUCIState {
             _t_table_size: Mutex::new(CacheTableSize::Exact(16)),
             _long_algebraic_notation: AtomicBool::new(false),
             _num_threads: AtomicUsize::new(1),
-            _move_overhead: Mutex::new(Duration::from_millis(100)),
+            _move_overhead: Mutex::new(Duration::ZERO),
             _use_own_book: AtomicBool::new(false),
             _debug_mode: AtomicBool::new(true),
             _chess960_mode: AtomicBool::new(false),
