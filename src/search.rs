@@ -404,7 +404,7 @@ impl Searcher {
             return Some(self.quiescence(alpha, beta));
         }
         self.num_nodes_searched.fetch_add(1, MEMORY_ORDERING);
-        let not_in_check = checkers == BB_EMPTY;
+        let not_in_check = checkers.is_empty();
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
             let static_evaluation = self.board.evaluate_flipped();

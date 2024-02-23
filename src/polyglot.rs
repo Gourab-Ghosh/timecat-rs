@@ -1,4 +1,5 @@
 use super::*;
+use std::collections::HashMap;
 use std::io::{Read, Seek};
 
 #[rustfmt::skip]

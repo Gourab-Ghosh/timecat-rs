@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::str::FromStr;
 use timecat::*;
 
 fn move_generator_perft_test(fen: &str, depth: usize, expected_result: usize) {

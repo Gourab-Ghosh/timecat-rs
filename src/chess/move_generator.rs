@@ -332,7 +332,7 @@ impl KingMoves {
             board.get_piece_mask(Pawn) & board.occupied_co(!board.turn()),
         );
 
-        attackers == BB_EMPTY
+        attackers.is_empty()
     }
 }
 
@@ -378,7 +378,7 @@ impl PieceMoves for KingMoves {
         //     'legal_king_move' for that square.
         if !T::IN_CHECK {
             if board.my_castle_rights().has_kingside()
-                && (occupied & board.my_castle_rights().kingside_squares(color)) == BB_EMPTY
+                && (occupied & board.my_castle_rights().kingside_squares(color)).is_empty()
             {
                 let middle = ksq.wrapping_right();
                 let right = middle.wrapping_right();
@@ -390,7 +390,7 @@ impl PieceMoves for KingMoves {
             }
 
             if board.my_castle_rights().has_queenside()
-                && (occupied & board.my_castle_rights().queenside_squares(color)) == BB_EMPTY
+                && (occupied & board.my_castle_rights().queenside_squares(color)).is_empty()
             {
                 let middle = ksq.wrapping_left();
                 let left = middle.wrapping_left();
@@ -446,7 +446,7 @@ impl MoveGenerator {
         let mask = !board.occupied_co(board.turn());
         let mut move_list = ArrayVec::new();
 
-        if checkers == BB_EMPTY {
+        if checkers.is_empty() {
             PawnMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
             KnightMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
             BishopMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
@@ -617,7 +617,7 @@ impl ExactSizeIterator for MoveGenerator {
         for i in 0..self.square_and_bitboard_array.len() {
             let square_and_bitboard = get_item_unchecked!(self.square_and_bitboard_array, i);
             let bitboard_and_iterator_mask = square_and_bitboard.bitboard & self.iterator_mask;
-            if bitboard_and_iterator_mask == BB_EMPTY {
+            if bitboard_and_iterator_mask.is_empty() {
                 break;
             }
             if square_and_bitboard.promotion {
@@ -644,7 +644,7 @@ impl Iterator for MoveGenerator {
             get_item_unchecked_mut!(self.square_and_bitboard_array, self.index);
 
         if self.index >= square_and_bitboard_array_len
-            || square_and_bitboard.bitboard & self.iterator_mask == BB_EMPTY
+            || (square_and_bitboard.bitboard & self.iterator_mask).is_empty()
         {
             // are we done?
             None
@@ -661,7 +661,7 @@ impl Iterator for MoveGenerator {
             if self.promotion_index >= NUM_PROMOTION_PIECES {
                 square_and_bitboard.bitboard ^= BitBoard::from_square(dest);
                 self.promotion_index = 0;
-                if square_and_bitboard.bitboard & self.iterator_mask == BB_EMPTY {
+                if (square_and_bitboard.bitboard & self.iterator_mask).is_empty() {
                     self.index += 1;
                 }
             }
@@ -671,7 +671,7 @@ impl Iterator for MoveGenerator {
             let dest = (square_and_bitboard.bitboard & self.iterator_mask).to_square();
 
             square_and_bitboard.bitboard ^= BitBoard::from_square(dest);
-            if square_and_bitboard.bitboard & self.iterator_mask == BB_EMPTY {
+            if (square_and_bitboard.bitboard & self.iterator_mask).is_empty() {
                 self.index += 1;
             }
             Some(Move::new(square_and_bitboard.square, dest, None))

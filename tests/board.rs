@@ -177,8 +177,65 @@ fn specified_color_has_insufficient_material() {
     }
 }
 
-// is_en_passant
-// is_passed_pawn
+#[test]
+fn square_has_passed_pawn() {
+    let moves = vec![
+        ("8/5k1p/1p6/8/2K5/8/4P3/8 w - - 0 1", vec![E2, B6, H7]),
+        ("8/5k1p/1p6/8/2K5/8/P3P3/8 w - - 0 1", vec![B6, H7]),
+        ("8/5k1p/1p6/5P2/2K5/8/P3P3/8 w - - 0 1", vec![F5, B6, H7]),
+    ];
+    for (fen, squares_vec) in moves {
+        let board = Board::from_fen(&fen).unwrap();
+        for (modified_board, mut expected_value) in [
+            (
+                {
+                    let mut board_clone = board.clone();
+                    board_clone.flip_vertical();
+                    board_clone
+                },
+                squares_vec
+                    .iter()
+                    .copied()
+                    .map(Square::mirror)
+                    .collect_vec(),
+            ),
+            (board, squares_vec),
+        ] {
+            expected_value.sort_by_key(|square| square.to_int());
+            let mut expected_value = ALL_SQUARES
+                .into_iter()
+                .filter(|&square| modified_board.is_passed_pawn(square))
+                .collect_vec();
+            expected_value.sort_by_key(|square| square.to_int());
+            assert_eq!(
+                expected_value,
+                expected_value,
+                "Got all En Passant squares as {expected_value:?} in position {}\n{modified_board}",
+                modified_board.get_fen(),
+            );
+        }
+    }
+}
+
+#[test]
+fn move_is_en_passant() {
+    let mut board = Board::default();
+    let moves = vec![
+        ("e4 c5 e5 f5", Move::from_str("e5f6").unwrap(), true),
+        ("e4 g5 e5 g4 h4", Move::from_str("g4h3").unwrap(), true),
+        ("e4 f5", Move::from_str("e4f5").unwrap(), false),
+    ];
+    for (moves_str, move_, expected_return) in moves {
+        board.set_fen(STARTING_POSITION_FEN).unwrap();
+        board.push_sans(&moves_str).unwrap();
+        let returned_value = board.is_en_passant(move_);
+        assert_eq!(
+            returned_value, expected_return,
+            "Returned {returned_value} with moves {moves_str} for move {move_}"
+        );
+    }
+}
+
 // is_capture
 // is_quiet
 // is_zeroing

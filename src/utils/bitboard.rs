@@ -60,6 +60,21 @@ impl BitBoard {
     }
 
     #[inline(always)]
+    pub const fn is_empty(self) -> bool {
+        self.0 == 0
+    }
+
+    /// https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating#FlipVertically
+    #[inline(always)]
+    pub const fn flip_vertical(self) -> Self {
+        let mut bb = self.0;
+        bb = ((bb >> 8) & 0x00ff_00ff_00ff_00ff) | ((bb & 0x00ff_00ff_00ff_00ff) << 8);
+        bb = ((bb >> 16) & 0x0000_ffff_0000_ffff) | ((bb & 0x0000_ffff_0000_ffff) << 16);
+        bb = (bb >> 32) | ((bb & 0x0000_0000_ffff_ffff) << 32);
+        Self::new(bb)
+    }
+
+    #[inline(always)]
     pub fn contains(self, square: Square) -> bool {
         self & square.to_bitboard() != BB_EMPTY
     }

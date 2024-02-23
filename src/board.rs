@@ -59,17 +59,15 @@ impl Board {
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<(), EngineError> {
-        if !Self::is_good_fen(fen) {
-            return Err(EngineError::BadFen {
-                fen: fen.to_string(),
-            });
-        }
         let fen = simplify_fen(fen);
+        if !Self::is_good_fen(&fen) {
+            return Err(EngineError::BadFen { fen });
+        }
         if fen == self.get_fen() {
             self.starting_fen = self.get_fen();
             return Ok(());
         }
-        self.sub_board = SubBoard::from_str(&fen).expect("FEN not parsed properly!");
+        self.sub_board = SubBoard::from_str(&fen)?;
         self.repetition_table.clear();
         self.repetition_table.insert(self.hash());
         self.starting_fen = self.get_fen();
@@ -78,10 +76,9 @@ impl Board {
     }
 
     pub fn from_fen(fen: &str) -> Result<Self, EngineError> {
-        let fen = simplify_fen(fen);
-        let mut sub_board = Self::new();
-        sub_board.set_fen(&fen)?;
-        Ok(sub_board)
+        let mut board = Self::new();
+        board.set_fen(fen)?;
+        Ok(board)
     }
 
     pub fn get_fen(&self) -> String {
@@ -117,6 +114,13 @@ impl Board {
 
     pub fn clear(&mut self) {
         self.set_fen(EMPTY_FEN).unwrap();
+    }
+
+    pub fn flip_vertical(&mut self) {
+        self.sub_board.flip_vertical();
+        self.stack.clear();
+        self.repetition_table.clear();
+        self.starting_fen = self.get_fen();
     }
 
     pub fn color_at(&self, square: Square) -> Option<Color> {
@@ -179,7 +183,7 @@ impl Board {
                     White => WHITE_PIECES_STYLE,
                     Black => BLACK_PIECES_STYLE,
                 });
-                if square == king_square && checkers != BB_EMPTY {
+                if square == king_square && !checkers.is_empty() {
                     styles.extend_from_slice(CHECK_STYLE);
                 }
             }
@@ -245,7 +249,7 @@ impl Board {
 
     #[inline(always)]
     pub fn is_check(&self) -> bool {
-        self.get_checkers() != BB_EMPTY
+        self.sub_board.is_check()
     }
 
     #[inline(always)]
@@ -255,7 +259,7 @@ impl Board {
 
     #[inline(always)]
     pub fn gives_check(&self, move_: Move) -> bool {
-        self.sub_board.make_move_new(move_).checkers() != BB_EMPTY
+        self.sub_board.make_move_new(move_).is_check()
     }
 
     #[inline(always)]
@@ -363,11 +367,11 @@ impl Board {
         let occupied = self.occupied_co(color);
         match occupied.popcnt() {
             1 => true,
-            2 => {
-                (self.get_piece_mask(Rook) ^ self.get_piece_mask(Queen) ^ self.get_piece_mask(Pawn))
-                    & occupied
-                    == BB_EMPTY
-            }
+            2 => ((self.get_piece_mask(Rook)
+                ^ self.get_piece_mask(Queen)
+                ^ self.get_piece_mask(Pawn))
+                & occupied)
+                .is_empty(),
             _ => false,
         }
     }
@@ -400,7 +404,7 @@ impl Board {
             2 => true,
             3 => [Pawn, Rook, Queen]
                 .into_iter()
-                .all(|piece| self.get_piece_mask(piece) == BB_EMPTY),
+                .all(|piece| self.get_piece_mask(piece).is_empty()),
             _ => self.has_only_same_colored_bishop(),
         }
     }
@@ -446,22 +450,26 @@ impl Board {
     }
 
     pub fn is_passed_pawn(&self, square: Square) -> bool {
+        // TODO:: Scope for improvement
         let pawn_mask = self.get_piece_mask(Pawn);
-        let self_color = self.turn();
+        let self_color = match self.color_at(square) {
+            Some(color) => color,
+            None => return false,
+        };
         if !(pawn_mask & self.occupied_co(self_color)).contains(square) {
             return false;
         }
         let file = square.get_file();
-        pawn_mask
+        (pawn_mask
             & self.occupied_co(!self_color)
             & (get_adjacent_files(file) ^ get_file_bb(file))
-            & get_upper_board_mask(square.get_rank(), self_color)
-            == BB_EMPTY
+            & get_upper_board_mask(square.get_rank(), self_color))
+        .is_empty()
     }
 
     pub fn is_capture(&self, move_: Move) -> bool {
         let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
-        (touched & self.occupied_co(!self.turn())) != BB_EMPTY || self.is_en_passant(move_)
+        !(touched & self.occupied_co(!self.turn())).is_empty() || self.is_en_passant(move_)
     }
 
     #[inline(always)]
@@ -499,15 +507,29 @@ impl Board {
         self.sub_board.get_piece_mask(piece)
     }
 
+    // fn reduces_castling_rights(&self, move_: Move) -> bool {
+    //     let cr = self.clean_castling_rights();
+    //     let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
+    //     let touched_cr = touched & cr;
+    //     let kings = self.get_piece_mask(King);
+    //     let touched_kings_cr = touched_cr & kings;
+    //     !touched_cr.is_empty()
+    //         || !(BB_RANK_1 & touched_kings_cr & self.occupied_co(White)).is_empty()
+    //         || !(BB_RANK_8 & touched_kings_cr & self.occupied_co(Black)).is_empty()
+    // }
+
     fn reduces_castling_rights(&self, move_: Move) -> bool {
+        // TODO: Check Logic
         let cr = self.clean_castling_rights();
         let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
         let touched_cr = touched & cr;
-        let kings = self.get_piece_mask(King);
-        let touched_kings_cr = touched_cr & kings;
-        touched_cr != BB_EMPTY
-            || BB_RANK_1 & touched_kings_cr & self.occupied_co(White) != BB_EMPTY
-            || BB_RANK_8 & touched_kings_cr & self.occupied_co(Black) != BB_EMPTY
+        let touched_kings_cr_is_empty = (touched_cr & self.get_piece_mask(King)).is_empty();
+        !(touched_cr.is_empty()
+            && touched_kings_cr_is_empty
+            && BB_RANK_1.is_empty()
+            && self.occupied_co(White).is_empty()
+            && BB_RANK_8.is_empty()
+            && self.occupied_co(Black).is_empty())
     }
 
     #[inline(always)]
@@ -554,14 +576,12 @@ impl Board {
             }
             1 => {
                 self.get_piece_mask(Rook).popcnt() <= 2
-                    && self.get_piece_mask(Bishop) ^ self.get_piece_mask(Knight) == BB_EMPTY
+                    && (self.get_piece_mask(Bishop) ^ self.get_piece_mask(Knight)).is_empty()
             }
-            2 => {
-                self.get_piece_mask(Rook)
-                    ^ self.get_piece_mask(Bishop)
-                    ^ self.get_piece_mask(Knight)
-                    == BB_EMPTY
-            }
+            2 => (self.get_piece_mask(Rook)
+                ^ self.get_piece_mask(Bishop)
+                ^ self.get_piece_mask(Knight))
+            .is_empty(),
             _ => false,
         }
     }
@@ -923,7 +943,7 @@ impl Board {
         let black_occupied = self.black_occupied();
         for &piece in ALL_PIECE_TYPES[..5].iter() {
             let piece_mask = self.get_piece_mask(piece);
-            if piece_mask == BB_EMPTY {
+            if piece_mask.is_empty() {
                 continue;
             }
             score += (piece_mask.popcnt() as Score

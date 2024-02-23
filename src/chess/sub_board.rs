@@ -20,6 +20,8 @@ pub struct SubBoard {
     _transposition_key: u64,
     _halfmove_clock: u8,
     _fullmove_number: NumMoves,
+    _white_score: Score,
+    _black_score: Score,
 }
 
 impl PartialEq for SubBoard {
@@ -64,6 +66,8 @@ impl SubBoard {
             _ep_square: None,
             _halfmove_clock: 0,
             _fullmove_number: 1,
+            _white_score: 0,
+            _black_score: 0,
         }
     }
 
@@ -72,7 +76,7 @@ impl SubBoard {
         let moves = MoveGenerator::new_legal(self).len();
         match moves {
             0 => {
-                if self.checkers() == BB_EMPTY {
+                if self.checkers().is_empty() {
                     BoardStatus::Stalemate
                 } else {
                     BoardStatus::Checkmate
@@ -89,7 +93,7 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn occupied_co(&self, color: Color) -> BitBoard {
-        unsafe { *self._occupied_co.get_unchecked(color.to_index()) }
+        *get_item_unchecked!(self._occupied_co, color.to_index())
     }
 
     #[inline(always)]
@@ -99,28 +103,24 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn get_piece_mask(&self, piece: PieceType) -> BitBoard {
-        unsafe { *self._pieces.get_unchecked(piece.to_index()) }
+        *get_item_unchecked!(self._pieces, piece.to_index())
     }
 
     #[inline(always)]
     pub fn castle_rights(&self, color: Color) -> CastleRights {
-        unsafe { *self._castle_rights.get_unchecked(color.to_index()) }
+        *get_item_unchecked!(self._castle_rights, color.to_index())
     }
 
     #[inline(always)]
     fn add_castle_rights(&mut self, color: Color, add: CastleRights) {
-        unsafe {
-            *self._castle_rights.get_unchecked_mut(color.to_index()) =
-                self.castle_rights(color).add(add);
-        }
+        *get_item_unchecked_mut!(self._castle_rights, color.to_index()) =
+            self.castle_rights(color).add(add);
     }
 
     #[inline(always)]
     fn remove_castle_rights(&mut self, color: Color, remove: CastleRights) {
-        unsafe {
-            *self._castle_rights.get_unchecked_mut(color.to_index()) =
-                self.castle_rights(color).remove(remove);
-        }
+        *get_item_unchecked_mut!(self._castle_rights, color.to_index()) =
+            self.castle_rights(color).remove(remove);
     }
 
     #[inline(always)]
@@ -159,11 +159,19 @@ impl SubBoard {
     }
 
     fn xor(&mut self, piece: PieceType, bb: BitBoard, color: Color) {
-        unsafe {
-            *self._pieces.get_unchecked_mut(piece.to_index()) ^= bb;
-            *self._occupied_co.get_unchecked_mut(color.to_index()) ^= bb;
-            self._occupied ^= bb;
-            self._transposition_key ^= Zobrist::piece(piece, bb.to_square(), color);
+        let piece_mask = get_item_unchecked_mut!(self._pieces, piece.to_index());
+        *piece_mask ^= bb;
+        *get_item_unchecked_mut!(self._occupied_co, color.to_index()) ^= bb;
+        self._occupied ^= bb;
+        self._transposition_key ^= Zobrist::piece(piece, bb.to_square(), color);
+        let score_change = if piece_mask.is_empty() {
+            -piece.evaluate()
+        } else {
+            piece.evaluate()
+        };
+        match color {
+            White => self._white_score += score_change,
+            Black => self._black_score += score_change,
         }
     }
 
@@ -227,8 +235,8 @@ impl SubBoard {
                 } else {
                     square_bb <<= 8;
                 }
-                if self.get_piece_mask(Pawn) & self.occupied_co(!self.turn()) & square_bb
-                    == BB_EMPTY
+                if (self.get_piece_mask(Pawn) & self.occupied_co(!self.turn()) & square_bb)
+                    .is_empty()
                 {
                     return false;
                 }
@@ -309,7 +317,7 @@ impl SubBoard {
     pub fn piece_type_at(&self, square: Square) -> Option<PieceType> {
         // TODO: check speed on Naive Algorithm
         let opp = BitBoard::from_square(square);
-        if self.occupied() & opp == BB_EMPTY {
+        if (self.occupied() & opp).is_empty() {
             None
         } else {
             //naive algorithm
@@ -506,12 +514,14 @@ impl SubBoard {
         } else if castles {
             let my_backrank = self.turn().to_my_backrank();
             let index = dest.get_file().to_index();
-            let start = BitBoard::from_rank_and_file(my_backrank, unsafe {
-                *CASTLE_ROOK_START.get_unchecked(index)
-            });
-            let end = BitBoard::from_rank_and_file(my_backrank, unsafe {
-                *CASTLE_ROOK_END.get_unchecked(index)
-            });
+            let start = BitBoard::from_rank_and_file(
+                my_backrank,
+                *get_item_unchecked!(CASTLE_ROOK_START, index),
+            );
+            let end = BitBoard::from_rank_and_file(
+                my_backrank,
+                *get_item_unchecked!(CASTLE_ROOK_END, index),
+            );
             result.xor(Rook, start, self.turn());
             result.xor(Rook, end, self.turn());
         }
@@ -524,7 +534,7 @@ impl SubBoard {
 
         for square in attackers {
             let between = between(square, ksq) & result.occupied();
-            if between == BB_EMPTY {
+            if between.is_empty() {
                 result._checkers ^= BitBoard::from_square(square);
             } else if between.popcnt() == 1 {
                 result._pinned ^= between;
@@ -532,6 +542,22 @@ impl SubBoard {
         }
 
         result._turn = !result.turn();
+    }
+
+    pub fn flip_vertical(&mut self) {
+        // TODO: Change Transposition Key
+        self._pieces
+            .iter_mut()
+            .for_each(|bb| *bb = bb.flip_vertical());
+        self._occupied_co
+            .iter_mut()
+            .for_each(|bb| *bb = bb.flip_vertical());
+        self._occupied = self._occupied.flip_vertical();
+        self._turn = !self._turn;
+        self._castle_rights = [CastleRights::None; NUM_COLORS];
+        self.update_pin_and_checkers_info();
+        // self._transposition_key = self._transposition_key;
+        self._ep_square = self._ep_square.map(|square| square.mirror());
     }
 
     fn update_pin_and_checkers_info(&mut self) {
@@ -546,7 +572,7 @@ impl SubBoard {
 
         for square in pinners {
             let between = between(square, ksq) & self.occupied();
-            if between == BB_EMPTY {
+            if between.is_empty() {
                 self._checkers ^= BitBoard::from_square(square);
             } else if between.popcnt() == 1 {
                 self._pinned ^= between;
@@ -571,6 +597,11 @@ impl SubBoard {
     #[inline(always)]
     pub fn checkers(&self) -> BitBoard {
         self._checkers
+    }
+
+    #[inline(always)]
+    pub fn is_check(&self) -> bool {
+        !self._checkers.is_empty()
     }
 }
 

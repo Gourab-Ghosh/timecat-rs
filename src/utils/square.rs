@@ -163,9 +163,46 @@ impl Square {
     pub fn distance(self, other: Square) -> u8 {
         let (file1, rank1) = (self.get_file(), self.get_rank());
         let (file2, rank2) = (other.get_file(), other.get_rank());
-        let file_distance = (file1 as i8).abs_diff(file2 as i8);
-        let rank_distance = (rank1 as i8).abs_diff(rank2 as i8);
+        let file_distance = file1.to_int().abs_diff(file2.to_int());
+        let rank_distance = rank1.to_int().abs_diff(rank2.to_int());
         file_distance.max(rank_distance)
+    }
+
+    pub fn manhattan_distance(self, other: Square) -> u8 {
+        let (file1, rank1) = (self.get_file(), self.get_rank());
+        let (file2, rank2) = (other.get_file(), other.get_rank());
+        let file_distance = file1.to_int().abs_diff(file2.to_int());
+        let rank_distance = rank1.to_int().abs_diff(rank2.to_int());
+        file_distance + rank_distance
+    }
+
+    pub fn knight_distance(self, other: Square) -> u8 {
+        let dx = self.get_file().to_int().abs_diff(other.get_file().to_int());
+        let dy = self.get_rank().to_int().abs_diff(other.get_rank().to_int());
+
+        if dx + dy == 1 {
+            return 3;
+        }
+        if dx == 2 && dy == 2 {
+            return 4;
+        }
+        if dx == 1
+            && dy == 1
+            && (!(self.to_bitboard() & BB_CORNERS).is_empty()
+                || !(other.to_bitboard() & BB_CORNERS).is_empty())
+        {
+            // Special case only for corner squares
+            return 4;
+        }
+
+        let dx_f64 = dx as f64;
+        let dy_f64 = dy as f64;
+
+        let m = (dx_f64 / 2.0)
+            .max(dy_f64 / 2.0)
+            .max((dx_f64 + dy_f64) / 3.0)
+            .ceil() as u8;
+        m + ((m + dx + dy) % 2)
     }
 }
 

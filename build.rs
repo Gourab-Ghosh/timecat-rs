@@ -46,7 +46,7 @@ fn nnue_downloaded_correctly(nnue_path: &Path) -> bool {
 fn generate_nnue_file(nnue_file: &mut File) -> Result<(), NNUEGenerationError> {
     let nnue_file_link = format!("https://tests.stockfishchess.org/api/nn/{}", NNUE_FILE_NAME);
     reqwest::blocking::get(nnue_file_link)
-        .map_err(|_| "Could not download NNUE file! Check your internet connection")?
+        .map_err(|_| "Could not download NNUE file! Check your internet connection!")?
         .copy_to(nnue_file)
         .map_err(|_| "Could not copy NNUE file data to the nnue file!")?;
     Ok(())
