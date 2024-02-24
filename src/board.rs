@@ -740,18 +740,18 @@ impl Board {
             let to_mask = move_.get_dest().to_bitboard();
             for candidate in self
                 .generate_masked_legal_moves(to_mask)
-                .filter(|m| m.get_source().to_bitboard() & from_mask != BB_EMPTY)
+                .filter(|m| !(m.get_source().to_bitboard() & from_mask).is_empty())
             {
                 others |= candidate.get_source().to_bitboard();
             }
 
             // Disambiguate.
-            if others != BB_EMPTY {
+            if !others.is_empty() {
                 let (mut row, mut column) = (false, false);
-                if others & get_rank_bb(move_.get_source().get_rank()) != BB_EMPTY {
+                if !(others & get_rank_bb(move_.get_source().get_rank())).is_empty() {
                     column = true;
                 }
-                if others & get_file_bb(move_.get_source().get_file()) != BB_EMPTY {
+                if !(others & get_file_bb(move_.get_source().get_file())).is_empty() {
                     row = true;
                 } else {
                     column = true;

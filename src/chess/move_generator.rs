@@ -26,7 +26,7 @@ trait PieceMoves {
         for src in pieces & !pinned {
             let square_and_bitboard_array =
                 Self::pseudo_legals(src, color, occupied, mask) & check_mask;
-            if square_and_bitboard_array != BB_EMPTY {
+            if !square_and_bitboard_array.is_empty() {
                 unsafe {
                     move_list.push_unchecked(SquareAndBitBoard::new(
                         src,
@@ -41,7 +41,7 @@ trait PieceMoves {
             for src in pieces & pinned {
                 let square_and_bitboard_array =
                     Self::pseudo_legals(src, color, occupied, mask) & line(src, ksq);
-                if square_and_bitboard_array != BB_EMPTY {
+                if !square_and_bitboard_array.is_empty() {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(
                             src,
@@ -89,8 +89,8 @@ impl PawnMoves {
         let rooks = (board.get_piece_mask(Rook) ^ board.get_piece_mask(Queen))
             & board.occupied_co(!board.turn());
 
-        if (get_rook_rays(ksq) & rooks) != BB_EMPTY
-            && (get_rook_moves(ksq, occupied) & rooks) != BB_EMPTY
+        if !(get_rook_rays(ksq) & rooks).is_empty()
+            && !(get_rook_moves(ksq, occupied) & rooks).is_empty()
         {
             return false;
         }
@@ -98,8 +98,8 @@ impl PawnMoves {
         let bishops = (board.get_piece_mask(Bishop) ^ board.get_piece_mask(Queen))
             & board.occupied_co(!board.turn());
 
-        if (get_bishop_rays(ksq) & bishops) != BB_EMPTY
-            && (get_bishop_moves(ksq, occupied) & bishops) != BB_EMPTY
+        if !(get_bishop_rays(ksq) & bishops).is_empty()
+            && !(get_bishop_moves(ksq, occupied) & bishops).is_empty()
         {
             return false;
         }
@@ -145,7 +145,7 @@ impl PieceMoves for PawnMoves {
         for src in pieces & !pinned {
             let square_and_bitboard_array =
                 Self::pseudo_legals(src, color, occupied, mask) & check_mask;
-            if square_and_bitboard_array != BB_EMPTY {
+            if !square_and_bitboard_array.is_empty() {
                 unsafe {
                     move_list.push_unchecked(SquareAndBitBoard::new(
                         src,
@@ -160,7 +160,7 @@ impl PieceMoves for PawnMoves {
             for src in pieces & pinned {
                 let square_and_bitboard_array =
                     Self::pseudo_legals(src, color, occupied, mask) & line(ksq, src);
-                if square_and_bitboard_array != BB_EMPTY {
+                if !square_and_bitboard_array.is_empty() {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(
                             src,
@@ -244,7 +244,7 @@ impl PieceMoves for KnightMoves {
             for src in pieces & !pinned {
                 let square_and_bitboard_array =
                     Self::pseudo_legals(src, color, occupied, mask & check_mask);
-                if square_and_bitboard_array != BB_EMPTY {
+                if !square_and_bitboard_array.is_empty() {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(
                             src,
@@ -257,7 +257,7 @@ impl PieceMoves for KnightMoves {
         } else {
             for src in pieces & !pinned {
                 let square_and_bitboard_array = Self::pseudo_legals(src, color, occupied, mask);
-                if square_and_bitboard_array != BB_EMPTY {
+                if !square_and_bitboard_array.is_empty() {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(
                             src,
@@ -401,7 +401,7 @@ impl PieceMoves for KingMoves {
                 }
             }
         }
-        if square_and_bitboard_array != BB_EMPTY {
+        if !square_and_bitboard_array.is_empty() {
             unsafe {
                 move_list.push_unchecked(SquareAndBitBoard::new(
                     ksq,
@@ -510,8 +510,9 @@ impl MoveGenerator {
         // first, find the first non-used square_and_bitboard_array index, and store that in i
         let mut i = 0;
         while i < self.square_and_bitboard_array.len()
-            && get_item_unchecked!(self.square_and_bitboard_array, i).bitboard & self.iterator_mask
-                != BB_EMPTY
+            && !(get_item_unchecked!(self.square_and_bitboard_array, i).bitboard
+                & self.iterator_mask)
+                .is_empty()
         {
             i += 1;
         }
@@ -519,8 +520,9 @@ impl MoveGenerator {
         // next, find each element past i where the square_and_bitboard_array are used, and store
         // that in i.  Then, increment i to point to a new unused slot.
         for j in (i + 1)..self.square_and_bitboard_array.len() {
-            if get_item_unchecked!(self.square_and_bitboard_array, j).bitboard & self.iterator_mask
-                != BB_EMPTY
+            if !(get_item_unchecked!(self.square_and_bitboard_array, j).bitboard
+                & self.iterator_mask)
+                .is_empty()
             {
                 // unsafe { self.square_and_bitboard_array.swap_unchecked(i, j) };
                 self.square_and_bitboard_array.swap(i, j);

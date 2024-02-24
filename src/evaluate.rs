@@ -43,7 +43,7 @@ impl Evaluator {
         let mut least_distant_corner = Square::D4;
         if is_bishop_knight_endgame {
             let is_light_squared_bishop =
-                board.get_piece_mask(Bishop) & BB_LIGHT_SQUARES != BB_EMPTY;
+                !(board.get_piece_mask(Bishop) & BB_LIGHT_SQUARES).is_empty();
             let least_distant_corners = if is_light_squared_bishop {
                 [Square::A8, Square::H1]
             } else {

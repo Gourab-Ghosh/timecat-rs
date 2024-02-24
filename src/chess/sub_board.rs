@@ -177,7 +177,7 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn null_move(&self) -> Option<Self> {
-        if self.checkers() != BB_EMPTY {
+        if !self.checkers().is_empty() {
             None
         } else {
             let mut result = self.to_owned();
@@ -194,14 +194,14 @@ impl SubBoard {
         // make sure there is no square with multiple pieces on it
         for &x in ALL_PIECE_TYPES.iter() {
             for &y in ALL_PIECE_TYPES.iter() {
-                if x != y && self.get_piece_mask(x) & self.get_piece_mask(y) != BB_EMPTY {
+                if x != y && !(self.get_piece_mask(x) & self.get_piece_mask(y)).is_empty() {
                     return false;
                 }
             }
         }
 
         // make sure the colors don't overlap, either
-        if self.occupied_co(White) & self.occupied_co(Black) != BB_EMPTY {
+        if !(self.occupied_co(White) & self.occupied_co(Black)).is_empty() {
             return false;
         }
 
@@ -247,7 +247,7 @@ impl SubBoard {
         let mut board_copy = self.to_owned();
         board_copy._turn = !board_copy.turn();
         board_copy.update_pin_and_checkers_info();
-        if board_copy.checkers() != BB_EMPTY {
+        if !board_copy.checkers().is_empty() {
             return false;
         }
 
@@ -277,7 +277,7 @@ impl SubBoard {
         }
 
         // we must make sure the kings aren't touching
-        if get_king_moves(self.king_square(White)) & self.get_piece_mask(King) != BB_EMPTY {
+        if !(get_king_moves(self.king_square(White)) & self.get_piece_mask(King)).is_empty() {
             return false;
         }
 
@@ -327,22 +327,22 @@ impl SubBoard {
                     return p;
                 }
             } */
-            if (self.get_piece_mask(Pawn)
+            if !((self.get_piece_mask(Pawn)
                 ^ self.get_piece_mask(Knight)
                 ^ self.get_piece_mask(Bishop))
-                & opp
-                != BB_EMPTY
+                & opp)
+                .is_empty()
             {
-                if self.get_piece_mask(Pawn) & opp != BB_EMPTY {
+                if !(self.get_piece_mask(Pawn) & opp).is_empty() {
                     Some(Pawn)
-                } else if self.get_piece_mask(Knight) & opp != BB_EMPTY {
+                } else if !(self.get_piece_mask(Knight) & opp).is_empty() {
                     Some(Knight)
                 } else {
                     Some(Bishop)
                 }
-            } else if self.get_piece_mask(Rook) & opp != BB_EMPTY {
+            } else if !(self.get_piece_mask(Rook) & opp).is_empty() {
                 Some(Rook)
-            } else if self.get_piece_mask(Queen) & opp != BB_EMPTY {
+            } else if !(self.get_piece_mask(Queen) & opp).is_empty() {
                 Some(Queen)
             } else {
                 Some(King)
@@ -352,9 +352,9 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn color_at(&self, square: Square) -> Option<Color> {
-        if (self.occupied_co(White) & BitBoard::from_square(square)) != BB_EMPTY {
+        if !(self.occupied_co(White) & BitBoard::from_square(square)).is_empty() {
             Some(White)
-        } else if (self.occupied_co(Black) & BitBoard::from_square(square)) != BB_EMPTY {
+        } else if !(self.occupied_co(Black) & BitBoard::from_square(square)).is_empty() {
             Some(Black)
         } else {
             None
@@ -396,11 +396,11 @@ impl SubBoard {
         } else {
             rank.up()
         };
-        if get_adjacent_files(square.get_file())
+        if !(get_adjacent_files(square.get_file())
             & get_rank_bb(rank)
             & self.get_piece_mask(Pawn)
-            & self.occupied_co(!self.turn())
-            != BB_EMPTY
+            & self.occupied_co(!self.turn()))
+        .is_empty()
         {
             self._ep_square = Some(square);
         }
@@ -421,8 +421,8 @@ impl SubBoard {
 
     pub fn is_zeroing(&self, move_: Move) -> bool {
         let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
-        touched & self.get_piece_mask(Pawn) != BB_EMPTY
-            || (touched & self.occupied_co(!self.turn())) != BB_EMPTY
+        !(touched & self.get_piece_mask(Pawn)).is_empty()
+            || !(touched & self.occupied_co(!self.turn())).is_empty()
     }
 
     pub fn make_move(&self, move_: Move, result: &mut Self) {
@@ -496,8 +496,8 @@ impl SubBoard {
             } else if let Some(promotion) = move_.get_promotion() {
                 result.xor(Pawn, dest_bb, self.turn());
                 result.xor(promotion, dest_bb, self.turn());
-            } else if (source_bb & get_pawn_source_double_moves()) != BB_EMPTY
-                && (dest_bb & get_pawn_dest_double_moves()) != BB_EMPTY
+            } else if !(source_bb & get_pawn_source_double_moves()).is_empty()
+                && !(dest_bb & get_pawn_dest_double_moves()).is_empty()
             {
                 result.set_ep(dest.wrapping_backward(result.turn()));
                 result._checkers ^= get_pawn_attacks(ksq, !result.turn(), dest_bb);

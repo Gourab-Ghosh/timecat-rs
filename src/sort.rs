@@ -283,7 +283,7 @@ impl MoveSorter {
         // check
         let checkers = move_made_sub_board.checkers();
         let moving_piece = board.piece_type_at(source).unwrap();
-        if checkers != BB_EMPTY {
+        if !checkers.is_empty() {
             return -127000000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
         if board.is_irreversible(move_) {

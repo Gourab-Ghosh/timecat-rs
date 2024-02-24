@@ -76,7 +76,7 @@ impl BitBoard {
 
     #[inline(always)]
     pub fn contains(self, square: Square) -> bool {
-        self & square.to_bitboard() != BB_EMPTY
+        !(self & square.to_bitboard()).is_empty()
     }
 }
 

@@ -120,7 +120,7 @@ pub fn get_castle_moves() -> BitBoard {
 #[inline(always)]
 pub fn get_pawn_quiets(square: Square, color: Color, blockers: BitBoard) -> BitBoard {
     unsafe {
-        if (BitBoard::from_square(square.wrapping_forward(color)) & blockers) != BB_EMPTY {
+        if !(BitBoard::from_square(square.wrapping_forward(color)) & blockers).is_empty() {
             BB_EMPTY
         } else {
             *PAWN_MOVES
