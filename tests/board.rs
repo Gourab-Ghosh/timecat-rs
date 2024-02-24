@@ -177,12 +177,22 @@ fn specified_color_has_insufficient_material() {
     }
 }
 
+#[rustfmt::skip]
 #[test]
-fn square_has_passed_pawn() {
+fn test_passed_pawn_detection() {
     let moves = vec![
         ("8/5k1p/1p6/8/2K5/8/4P3/8 w - - 0 1", vec![E2, B6, H7]),
         ("8/5k1p/1p6/8/2K5/8/P3P3/8 w - - 0 1", vec![B6, H7]),
         ("8/5k1p/1p6/5P2/2K5/8/P3P3/8 w - - 0 1", vec![F5, B6, H7]),
+        ("8/4nkNp/1p6/5P2/2K5/8/P3P3/8 w - - 0 1", vec![F5, B6, H7]),
+        ("8/4nkNp/1p6/5P2/2K5/8/P3P3/8 w - - 0 1", vec![F5, B6, H7]),
+        ("8/4nkNp/1p6/5P2/2K3p1/8/P3P3/8 w - - 0 1", vec![F5, B6, H4, H7]),
+        ("8/5k1p/1p6/8/2K5/8/4P3/8 b - - 0 1", vec![E2, B6, H7]),
+        ("8/5k1p/1p6/8/2K5/8/P3P3/8 b - - 0 1", vec![B6, H7]),
+        ("8/5k1p/1p6/5P2/2K5/8/P3P3/8 b - - 0 1", vec![F5, B6, H7]),
+        ("8/4nkNp/1p6/5P2/2K5/8/P3P3/8 b - - 0 1", vec![F5, B6, H7]),
+        ("8/4nkNp/1p6/5P2/2K5/8/P3P3/8 b - - 0 1", vec![F5, B6, H7]),
+        ("8/4nkNp/1p6/5P2/2K3p1/8/P3P3/8 b - - 0 1", vec![F5, B6, H4, H7]),
     ];
     for (fen, squares_vec) in moves {
         let board = Board::from_fen(&fen).unwrap();
