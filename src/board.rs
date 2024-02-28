@@ -939,6 +939,7 @@ impl Board {
     }
 
     pub fn get_material_score(&self) -> Score {
+        // TODO: Change Logic
         let mut score = 0;
         let black_occupied = self.black_occupied();
         for &piece in ALL_PIECE_TYPES[..5].iter() {
@@ -980,6 +981,7 @@ impl Board {
 
     #[inline(always)]
     pub fn get_material_score_abs(&self) -> Score {
+        // TODO: Change Logic
         get_item_unchecked!(ALL_PIECE_TYPES, ..5)
             .iter()
             .map(|&piece| piece.evaluate() * self.get_piece_mask(piece).popcnt() as Score)
@@ -988,6 +990,7 @@ impl Board {
 
     #[inline(always)]
     pub fn get_non_pawn_material_score_abs(&self) -> Score {
+        // TODO: Change Logic
         get_item_unchecked!(ALL_PIECE_TYPES, 1..5)
             .iter()
             .map(|&piece| piece.evaluate() * self.get_piece_mask(piece).popcnt() as Score)

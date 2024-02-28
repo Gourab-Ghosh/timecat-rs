@@ -20,8 +20,8 @@ pub struct SubBoard {
     _transposition_key: u64,
     _halfmove_clock: u8,
     _fullmove_number: NumMoves,
-    _white_score: Score,
-    _black_score: Score,
+    _white_material_score: Score,
+    _black_material_score: Score,
 }
 
 impl PartialEq for SubBoard {
@@ -66,8 +66,8 @@ impl SubBoard {
             _ep_square: None,
             _halfmove_clock: 0,
             _fullmove_number: 1,
-            _white_score: 0,
-            _black_score: 0,
+            _white_material_score: 0,
+            _black_material_score: 0,
         }
     }
 
@@ -158,21 +158,31 @@ impl SubBoard {
         self.remove_castle_rights(!self.turn(), remove);
     }
 
-    fn xor(&mut self, piece: PieceType, bb: BitBoard, color: Color) {
-        let piece_mask = get_item_unchecked_mut!(self._pieces, piece.to_index());
+    fn xor(&mut self, piece_type: PieceType, bb: BitBoard, color: Color) {
+        let piece_mask = get_item_unchecked_mut!(self._pieces, piece_type.to_index());
         *piece_mask ^= bb;
         *get_item_unchecked_mut!(self._occupied_co, color.to_index()) ^= bb;
         self._occupied ^= bb;
-        self._transposition_key ^= Zobrist::piece(piece, bb.to_square(), color);
-        let score_change = if piece_mask.is_empty() {
-            -piece.evaluate()
-        } else {
-            piece.evaluate()
-        };
-        match color {
-            White => self._white_score += score_change,
-            Black => self._black_score += score_change,
+        self._transposition_key ^= Zobrist::piece(piece_type, bb.to_square(), color);
+        if piece_type != King {
+            let score_change = if (*piece_mask & bb).is_empty() {
+                -piece_type.evaluate()
+            } else {
+                piece_type.evaluate()
+            };
+            match color {
+                White => self._white_material_score += score_change,
+                Black => self._black_material_score += score_change,
+            }
         }
+    }
+
+    pub fn get_white_material_score(&self) -> Score {
+        self._white_material_score
+    }
+
+    pub fn get_black_material_score(&self) -> Score {
+        self._black_material_score
     }
 
     #[inline(always)]
