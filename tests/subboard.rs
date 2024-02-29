@@ -3,6 +3,7 @@ use timecat::*;
 #[rustfmt::skip]
 #[test]
 fn position_is_sane() {
+    // TODO: Add some fens to test wrong fens
     let mut board = Board::default();
     let fens = [
         (STARTING_POSITION_FEN, true),
