@@ -159,17 +159,19 @@ impl SubBoard {
     }
 
     fn xor(&mut self, piece_type: PieceType, bb: BitBoard, color: Color) {
-        let piece_mask = get_item_unchecked_mut!(self._pieces, piece_type.to_index());
-        *piece_mask ^= bb;
-        *get_item_unchecked_mut!(self._occupied_co, color.to_index()) ^= bb;
+        *get_item_unchecked_mut!(self._pieces, piece_type.to_index()) ^= bb;
+        let colored_piece_mask = get_item_unchecked_mut!(self._occupied_co, color.to_index());
+        let colored_piece_mask_before = *colored_piece_mask;
+        *colored_piece_mask ^= bb;
         self._occupied ^= bb;
         self._transposition_key ^= Zobrist::piece(piece_type, bb.to_square(), color);
         if piece_type != King {
-            let score_change = if (*piece_mask & bb).is_empty() {
-                -piece_type.evaluate()
-            } else {
-                piece_type.evaluate()
-            };
+            let score_change =
+                if colored_piece_mask.get_mask() > colored_piece_mask_before.get_mask() {
+                    piece_type.evaluate()
+                } else {
+                    -piece_type.evaluate()
+                };
             match color {
                 White => self._white_material_score += score_change,
                 Black => self._black_material_score += score_change,
@@ -177,10 +179,12 @@ impl SubBoard {
         }
     }
 
+    #[inline(always)]
     pub fn get_white_material_score(&self) -> Score {
         self._white_material_score
     }
 
+    #[inline(always)]
     pub fn get_black_material_score(&self) -> Score {
         self._black_material_score
     }
@@ -239,7 +243,7 @@ impl SubBoard {
         match self.ep_square() {
             None => {}
             Some(x) => {
-                let mut square_bb = BitBoard::from_square(x);
+                let mut square_bb = x.to_bitboard();
                 if self.turn() == White {
                     square_bb >>= 8;
                 } else {
@@ -326,7 +330,7 @@ impl SubBoard {
     #[inline(always)]
     pub fn piece_type_at(&self, square: Square) -> Option<PieceType> {
         // TODO: check speed on Naive Algorithm
-        let opp = BitBoard::from_square(square);
+        let opp = square.to_bitboard();
         if (self.occupied() & opp).is_empty() {
             None
         } else {
@@ -362,9 +366,9 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn color_at(&self, square: Square) -> Option<Color> {
-        if !(self.occupied_co(White) & BitBoard::from_square(square)).is_empty() {
+        if !(self.occupied_co(White) & square.to_bitboard()).is_empty() {
             Some(White)
-        } else if !(self.occupied_co(Black) & BitBoard::from_square(square)).is_empty() {
+        } else if !(self.occupied_co(Black) & square.to_bitboard()).is_empty() {
             Some(Black)
         } else {
             None
@@ -453,8 +457,8 @@ impl SubBoard {
         let source = move_.get_source();
         let dest = move_.get_dest();
 
-        let source_bb = BitBoard::from_square(source);
-        let dest_bb = BitBoard::from_square(dest);
+        let source_bb = source.to_bitboard();
+        let dest_bb = dest.to_bitboard();
         let move_bb = source_bb ^ dest_bb;
         let moved = self.piece_type_at(source).unwrap();
 
@@ -514,7 +518,7 @@ impl SubBoard {
             } else if Some(dest) == self.ep_square() {
                 result.xor(
                     Pawn,
-                    BitBoard::from_square(dest.wrapping_backward(self.turn())),
+                    dest.wrapping_backward(self.turn()).to_bitboard(),
                     !self.turn(),
                 );
                 result._checkers ^= get_pawn_attacks(ksq, !result.turn(), dest_bb);
@@ -545,7 +549,7 @@ impl SubBoard {
         for square in attackers {
             let between = between(square, ksq) & result.occupied();
             if between.is_empty() {
-                result._checkers ^= BitBoard::from_square(square);
+                result._checkers ^= square.to_bitboard();
             } else if between.popcnt() == 1 {
                 result._pinned ^= between;
             }
@@ -583,7 +587,7 @@ impl SubBoard {
         for square in pinners {
             let between = between(square, ksq) & self.occupied();
             if between.is_empty() {
-                self._checkers ^= BitBoard::from_square(square);
+                self._checkers ^= square.to_bitboard();
             } else if between.popcnt() == 1 {
                 self._pinned ^= between;
             }
@@ -625,7 +629,7 @@ impl TryFrom<&BoardBuilder> for SubBoard {
             if let Some(piece) = board_builder[square] {
                 board.xor(
                     piece.get_piece_type(),
-                    BitBoard::from_square(square),
+                    square.to_bitboard(),
                     piece.get_color(),
                 );
             }

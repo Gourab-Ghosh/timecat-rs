@@ -938,23 +938,11 @@ impl Board {
         }
     }
 
+    #[inline(always)]
     pub fn get_material_score(&self) -> Score {
-        // TODO: Change Logic
-        let mut score = 0;
-        let black_occupied = self.black_occupied();
-        for &piece in ALL_PIECE_TYPES[..5].iter() {
-            let piece_mask = self.get_piece_mask(piece);
-            if piece_mask.is_empty() {
-                continue;
-            }
-            score += (piece_mask.popcnt() as Score
-                - 2 * (piece_mask & black_occupied).popcnt() as Score)
-                * piece.evaluate();
-        }
-        score
+        self.sub_board.get_white_material_score() - self.sub_board.get_black_material_score()
     }
 
-    #[inline(always)]
     pub fn get_winning_side(&self) -> Option<Color> {
         let material_score = self.get_material_score();
         if material_score.is_positive() {
@@ -981,20 +969,12 @@ impl Board {
 
     #[inline(always)]
     pub fn get_material_score_abs(&self) -> Score {
-        // TODO: Change Logic
-        get_item_unchecked!(ALL_PIECE_TYPES, ..5)
-            .iter()
-            .map(|&piece| piece.evaluate() * self.get_piece_mask(piece).popcnt() as Score)
-            .sum()
+        self.sub_board.get_white_material_score() + self.sub_board.get_black_material_score()
     }
 
     #[inline(always)]
     pub fn get_non_pawn_material_score_abs(&self) -> Score {
-        // TODO: Change Logic
-        get_item_unchecked!(ALL_PIECE_TYPES, 1..5)
-            .iter()
-            .map(|&piece| piece.evaluate() * self.get_piece_mask(piece).popcnt() as Score)
-            .sum()
+        self.get_material_score() - Pawn.evaluate() * self.get_piece_mask(Pawn).popcnt() as Score
     }
 
     #[inline(always)]

@@ -20,11 +20,6 @@ impl BitBoard {
     }
 
     #[inline(always)]
-    pub const fn from_square(square: Square) -> Self {
-        Self(1 << square.to_int())
-    }
-
-    #[inline(always)]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Self {
         Self(1 << ((rank.to_int() << 3) + file.to_int()))
     }

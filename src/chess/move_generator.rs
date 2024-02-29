@@ -80,9 +80,13 @@ impl CheckMoves for NotInCheckMoves {
 impl PawnMoves {
     fn legal_ep_move(board: &SubBoard, source: Square, dest: Square) -> bool {
         let occupied = board.occupied()
-            ^ BitBoard::from_square(board.ep_square().unwrap().wrapping_backward(board.turn()))
-            ^ BitBoard::from_square(source)
-            ^ BitBoard::from_square(dest);
+            ^ board
+                .ep_square()
+                .unwrap()
+                .wrapping_backward(board.turn())
+                .to_bitboard()
+            ^ source.to_bitboard()
+            ^ dest.to_bitboard();
 
         let ksq = (board.get_piece_mask(King) & board.occupied_co(board.turn())).to_square();
 
@@ -185,7 +189,7 @@ impl PieceMoves for PawnMoves {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(
                             src,
-                            BitBoard::from_square(dest),
+                            dest.to_bitboard(),
                             false,
                         ));
                     }
@@ -306,7 +310,7 @@ impl KingMoves {
     fn legal_king_move(board: &SubBoard, dest: Square) -> bool {
         let occupied = board.occupied()
             ^ (board.get_piece_mask(King) & board.occupied_co(board.turn()))
-            | BitBoard::from_square(dest);
+            | dest.to_bitboard();
 
         let rooks = (board.get_piece_mask(Rook) ^ board.get_piece_mask(Queen))
             & board.occupied_co(!board.turn());
@@ -364,7 +368,7 @@ impl PieceMoves for KingMoves {
         let copy = square_and_bitboard_array;
         for dest in copy {
             if !KingMoves::legal_king_move(board, dest) {
-                square_and_bitboard_array ^= BitBoard::from_square(dest);
+                square_and_bitboard_array ^= dest.to_bitboard();
             }
         }
 
@@ -385,7 +389,7 @@ impl PieceMoves for KingMoves {
                 if KingMoves::legal_king_move(board, middle)
                     && KingMoves::legal_king_move(board, right)
                 {
-                    square_and_bitboard_array ^= BitBoard::from_square(right);
+                    square_and_bitboard_array ^= right.to_bitboard();
                 }
             }
 
@@ -397,7 +401,7 @@ impl PieceMoves for KingMoves {
                 if KingMoves::legal_king_move(board, middle)
                     && KingMoves::legal_king_move(board, left)
                 {
-                    square_and_bitboard_array ^= BitBoard::from_square(left);
+                    square_and_bitboard_array ^= left.to_bitboard();
                 }
             }
         }
@@ -487,7 +491,7 @@ impl MoveGenerator {
         for x in 0..self.square_and_bitboard_array.len() {
             let square_and_bitboard = get_item_unchecked_mut!(self.square_and_bitboard_array, x);
             if square_and_bitboard.square == move_.get_source() {
-                square_and_bitboard.bitboard &= !BitBoard::from_square(move_.get_dest());
+                square_and_bitboard.bitboard &= !move_.get_dest().to_bitboard();
                 return true;
             }
         }
@@ -661,7 +665,7 @@ impl Iterator for MoveGenerator {
             );
             self.promotion_index += 1;
             if self.promotion_index >= NUM_PROMOTION_PIECES {
-                square_and_bitboard.bitboard ^= BitBoard::from_square(dest);
+                square_and_bitboard.bitboard ^= dest.to_bitboard();
                 self.promotion_index = 0;
                 if (square_and_bitboard.bitboard & self.iterator_mask).is_empty() {
                     self.index += 1;
@@ -672,7 +676,7 @@ impl Iterator for MoveGenerator {
             // not a promotion move, so its a 'normal' move as far as this function is concerned
             let dest = (square_and_bitboard.bitboard & self.iterator_mask).to_square();
 
-            square_and_bitboard.bitboard ^= BitBoard::from_square(dest);
+            square_and_bitboard.bitboard ^= dest.to_bitboard();
             if (square_and_bitboard.bitboard & self.iterator_mask).is_empty() {
                 self.index += 1;
             }
