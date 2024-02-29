@@ -881,7 +881,7 @@ impl Board {
     pub fn get_pgn(&self) -> String {
         let mut pgn = String::new();
         if self.starting_fen != STARTING_POSITION_FEN {
-            pgn += &format!("[FEN \"{}\"]", self.starting_fen);
+            pgn += &format!("[FEN \"{}\"]\n", self.starting_fen);
         }
         pgn += &self.variation_san(
             &Self::from_fen(&self.starting_fen).unwrap(),
