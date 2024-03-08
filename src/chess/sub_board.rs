@@ -206,8 +206,8 @@ impl SubBoard {
 
     pub fn is_sane(&self) -> bool {
         // make sure there is no square with multiple pieces on it
-        for &x in ALL_PIECE_TYPES.iter() {
-            for &y in ALL_PIECE_TYPES.iter() {
+        for x in ALL_PIECE_TYPES {
+            for y in ALL_PIECE_TYPES {
                 if x != y && !(self.get_piece_mask(x) & self.get_piece_mask(y)).is_empty() {
                     return false;
                 }
@@ -267,7 +267,7 @@ impl SubBoard {
 
         // for each color, verify that, if they have castle rights, that they haven't moved their
         // rooks or king
-        for &color in ALL_COLORS.iter() {
+        for color in ALL_COLORS {
             // get the castle rights
             let castle_rights = self.castle_rights(color);
 
@@ -625,7 +625,7 @@ impl TryFrom<&BoardBuilder> for SubBoard {
     fn try_from(board_builder: &BoardBuilder) -> Result<Self, Self::Error> {
         let mut board = SubBoard::new_empty();
 
-        for square in ALL_SQUARES.into_iter() {
+        for square in ALL_SQUARES {
             if let Some(piece) = board_builder[square] {
                 board.xor(
                     piece.get_piece_type(),

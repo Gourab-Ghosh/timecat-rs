@@ -103,7 +103,7 @@ pub fn test() -> Result<(), EngineError> {
     // all_optional_pieces.extend_from_slice(&ALL_PIECE_TYPES.map(|piece| Some(piece)));
     // for source in ALL_SQUARES {
     //     for dest in ALL_SQUARES {
-    //         for &promotion in all_optional_pieces.iter() {
+    //         for &promotion in &all_optional_pieces {
     //             let move_ = Move::new(source, dest, promotion);
     //             let compressed_then_decompressed_move: Option<Move> = move_.compress().decompress();
     //             let compressed_then_decompressed_move = compressed_then_decompressed_move.unwrap();

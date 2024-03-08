@@ -41,7 +41,7 @@ impl BoardBuilder {
             fullmove_number,
         };
 
-        for piece in pieces.into_iter() {
+        for piece in pieces {
             result.pieces[piece.0.to_index()] = Some(piece.1);
         }
 
@@ -125,7 +125,7 @@ impl fmt::Display for BoardBuilder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut count = 0;
         for &rank in ALL_RANKS.iter().rev() {
-            for &file in ALL_FILES.iter() {
+            for file in ALL_FILES {
                 let square = Square::from_rank_and_file(rank, file).to_index();
 
                 if self.pieces[square].is_some() && count != 0 {
@@ -335,7 +335,7 @@ impl FromStr for BoardBuilder {
 impl From<&SubBoard> for BoardBuilder {
     fn from(board: &SubBoard) -> Self {
         let mut pieces = vec![];
-        for square in ALL_SQUARES.into_iter() {
+        for square in ALL_SQUARES {
             if let Some(piece) = board.piece_at(square) {
                 pieces.push((square, piece));
             }
