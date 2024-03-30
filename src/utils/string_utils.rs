@@ -110,20 +110,20 @@ impl Stringify for Score {
 
 pub trait StringifyMove {
     fn uci(self) -> String;
-    fn algebraic(self, board: &Board, long: bool) -> Result<String, BoardError>;
+    fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String, BoardError>;
     fn san(self, board: &Board) -> Result<String, BoardError>
     where
         Self: Sized,
     {
-        self.algebraic(board, false)
+        self.algebraic(board.get_sub_board(), false)
     }
     fn lan(self, board: &Board) -> Result<String, BoardError>
     where
         Self: Sized,
     {
-        self.algebraic(board, true)
+        self.algebraic(board.get_sub_board(), true)
     }
-    fn stringify_move(self, board: &Board) -> Result<String, BoardError>;
+    fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError>;
 }
 
 impl StringifyMove for Option<Move> {
@@ -134,30 +134,19 @@ impl StringifyMove for Option<Move> {
         }
     }
 
-    fn algebraic(self, board: &Board, long: bool) -> Result<String, BoardError> {
-        board.clone().algebraic_and_push(self, long)
+    fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String, BoardError> {
+        match self {
+            Some(move_) => move_.algebraic(sub_board, long),
+            None => Ok("--".to_string()),
+        }
     }
 
-    fn stringify_move(self, board: &Board) -> Result<String, BoardError> {
+    fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError> {
         if UCI_STATE.is_in_console_mode() {
-            self.algebraic(board, UCI_STATE.use_long_algebraic_notation())
+            self.algebraic(sub_board, UCI_STATE.use_long_algebraic_notation())
         } else {
             Ok(self.uci())
         }
-    }
-}
-
-impl StringifyMove for Move {
-    fn uci(self) -> String {
-        Some(self).uci()
-    }
-
-    fn algebraic(self, board: &Board, long: bool) -> Result<String, BoardError> {
-        Some(self).algebraic(board, long)
-    }
-
-    fn stringify_move(self, board: &Board) -> Result<String, BoardError> {
-        Some(self).stringify_move(board)
     }
 }
 

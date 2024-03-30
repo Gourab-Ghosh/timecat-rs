@@ -39,6 +39,7 @@ impl GameResult {
     }
 }
 
+#[derive(Clone)]
 pub struct Board {
     sub_board: SubBoard,
     stack: Vec<(SubBoard, Option<Move>)>,
@@ -48,14 +49,7 @@ pub struct Board {
 
 impl Board {
     pub fn new() -> Self {
-        let mut board = Self {
-            sub_board: SubBoard::from_str(STARTING_POSITION_FEN).unwrap(),
-            stack: Vec::new(),
-            starting_fen: STARTING_POSITION_FEN.to_string(),
-            repetition_table: RepetitionTable::new(),
-        };
-        board.repetition_table.insert(board.hash());
-        board
+        SubBoard::from_str(STARTING_POSITION_FEN).unwrap().into()
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<(), EngineError> {
@@ -81,8 +75,9 @@ impl Board {
         Ok(board)
     }
 
+    #[inline(always)]
     pub fn get_fen(&self) -> String {
-        self.sub_board.to_string()
+        self.sub_board.get_fen()
     }
 
     pub fn get_sub_board(&self) -> &SubBoard {
@@ -163,7 +158,7 @@ impl Board {
     }
 
     pub fn get_king_square(&self, color: Color) -> Square {
-        self.sub_board.king_square(color)
+        self.sub_board.get_king_square(color)
     }
 
     fn to_board_string(&self, use_unicode: bool) -> String {
@@ -254,7 +249,7 @@ impl Board {
 
     #[inline(always)]
     pub fn is_checkmate(&self) -> bool {
-        self.status() == BoardStatus::Checkmate
+        self.sub_board.is_checkmate()
     }
 
     #[inline(always)]
@@ -364,49 +359,25 @@ impl Board {
     }
 
     pub fn has_insufficient_material(&self, color: Color) -> bool {
-        let occupied = self.occupied_co(color);
-        match occupied.popcnt() {
-            1 => true,
-            2 => ((self.get_piece_mask(Rook)
-                ^ self.get_piece_mask(Queen)
-                ^ self.get_piece_mask(Pawn))
-                & occupied)
-                .is_empty(),
-            _ => false,
-        }
+        self.sub_board.has_insufficient_material(color)
     }
 
     #[inline(always)]
     pub fn has_non_pawn_material(&self) -> bool {
-        (self.get_piece_mask(Pawn) ^ self.get_piece_mask(King)) != self.occupied()
+        self.sub_board.has_non_pawn_material()
     }
 
     #[inline(always)]
     pub fn get_non_king_pieces_mask(&self) -> BitBoard {
-        self.occupied() & !self.get_piece_mask(King)
+        self.sub_board.get_non_king_pieces_mask()
     }
 
     pub fn has_only_same_colored_bishop(&self) -> bool {
-        let non_king_pieces_mask = self.get_non_king_pieces_mask();
-        if non_king_pieces_mask.popcnt() > 32 {
-            return false;
-        }
-        let bishop_bitboard = self.get_piece_mask(Bishop);
-        if non_king_pieces_mask != bishop_bitboard {
-            return false;
-        }
-        non_king_pieces_mask & BB_LIGHT_SQUARES == bishop_bitboard
-            || non_king_pieces_mask & BB_DARK_SQUARES == bishop_bitboard
+        self.sub_board.has_only_same_colored_bishop()
     }
 
     pub fn is_insufficient_material(&self) -> bool {
-        match self.occupied().popcnt() {
-            2 => true,
-            3 => [Pawn, Rook, Queen]
-                .into_iter()
-                .all(|piece| self.get_piece_mask(piece).is_empty()),
-            _ => self.has_only_same_colored_bishop(),
-        }
+        self.sub_board.is_insufficient_material()
     }
 
     #[inline(always)]
@@ -436,40 +407,15 @@ impl Board {
     // }
 
     pub fn is_en_passant(&self, move_: Move) -> bool {
-        match self.ep_square() {
-            Some(ep_square) => {
-                let source = move_.get_source();
-                let dest = move_.get_dest();
-                ep_square == dest
-                    && self.get_piece_mask(Pawn).contains(source)
-                    && [7, 9].contains(&dest.to_int().abs_diff(source.to_int()))
-                    && !self.occupied().contains(dest)
-            }
-            None => false,
-        }
+        self.sub_board.is_en_passant(move_)
     }
 
     pub fn is_passed_pawn(&self, square: Square) -> bool {
-        // TODO:: Scope for improvement
-        let pawn_mask = self.get_piece_mask(Pawn);
-        let self_color = match self.color_at(square) {
-            Some(color) => color,
-            None => return false,
-        };
-        if !(pawn_mask & self.occupied_co(self_color)).contains(square) {
-            return false;
-        }
-        let file = square.get_file();
-        (pawn_mask
-            & self.occupied_co(!self_color)
-            & (get_adjacent_files(file) ^ get_file_bb(file))
-            & get_upper_board_mask(square.get_rank(), self_color))
-        .is_empty()
+        self.sub_board.is_passed_pawn(square)
     }
 
     pub fn is_capture(&self, move_: Move) -> bool {
-        let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
-        !(touched & self.occupied_co(!self.turn())).is_empty() || self.is_en_passant(move_)
+        self.sub_board.is_capture(move_)
     }
 
     #[inline(always)]
@@ -543,27 +489,17 @@ impl Board {
     }
 
     pub fn is_castling(&self, move_: Move) -> bool {
-        if !self.get_piece_mask(King).contains(move_.get_source()) {
-            return false;
-        }
-        let rank_diff = move_
-            .get_source()
-            .get_file()
-            .to_index()
-            .abs_diff(move_.get_dest().get_file().to_index());
-        rank_diff > 1
-            || (self.get_piece_mask(Rook) & self.occupied_co(self.turn()))
-                .contains(move_.get_dest())
+        self.sub_board.is_castling(move_)
     }
 
     #[inline(always)]
-    pub fn get_num_get_piece_mask(&self) -> u32 {
-        self.occupied().popcnt()
+    pub fn get_num_pieces(&self) -> u32 {
+        self.sub_board.get_num_pieces()
     }
 
     #[inline(always)]
     pub fn is_endgame(&self) -> bool {
-        if self.get_num_get_piece_mask() <= ENDGAME_PIECE_THRESHOLD {
+        if self.get_num_pieces() <= ENDGAME_PIECE_THRESHOLD {
             return true;
         }
         match self.get_piece_mask(Queen).popcnt() {
@@ -693,125 +629,26 @@ impl Board {
             .collect()
     }
 
-    fn algebraic_without_suffix(
-        &self,
-        optional_move: Option<Move>,
-        long: bool,
-    ) -> Result<String, BoardError> {
-        // Null move.
-        if optional_move.is_none() {
-            return Ok("--".to_string());
-        }
-
-        let move_ = optional_move.unwrap();
-
-        // Castling.
-        if self.is_castling(move_) {
-            return if move_.get_dest().get_file() < move_.get_source().get_file() {
-                Ok("O-O-O".to_string())
-            } else {
-                Ok("O-O".to_string())
-            };
-        }
-
-        let piece = self
-            .piece_type_at(move_.get_source())
-            .ok_or(BoardError::InvalidSanMove {
-                move_,
-                fen: self.get_fen(),
-            })?;
-        let capture = self.is_capture(move_);
-        let mut san = if piece == Pawn {
-            String::new()
-        } else {
-            piece.to_string(White)
-        };
-
-        if long {
-            san += &move_.get_source().to_string();
-        } else if piece != Pawn {
-            // Get ambiguous move candidates.
-            // Relevant candidates: not exactly the current move,
-            // but to the same square.
-            let mut others = BB_EMPTY;
-            let from_mask = self.get_piece_mask(piece)
-                & self.occupied_co(self.turn())
-                & !move_.get_source().to_bitboard();
-            let to_mask = move_.get_dest().to_bitboard();
-            for candidate in self
-                .generate_masked_legal_moves(to_mask)
-                .filter(|m| !(m.get_source().to_bitboard() & from_mask).is_empty())
-            {
-                others |= candidate.get_source().to_bitboard();
-            }
-
-            // Disambiguate.
-            if !others.is_empty() {
-                let (mut row, mut column) = (false, false);
-                if !(others & get_rank_bb(move_.get_source().get_rank())).is_empty() {
-                    column = true;
-                }
-                if !(others & get_file_bb(move_.get_source().get_file())).is_empty() {
-                    row = true;
-                } else {
-                    column = true;
-                }
-                if column {
-                    san.push(
-                        "abcdefgh"
-                            .chars()
-                            .nth(move_.get_source().get_file().to_index())
-                            .unwrap(),
-                    );
-                }
-                if row {
-                    san += &(move_.get_source().get_rank().to_index() + 1).to_string();
-                }
-            }
-        } else if capture {
-            san.push(
-                "abcdefgh"
-                    .chars()
-                    .nth(move_.get_source().get_file().to_index())
-                    .unwrap(),
-            );
-        }
-
-        // Captures.
-        if capture {
-            san += "x";
-        } else if long {
-            san += "-";
-        }
-
-        // Destination square.
-        san += &move_.get_dest().to_string();
-
-        // Promotion.
-        if let Some(promotion) = move_.get_promotion() {
-            san += &format!("={}", promotion.to_string(White))
-        }
-
-        Ok(san)
-    }
-
     pub fn algebraic_and_push(
         &mut self,
         optional_move: impl Into<Option<Move>>,
         long: bool,
     ) -> Result<String, BoardError> {
         let optional_move = optional_move.into();
-        let san = self.algebraic_without_suffix(optional_move, long)?;
+        if optional_move.is_none() {
+            return Ok("--".to_string())
+        }
+        let move_ = optional_move.unwrap();
+        let san = move_.algebraic_without_suffix(self.get_sub_board(), long)?;
 
         // Look ahead for check or checkmate.
-        self.push(optional_move);
-        let is_check = self.is_check();
-        let is_checkmate = is_check && self.is_checkmate();
+        self.push(move_);
+        let is_checkmate = self.is_checkmate();
 
         // Add check or checkmate suffix.
-        if is_checkmate && optional_move.is_some() {
+        if is_checkmate {
             Ok(san + "#")
-        } else if is_check && optional_move.is_some() {
+        } else if self.is_check() {
             Ok(san + "+")
         } else {
             Ok(san)
@@ -897,26 +734,20 @@ impl Board {
 
     #[inline(always)]
     pub fn is_legal(&self, move_: Move) -> bool {
-        self.sub_board.legal(move_)
+        self.sub_board.is_legal(move_)
     }
 
     pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGenerator {
-        let mut moves = MoveGenerator::new_legal(&self.sub_board);
-        moves.set_iterator_mask(to_bitboard);
-        moves
+        self.sub_board.generate_masked_legal_moves(to_bitboard)
     }
 
     #[inline(always)]
     pub fn generate_legal_moves(&self) -> MoveGenerator {
-        MoveGenerator::new_legal(&self.sub_board)
+        self.sub_board.generate_legal_moves()
     }
 
     pub fn generate_legal_captures(&self) -> MoveGenerator {
-        let mut targets = self.occupied_co(!self.turn());
-        if let Some(ep_square) = self.ep_square() {
-            targets ^= ep_square.to_bitboard()
-        }
-        self.generate_masked_legal_moves(targets)
+        self.sub_board.generate_legal_captures()
     }
 
     #[inline(always)]
@@ -931,60 +762,46 @@ impl Board {
 
     #[inline(always)]
     pub fn score_flipped(&self, score: Score) -> Score {
-        if self.turn() == White {
-            score
-        } else {
-            -score
-        }
+        self.sub_board.score_flipped(score)
     }
 
     #[inline(always)]
     pub fn get_material_score(&self) -> Score {
-        self.sub_board.get_white_material_score() - self.sub_board.get_black_material_score()
+        self.sub_board.get_material_score()
     }
 
     pub fn get_winning_side(&self) -> Option<Color> {
-        let material_score = self.get_material_score();
-        if material_score.is_positive() {
-            Some(White)
-        } else if material_score.is_negative() {
-            Some(Black)
-        } else {
-            None
-        }
+        self.sub_board.get_winning_side()
     }
 
     #[inline(always)]
     pub fn get_material_score_flipped(&self) -> Score {
-        self.score_flipped(self.get_material_score())
+        self.sub_board.get_material_score_flipped()
     }
 
     #[inline(always)]
     pub fn get_masked_material_score_abs(&self, mask: BitBoard) -> Score {
-        get_item_unchecked!(ALL_PIECE_TYPES, ..5)
-            .iter()
-            .map(|&piece| piece.evaluate() * (self.get_piece_mask(piece) & mask).popcnt() as Score)
-            .sum()
+        self.sub_board.get_masked_material_score_abs(mask)
     }
 
     #[inline(always)]
     pub fn get_material_score_abs(&self) -> Score {
-        self.sub_board.get_white_material_score() + self.sub_board.get_black_material_score()
+        self.sub_board.get_material_score_abs()
     }
 
     #[inline(always)]
     pub fn get_non_pawn_material_score_abs(&self) -> Score {
-        self.get_material_score() - Pawn.evaluate() * self.get_piece_mask(Pawn).popcnt() as Score
+        self.sub_board.get_non_pawn_material_score_abs()
     }
 
     #[inline(always)]
     pub fn evaluate(&self) -> Score {
-        EVALUATOR.evaluate(self)
+        self.sub_board.evaluate()
     }
 
     #[inline(always)]
     pub fn evaluate_flipped(&self) -> Score {
-        self.score_flipped(self.evaluate())
+        self.sub_board.evaluate_flipped()
     }
 
     fn mini_perft(&mut self, depth: Depth, print_move: bool) -> usize {
@@ -1027,17 +844,6 @@ impl Default for Board {
     }
 }
 
-impl Clone for Board {
-    fn clone(&self) -> Self {
-        Self {
-            sub_board: self.sub_board.clone(),
-            stack: Vec::new(),
-            starting_fen: self.starting_fen.clone(),
-            repetition_table: self.repetition_table.clone(),
-        }
-    }
-}
-
 impl FromStr for Board {
     type Err = EngineError;
 
@@ -1051,3 +857,28 @@ impl From<&str> for Board {
         Self::from_fen(fen).unwrap()
     }
 }
+
+impl From<SubBoard> for Board {
+    fn from(sub_board: SubBoard) -> Self {
+        let mut board = Self {
+            sub_board,
+            stack: Vec::new(),
+            starting_fen: STARTING_POSITION_FEN.to_string(),
+            repetition_table: RepetitionTable::new(),
+        };
+        board.repetition_table.insert(board.hash());
+        board
+    }
+}
+
+impl From<&SubBoard> for Board {
+    fn from(sub_board: &SubBoard) -> Self {
+        sub_board.to_owned().into()
+    }
+}
+
+// macro_rules! copy_from_sub_board {
+//     ([$function: ident, *]) => {
+//         impl Board
+//     };
+// }

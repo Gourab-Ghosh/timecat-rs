@@ -92,18 +92,69 @@ impl SubBoard {
     }
 
     #[inline(always)]
+    pub fn get_num_pieces(&self) -> u32 {
+        self.occupied().popcnt()
+    }
+
+    #[inline(always)]
     pub fn occupied_co(&self, color: Color) -> BitBoard {
         *get_item_unchecked!(self._occupied_co, color.to_index())
     }
 
     #[inline(always)]
-    pub fn king_square(&self, color: Color) -> Square {
+    pub fn get_king_square(&self, color: Color) -> Square {
         (self.get_piece_mask(King) & self.occupied_co(color)).to_square()
     }
 
     #[inline(always)]
     pub fn get_piece_mask(&self, piece: PieceType) -> BitBoard {
         *get_item_unchecked!(self._pieces, piece.to_index())
+    }
+
+    pub fn has_insufficient_material(&self, color: Color) -> bool {
+        let occupied = self.occupied_co(color);
+        match occupied.popcnt() {
+            1 => true,
+            2 => ((self.get_piece_mask(Rook)
+                ^ self.get_piece_mask(Queen)
+                ^ self.get_piece_mask(Pawn))
+                & occupied)
+                .is_empty(),
+            _ => false,
+        }
+    }
+
+    #[inline(always)]
+    pub fn has_non_pawn_material(&self) -> bool {
+        (self.get_piece_mask(Pawn) ^ self.get_piece_mask(King)) != self.occupied()
+    }
+
+    #[inline(always)]
+    pub fn get_non_king_pieces_mask(&self) -> BitBoard {
+        self.occupied() & !self.get_piece_mask(King)
+    }
+
+    pub fn has_only_same_colored_bishop(&self) -> bool {
+        let non_king_pieces_mask = self.get_non_king_pieces_mask();
+        if non_king_pieces_mask.popcnt() > 32 {
+            return false;
+        }
+        let bishop_bitboard = self.get_piece_mask(Bishop);
+        if non_king_pieces_mask != bishop_bitboard {
+            return false;
+        }
+        non_king_pieces_mask & BB_LIGHT_SQUARES == bishop_bitboard
+            || non_king_pieces_mask & BB_DARK_SQUARES == bishop_bitboard
+    }
+
+    pub fn is_insufficient_material(&self) -> bool {
+        match self.occupied().popcnt() {
+            2 => true,
+            3 => [Pawn, Rook, Queen]
+                .into_iter()
+                .all(|piece| self.get_piece_mask(piece).is_empty()),
+            _ => self.has_only_same_colored_bishop(),
+        }
     }
 
     #[inline(always)]
@@ -291,7 +342,7 @@ impl SubBoard {
         }
 
         // we must make sure the kings aren't touching
-        if !(get_king_moves(self.king_square(White)) & self.get_piece_mask(King)).is_empty() {
+        if !(get_king_moves(self.get_king_square(White)) & self.get_piece_mask(King)).is_empty() {
             return false;
         }
 
@@ -402,6 +453,48 @@ impl SubBoard {
         self._fullmove_number
     }
 
+    #[inline(always)]
+    pub fn get_fen(&self) -> String {
+        self.to_string()
+    }
+
+    pub fn is_en_passant(&self, move_: Move) -> bool {
+        match self.ep_square() {
+            Some(ep_square) => {
+                let source = move_.get_source();
+                let dest = move_.get_dest();
+                ep_square == dest
+                    && self.get_piece_mask(Pawn).contains(source)
+                    && [7, 9].contains(&dest.to_int().abs_diff(source.to_int()))
+                    && !self.occupied().contains(dest)
+            }
+            None => false,
+        }
+    }
+
+    pub fn is_passed_pawn(&self, square: Square) -> bool {
+        // TODO:: Scope for improvement
+        let pawn_mask = self.get_piece_mask(Pawn);
+        let self_color = match self.color_at(square) {
+            Some(color) => color,
+            None => return false,
+        };
+        if !(pawn_mask & self.occupied_co(self_color)).contains(square) {
+            return false;
+        }
+        let file = square.get_file();
+        (pawn_mask
+            & self.occupied_co(!self_color)
+            & (get_adjacent_files(file) ^ get_file_bb(file))
+            & get_upper_board_mask(square.get_rank(), self_color))
+        .is_empty()
+    }
+    
+    pub fn is_capture(&self, move_: Move) -> bool {
+        let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
+        !(touched & self.occupied_co(!self.turn())).is_empty() || self.is_en_passant(move_)
+    }
+
     fn set_ep(&mut self, square: Square) {
         // Only set self._ep_square if the pawn can actually be captured next move.
         let mut rank = square.get_rank();
@@ -420,9 +513,28 @@ impl SubBoard {
         }
     }
 
+    pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGenerator {
+        let mut moves = MoveGenerator::new_legal(&self);
+        moves.set_iterator_mask(to_bitboard);
+        moves
+    }
+
     #[inline(always)]
-    pub fn legal(&self, move_: Move) -> bool {
-        MoveGenerator::new_legal(self).contains(&move_)
+    pub fn generate_legal_moves(&self) -> MoveGenerator {
+        MoveGenerator::new_legal(&self)
+    }
+
+    pub fn generate_legal_captures(&self) -> MoveGenerator {
+        let mut targets = self.occupied_co(!self.turn());
+        if let Some(ep_square) = self.ep_square() {
+            targets ^= ep_square.to_bitboard()
+        }
+        self.generate_masked_legal_moves(targets)
+    }
+
+    #[inline(always)]
+    pub fn is_legal(&self, move_: Move) -> bool {
+        self.generate_legal_moves().contains(&move_)
     }
 
     pub fn make_move_new(&self, move_: Move) -> Self {
@@ -433,6 +545,20 @@ impl SubBoard {
         }
     }
 
+    pub fn is_castling(&self, move_: Move) -> bool {
+        if !self.get_piece_mask(King).contains(move_.get_source()) {
+            return false;
+        }
+        let rank_diff = move_
+            .get_source()
+            .get_file()
+            .to_index()
+            .abs_diff(move_.get_dest().get_file().to_index());
+        rank_diff > 1
+            || (self.get_piece_mask(Rook) & self.occupied_co(self.turn()))
+                .contains(move_.get_dest())
+    }
+    
     pub fn is_zeroing(&self, move_: Move) -> bool {
         let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
         !(touched & self.get_piece_mask(Pawn)).is_empty()
@@ -616,6 +742,74 @@ impl SubBoard {
     #[inline(always)]
     pub fn is_check(&self) -> bool {
         !self._checkers.is_empty()
+    }
+
+    #[inline(always)]
+    pub fn is_checkmate(&self) -> bool {
+        self.status() == BoardStatus::Checkmate
+    }
+
+    #[inline(always)]
+    pub fn gives_check(&self, move_: Move) -> bool {
+        self.make_move_new(move_).is_check()
+    }
+
+    #[inline(always)]
+    pub fn score_flipped(&self, score: Score) -> Score {
+        if self.turn() == White {
+            score
+        } else {
+            -score
+        }
+    }
+
+    #[inline(always)]
+    pub fn get_material_score(&self) -> Score {
+        self.get_white_material_score() - self.get_black_material_score()
+    }
+
+    pub fn get_winning_side(&self) -> Option<Color> {
+        let material_score = self.get_material_score();
+        if material_score.is_positive() {
+            Some(White)
+        } else if material_score.is_negative() {
+            Some(Black)
+        } else {
+            None
+        }
+    }
+
+    #[inline(always)]
+    pub fn get_material_score_flipped(&self) -> Score {
+        self.score_flipped(self.get_material_score())
+    }
+
+    #[inline(always)]
+    pub fn get_masked_material_score_abs(&self, mask: BitBoard) -> Score {
+        get_item_unchecked!(ALL_PIECE_TYPES, ..5)
+            .iter()
+            .map(|&piece| piece.evaluate() * (self.get_piece_mask(piece) & mask).popcnt() as Score)
+            .sum()
+    }
+
+    #[inline(always)]
+    pub fn get_material_score_abs(&self) -> Score {
+        self.get_white_material_score() + self.get_black_material_score()
+    }
+
+    #[inline(always)]
+    pub fn get_non_pawn_material_score_abs(&self) -> Score {
+        self.get_material_score() - Pawn.evaluate() * self.get_piece_mask(Pawn).popcnt() as Score
+    }
+
+    #[inline(always)]
+    pub fn evaluate(&self) -> Score {
+        EVALUATOR.evaluate(self)
+    }
+
+    #[inline(always)]
+    pub fn evaluate_flipped(&self) -> Score {
+        self.score_flipped(self.evaluate())
     }
 }
 

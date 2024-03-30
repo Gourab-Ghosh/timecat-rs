@@ -122,7 +122,7 @@ impl Go {
             "{} Nodes/sec",
             (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
         );
-        let pv_string = get_pv_string(&engine.board, response.get_pv());
+        let pv_string = get_pv_string(engine.board.get_sub_board(), response.get_pv());
         if UCI_STATE.is_in_console_mode() {
             println!();
         }
@@ -134,21 +134,19 @@ impl Go {
         if UCI_STATE.is_in_console_mode() {
             println_info(
                 "Best Move",
-                best_move.stringify_move(&engine.board).unwrap(),
+                best_move.stringify_move(engine.board.get_sub_board()).unwrap(),
             );
         } else {
             let mut move_text = format_info(
                 "bestmove",
-                best_move.stringify_move(&engine.board).unwrap(),
+                best_move.stringify_move(engine.board.get_sub_board()).unwrap(),
                 false,
             );
             if let Some(ponder_move) = response.get_ponder_move() {
                 move_text += " ";
-                let mut new_board = engine.board.clone();
-                new_board.push(best_move);
                 move_text += &format_info(
                     "ponder",
-                    ponder_move.stringify_move(&new_board).unwrap(),
+                    ponder_move.stringify_move(&engine.board.get_sub_board().make_move_new(best_move)).unwrap(),
                     false,
                 );
             }
@@ -296,7 +294,7 @@ impl Pop {
             let last_move = engine.board.pop();
             println_info(
                 "Popped move",
-                last_move.stringify_move(&engine.board).unwrap(),
+                last_move.stringify_move(engine.board.get_sub_board()).unwrap(),
             );
         }
         Ok(())

@@ -31,6 +31,147 @@ impl Move {
     pub const fn get_promotion(&self) -> Option<PieceType> {
         self.promotion
     }
+
+    pub fn algebraic_without_suffix(
+        self,
+        sub_board: &SubBoard,
+        long: bool,
+    ) -> Result<String, BoardError> {
+        // Castling.
+        if sub_board.is_castling(self) {
+            return if self.get_dest().get_file() < self.get_source().get_file() {
+                Ok("O-O-O".to_string())
+            } else {
+                Ok("O-O".to_string())
+            };
+        }
+
+        let piece = sub_board
+            .piece_type_at(self.get_source())
+            .ok_or(BoardError::InvalidSanMove {
+                move_: self,
+                fen: sub_board.get_fen(),
+            })?;
+        let capture = sub_board.is_capture(self);
+        let mut san = if piece == Pawn {
+            String::new()
+        } else {
+            piece.to_string(White)
+        };
+
+        if long {
+            san += &self.get_source().to_string();
+        } else if piece != Pawn {
+            // Get ambiguous move candidates.
+            // Relevant candidates: not exactly the current move,
+            // but to the same square.
+            let mut others = BB_EMPTY;
+            let from_mask = sub_board.get_piece_mask(piece)
+                & sub_board.occupied_co(sub_board.turn())
+                & !self.get_source().to_bitboard();
+            let to_mask = self.get_dest().to_bitboard();
+            for candidate in sub_board
+                .generate_masked_legal_moves(to_mask)
+                .filter(|m| !(m.get_source().to_bitboard() & from_mask).is_empty())
+            {
+                others |= candidate.get_source().to_bitboard();
+            }
+
+            // Disambiguate.
+            if !others.is_empty() {
+                let (mut row, mut column) = (false, false);
+                if !(others & get_rank_bb(self.get_source().get_rank())).is_empty() {
+                    column = true;
+                }
+                if !(others & get_file_bb(self.get_source().get_file())).is_empty() {
+                    row = true;
+                } else {
+                    column = true;
+                }
+                if column {
+                    san.push(
+                        "abcdefgh"
+                            .chars()
+                            .nth(self.get_source().get_file().to_index())
+                            .unwrap(),
+                    );
+                }
+                if row {
+                    san += &(self.get_source().get_rank().to_index() + 1).to_string();
+                }
+            }
+        } else if capture {
+            san.push(
+                "abcdefgh"
+                    .chars()
+                    .nth(self.get_source().get_file().to_index())
+                    .unwrap(),
+            );
+        }
+
+        // Captures.
+        if capture {
+            san += "x";
+        } else if long {
+            san += "-";
+        }
+
+        // Destination square.
+        san += &self.get_dest().to_string();
+
+        // Promotion.
+        if let Some(promotion) = self.get_promotion() {
+            san += &format!("={}", promotion.to_string(White))
+        }
+
+        Ok(san)
+    }
+
+    pub fn algebraic_and_new_sub_board(
+        self,
+        sub_board: &SubBoard,
+        long: bool,
+    ) -> Result<(String, SubBoard), BoardError> {
+        let san = self.algebraic_without_suffix(sub_board, long)?;
+
+        // Look ahead for check or checkmate.
+        let new_sub_board = sub_board.make_move_new(self);
+        let is_checkmate = new_sub_board.is_checkmate();
+
+        // Add check or checkmate suffix.
+        let san = if is_checkmate {
+            san + "#"
+        } else if new_sub_board.is_check() {
+            san + "+"
+        } else {
+            san
+        };
+        Ok((san, new_sub_board))
+    }
+
+    pub fn algebraic(
+        self,
+        sub_board: &SubBoard,
+        long: bool,
+    ) -> Result<String, BoardError> {
+        Ok(self.algebraic_and_new_sub_board(sub_board, long)?.0)
+    }
+
+    pub fn uci(self) -> String {
+        Some(self).uci()
+    }
+
+    pub fn san(self, board: &Board) -> Result<String, BoardError> {
+        self.algebraic(board.get_sub_board(), false)
+    }
+
+    pub fn lan(self, board: &Board) -> Result<String, BoardError> {
+        self.algebraic(board.get_sub_board(), true)
+    }
+
+    pub fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError> {
+        Some(self).stringify_move(sub_board)
+    }
 }
 
 impl fmt::Display for Move {

@@ -34,16 +34,16 @@ impl Evaluator {
 
     fn force_opponent_king_to_corner(
         &self,
-        board: &Board,
+        sub_board: &SubBoard,
         winning_side: Color,
         is_bishop_knight_endgame: bool,
     ) -> Score {
-        let winning_side_king_square = board.get_king_square(winning_side);
-        let losing_side_king_square = board.get_king_square(!winning_side);
+        let winning_side_king_square = sub_board.get_king_square(winning_side);
+        let losing_side_king_square = sub_board.get_king_square(!winning_side);
         let mut least_distant_corner = Square::D4;
         if is_bishop_knight_endgame {
             let is_light_squared_bishop =
-                !(board.get_piece_mask(Bishop) & BB_LIGHT_SQUARES).is_empty();
+                !(sub_board.get_piece_mask(Bishop) & BB_LIGHT_SQUARES).is_empty();
             let least_distant_corners = if is_light_squared_bishop {
                 [Square::A8, Square::H1]
             } else {
@@ -78,7 +78,7 @@ impl Evaluator {
                 .abs_diff(least_distant_corner.get_file().to_index()) as Score;
         let losing_king_corner_score =
             losing_king_rank_distance_score.pow(2) + losing_king_file_distance_score.pow(2);
-        let losing_king_opponent_pieces_score = board
+        let losing_king_opponent_pieces_score = sub_board
             .occupied_co(winning_side)
             .map(|square| 7 - square.distance(losing_side_king_square))
             .sum::<u8>() as Score;
@@ -86,12 +86,12 @@ impl Evaluator {
             + losing_king_opponent_pieces_score
     }
 
-    fn force_passed_pawn_push(&self, board: &Board) -> Score {
-        todo!("force_passed_pawn_push {}", board)
+    fn force_passed_pawn_push(&self, sub_board: &SubBoard) -> Score {
+        todo!("force_passed_pawn_push {}", sub_board)
     }
 
-    fn king_corner_forcing_evaluation(&self, board: &Board, material_score: Score) -> Score {
-        let is_bishop_knight_endgame = board.get_num_get_piece_mask() == 4
+    fn king_corner_forcing_evaluation(&self, sub_board: &SubBoard, material_score: Score) -> Score {
+        let is_bishop_knight_endgame = sub_board.get_num_pieces() == 4
             && material_score.abs() == Knight.evaluate() + Bishop.evaluate();
         let winning_side = if material_score.is_positive() {
             White
@@ -100,29 +100,29 @@ impl Evaluator {
         };
         let signum = material_score.signum();
         let king_forcing_score =
-            self.force_opponent_king_to_corner(board, winning_side, is_bishop_knight_endgame);
+            self.force_opponent_king_to_corner(sub_board, winning_side, is_bishop_knight_endgame);
         (50 * PAWN_VALUE + king_forcing_score / 2) * signum + 2 * material_score
     }
 
-    pub fn is_easily_winning_position(board: &Board, material_score: Score) -> bool {
+    pub fn is_easily_winning_position(sub_board: &SubBoard, material_score: Score) -> bool {
         if material_score.abs() > PAWN_VALUE + Bishop.evaluate() {
-            let white_occupied = board.occupied_co(White);
-            let black_occupied = board.occupied_co(Black);
+            let white_occupied = sub_board.occupied_co(White);
+            let black_occupied = sub_board.occupied_co(Black);
             let num_white_pieces = white_occupied.popcnt();
             let num_black_pieces = black_occupied.popcnt();
             let num_pieces = num_white_pieces + num_black_pieces;
             if num_pieces < 5 {
                 if num_white_pieces == 2 && num_black_pieces == 2 {
-                    let non_king_white_piece = board
+                    let non_king_white_piece = sub_board
                         .piece_type_at(
-                            (white_occupied & !board.get_piece_mask(King))
+                            (white_occupied & !sub_board.get_piece_mask(King))
                                 .next()
                                 .unwrap(),
                         )
                         .unwrap();
-                    let non_king_black_piece = board
+                    let non_king_black_piece = sub_board
                         .piece_type_at(
-                            (black_occupied & !board.get_piece_mask(King))
+                            (black_occupied & !sub_board.get_piece_mask(King))
                                 .next()
                                 .unwrap(),
                         )
@@ -139,8 +139,8 @@ impl Evaluator {
                 {
                     if num_pieces == 3 {
                         let non_king_pieces: (PieceType, PieceType) = (bb
-                            & !board.get_piece_mask(King))
-                        .map(|s| board.piece_type_at(s).unwrap())
+                            & !sub_board.get_piece_mask(King))
+                        .map(|s| sub_board.piece_type_at(s).unwrap())
                         .collect_tuple()
                         .unwrap();
                         if non_king_pieces == (Knight, Knight) {
@@ -157,16 +157,16 @@ impl Evaluator {
         false
     }
 
-    pub fn evaluate_raw(&self, board: &Board) -> Score {
-        let knights_mask = board.get_piece_mask(Knight);
-        if board.get_non_king_pieces_mask() == knights_mask && knights_mask.popcnt() < 3 {
+    pub fn evaluate_raw(&self, sub_board: &SubBoard) -> Score {
+        let knights_mask = sub_board.get_piece_mask(Knight);
+        if sub_board.get_non_king_pieces_mask() == knights_mask && knights_mask.popcnt() < 3 {
             return 0;
         }
-        let material_score = board.get_material_score();
-        if Self::is_easily_winning_position(board, material_score) {
-            return self.king_corner_forcing_evaluation(board, material_score);
+        let material_score = sub_board.get_material_score();
+        if Self::is_easily_winning_position(sub_board, material_score) {
+            return self.king_corner_forcing_evaluation(sub_board, material_score);
         }
-        let mut nnue_eval = self.stockfish_network.eval(board.get_sub_board());
+        let mut nnue_eval = self.stockfish_network.eval(sub_board);
         if nnue_eval.abs() > WINNING_SCORE_THRESHOLD {
             let multiplier = match_interpolate!(
                 0,
@@ -187,7 +187,7 @@ impl Evaluator {
                     5.0 * multiplier,
                     MAX_MATERIAL_SCORE,
                     0,
-                    board.get_masked_material_score_abs(board.occupied_co(losing_side))
+                    sub_board.get_masked_material_score_abs(sub_board.occupied_co(losing_side))
                 )
                 .round() as Score
                 * PAWN_VALUE;
@@ -195,18 +195,18 @@ impl Evaluator {
         nnue_eval
     }
 
-    fn hashed_evaluate(&self, board: &Board) -> Score {
-        let hash = board.hash();
+    fn hashed_evaluate(&self, sub_board: &SubBoard) -> Score {
+        let hash = sub_board.hash();
         if let Some(score) = self.score_cache.get(hash) {
             return score;
         }
-        let score = self.evaluate_raw(board);
+        let score = self.evaluate_raw(sub_board);
         self.score_cache.add(hash, score);
         score
     }
 
-    pub fn evaluate(&self, board: &Board) -> Score {
-        self.hashed_evaluate(board)
+    pub fn evaluate(&self, sub_board: &SubBoard) -> Score {
+        self.hashed_evaluate(sub_board)
     }
 
     pub fn reset_variables(&self) {

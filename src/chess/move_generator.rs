@@ -11,7 +11,7 @@ trait PieceMoves {
         let occupied = board.occupied();
         let color = board.turn();
         let my_pieces = board.occupied_co(color);
-        let ksq = board.king_square(color);
+        let ksq = board.get_king_square(color);
 
         let pieces = board.get_piece_mask(Self::into_piece()) & my_pieces;
         let pinned = board.pinned();
@@ -134,7 +134,7 @@ impl PieceMoves for PawnMoves {
         let occupied = board.occupied();
         let color = board.turn();
         let my_pieces = board.occupied_co(color);
-        let ksq = board.king_square(color);
+        let ksq = board.get_king_square(color);
 
         let pieces = board.get_piece_mask(Self::into_piece()) & my_pieces;
         let pinned = board.pinned();
@@ -236,7 +236,7 @@ impl PieceMoves for KnightMoves {
         let occupied = board.occupied();
         let color = board.turn();
         let my_pieces = board.occupied_co(color);
-        let ksq = board.king_square(color);
+        let ksq = board.get_king_square(color);
 
         let pieces = board.get_piece_mask(Self::into_piece()) & my_pieces;
         let pinned = board.pinned();
@@ -361,7 +361,7 @@ impl PieceMoves for KingMoves {
     {
         let occupied = board.occupied();
         let color = board.turn();
-        let ksq = board.king_square(color);
+        let ksq = board.get_king_square(color);
 
         let mut square_and_bitboard_array = Self::pseudo_legals(ksq, color, occupied, mask);
 

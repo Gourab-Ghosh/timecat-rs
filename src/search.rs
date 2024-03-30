@@ -3,7 +3,7 @@ use EntryFlag::*;
 
 #[derive(Clone)]
 pub struct SearchInfo {
-    board: Board,
+    sub_board: SubBoard,
     depth: Depth,
     seldepth: Ply,
     score: Score,
@@ -18,7 +18,7 @@ pub struct SearchInfo {
 impl SearchInfo {
     pub fn new(searcher: &Searcher) -> Self {
         Self {
-            board: searcher.initial_board.clone(),
+            sub_board: searcher.initial_sub_board.to_owned(),
             depth: searcher.get_current_depth(),
             seldepth: searcher.get_selective_depth(),
             score: searcher.get_score(),
@@ -45,7 +45,7 @@ impl SearchInfo {
     pub fn get_score(&self) -> Score {
         let mut score = self.score;
         if UCI_STATE.is_in_console_mode() {
-            score = self.board.score_flipped(score);
+            score = self.sub_board.score_flipped(score);
         }
         score
     }
@@ -82,15 +82,15 @@ impl SearchInfo {
             Self::format_info("overwrites", self.overwrites),
             Self::format_info("collisions", self.collisions),
             Self::format_info("time", self.get_time_elapsed().stringify()),
-            Self::format_info("pv", get_pv_string(&self.board, &self.pv)),
+            Self::format_info("pv", get_pv_string(&self.sub_board, &self.pv)),
         ];
         println!("{}", outputs.join(" "));
     }
 
     pub fn print_warning_message(&self, mut alpha: Score, mut beta: Score) {
         if UCI_STATE.is_in_console_mode() {
-            alpha = self.board.score_flipped(alpha);
-            beta = self.board.score_flipped(beta);
+            alpha = self.sub_board.score_flipped(alpha);
+            beta = self.sub_board.score_flipped(beta);
         }
         let warning_message = format!(
             "info string resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {}, beta {} and score {} with time {}",
@@ -144,7 +144,7 @@ impl Default for PVTable {
 
 pub struct Searcher {
     id: usize,
-    initial_board: Board,
+    initial_sub_board: SubBoard,
     board: Board,
     pv_table: PVTable,
     move_sorter: MoveSorter,
@@ -166,7 +166,7 @@ impl Searcher {
     ) -> Self {
         Self {
             id,
-            initial_board: board.clone(),
+            initial_sub_board: board.get_sub_board().to_owned(),
             board,
             pv_table: PVTable::new(),
             move_sorter: MoveSorter::new(),
@@ -210,7 +210,7 @@ impl Searcher {
             "{} {} {} {} {} {} {} {} {} {} {}",
             "info".colorize(INFO_MESSAGE_STYLE),
             "curr move".colorize(INFO_MESSAGE_STYLE),
-            curr_move.stringify_move(board).unwrap(),
+            curr_move.stringify_move(board.get_sub_board()).unwrap(),
             "depth".colorize(INFO_MESSAGE_STYLE),
             depth,
             "score".colorize(INFO_MESSAGE_STYLE),
@@ -235,7 +235,7 @@ impl Searcher {
                 0,
                 TRANSPOSITION_TABLE.read_best_move(self.board.hash()),
                 self.get_best_move(),
-                Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
+                Evaluator::is_easily_winning_position(self.board.get_sub_board(), self.board.get_material_score()),
             )
             .map(|WeightedMove { move_, .. }| {
                 (
@@ -458,7 +458,7 @@ impl Searcher {
             self.ply,
             best_move,
             self.get_nth_pv_move(self.ply),
-            Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
+            Evaluator::is_easily_winning_position(self.board.get_sub_board(), self.board.get_material_score()),
         );
         #[allow(clippy::single_match)]
         match weighted_moves.len() {
@@ -624,7 +624,7 @@ impl Searcher {
     }
 
     pub fn get_pv_from_t_table(&self) -> Vec<Option<Move>> {
-        extract_pv_from_t_table(&mut self.initial_board.clone())
+        extract_pv_from_t_table(&self.initial_sub_board)
             .into_iter()
             .map_into()
             .collect_vec()
