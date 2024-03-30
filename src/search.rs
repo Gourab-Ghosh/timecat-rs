@@ -27,7 +27,7 @@ impl SearchInfo {
             overwrites: searcher.get_num_overwrites(),
             collisions: searcher.get_num_collisions(),
             clock: searcher.timer.get_clock(),
-            pv: searcher.get_pv().to_vec(),
+            pv: searcher.get_pv(),
         }
     }
 
@@ -235,7 +235,10 @@ impl Searcher {
                 0,
                 TRANSPOSITION_TABLE.read_best_move(self.board.hash()),
                 self.get_best_move(),
-                Evaluator::is_easily_winning_position(self.board.get_sub_board(), self.board.get_material_score()),
+                Evaluator::is_easily_winning_position(
+                    self.board.get_sub_board(),
+                    self.board.get_material_score(),
+                ),
             )
             .map(|WeightedMove { move_, .. }| {
                 (
@@ -458,7 +461,10 @@ impl Searcher {
             self.ply,
             best_move,
             self.get_nth_pv_move(self.ply),
-            Evaluator::is_easily_winning_position(self.board.get_sub_board(), self.board.get_material_score()),
+            Evaluator::is_easily_winning_position(
+                self.board.get_sub_board(),
+                self.board.get_material_score(),
+            ),
         );
         #[allow(clippy::single_match)]
         match weighted_moves.len() {

@@ -15,7 +15,7 @@ trait PieceMoves {
 
         let pieces = board.get_piece_mask(Self::into_piece()) & my_pieces;
         let pinned = board.pinned();
-        let checkers = board.checkers();
+        let checkers = board.get_checkers();
 
         let check_mask = if T::IN_CHECK {
             between(checkers.to_square(), ksq) ^ checkers
@@ -138,7 +138,7 @@ impl PieceMoves for PawnMoves {
 
         let pieces = board.get_piece_mask(Self::into_piece()) & my_pieces;
         let pinned = board.pinned();
-        let checkers = board.checkers();
+        let checkers = board.get_checkers();
 
         let check_mask = if T::IN_CHECK {
             between(checkers.to_square(), ksq) ^ checkers
@@ -240,7 +240,7 @@ impl PieceMoves for KnightMoves {
 
         let pieces = board.get_piece_mask(Self::into_piece()) & my_pieces;
         let pinned = board.pinned();
-        let checkers = board.checkers();
+        let checkers = board.get_checkers();
 
         if T::IN_CHECK {
             let check_mask = between(checkers.to_square(), ksq) ^ checkers;
@@ -446,7 +446,7 @@ pub struct MoveGenerator {
 impl MoveGenerator {
     #[inline(always)]
     fn enumerate_moves(board: &SubBoard) -> MoveList {
-        let checkers = board.checkers();
+        let checkers = board.get_checkers();
         let mask = !board.occupied_co(board.turn());
         let mut move_list = ArrayVec::new();
 

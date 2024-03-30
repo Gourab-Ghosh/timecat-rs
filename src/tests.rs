@@ -67,6 +67,7 @@ pub fn test() -> Result<(), EngineError> {
 
     // self_play(&mut Engine::from_fen("8/8/8/8/2N5/B2K4/8/1k6 b - - 73 37")?, GoCommand::MoveTime(Duration::from_secs(1)), true, 2)?;
     self_play(&mut Engine::from_fen("7k/8/8/5Ppp/1pB1P3/1P2B3/5KP1/8 w - - 0 56")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
+    // self_play(&mut Engine::from_fen("8/8/5Q2/7p/1pBBP1k1/1P4p1/4K1P1/8 w - - 3 62")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
 
     // println!("{}", Board::from_fen("8/8/8/8/7R/7K/k7/8 b - - 1 1")?);
 

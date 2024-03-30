@@ -5,7 +5,9 @@ pub fn extract_pv_from_t_table(sub_board: &SubBoard) -> Vec<Move> {
     let best_move = TRANSPOSITION_TABLE.read_best_move(sub_board.hash());
     if let Some(best_move) = best_move {
         pv.push(best_move);
-        pv.append(&mut extract_pv_from_t_table(&sub_board.make_move_new(best_move)));
+        pv.append(&mut extract_pv_from_t_table(
+            &sub_board.make_move_new(best_move),
+        ));
     }
     pv
 }
@@ -28,7 +30,10 @@ pub fn get_pv_as_algebraic(sub_board: &SubBoard, pv: &[Option<Move>], long: bool
             false
         };
         pv_string += &(if is_legal_move {
-            let (san, new_sub_board) = optional_move.unwrap().algebraic_and_new_sub_board(&sub_board, long).unwrap();
+            let (san, new_sub_board) = optional_move
+                .unwrap()
+                .algebraic_and_new_sub_board(&sub_board, long)
+                .unwrap();
             sub_board = new_sub_board;
             san
         } else {

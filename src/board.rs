@@ -75,11 +75,6 @@ impl Board {
         Ok(board)
     }
 
-    #[inline(always)]
-    pub fn get_fen(&self) -> String {
-        self.sub_board.get_fen()
-    }
-
     pub fn get_sub_board(&self) -> &SubBoard {
         &self.sub_board
     }
@@ -118,18 +113,6 @@ impl Board {
         self.starting_fen = self.get_fen();
     }
 
-    pub fn color_at(&self, square: Square) -> Option<Color> {
-        self.sub_board.color_at(square)
-    }
-
-    pub fn piece_type_at(&self, square: Square) -> Option<PieceType> {
-        self.sub_board.piece_type_at(square)
-    }
-
-    pub fn piece_at(&self, square: Square) -> Option<Piece> {
-        self.sub_board.piece_at(square)
-    }
-
     pub fn piece_symbol_at(&self, square: Square) -> String {
         match self.piece_at(square) {
             Some(piece) => piece.to_string(),
@@ -151,14 +134,6 @@ impl Board {
             .to_string();
         }
         EMPTY_SPACE_UNICODE_SYMBOL.to_string()
-    }
-
-    pub fn get_checkers(&self) -> BitBoard {
-        self.sub_board.checkers()
-    }
-
-    pub fn get_king_square(&self, color: Color) -> Square {
-        self.sub_board.get_king_square(color)
     }
 
     fn to_board_string(&self, use_unicode: bool) -> String {
@@ -217,56 +192,6 @@ impl Board {
         self.to_board_string(true)
     }
 
-    #[inline(always)]
-    pub fn turn(&self) -> Color {
-        self.sub_board.turn()
-    }
-
-    #[inline(always)]
-    pub fn occupied(&self) -> BitBoard {
-        self.sub_board.occupied()
-    }
-
-    #[inline(always)]
-    pub fn occupied_co(&self, color: Color) -> BitBoard {
-        self.sub_board.occupied_co(color)
-    }
-
-    #[inline(always)]
-    pub fn black_occupied(&self) -> BitBoard {
-        self.sub_board.occupied_co(Black)
-    }
-
-    #[inline(always)]
-    pub fn white_occupied(&self) -> BitBoard {
-        self.sub_board.occupied_co(White)
-    }
-
-    #[inline(always)]
-    pub fn is_check(&self) -> bool {
-        self.sub_board.is_check()
-    }
-
-    #[inline(always)]
-    pub fn is_checkmate(&self) -> bool {
-        self.sub_board.is_checkmate()
-    }
-
-    #[inline(always)]
-    pub fn gives_check(&self, move_: Move) -> bool {
-        self.sub_board.make_move_new(move_).is_check()
-    }
-
-    #[inline(always)]
-    pub fn gives_checkmate(&self, move_: Move) -> bool {
-        self.sub_board.make_move_new(move_).status() == BoardStatus::Checkmate
-    }
-
-    #[inline(always)]
-    pub fn status(&self) -> BoardStatus {
-        self.sub_board.status()
-    }
-
     pub fn result(&self) -> GameResult {
         if self.is_other_draw() {
             return GameResult::Draw;
@@ -281,16 +206,6 @@ impl Board {
     #[inline(always)]
     pub fn get_num_moves(&self) -> NumMoves {
         self.stack.len() as NumMoves
-    }
-
-    #[inline(always)]
-    pub fn get_halfmove_clock(&self) -> u8 {
-        self.sub_board.get_halfmove_clock()
-    }
-
-    #[inline(always)]
-    pub fn get_fullmove_number(&self) -> NumMoves {
-        self.sub_board.get_fullmove_number()
     }
 
     #[inline(always)]
@@ -358,28 +273,6 @@ impl Board {
         self.is_halfmoves(100)
     }
 
-    pub fn has_insufficient_material(&self, color: Color) -> bool {
-        self.sub_board.has_insufficient_material(color)
-    }
-
-    #[inline(always)]
-    pub fn has_non_pawn_material(&self) -> bool {
-        self.sub_board.has_non_pawn_material()
-    }
-
-    #[inline(always)]
-    pub fn get_non_king_pieces_mask(&self) -> BitBoard {
-        self.sub_board.get_non_king_pieces_mask()
-    }
-
-    pub fn has_only_same_colored_bishop(&self) -> bool {
-        self.sub_board.has_only_same_colored_bishop()
-    }
-
-    pub fn is_insufficient_material(&self) -> bool {
-        self.sub_board.is_insufficient_material()
-    }
-
     #[inline(always)]
     pub fn is_stalemate(&self) -> bool {
         self.status() == BoardStatus::Stalemate
@@ -406,25 +299,9 @@ impl Board {
     //     let pawn_mask = self.get_piece_mask(Pawn);
     // }
 
-    pub fn is_en_passant(&self, move_: Move) -> bool {
-        self.sub_board.is_en_passant(move_)
-    }
-
-    pub fn is_passed_pawn(&self, square: Square) -> bool {
-        self.sub_board.is_passed_pawn(square)
-    }
-
-    pub fn is_capture(&self, move_: Move) -> bool {
-        self.sub_board.is_capture(move_)
-    }
-
     #[inline(always)]
     pub fn is_quiet(&self, move_: Move) -> bool {
         !(self.is_capture(move_) || self.gives_check(move_))
-    }
-
-    pub fn is_zeroing(&self, move_: Move) -> bool {
-        self.sub_board.is_zeroing(move_)
     }
 
     #[inline(always)]
@@ -446,11 +323,6 @@ impl Board {
             CastleRights::None => BB_EMPTY,
         };
         white_castling_rights ^ black_castling_rights
-    }
-
-    #[inline(always)]
-    pub fn get_piece_mask(&self, piece: PieceType) -> BitBoard {
-        self.sub_board.get_piece_mask(piece)
     }
 
     // fn reduces_castling_rights(&self, move_: Move) -> bool {
@@ -481,20 +353,6 @@ impl Board {
     #[inline(always)]
     pub fn is_irreversible(&self, move_: Move) -> bool {
         self.has_legal_en_passant() || self.is_zeroing(move_) || self.reduces_castling_rights(move_)
-    }
-
-    #[inline(always)]
-    pub fn ep_square(&self) -> Option<Square> {
-        self.sub_board.ep_square()
-    }
-
-    pub fn is_castling(&self, move_: Move) -> bool {
-        self.sub_board.is_castling(move_)
-    }
-
-    #[inline(always)]
-    pub fn get_num_pieces(&self) -> u32 {
-        self.sub_board.get_num_pieces()
     }
 
     #[inline(always)]
@@ -575,7 +433,7 @@ impl Board {
         }
         let san = san.replace('0', "O");
         for move_ in self.generate_legal_moves() {
-            if move_.san(self).unwrap() == san {
+            if move_.san(self.get_sub_board()).unwrap() == san {
                 return Ok(Some(move_));
             }
         }
@@ -636,7 +494,7 @@ impl Board {
     ) -> Result<String, BoardError> {
         let optional_move = optional_move.into();
         if optional_move.is_none() {
-            return Ok("--".to_string())
+            return Ok("--".to_string());
         }
         let move_ = optional_move.unwrap();
         let san = move_.algebraic_without_suffix(self.get_sub_board(), long)?;
@@ -732,78 +590,6 @@ impl Board {
         pgn
     }
 
-    #[inline(always)]
-    pub fn is_legal(&self, move_: Move) -> bool {
-        self.sub_board.is_legal(move_)
-    }
-
-    pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGenerator {
-        self.sub_board.generate_masked_legal_moves(to_bitboard)
-    }
-
-    #[inline(always)]
-    pub fn generate_legal_moves(&self) -> MoveGenerator {
-        self.sub_board.generate_legal_moves()
-    }
-
-    pub fn generate_legal_captures(&self) -> MoveGenerator {
-        self.sub_board.generate_legal_captures()
-    }
-
-    #[inline(always)]
-    pub fn hash(&self) -> u64 {
-        self.sub_board.hash()
-    }
-
-    #[inline(always)]
-    pub fn get_pawn_hash(&self) -> u64 {
-        self.sub_board.get_pawn_hash()
-    }
-
-    #[inline(always)]
-    pub fn score_flipped(&self, score: Score) -> Score {
-        self.sub_board.score_flipped(score)
-    }
-
-    #[inline(always)]
-    pub fn get_material_score(&self) -> Score {
-        self.sub_board.get_material_score()
-    }
-
-    pub fn get_winning_side(&self) -> Option<Color> {
-        self.sub_board.get_winning_side()
-    }
-
-    #[inline(always)]
-    pub fn get_material_score_flipped(&self) -> Score {
-        self.sub_board.get_material_score_flipped()
-    }
-
-    #[inline(always)]
-    pub fn get_masked_material_score_abs(&self, mask: BitBoard) -> Score {
-        self.sub_board.get_masked_material_score_abs(mask)
-    }
-
-    #[inline(always)]
-    pub fn get_material_score_abs(&self) -> Score {
-        self.sub_board.get_material_score_abs()
-    }
-
-    #[inline(always)]
-    pub fn get_non_pawn_material_score_abs(&self) -> Score {
-        self.sub_board.get_non_pawn_material_score_abs()
-    }
-
-    #[inline(always)]
-    pub fn evaluate(&self) -> Score {
-        self.sub_board.evaluate()
-    }
-
-    #[inline(always)]
-    pub fn evaluate_flipped(&self) -> Score {
-        self.sub_board.evaluate_flipped()
-    }
-
     fn mini_perft(&mut self, depth: Depth, print_move: bool) -> usize {
         let moves = self.generate_legal_moves();
         if depth == 1 {
@@ -877,8 +663,64 @@ impl From<&SubBoard> for Board {
     }
 }
 
-// macro_rules! copy_from_sub_board {
-//     ([$function: ident, *]) => {
-//         impl Board
-//     };
-// }
+macro_rules! copy_from_sub_board {
+    ($($visibility:vis fn $function:ident(&self $(, $argument:ident: $argument_type:ty)* $(,)?) -> $return_type:ty),* $(,)?) => {
+        impl Board {
+            $(
+                #[inline(always)]
+                $visibility fn $function(&self, $($argument: $argument_type),*) -> $return_type {
+                    self.sub_board.$function($($argument),*)
+                }
+            )*
+        }
+    };
+}
+
+copy_from_sub_board!(
+    pub fn evaluate(&self) -> Score,
+    pub fn evaluate_flipped(&self) -> Score,
+    pub fn generate_legal_moves(&self) -> MoveGenerator,
+    pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGenerator,
+    pub fn generate_legal_captures(&self) -> MoveGenerator,
+    pub fn hash(&self) -> u64,
+    pub fn get_pawn_hash(&self) -> u64,
+    pub fn get_material_score(&self) -> Score,
+    pub fn get_non_pawn_material_score_abs(&self) -> Score,
+    pub fn get_winning_side(&self) -> Option<Color>,
+    pub fn get_material_score_flipped(&self) -> Score,
+    pub fn get_material_score_abs(&self) -> Score,
+    pub fn is_legal(&self, move_: Move) -> bool,
+    pub fn score_flipped(&self, score: Score) -> Score,
+    pub fn get_masked_material_score_abs(&self, mask: BitBoard) -> Score,
+    pub fn get_fen(&self) -> String,
+    pub fn color_at(&self, square: Square) -> Option<Color>,
+    pub fn piece_type_at(&self, square: Square) -> Option<PieceType>,
+    pub fn piece_at(&self, square: Square) -> Option<Piece>,
+    pub fn get_checkers(&self) -> BitBoard,
+    pub fn get_king_square(&self, color: Color) -> Square,
+    pub fn turn(&self) -> Color,
+    pub fn occupied(&self) -> BitBoard,
+    pub fn occupied_co(&self, color: Color) -> BitBoard,
+    pub fn get_black_occupied(&self) -> BitBoard,
+    pub fn get_white_occupied(&self) -> BitBoard,
+    pub fn is_check(&self) -> bool,
+    pub fn is_checkmate(&self) -> bool,
+    pub fn status(&self) -> BoardStatus,
+    pub fn get_halfmove_clock(&self) -> u8,
+    pub fn get_fullmove_number(&self) -> NumMoves,
+    pub fn has_non_pawn_material(&self) -> bool,
+    pub fn get_non_king_pieces_mask(&self) -> BitBoard,
+    pub fn has_only_same_colored_bishop(&self) -> bool,
+    pub fn is_insufficient_material(&self) -> bool,
+    pub fn is_en_passant(&self, move_: Move) -> bool,
+    pub fn is_passed_pawn(&self, square: Square) -> bool,
+    pub fn is_capture(&self, move_: Move) -> bool,
+    pub fn is_zeroing(&self, move_: Move) -> bool,
+    pub fn get_piece_mask(&self, piece: PieceType) -> BitBoard,
+    pub fn ep_square(&self) -> Option<Square>,
+    pub fn is_castling(&self, move_: Move) -> bool,
+    pub fn get_num_pieces(&self) -> u32,
+    pub fn has_insufficient_material(&self, color: Color) -> bool,
+    pub fn gives_check(&self, move_: Move) -> bool,
+    pub fn gives_checkmate(&self, move_: Move) -> bool,
+);

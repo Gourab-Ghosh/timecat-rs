@@ -46,12 +46,13 @@ impl Move {
             };
         }
 
-        let piece = sub_board
-            .piece_type_at(self.get_source())
-            .ok_or(BoardError::InvalidSanMove {
-                move_: self,
-                fen: sub_board.get_fen(),
-            })?;
+        let piece =
+            sub_board
+                .piece_type_at(self.get_source())
+                .ok_or(BoardError::InvalidSanMove {
+                    move_: self,
+                    fen: sub_board.get_fen(),
+                })?;
         let capture = sub_board.is_capture(self);
         let mut san = if piece == Pawn {
             String::new()
@@ -147,30 +148,6 @@ impl Move {
             san
         };
         Ok((san, new_sub_board))
-    }
-
-    pub fn algebraic(
-        self,
-        sub_board: &SubBoard,
-        long: bool,
-    ) -> Result<String, BoardError> {
-        Ok(self.algebraic_and_new_sub_board(sub_board, long)?.0)
-    }
-
-    pub fn uci(self) -> String {
-        Some(self).uci()
-    }
-
-    pub fn san(self, board: &Board) -> Result<String, BoardError> {
-        self.algebraic(board.get_sub_board(), false)
-    }
-
-    pub fn lan(self, board: &Board) -> Result<String, BoardError> {
-        self.algebraic(board.get_sub_board(), true)
-    }
-
-    pub fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError> {
-        Some(self).stringify_move(sub_board)
     }
 }
 

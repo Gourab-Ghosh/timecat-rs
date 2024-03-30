@@ -134,19 +134,25 @@ impl Go {
         if UCI_STATE.is_in_console_mode() {
             println_info(
                 "Best Move",
-                best_move.stringify_move(engine.board.get_sub_board()).unwrap(),
+                best_move
+                    .stringify_move(engine.board.get_sub_board())
+                    .unwrap(),
             );
         } else {
             let mut move_text = format_info(
                 "bestmove",
-                best_move.stringify_move(engine.board.get_sub_board()).unwrap(),
+                best_move
+                    .stringify_move(engine.board.get_sub_board())
+                    .unwrap(),
                 false,
             );
             if let Some(ponder_move) = response.get_ponder_move() {
                 move_text += " ";
                 move_text += &format_info(
                     "ponder",
-                    ponder_move.stringify_move(&engine.board.get_sub_board().make_move_new(best_move)).unwrap(),
+                    ponder_move
+                        .stringify_move(&engine.board.get_sub_board().make_move_new(best_move))
+                        .unwrap(),
                     false,
                 );
             }
@@ -294,7 +300,9 @@ impl Pop {
             let last_move = engine.board.pop();
             println_info(
                 "Popped move",
-                last_move.stringify_move(engine.board.get_sub_board()).unwrap(),
+                last_move
+                    .stringify_move(engine.board.get_sub_board())
+                    .unwrap(),
             );
         }
         Ok(())

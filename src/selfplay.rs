@@ -42,7 +42,9 @@ pub fn self_play(
         };
         let score = response.get_score();
         let time_elapsed = clock.elapsed();
-        let best_move_san = best_move.stringify_move(engine.board.get_sub_board()).unwrap();
+        let best_move_san = best_move
+            .stringify_move(engine.board.get_sub_board())
+            .unwrap();
         let pv = get_pv_string(engine.board.get_sub_board(), response.get_pv());
         engine.board.push(best_move);
         if time_elapsed.as_secs_f64()

@@ -111,25 +111,41 @@ impl Stringify for Score {
 pub trait StringifyMove {
     fn uci(self) -> String;
     fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String, BoardError>;
-    fn san(self, board: &Board) -> Result<String, BoardError>
-    where
-        Self: Sized,
-    {
-        self.algebraic(board.get_sub_board(), false)
-    }
-    fn lan(self, board: &Board) -> Result<String, BoardError>
-    where
-        Self: Sized,
-    {
-        self.algebraic(board.get_sub_board(), true)
-    }
     fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError>;
+
+    fn san(self, sub_board: &SubBoard) -> Result<String, BoardError>
+    where
+        Self: Sized,
+    {
+        self.algebraic(sub_board, false)
+    }
+
+    fn lan(self, sub_board: &SubBoard) -> Result<String, BoardError>
+    where
+        Self: Sized,
+    {
+        self.algebraic(sub_board, true)
+    }
+}
+
+impl StringifyMove for Move {
+    fn uci(self) -> String {
+        self.to_string()
+    }
+
+    fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String, BoardError> {
+        Ok(self.algebraic_and_new_sub_board(sub_board, long)?.0)
+    }
+
+    fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError> {
+        Some(self).stringify_move(sub_board)
+    }
 }
 
 impl StringifyMove for Option<Move> {
     fn uci(self) -> String {
         match self {
-            Some(m) => m.to_string(),
+            Some(m) => m.uci(),
             None => String::from("0000"),
         }
     }
@@ -142,10 +158,9 @@ impl StringifyMove for Option<Move> {
     }
 
     fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError> {
-        if UCI_STATE.is_in_console_mode() {
-            self.algebraic(sub_board, UCI_STATE.use_long_algebraic_notation())
-        } else {
-            Ok(self.uci())
+        match UCI_STATE.is_in_console_mode() {
+            true => self.algebraic(sub_board, UCI_STATE.use_long_algebraic_notation()),
+            false => Ok(self.uci()),
         }
     }
 }

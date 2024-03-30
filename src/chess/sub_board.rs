@@ -76,7 +76,7 @@ impl SubBoard {
         let moves = MoveGenerator::new_legal(self).len();
         match moves {
             0 => {
-                if self.checkers().is_empty() {
+                if self.get_checkers().is_empty() {
                     BoardStatus::Stalemate
                 } else {
                     BoardStatus::Checkmate
@@ -99,6 +99,16 @@ impl SubBoard {
     #[inline(always)]
     pub fn occupied_co(&self, color: Color) -> BitBoard {
         *get_item_unchecked!(self._occupied_co, color.to_index())
+    }
+
+    #[inline(always)]
+    pub fn get_black_occupied(&self) -> BitBoard {
+        self.occupied_co(Black)
+    }
+
+    #[inline(always)]
+    pub fn get_white_occupied(&self) -> BitBoard {
+        self.occupied_co(White)
     }
 
     #[inline(always)]
@@ -241,8 +251,18 @@ impl SubBoard {
     }
 
     #[inline(always)]
+    pub fn gives_check(&self, move_: Move) -> bool {
+        self.make_move_new(move_).is_check()
+    }
+
+    #[inline(always)]
+    pub fn gives_checkmate(&self, move_: Move) -> bool {
+        self.make_move_new(move_).status() == BoardStatus::Checkmate
+    }
+
+    #[inline(always)]
     pub fn null_move(&self) -> Option<Self> {
-        if !self.checkers().is_empty() {
+        if !self.get_checkers().is_empty() {
             None
         } else {
             let mut result = self.to_owned();
@@ -312,7 +332,7 @@ impl SubBoard {
         let mut board_copy = self.to_owned();
         board_copy._turn = !board_copy.turn();
         board_copy.update_pin_and_checkers_info();
-        if !board_copy.checkers().is_empty() {
+        if !board_copy.get_checkers().is_empty() {
             return false;
         }
 
@@ -489,7 +509,7 @@ impl SubBoard {
             & get_upper_board_mask(square.get_rank(), self_color))
         .is_empty()
     }
-    
+
     pub fn is_capture(&self, move_: Move) -> bool {
         let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
         !(touched & self.occupied_co(!self.turn())).is_empty() || self.is_en_passant(move_)
@@ -558,7 +578,7 @@ impl SubBoard {
             || (self.get_piece_mask(Rook) & self.occupied_co(self.turn()))
                 .contains(move_.get_dest())
     }
-    
+
     pub fn is_zeroing(&self, move_: Move) -> bool {
         let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
         !(touched & self.get_piece_mask(Pawn)).is_empty()
@@ -735,7 +755,7 @@ impl SubBoard {
     }
 
     #[inline(always)]
-    pub fn checkers(&self) -> BitBoard {
+    pub fn get_checkers(&self) -> BitBoard {
         self._checkers
     }
 
@@ -747,11 +767,6 @@ impl SubBoard {
     #[inline(always)]
     pub fn is_checkmate(&self) -> bool {
         self.status() == BoardStatus::Checkmate
-    }
-
-    #[inline(always)]
-    pub fn gives_check(&self, move_: Move) -> bool {
-        self.make_move_new(move_).is_check()
     }
 
     #[inline(always)]
