@@ -708,9 +708,7 @@ impl SubBoard {
         // TODO: Change Transposition Key
         self._pieces
             .iter_mut()
-            .for_each(|bb| *bb = bb.flip_vertical());
-        self._occupied_co
-            .iter_mut()
+            .chain(self._occupied_co.iter_mut())
             .for_each(|bb| *bb = bb.flip_vertical());
         self._occupied = self._occupied.flip_vertical();
         self._turn = !self._turn;
