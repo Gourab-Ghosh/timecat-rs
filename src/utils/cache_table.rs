@@ -294,7 +294,7 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
         self.reset_mask(&table);
         drop(table);
         self.reset_variables();
-        for &CacheTableEntry { hash, entry } in current_table_copy.into_iter() {
+        for &CacheTableEntry { hash, entry } in current_table_copy.iter() {
             if hash != 0 {
                 self.add(hash, entry);
             }

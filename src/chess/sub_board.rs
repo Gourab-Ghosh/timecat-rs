@@ -534,14 +534,14 @@ impl SubBoard {
     }
 
     pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGenerator {
-        let mut moves = MoveGenerator::new_legal(&self);
+        let mut moves = MoveGenerator::new_legal(self);
         moves.set_iterator_mask(to_bitboard);
         moves
     }
 
     #[inline(always)]
     pub fn generate_legal_moves(&self) -> MoveGenerator {
-        MoveGenerator::new_legal(&self)
+        MoveGenerator::new_legal(self)
     }
 
     pub fn generate_legal_captures(&self) -> MoveGenerator {
