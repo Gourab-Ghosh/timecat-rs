@@ -10,4 +10,7 @@ WORKDIR /root/timecat
 ENV RUSTFLAGS="-C target-cpu=native"
 RUN cargo build --release
 
-CMD [ "/root/timecat/target/release/timecat", "--no-color", "--uci" ]
+RUN mv /root/timecat/target/release/timecat /timecat
+RUN rm -rf /root
+
+CMD [ "/timecat", "--no-color", "--uci" ]
