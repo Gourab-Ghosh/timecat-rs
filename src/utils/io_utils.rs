@@ -1,5 +1,6 @@
 use super::*;
 use std::io::{self, Write};
+use std::sync::mpsc::{channel, Receiver, Sender};
 
 pub fn print_line<T: fmt::Display>(line: T) {
     let to_print = format!("{line}");
@@ -11,41 +12,35 @@ pub fn print_line<T: fmt::Display>(line: T) {
 }
 
 pub struct IoReader {
-    user_input: Mutex<String>,
-    received_input: AtomicBool,
+    sender: Sender<String>,
+    receiver: Mutex<Receiver<String>>,
 }
 
 impl IoReader {
     pub fn new() -> Self {
+        let (sender, receiver) = channel();
         Self {
-            user_input: Mutex::new(String::new()),
-            received_input: AtomicBool::new(false),
+            sender,
+            receiver: Mutex::new(receiver),
         }
     }
 
     pub fn start_reader(&self) {
         loop {
-            if self.received_input.load(MEMORY_ORDERING) {
-                continue;
-            }
+            let mut user_input = String::new();
             std::io::stdin()
-                .read_line(&mut self.user_input.lock().unwrap())
+                .read_line(&mut user_input)
                 .expect("Failed to read line!");
-            self.received_input.store(true, MEMORY_ORDERING);
+            self.sender.send(user_input).unwrap();
         }
     }
 
     pub fn read_line_once(&self) -> Option<String> {
-        if !self.received_input.load(MEMORY_ORDERING) {
-            thread::sleep(COMMUNICATION_CHECK_INTERVAL);
-            return None;
-        }
-        let mut user_input = self.user_input.lock().unwrap();
-        let input = user_input.to_owned();
-        user_input.clear();
-        drop(user_input);
-        self.received_input.store(false, MEMORY_ORDERING);
-        Some(input)
+        self.receiver
+            .lock()
+            .unwrap()
+            .recv_timeout(COMMUNICATION_CHECK_INTERVAL)
+            .ok()
     }
 
     pub fn read_line(&self) -> String {
