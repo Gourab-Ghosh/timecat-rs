@@ -484,7 +484,7 @@ impl Parser {
                 }
             }
             "help" => {
-                println!("{}", Self::get_help_text());
+                println!("{}", Self::get_help_message());
                 Ok(())
             }
             _ => Err(UnknownCommand),
@@ -580,10 +580,12 @@ impl Parser {
     }
 
     fn print_exit_message() {
-        println!(
-            "{}",
-            "Program ended successfully!".colorize(SUCCESS_MESSAGE_STYLE)
-        );
+        if UCI_STATE.is_in_console_mode() {
+            println!(
+                "{}",
+                "Program ended successfully!".colorize(SUCCESS_MESSAGE_STYLE)
+            );
+        }
     }
 
     pub fn main_loop() {
@@ -627,7 +629,7 @@ impl Parser {
             UCI_STATE.set_num_threads(num_threads, false);
         }
         if args.contains(&"--help") {
-            println!("{}", Self::get_help_text());
+            println!("{}", Self::get_help_message());
             return;
         }
         if args.contains(&"--version") {
@@ -654,8 +656,8 @@ impl Parser {
         Self::main_loop.run_and_print_time();
     }
 
-    pub fn get_help_text() -> String {
-        let help_text = "Sadly, the help text is till now not implemented. But type uci to go into the uci mode and visit the link \"https://backscattering.de/chess/uci/\" to know the necessary commands required to use an uci chess engine.";
-        help_text.colorize(ERROR_MESSAGE_STYLE).to_string()
+    pub fn get_help_message() -> String {
+        let help_message = "Sadly, the help message is till now not implemented. But type uci to go into the uci mode and visit the link \"https://backscattering.de/chess/uci/\" to know the necessary commands required to use an uci chess engine.";
+        help_message.colorize(ERROR_MESSAGE_STYLE).to_string()
     }
 }
