@@ -1,4 +1,4 @@
-FROM rust:1-bullseye
+FROM rust:1-slim-bullseye
 
 RUN mkdir /root/timecat
 COPY src /root/timecat/src
