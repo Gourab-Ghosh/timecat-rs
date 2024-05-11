@@ -63,10 +63,10 @@ macro_rules! test_repetition_and_checkmate {
             #[test]
             fn [<move_$func>]() {
                 for (fen, moves, move_, returned_value) in $array {
-                    let mut board = Board::from_fen(fen).unwrap();
-                    board.push_sans(moves).unwrap();
+                    let mut board = Board::from_fen(fen).expect(&format!("Failed to set board FEN {fen}"));
+                    board.push_sans(moves).expect(&format!("Failed to push sans {moves:?} in position {board}"));
                     assert_eq!(
-                        board.$func(board.parse_san(move_).unwrap().unwrap()),
+                        board.$func(board.parse_san(move_).expect(&format!("Failed to parse san {move_} in position {board}")).unwrap()),
                         returned_value,
                         "Returned {returned_value} in position {fen} with moves {moves} and move {move_}"
                     );

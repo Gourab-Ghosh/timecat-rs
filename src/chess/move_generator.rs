@@ -646,12 +646,13 @@ impl Iterator for MoveGenerator {
 
     fn next(&mut self) -> Option<Move> {
         let square_and_bitboard_array_len = self.square_and_bitboard_array.len();
+        if self.index >= square_and_bitboard_array_len {
+            return None;
+        }
         let square_and_bitboard =
             get_item_unchecked_mut!(self.square_and_bitboard_array, self.index);
 
-        if self.index >= square_and_bitboard_array_len
-            || (square_and_bitboard.bitboard & self.iterator_mask).is_empty()
-        {
+        if (square_and_bitboard.bitboard & self.iterator_mask).is_empty() {
             // are we done?
             None
         } else if square_and_bitboard.promotion {

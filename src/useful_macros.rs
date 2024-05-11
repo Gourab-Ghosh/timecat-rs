@@ -53,6 +53,32 @@ macro_rules! get_item_unchecked_mut {
     };
 }
 
+// #[macro_export]
+// macro_rules! get_item_unchecked {
+//     ($vec:expr, $index:expr) => {
+//         &$vec[$index]
+//     };
+//     ($vec:expr, $index1:expr, $index2:expr) => {
+//         &$vec[$index1][$index2]
+//     };
+//     ($vec:expr, $index1:expr, $index2:expr, $index3:expr) => {
+//         &$vec[$index1][$index2][$index3]
+//     };
+// }
+
+// #[macro_export]
+// macro_rules! get_item_unchecked_mut {
+//     ($vec:expr, $index:expr) => {
+//         &mut $vec[$index]
+//     };
+//     ($vec:expr, $index1:expr, $index2:expr) => {
+//         &mut $vec[$index1][$index2]
+//     };
+//     ($vec:expr, $index1:expr, $index2:expr, $index3:expr) => {
+//         &mut $vec[$index1][$index2][$index3]
+//     };
+// }
+
 #[macro_export]
 macro_rules! interpolate {
     ($start:expr, $end:expr, $alpha:expr) => {

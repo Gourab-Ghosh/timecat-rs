@@ -117,8 +117,13 @@ impl PVTable {
         }
     }
 
+    #[allow(unused_unsafe)]
     pub fn get_pv(&self, ply: Ply) -> &[Option<Move>] {
-        get_item_unchecked!(self.table, ply, 0..*self.length.get_unchecked(ply))
+        get_item_unchecked!(
+            self.table,
+            ply,
+            0..unsafe { *self.length.get_unchecked(ply) }
+        )
     }
 
     pub fn update_table(&mut self, ply: Ply, move_: Move) {
