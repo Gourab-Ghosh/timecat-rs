@@ -195,7 +195,7 @@ fn test_passed_pawn_detection() {
         ("8/4nkNp/1p6/5P2/2K3p1/8/P3P3/8 b - - 0 1", vec![F5, B6, H4, H7]),
     ];
     for (fen, squares_vec) in moves {
-        let board = Board::from_fen(&fen).unwrap();
+        let board = Board::from_fen(fen).unwrap();
         for (modified_board, mut expected_value) in [
             (
                 {
@@ -237,7 +237,7 @@ fn move_is_en_passant() {
     ];
     for (moves_str, move_, expected_return) in moves {
         board.set_fen(STARTING_POSITION_FEN).unwrap();
-        board.push_sans(&moves_str).unwrap();
+        board.push_sans(moves_str).unwrap();
         let returned_value = board.is_en_passant(move_);
         assert_eq!(
             returned_value, expected_return,

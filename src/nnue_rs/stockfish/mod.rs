@@ -1,3 +1,5 @@
+#![allow(clippy::multiple_bound_locations)]
+
 //!Module for Stockfish networks.
 
 ///Module for the Stockfish HalfKP 256x2-32-32 architecture.

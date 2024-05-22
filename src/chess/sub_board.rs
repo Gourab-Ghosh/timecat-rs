@@ -586,7 +586,7 @@ impl SubBoard {
     }
 
     pub fn make_move(&self, move_: Move, result: &mut Self) {
-        *result = self.to_owned();
+        self.clone_into(result);
 
         if result.is_zeroing(move_) {
             result._halfmove_clock = 0;

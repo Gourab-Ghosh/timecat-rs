@@ -1,3 +1,5 @@
+#![allow(clippy::multiple_bound_locations)]
+
 //!Module for layer types.
 
 use std::ops::AddAssign;
@@ -45,7 +47,7 @@ where
 {
     ///Clear an accumulator to a default state.
     pub fn empty(&self, outputs: &mut [WB; OUTPUTS]) {
-        *outputs = self.biases.clone();
+        outputs.clone_from(&self.biases);
     }
 
     ///Add an input feature to an accumulator.
