@@ -32,7 +32,7 @@ pub mod prelude {
     pub use constants::ranks::*;
     pub use constants::types::*;
     pub use error::*;
-    pub use itertools::Itertools;
+    pub use itertools::*;
     pub use parse::*;
     pub use paste::paste;
     pub use polyglot::*;
