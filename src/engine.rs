@@ -83,7 +83,7 @@ impl GoResponse {
 }
 
 pub struct Engine {
-    pub board: Board,
+    board: Board,
     num_nodes_searched: Arc<AtomicUsize>,
     selective_depth: Arc<AtomicUsize>,
     stopper: Arc<AtomicBool>,
@@ -99,6 +99,14 @@ impl Engine {
         }
     }
 
+    pub fn get_board(&self) -> &Board{
+        &self.board
+    }
+
+    pub fn get_board_mut(&mut self) -> &mut Board{
+        &mut self.board
+    }
+    
     fn reset_variables(&self) {
         self.num_nodes_searched.store(0, MEMORY_ORDERING);
         self.selective_depth.store(0, MEMORY_ORDERING);

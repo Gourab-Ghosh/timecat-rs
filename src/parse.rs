@@ -45,10 +45,10 @@ struct Go;
 impl Go {
     fn perft(engine: &mut Engine, depth: Depth) -> usize {
         if UCI_STATE.is_in_console_mode() {
-            println!("{}\n", engine.board);
+            println!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
-        let position_count = engine.board.perft(depth);
+        let position_count = engine.get_board_mut().perft(depth);
         let elapsed_time = clock.elapsed();
         let nps: String = format!(
             "{} nodes/sec",
@@ -106,13 +106,13 @@ impl Go {
 
     fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<(), EngineError> {
         if UCI_STATE.is_in_console_mode() {
-            println!("{}\n", engine.board);
+            println!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
         let response = engine.go(go_command, true);
         let Some(best_move) = response.get_best_move() else {
             return Err(BestMoveNotFound {
-                fen: engine.board.get_fen(),
+                fen: engine.get_board().get_fen(),
             });
         };
         let elapsed_time = clock.elapsed();
@@ -121,7 +121,7 @@ impl Go {
             "{} Nodes/sec",
             (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
         );
-        let pv_string = get_pv_string(engine.board.get_sub_board(), response.get_pv());
+        let pv_string = get_pv_string(engine.get_board().get_sub_board(), response.get_pv());
         if UCI_STATE.is_in_console_mode() {
             println!();
         }
@@ -134,14 +134,14 @@ impl Go {
             println_info(
                 "Best Move",
                 best_move
-                    .stringify_move(engine.board.get_sub_board())
+                    .stringify_move(engine.get_board().get_sub_board())
                     .unwrap(),
             );
         } else {
             let mut move_text = format_info(
                 "bestmove",
                 best_move
-                    .stringify_move(engine.board.get_sub_board())
+                    .stringify_move(engine.get_board().get_sub_board())
                     .unwrap(),
                 false,
             );
@@ -150,7 +150,7 @@ impl Go {
                 move_text += &format_info(
                     "ponder",
                     ponder_move
-                        .stringify_move(&engine.board.get_sub_board().make_move_new(best_move))
+                        .stringify_move(&engine.get_board().get_sub_board().make_move_new(best_move))
                         .unwrap(),
                     false,
                 );
@@ -210,7 +210,7 @@ impl Set {
         };
         engine.set_fen(&fen)?;
         if UCI_STATE.is_in_console_mode() {
-            println!("{}", engine.board);
+            println!("{}", engine.get_board());
         }
         Ok(())
     }
@@ -248,26 +248,26 @@ impl Push {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         for move_text in commands.iter().skip(2) {
             let optional_move = match second_command.as_str() {
-                "san" => engine.board.parse_san(move_text)?,
-                "uci" => engine.board.parse_uci(move_text)?,
-                "move" | "moves" => engine.board.parse_move(move_text)?,
+                "san" => engine.get_board().parse_san(move_text)?,
+                "uci" => engine.get_board().parse_uci(move_text)?,
+                "move" | "moves" => engine.get_board().parse_move(move_text)?,
                 _ => return Err(UnknownCommand),
             };
             if let Some(move_) = optional_move {
-                if !engine.board.is_legal(move_) {
+                if !engine.get_board().is_legal(move_) {
                     return Err(IllegalMove {
                         move_text: move_text.to_string(),
-                        board_fen: engine.board.get_fen(),
+                        board_fen: engine.get_board().get_fen(),
                     });
                 }
-                engine.board.push(move_);
+                engine.get_board_mut().push(move_);
             } else {
-                if engine.board.is_check() {
+                if engine.get_board().is_check() {
                     return Err(NullMoveInCheck {
-                        fen: engine.board.get_fen(),
+                        fen: engine.get_board().get_fen(),
                     });
                 }
-                engine.board.push(None);
+                engine.get_board_mut().push(None);
             }
             println_info("Pushed move", move_text);
         }
@@ -289,14 +289,14 @@ impl Pop {
         }
         let num_pop = second_command.parse()?;
         for _ in 0..num_pop {
-            if engine.board.has_empty_stack() {
+            if engine.get_board().has_empty_stack() {
                 return Err(EmptyStack);
             }
-            let last_move = engine.board.pop();
+            let last_move = engine.get_board_mut().pop();
             println_info(
                 "Popped move",
                 last_move
-                    .stringify_move(engine.board.get_sub_board())
+                    .stringify_move(engine.get_board().get_sub_board())
                     .unwrap(),
             );
         }
@@ -462,9 +462,9 @@ impl Parser {
 
     fn run_single_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
         let res = match user_input.to_lowercase().as_str() {
-            "d" => Ok(println!("{}", engine.board)),
+            "d" => Ok(println!("{}", engine.get_board())),
             "eval" => {
-                force_println_info("Current Score", engine.board.evaluate().stringify());
+                force_println_info("Current Score", engine.get_board().evaluate().stringify());
                 Ok(())
             }
             "reset board" => engine

@@ -18,17 +18,17 @@ pub fn self_play(
     if move_limit == 0 {
         return Ok(());
     }
-    let stating_fen = engine.board.get_fen();
+    let stating_fen = engine.get_board().get_fen();
     let mut time_taken_vec: Vec<f64> = Vec::new();
     let mut max_time_taken_fen = String::new();
     let mut prediction_score_vec = Vec::new();
-    println!("{}", engine.board);
-    if engine.board.is_game_over() {
+    println!("{}", engine.get_board());
+    if engine.get_board().is_game_over() {
         return Err(EngineError::GameAlreadyOver);
     }
-    let initial_num_moves = engine.board.get_num_moves();
-    while !engine.board.is_game_over()
-        && (engine.board.get_num_moves() as u64) < (initial_num_moves as u64) + (move_limit as u64)
+    let initial_num_moves = engine.get_board().get_num_moves();
+    while !engine.get_board().is_game_over()
+        && (engine.get_board().get_num_moves() as u64) < (initial_num_moves as u64) + (move_limit as u64)
     {
         let clock = Instant::now();
         if print {
@@ -37,29 +37,29 @@ pub fn self_play(
         let response = engine.go(go_command, print);
         let Some(best_move) = response.get_best_move() else {
             return Err(EngineError::BestMoveNotFound {
-                fen: engine.board.get_fen(),
+                fen: engine.get_board().get_fen(),
             });
         };
         let score = response.get_score();
         let time_elapsed = clock.elapsed();
         let best_move_san = best_move
-            .stringify_move(engine.board.get_sub_board())
+            .stringify_move(engine.get_board().get_sub_board())
             .unwrap();
-        let pv = get_pv_string(engine.board.get_sub_board(), response.get_pv());
-        engine.board.push(best_move);
+        let pv = get_pv_string(engine.get_board().get_sub_board(), response.get_pv());
+        engine.get_board_mut().push(best_move);
         if time_elapsed.as_secs_f64()
             > *time_taken_vec
                 .iter()
                 .max_by(|&x, &y| x.partial_cmp(y).unwrap())
                 .unwrap_or(&0.0)
         {
-            max_time_taken_fen = engine.board.get_fen();
+            max_time_taken_fen = engine.get_board().get_fen();
         }
         time_taken_vec.push(time_elapsed.as_secs_f64());
         prediction_score_vec.push(score);
         let nps =
             (engine.get_num_nodes_searched() as u128 * 10u128.pow(9)) / time_elapsed.as_nanos();
-        println!("\n{}\n", engine.board);
+        println!("\n{}\n", engine.get_board());
         println_info("Best Move", best_move_san);
         println_info("Score", score.stringify());
         println_info("Num Nodes Searched", engine.get_num_nodes_searched());
@@ -94,7 +94,7 @@ pub fn self_play(
     println!(
         "\n{}:\n\n{}",
         "Game PGN".colorize(INFO_MESSAGE_STYLE),
-        engine.board.get_pgn(),
+        engine.get_board().get_pgn(),
     );
     println!(
         "\n{}:\n\n[{}]",
