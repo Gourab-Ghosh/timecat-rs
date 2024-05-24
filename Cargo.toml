@@ -3,6 +3,7 @@ name = "timecat"
 authors = ["Gourab Ghosh"]
 version = "0.1.0"
 edition = "2021"
+homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
 description = "A NNUE based chess engine implementing the Negamax algorithm."
 license-file = "LICENSE"
