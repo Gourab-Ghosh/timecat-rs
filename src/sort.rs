@@ -1,9 +1,21 @@
 use super::*;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct WeightedMove {
     pub weight: MoveWeight,
     pub move_: Move,
+}
+
+impl PartialOrd for WeightedMove {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.weight.partial_cmp(&other.weight)
+    }
+}
+
+impl Ord for WeightedMove {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.weight.cmp(&other.weight)
+    }
 }
 
 impl Default for WeightedMove {
@@ -21,7 +33,7 @@ impl WeightedMove {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct WeightedMoveListSorter {
     weighted_moves: [WeightedMove; MAX_MOVES_PER_POSITION],
     len: usize,
@@ -38,6 +50,11 @@ impl WeightedMoveListSorter {
     #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.len == 0
+    }
+
+    #[inline(always)]
+    pub fn get_weighted_moves(&self) -> &[WeightedMove] {
+        &self.weighted_moves
     }
 }
 

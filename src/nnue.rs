@@ -9,8 +9,7 @@ fn square_to_stockfish_square(square: Square) -> StockfishSquare {
     StockfishSquare::from_index(square.to_index())
 }
 
-// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, BinRead)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StockfishNetwork {
     model: SfHalfKpModel,
 }

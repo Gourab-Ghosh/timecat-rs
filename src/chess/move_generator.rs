@@ -436,6 +436,7 @@ impl SquareAndBitBoard {
 
 type MoveList = ArrayVec<SquareAndBitBoard, 18>;
 
+#[derive(Clone, Debug)]
 pub struct MoveGenerator {
     square_and_bitboard_array: MoveList,
     promotion_index: usize,

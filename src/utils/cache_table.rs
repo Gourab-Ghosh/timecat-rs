@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct CacheTableEntry<T: Copy + Clone + PartialEq> {
     hash: u64,
     entry: T,
@@ -122,6 +122,7 @@ macro_rules! update_overwrites_and_collisions {
     };
 }
 
+#[derive(Debug)]
 pub struct CacheTable<T: Copy + Clone + PartialEq> {
     table: Mutex<Box<[CacheTableEntry<T>]>>,
     size: Mutex<CacheTableSize>,

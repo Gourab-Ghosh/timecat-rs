@@ -39,7 +39,7 @@ impl GameResult {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Board {
     sub_board: SubBoard,
     stack: Vec<(SubBoard, Option<Move>)>,

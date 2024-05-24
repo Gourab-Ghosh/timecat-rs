@@ -1,6 +1,8 @@
 use super::*;
 use nnue::StockfishNetwork;
 
+
+#[derive(Debug)]
 pub struct Evaluator {
     stockfish_network: StockfishNetwork,
     score_cache: CacheTable<Score>,

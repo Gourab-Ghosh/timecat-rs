@@ -40,7 +40,6 @@ macro_rules! extract_time {
     };
 }
 
-#[derive(Debug)]
 struct Go;
 
 impl Go {
@@ -173,7 +172,6 @@ impl Go {
     }
 }
 
-#[derive(Debug)]
 pub struct SetOption;
 
 impl SetOption {
@@ -199,7 +197,6 @@ impl SetOption {
     }
 }
 
-#[derive(Debug)]
 struct Set;
 
 impl Set {
@@ -244,7 +241,6 @@ impl Set {
     }
 }
 
-#[derive(Debug)]
 struct Push;
 
 impl Push {
@@ -283,7 +279,6 @@ impl Push {
     }
 }
 
-#[derive(Debug)]
 struct Pop;
 
 impl Pop {
@@ -443,7 +438,6 @@ impl DebugMode {
     }
 }
 
-#[derive(Debug)]
 pub struct Parser;
 
 impl Parser {

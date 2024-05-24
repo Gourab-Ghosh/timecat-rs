@@ -7,7 +7,7 @@ pub enum BoardStatus {
     Checkmate,
 }
 
-#[derive(Eq, Clone, Debug)]
+#[derive(Clone, Debug, Eq)]
 pub struct SubBoard {
     _pieces: [BitBoard; NUM_PIECE_TYPES],
     _occupied_co: [BitBoard; NUM_COLORS],

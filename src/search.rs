@@ -1,7 +1,7 @@
 use super::*;
 use EntryFlag::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SearchInfo {
     sub_board: SubBoard,
     depth: Depth,
@@ -104,6 +104,7 @@ impl SearchInfo {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct PVTable {
     length: [usize; MAX_PLY],
     table: [[Option<Move>; MAX_PLY]; MAX_PLY],
@@ -147,6 +148,7 @@ impl Default for PVTable {
     }
 }
 
+#[derive(Clone, Debug, Default)]
 pub struct Searcher {
     id: usize,
     initial_sub_board: SubBoard,
