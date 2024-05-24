@@ -4,10 +4,17 @@ authors = ["Gourab Ghosh"]
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
-description = "A chess engine"
+description = "A NNUE based chess engine implementing the Negamax algorithm."
 license-file = "LICENSE"
 keywords = ["rust", "chess-engine", "chess", "uci", "alpha-beta-pruning", "negamax", "chess-ai", "uci-chess-engine", "nnue", "timecat", "timecat-rs"]
 readme = "README.md"
+include = [
+    "src/**/*",
+    "build.rs",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

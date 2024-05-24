@@ -1,4 +1,6 @@
-# timecat-rs
+# timecat
+
+Will soon update the readme section.
 
 ## License
 
