@@ -10,6 +10,7 @@ keywords = ["rust", "chess-engine", "chess", "uci", "alpha-beta-pruning", "negam
 readme = "README.md"
 include = [
     "src/**/*",
+    "!src/**/*.bak",
     "build.rs",
     "Cargo.toml",
     "README.md",
