@@ -9,7 +9,7 @@ license-file = "LICENSE"
 keywords = ["rust", "chess-engine", "chess", "uci", "alpha-beta-pruning", "negamax", "chess-ai", "uci-chess-engine", "nnue", "timecat", "timecat-rs"]
 readme = "README.md"
 include = [
-    "src/**/*",
+    "src/",
     "!src/**/*.bak",
     "build.rs",
     "Cargo.toml",
