@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
 const NNUE_FILE_NAME: &str = "nn-62ef826d1a6d.nnue";
@@ -70,6 +71,9 @@ fn main() {
                 remove_nnue_file(&nnue_path).unwrap();
                 panic!("{err:?}");
             }
+        }
+        if nnue_file.metadata().unwrap().size() < 2_u64.pow(10) {
+            panic!("File not downloaded correctly!");
         }
     }
 }
