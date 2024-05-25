@@ -72,7 +72,7 @@ fn main() {
 - `colored_output`: Displays all information in a visually appealing colored format for enhanced readability..
 - `serde`: Enables serialization and deserialization support via `serde`.
 
-Default features include binary and colored_output
+Default features include `binary` and `colored_output`
 
 ## License
 Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](LICENSE). You are free to use, modify, and distribute it under the same license.
