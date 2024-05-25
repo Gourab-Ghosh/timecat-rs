@@ -1,6 +1,7 @@
 use super::*;
 use EngineError::*;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Fail, PartialEq, Eq, Debug)]
 pub enum EngineError {
     #[fail(display = "No input! Please try again!")]

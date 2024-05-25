@@ -1,6 +1,7 @@
 use super::*;
 pub use PieceType::*;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
 pub enum PieceType {
     Pawn,
@@ -61,6 +62,7 @@ impl fmt::Display for PieceType {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
 pub struct Piece {
     type_: PieceType,

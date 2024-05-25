@@ -1,5 +1,6 @@
 use super::*;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[allow(clippy::enum_variant_names)]
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
 pub enum EntryFlag {
@@ -9,6 +10,7 @@ pub enum EntryFlag {
     HashBeta,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq)]
 struct TranspositionTableData {
     depth: Depth,
@@ -26,6 +28,7 @@ impl Default for TranspositionTableData {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct TranspositionTableEntry {
     optional_data: Option<TranspositionTableData>,
@@ -49,6 +52,7 @@ impl TranspositionTableEntry {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TranspositionTable {
     table: CacheTable<TranspositionTableEntry>,
 }

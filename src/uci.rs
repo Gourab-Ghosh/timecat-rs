@@ -52,6 +52,7 @@ enum UCIOptionType {
     },
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct SpinValue<T: Clone + Copy + IntoSpin> {
     default: T,

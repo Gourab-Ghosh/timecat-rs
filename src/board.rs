@@ -1,5 +1,6 @@
 use super::*;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, Fail)]
 pub enum BoardError {
     #[fail(
@@ -12,6 +13,7 @@ pub enum BoardError {
     CustomError { err_msg: String },
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum GameResult {
     Win(Color),
     Draw,
@@ -39,6 +41,7 @@ impl GameResult {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Board {
     sub_board: SubBoard,

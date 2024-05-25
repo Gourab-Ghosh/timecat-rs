@@ -1,5 +1,6 @@
 use super::*;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct CacheTableEntry<T: Copy + Clone + PartialEq> {
     hash: u64,
@@ -28,6 +29,7 @@ impl<T: Copy + Clone + PartialEq> CacheTableEntry<T> {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CacheTableSize {
     Max(usize),
@@ -122,6 +124,7 @@ macro_rules! update_overwrites_and_collisions {
     };
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct CacheTable<T: Copy + Clone + PartialEq> {
     table: Mutex<Box<[CacheTableEntry<T>]>>,

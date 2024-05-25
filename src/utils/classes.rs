@@ -43,6 +43,7 @@
 
 use super::*;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct RepetitionTable {
     count_map: Box<[u8]>,

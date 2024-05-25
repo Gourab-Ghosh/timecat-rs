@@ -1,5 +1,6 @@
 use super::*;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum BoardStatus {
     Ongoing,
@@ -7,6 +8,7 @@ pub enum BoardStatus {
     Checkmate,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, Eq)]
 pub struct SubBoard {
     _pieces: [BitBoard; NUM_PIECE_TYPES],
