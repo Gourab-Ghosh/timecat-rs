@@ -28,7 +28,8 @@ pub fn self_play(
     }
     let initial_num_moves = engine.get_board().get_num_moves();
     while !engine.get_board().is_game_over()
-        && (engine.get_board().get_num_moves() as u64) < (initial_num_moves as u64) + (move_limit as u64)
+        && (engine.get_board().get_num_moves() as u64)
+            < (initial_num_moves as u64) + (move_limit as u64)
     {
         let clock = Instant::now();
         if print {

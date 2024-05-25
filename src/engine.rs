@@ -100,14 +100,14 @@ impl Engine {
         }
     }
 
-    pub fn get_board(&self) -> &Board{
+    pub fn get_board(&self) -> &Board {
         &self.board
     }
 
-    pub fn get_board_mut(&mut self) -> &mut Board{
+    pub fn get_board_mut(&mut self) -> &mut Board {
         &mut self.board
     }
-    
+
     fn reset_variables(&self) {
         self.num_nodes_searched.store(0, MEMORY_ORDERING);
         self.selective_depth.store(0, MEMORY_ORDERING);

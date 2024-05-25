@@ -205,3 +205,37 @@ pub struct MoveWithInfo {
     type_: MoveType,
     is_check: bool,
 }
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct WeightedMove {
+    pub weight: MoveWeight,
+    pub move_: Move,
+}
+
+impl PartialOrd for WeightedMove {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.weight.partial_cmp(&other.weight)
+    }
+}
+
+impl Ord for WeightedMove {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.weight.cmp(&other.weight)
+    }
+}
+
+impl Default for WeightedMove {
+    fn default() -> Self {
+        Self {
+            weight: 0,
+            move_: Move::new(Square::A1, Square::A1, None),
+        }
+    }
+}
+
+impl WeightedMove {
+    pub fn new(move_: Move, weight: MoveWeight) -> Self {
+        Self { move_, weight }
+    }
+}

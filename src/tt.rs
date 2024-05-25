@@ -83,7 +83,7 @@ impl TranspositionTable {
             None => return (None, None),
         };
         let best_move = tt_entry.get_best_move();
-        if DISABLE_T_TABLE || tt_entry.optional_data.is_none() {
+        if tt_entry.optional_data.is_none() {
             return (None, best_move);
         }
         let data = tt_entry.optional_data.unwrap();
@@ -114,7 +114,8 @@ impl TranspositionTable {
         flag: EntryFlag,
         best_move: impl Into<Option<Move>>,
     ) {
-        let save_score = !DISABLE_T_TABLE && !is_checkmate(score);
+        // TODO: Logic Wrong Here
+        let save_score = !is_checkmate(score);
         if save_score && is_checkmate(score) {
             let mate_distance = CHECKMATE_SCORE
                 .abs_diff(score.abs())

@@ -817,11 +817,13 @@ impl SubBoard {
         self.get_material_score() - Pawn.evaluate() * self.get_piece_mask(Pawn).popcnt() as Score
     }
 
+    #[cfg(feature = "nnue")]
     #[inline(always)]
     pub fn evaluate(&self) -> Score {
         EVALUATOR.evaluate(self)
     }
 
+    #[cfg(feature = "nnue")]
     #[inline(always)]
     pub fn evaluate_flipped(&self) -> Score {
         self.score_flipped(self.evaluate())

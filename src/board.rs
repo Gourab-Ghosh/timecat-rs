@@ -183,10 +183,11 @@ impl Board {
                     checkers.stringify().colorize(CHECKERS_STYLE),
                     true,
                 ),
-                format_info("Current Evaluation", self.evaluate().stringify(), true),
             ]
             .join("\n"),
         );
+        #[cfg(feature = "nnue")]
+        skeleton.push_str(&format!("\n{}", format_info("Current Evaluation", self.evaluate().stringify(), true)));
         skeleton
     }
 
@@ -680,8 +681,6 @@ macro_rules! copy_from_sub_board {
 }
 
 copy_from_sub_board!(
-    pub fn evaluate(&self) -> Score,
-    pub fn evaluate_flipped(&self) -> Score,
     pub fn generate_legal_moves(&self) -> MoveGenerator,
     pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGenerator,
     pub fn generate_legal_captures(&self) -> MoveGenerator,
@@ -726,4 +725,10 @@ copy_from_sub_board!(
     pub fn has_insufficient_material(&self, color: Color) -> bool,
     pub fn gives_check(&self, move_: Move) -> bool,
     pub fn gives_checkmate(&self, move_: Move) -> bool,
+);
+
+#[cfg(feature = "nnue")]
+copy_from_sub_board!(
+    pub fn evaluate(&self) -> Score,
+    pub fn evaluate_flipped(&self) -> Score,
 );

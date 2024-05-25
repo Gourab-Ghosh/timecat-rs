@@ -129,11 +129,12 @@ pub mod bitboard_and_square {
     ];
 }
 
-pub mod board_representation {
+pub mod board {
     pub const EMPTY_SPACE_SYMBOL: &str = " ";
     pub const EMPTY_SPACE_UNICODE_SYMBOL: &str = " ";
     pub const WHITE_PIECE_UNICODE_SYMBOLS: [&str; 6] = ["♙", "♘", "♗", "♖", "♕", "♔"];
     pub const BLACK_PIECE_UNICODE_SYMBOLS: [&str; 6] = ["♟", "♞", "♝", "♜", "♛", "♚"];
+    pub const REPETITION_TABLE_SIZE: usize = 4; // Should be in power of 2 (in MB)
 }
 
 pub mod fen {
@@ -169,24 +170,35 @@ pub mod print_style {
     generate_constants!(WARNING_MESSAGE_STYLE, [bright_yellow, bold]);
 }
 
-pub mod engine_constants {
+pub mod nnue {
     use super::*;
 
-    pub const REPETITION_TABLE_SIZE: usize = 4; // Should be in power of 2 (in MB)
-    pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
-
-    pub const MAX_PLY: usize = 255;
+    pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
+    pub const EVALUATOR_SIZE: CacheTableSize = CacheTableSize::Exact(16);
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;
     pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - MAX_PLY as Score - 1;
     pub const INFINITY: Score = CHECKMATE_SCORE + 4 * MAX_PLY as Score;
-    pub const NUM_KILLER_MOVES: usize = 3;
     pub const PAWN_VALUE: Score = 100;
+    pub const MAX_PLY: usize = 255;
+    pub const INITIAL_MATERIAL_SCORE_ABS: Score = 16 * PAWN_VALUE
+        + 4 * (Knight.evaluate() + Bishop.evaluate() + Rook.evaluate())
+        + 2 * Queen.evaluate();
+    pub const MAX_MATERIAL_SCORE: Score = INITIAL_MATERIAL_SCORE_ABS / 2;
+    pub const WINNING_SCORE_THRESHOLD: Score = 15 * PAWN_VALUE;
+}
+
+#[cfg(feature = "engine")]
+pub mod engine {
+    use super::*;
+
+    pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
+
     pub const CLEAR_TABLE_AFTER_EACH_SEARCH: bool = true;
+    pub const NUM_KILLER_MOVES: usize = 3;
 
     pub const DISABLE_ALL_PRUNINGS: bool = false;
     pub const DISABLE_LMR: bool = false || DISABLE_ALL_PRUNINGS;
-    pub const DISABLE_T_TABLE: bool = false || DISABLE_ALL_PRUNINGS;
 
     pub const NULL_MOVE_MIN_DEPTH: Depth = 2;
     pub const NULL_MOVE_MIN_REDUCTION: Depth = 2;
@@ -199,19 +211,9 @@ pub mod engine_constants {
 
     pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;
     pub const MAX_MOVES_PER_POSITION: usize = 250;
-    pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
-
-    pub const EVALUATOR_SIZE: CacheTableSize = CacheTableSize::Exact(16);
 
     pub const FOLLOW_PV: bool = true;
     pub const PRINT_MOVE_INFO_DURATION_THRESHOLD: Duration = Duration::from_millis(1000);
-    pub const COMMUNICATION_CHECK_INTERVAL: Duration = Duration::from_millis(1);
-
-    pub const INITIAL_MATERIAL_SCORE_ABS: Score = 16 * PAWN_VALUE
-        + 4 * (Knight.evaluate() + Bishop.evaluate() + Rook.evaluate())
-        + 2 * Queen.evaluate();
-    pub const MAX_MATERIAL_SCORE: Score = INITIAL_MATERIAL_SCORE_ABS / 2;
-    pub const WINNING_SCORE_THRESHOLD: Score = 15 * PAWN_VALUE;
 
     #[rustfmt::skip]
     pub const MVV_LVA: [[MoveWeight; 6]; 6] = [
@@ -224,6 +226,12 @@ pub mod engine_constants {
     ];
 
     pub const LMR_TABLE: [[Depth; 64]; 64] = [[0; 64]; 64];
+}
+
+pub mod io {
+    use super::*;
+
+    pub const COMMUNICATION_CHECK_INTERVAL: Duration = Duration::from_millis(1);
 }
 
 pub mod atomic {
