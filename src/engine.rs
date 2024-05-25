@@ -165,7 +165,7 @@ impl Engine {
         }
     }
 
-    pub fn go(&self, command: GoCommand, print_info: bool) -> GoResponse {
+    pub fn go(&self, command: GoCommand, verbose: bool) -> GoResponse {
         self.reset_variables();
         let num_threads = UCI_STATE.get_num_threads().max(1);
         let mut join_handles = vec![];
@@ -181,7 +181,7 @@ impl Engine {
             move || Self::update_stop_command_from_input(&stopper)
         }));
         let mut main_thread_searcher = self.generate_searcher(0);
-        main_thread_searcher.go(command, print_info);
+        main_thread_searcher.go(command, verbose);
         self.stopper.store(true, MEMORY_ORDERING);
         for join_handle in join_handles {
             join_handle.join().unwrap();
@@ -191,6 +191,14 @@ impl Engine {
             search_info.set_pv(&[self.board.generate_legal_moves().next()]);
         }
         GoResponse::new(search_info)
+    }
+
+    pub fn go_quiet(&self, command: GoCommand) -> GoResponse {
+        self.go(command, false)
+    }
+
+    pub fn go_verbose(&self, command: GoCommand) -> GoResponse {
+        self.go(command, true)
     }
 }
 
