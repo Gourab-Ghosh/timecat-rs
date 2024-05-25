@@ -54,7 +54,7 @@ sha256 = "1.*"
 [features]
 default = ["binary"]
 binary = ["nnue", "engine"]
-nnue = ["reqwest"]
+nnue = ["dep:reqwest"]
 engine = ["nnue"]
 serde = ["dep:serde"]
 
