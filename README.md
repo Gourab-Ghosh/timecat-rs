@@ -66,11 +66,13 @@ fn main() {
 ```
 
 ## Cargo Features
-- `default`: Activates all standard features.
 - `binary`: Enables binary builds, including NNUE and engine functionalities.
 - `nnue`: Adds support for NNUE (downloaded via `reqwest`).
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
+- `colored_output`: Displays all information in a visually appealing colored format for enhanced readability..
 - `serde`: Enables serialization and deserialization support via `serde`.
+
+Default features include binary and colored_output
 
 ## License
 Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](LICENSE). You are free to use, modify, and distribute it under the same license.
