@@ -12,7 +12,7 @@ use crate::nnue_rs::layers::*;
 use binread::prelude::*;
 use bytemuck::Zeroable;
 
-///A helper struct for reading [`Dense`] layers from Stockfish NNUE formats with [`BinRead`](BinRead).
+///A helper struct for reading [`Dense`] layers from Stockfish NNUE formats with [`BinRead`].
 #[derive(Debug, Zeroable, BinRead)]
 pub struct SfDense<
     W: Zeroable + BinRead<Args = ()>,

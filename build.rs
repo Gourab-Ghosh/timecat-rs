@@ -2,24 +2,24 @@
 mod nnue_features {
     pub use std::fs::File;
     pub use std::path::Path;
-    
+
     pub const NNUE_FILE_NAME: &str = "nn-62ef826d1a6d.nnue";
     // const NNUE_FILE_NAME: &str = "nn-c3ca321c51c9.nnue";
-    
+
     pub struct NNUEGenerationError(String);
-    
+
     impl<T: ToString> From<T> for NNUEGenerationError {
         fn from(msg: T) -> Self {
             NNUEGenerationError(msg.to_string())
         }
     }
-    
+
     impl std::fmt::Debug for NNUEGenerationError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             f.write_str(&self.0)
         }
     }
-    
+
     pub fn remove_nnue_file(nnue_path: &Path) -> Result<(), NNUEGenerationError> {
         if nnue_path.is_file() {
             let err_msg = format!(
@@ -30,7 +30,7 @@ mod nnue_features {
         }
         Ok(())
     }
-    
+
     pub fn nnue_downloaded_correctly(nnue_path: &Path) -> bool {
         if !nnue_path.is_file() {
             return false;
@@ -44,7 +44,7 @@ mod nnue_features {
         let hash = sha256::digest(nnue_data.as_slice());
         hash.starts_with(expected_hash_start)
     }
-    
+
     pub fn generate_nnue_file(nnue_file: &mut File) -> Result<(), NNUEGenerationError> {
         let nnue_file_link = format!("https://tests.stockfishchess.org/api/nn/{}", NNUE_FILE_NAME);
         reqwest::blocking::get(nnue_file_link)
@@ -58,7 +58,7 @@ mod nnue_features {
 #[cfg(feature = "nnue")]
 fn main() {
     use nnue_features::*;
-    
+
     let output_dir = std::env::var("OUT_DIR").unwrap();
     let nnue_dir = Path::new(&output_dir).join("nnue_dir");
     if !nnue_dir.is_dir() {

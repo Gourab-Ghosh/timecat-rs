@@ -1,6 +1,8 @@
 use super::*;
 
-pub fn identity_function<T>(object: T) -> T { object }
+pub fn identity_function<T>(object: T) -> T {
+    object
+}
 
 fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
     if !UCI_STATE.is_in_debug_mode() {

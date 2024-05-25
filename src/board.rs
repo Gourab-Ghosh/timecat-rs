@@ -187,7 +187,10 @@ impl Board {
             .join("\n"),
         );
         #[cfg(feature = "nnue")]
-        skeleton.push_str(&format!("\n{}", format_info("Current Evaluation", self.evaluate().stringify(), true)));
+        skeleton.push_str(&format!(
+            "\n{}",
+            format_info("Current Evaluation", self.evaluate().stringify(), true)
+        ));
         skeleton
     }
 

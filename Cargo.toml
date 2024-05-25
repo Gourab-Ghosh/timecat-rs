@@ -58,6 +58,3 @@ nnue = ["dep:reqwest", "dep:sha256", "dep:binread", "dep:bytemuck"]
 engine = ["nnue"]
 colored_output = ["colored"]
 serde = ["dep:serde"]
-
-[package.metadata.docs.rs]
-all-features = true

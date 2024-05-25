@@ -60,7 +60,7 @@ impl BitBoard {
         self.0 == 0
     }
 
-    /// https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating#FlipVertically
+    /// <https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating#FlipVertically>
     #[inline(always)]
     pub const fn flip_vertical(self) -> Self {
         let mut bb = self.0;
