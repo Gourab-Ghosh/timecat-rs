@@ -19,6 +19,7 @@ fn main() {
     if !std::io::stdin().is_terminal() {
         UCI_STATE.set_console_mode(false, false);
     }
+    #[cfg(feature = "colored_output")]
     if !std::io::stdout().is_terminal() {
         UCI_STATE.set_colored_output(false, false);
     }

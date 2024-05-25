@@ -217,6 +217,7 @@ impl Set {
         Ok(())
     }
 
+    #[cfg(feature = "colored_output")]
     fn color(commands: &[&str]) -> Result<(), EngineError> {
         let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
         let b = third_command.parse()?;
@@ -237,7 +238,10 @@ impl Set {
                     _ => Err(UnknownCommand),
                 }
             }
+            #[cfg(feature = "colored_output")]
             "color" => Self::color(commands),
+            #[cfg(not(feature = "colored_output"))]
+            "color" => Err(ColoredOutputFeatureNotEnabled),
             _ => Err(UnknownCommand),
         }
     }
@@ -611,6 +615,7 @@ impl Parser {
         if args.contains(&"--uci") {
             UCI_STATE.set_console_mode(false, false);
         }
+        #[cfg(feature = "colored_output")]
         if args.contains(&"--no-color") {
             UCI_STATE.set_colored_output(false, false);
         }

@@ -13,6 +13,9 @@ pub enum EngineError {
     #[fail(display = "Sorry, this command is not implemented yet :(")]
     NotImplemented,
 
+    #[fail(display = "Colored Output Feature is not enabled. Recompile the chess engine enabling the feature!")]
+    ColoredOutputFeatureNotEnabled,
+
     #[fail(display = "Engine is not running! Please try again!")]
     EngineNotRunning,
 

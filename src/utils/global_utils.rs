@@ -1,5 +1,7 @@
 use super::*;
 
+pub fn identity_function<T>(object: T) -> T { object }
+
 fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
     if !UCI_STATE.is_in_debug_mode() {
         return;
@@ -21,6 +23,7 @@ fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
 
 pub struct EngineUCIState {
     _terminate_engine: AtomicBool,
+    #[cfg(feature = "colored_output")]
     _colored_output: AtomicBool,
     _console_mode: AtomicBool,
     _t_table_size: Mutex<CacheTableSize>,
@@ -42,6 +45,7 @@ impl EngineUCIState {
     pub const fn new() -> Self {
         EngineUCIState {
             _terminate_engine: AtomicBool::new(false),
+            #[cfg(feature = "colored_output")]
             _colored_output: AtomicBool::new(true),
             _console_mode: AtomicBool::new(true),
             _t_table_size: Mutex::new(CacheTableSize::Exact(16)),
@@ -64,11 +68,19 @@ impl EngineUCIState {
         self._terminate_engine.store(b, MEMORY_ORDERING);
     }
 
+    #[cfg(feature = "colored_output")]
     #[inline(always)]
     pub fn is_colored_output(&self) -> bool {
         self._colored_output.load(MEMORY_ORDERING)
     }
 
+    #[cfg(not(feature = "colored_output"))]
+    #[inline(always)]
+    pub fn is_colored_output(&self) -> bool {
+        false
+    }
+
+    #[cfg(feature = "colored_output")]
     pub fn set_colored_output(&self, b: bool, print: bool) {
         self._colored_output.store(b, MEMORY_ORDERING);
         if print {

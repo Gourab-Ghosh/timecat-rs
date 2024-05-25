@@ -13,7 +13,11 @@ pub mod types {
     pub type MoveWeight = i64;
     pub type NumMoves = u16;
     pub type Spin = u128;
+
+    #[cfg(feature = "colored_output")]
     pub type ColoredStringFunction = fn(colored::ColoredString) -> colored::ColoredString;
+    #[cfg(not(feature = "colored_output"))]
+    pub type ColoredStringFunction = fn(String) -> String;
 }
 
 pub mod bitboard_and_square {
@@ -146,9 +150,17 @@ pub mod fen {
 pub mod print_style {
     use super::*;
 
+    #[cfg(feature = "colored_output")]
     macro_rules! generate_constants {
         ($constant_name:ident, [$( $func_name:ident ), *]) => {
             pub const $constant_name: &[ColoredStringFunction] = &[$( colored::Colorize::$func_name ), *];
+        };
+    }
+
+    #[cfg(not(feature = "colored_output"))]
+    macro_rules! generate_constants {
+        ($constant_name:ident, [$( $_:ident ), *]) => {
+            pub const $constant_name: &[ColoredStringFunction] = &[identity_function];
         };
     }
 
