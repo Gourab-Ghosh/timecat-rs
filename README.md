@@ -41,14 +41,14 @@ cargo add timecat --no-default-features
 ### Examples
 This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize the inbuilt engine to find optimal moves in Rust using the `timecat` library. Some features such as position evaluation (`nnue`) and engine computation (`engine`) are optional and can be enabled via cargo features.
 
-First, add the timecat crate to your project with the necessary features enabled (`nnue` evaluation feature is already included in the `engine` feature):
+First, add the timecat crate to your project with the necessary features enabled (`nnue` feature is already included in the `engine` feature):
 ```bash
 cargo add timecat --no-default-features --features engine
 ```
 
 Then, you can proceed with the following Rust code:
 
-```rust
+```rust ignore
 use timecat::prelude::*;
 
 fn main() {
@@ -61,7 +61,7 @@ fn main() {
 
     // Evaluate the current board position using the nnue feature.
     let evaluation = board.evaluate();
-    println!("Current Evaluation: {}", evaluation);
+    println!("Current Evaluation: {}\n", evaluation);
 
     // Initialize the chess engine with the current board state.
     let engine = Engine::new(board);
@@ -72,7 +72,7 @@ fn main() {
                             .expect("No best move found");
 
     // Output the best move found by the engine.
-    println!("Best Move: {}", best_move);
+    println!("\nBest Move: {}", best_move);
 }
 ```
 

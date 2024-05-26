@@ -2,6 +2,7 @@
 
 use super::*;
 
+/// Error enum related to the Board struct
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, Fail)]
 pub enum BoardError {
