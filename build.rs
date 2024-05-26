@@ -68,6 +68,9 @@ fn main() {
     if !nnue_downloaded_correctly(&nnue_path) {
         remove_nnue_file(&nnue_path).unwrap();
         let mut nnue_file = File::create(nnue_path.clone()).expect("failed to create file");
+        if std::env::var("DOCS_RS").is_ok() {
+            return;
+        }
         match generate_nnue_file(&mut nnue_file) {
             Ok(_) => {
                 println!("cargo:rerun-if-changed={}", nnue_path.to_str().unwrap());
