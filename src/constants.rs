@@ -16,8 +16,6 @@ pub mod types {
 
     #[cfg(feature = "colored_output")]
     pub type ColoredStringFunction = fn(colored::ColoredString) -> colored::ColoredString;
-    #[cfg(not(feature = "colored_output"))]
-    pub type ColoredStringFunction = fn(String) -> String;
 }
 
 pub mod bitboard_and_square {
@@ -160,7 +158,7 @@ pub mod print_style {
     #[cfg(not(feature = "colored_output"))]
     macro_rules! generate_constants {
         ($constant_name:ident, [$( $_:ident ), *]) => {
-            pub const $constant_name: &[ColoredStringFunction] = &[identity_function];
+            pub const $constant_name: &[fn(String) -> String] = &[identity_function];
         };
     }
 

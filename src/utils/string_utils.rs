@@ -32,10 +32,12 @@ pub fn flip_board_fen(fen: &str) -> Result<String, EngineError> {
     ))
 }
 
+#[cfg(feature = "colored_output")]
 pub trait CustomColorize {
     fn colorize(&self, style_functions: &[ColoredStringFunction]) -> String;
 }
 
+#[cfg(feature = "colored_output")]
 impl<T: ToString> CustomColorize for T {
     fn colorize(&self, style_functions: &[ColoredStringFunction]) -> String {
         let self_string = self.to_string();
@@ -47,6 +49,19 @@ impl<T: ToString> CustomColorize for T {
             colorized_string = func(colorized_string);
         }
         colorized_string.to_string()
+    }
+}
+
+#[cfg(not(feature = "colored_output"))]
+pub trait CustomColorize {
+    fn colorize(&self, _: &[fn(String) -> String]) -> String;
+}
+
+#[cfg(not(feature = "colored_output"))]
+impl<T: ToString> CustomColorize for T {
+    #[inline(always)]
+    fn colorize(&self, _: &[fn(String) -> String]) -> String {
+        self.to_string()
     }
 }
 
