@@ -48,7 +48,7 @@ cargo add timecat --no-default-features --features engine
 
 Then, you can proceed with the following Rust code:
 
-```rust ignore
+```rust
 use timecat::prelude::*;
 
 fn main() {
