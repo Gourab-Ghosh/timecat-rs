@@ -434,6 +434,7 @@ impl Board {
     }
 
     pub fn parse_san(&self, mut san: &str) -> Result<Option<Move>, EngineError> {
+        // TODO: Make the logic better
         san = san.trim();
         if san == "--" {
             return Ok(None);
