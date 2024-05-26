@@ -1,3 +1,5 @@
+#![doc = include_str!("../documentation/board/README.md")]
+
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

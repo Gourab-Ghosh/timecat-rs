@@ -6,7 +6,8 @@ edition = "2021"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
 description = "A NNUE-based chess engine that implements the Negamax algorithm and can be integrated into any project as a library. It features move generation, advanced position evaluation through NNUE, and move searching capabilities."
-documentation = "https://docs.rs/timecat"
+documentation = "https://docs.rs/crate/timecat"
+# documentation = "https://docs.rs/timecat"
 license-file = "LICENSE"
 # keywords = ["rust", "chess-engine", "chess", "uci", "alpha-beta-pruning", "negamax", "chess-ai", "uci-chess-engine", "nnue", "timecat", "timecat-rs"]
 keywords = ["chess-engine", "chess", "uci", "nnue", "ai"]
@@ -16,8 +17,9 @@ include = [
     "!src/**/*.bak",
     "build.rs",
     "Cargo.toml",
-    "README.md",
     "LICENSE",
+    "README.md",
+    "documentation/**/*.md",
 ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
