@@ -9,7 +9,7 @@ Timecat is a UCI-compatible chess engine designed in Rust that combines powerful
 - **Customizable Builds:** Supports tailored builds through configurable cargo features.
 
 ## Integration of the Chess Library
-Initially, Timecat was dependent on the external `chess` library, which is available at https://github.com/jordanbray/chess. To align more closely with specific requirements, the library was integrated directly into Timecat. This integration permitted significant modifications and extensions to its functionalities, thereby enhancing the engine's overall capabilities. Such integration demonstrates a commitment to adapting and evolving the tools to secure the best possible performance and accuracy in chess analytics.
+Initially, Timecat was dependent on the external `chess` library, which is available at <https://github.com/jordanbray/chess>. To align more closely with specific requirements, the library was integrated directly into Timecat. This integration permitted significant modifications and extensions to its functionalities, thereby enhancing the engine's overall capabilities. Such integration demonstrates a commitment to adapting and evolving the tools to secure the best possible performance and accuracy in chess analytics.
 
 ## NNUE Support
 Timecat currently utilizes the Stockfish NNUE for evaluation. Plans are in place to transition to a custom-trained NNUE in the future.
@@ -86,7 +86,7 @@ fn main() {
 Default features include `binary` and `colored_output`
 
 ## License
-Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](LICENSE). You are free to use, modify, and distribute it under the same license.
+Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](./LICENSE). You are free to use, modify, and distribute it under the same license.
 
 ## Contributing
 We welcome contributions! Feel free to fork the repository, make improvements, and submit pull requests. You can also report issues or suggest features through the GitHub issue tracker.
