@@ -1,16 +1,25 @@
-FROM rust:1-bullseye
+# Use a specific base image
+FROM rust:1-bullseye as builder
 
-RUN mkdir /root/timecat
-COPY src /root/timecat/src
-COPY Cargo.toml /root/timecat
-COPY build.rs /root/timecat
-
+# Setup the working directory
 WORKDIR /root/timecat
 
+# Copy only the necessary files
+COPY src ./src
+COPY Cargo.toml .
+COPY build.rs .
+
+# Set environment variables to optimize build
 ENV RUSTFLAGS="-C target-cpu=native"
-RUN cargo build --release
 
-RUN mv /root/timecat/target/release/timecat /timecat
-RUN rm -rf /root
+# Build the application
+RUN cargo build --release --bins
 
-CMD [ "/timecat", "--no-color", "--uci" ]
+# Use a minimal base image for the final stage
+FROM debian:bullseye-slim
+
+# Copy the built executable from the builder stage
+COPY --from=builder /root/timecat/target/release/timecat /usr/local/bin/timecat
+
+# Set up runtime command
+CMD ["/usr/local/bin/timecat", "--no-color", "--uci"]
