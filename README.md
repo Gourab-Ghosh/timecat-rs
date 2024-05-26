@@ -39,35 +39,46 @@ cargo add timecat --no-default-features
 ```
 
 ### Examples
-This snippet below demonstrate setting up a chess board, making moves, evaluating positions, and utilizing the engine to determine the best moves. Note that some features, such as position evaluation and engine utilization, require enabling specific cargo features (`nnue` and `engine`).
+This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize a chess engine to find optimal moves in Rust using the timecat library. Some features such as position evaluation (nnue_evaluation) and engine computation (engine) are optional and can be enabled via cargo features.
+
+First, add the timecat crate to your project with the necessary features enabled:
+```bash
+cargo add timecat --no-default-features --features nnue_evaluation engine
+```
+
+Then, you can proceed with the following Rust code:
+
 ```rust
 use timecat::prelude::*;
 
 fn main() {
-    // Generate a board with initial position.
+    // Initialize a chess board with the default starting position.
     let mut board = Board::default();
 
-    // Make moves
-    board.push_san("e4").unwrap();
-    board.push_san("e5").unwrap();
+    // Apply moves in standard algebraic notation.
+    board.push_san("e4").expect("Failed to make move: e4");
+    board.push_san("e5").expect("Failed to make move: e5");
 
-    // Print current evaluation (Requires nnue feature)
-    println!("Current Evaluation: {}", board.evaluate());
+    // Evaluate the current board position using the nnue_evaluation feature.
+    let evaluation = board.evaluate();
+    println!("Current Evaluation: {}", evaluation);
 
-    // Create an engine (Requires engine feature)
+    // Initialize the chess engine with the current board state.
     let engine = Engine::new(board);
 
-    // Search best move
+    // Configure the engine to search for the best move up to a depth of 10 plies.
     let response = engine.go_verbose(GoCommand::Depth(10));
-    let best_move = response.get_best_move().unwrap();
+    let best_move = response.get_best_move()
+                            .expect("No best move found");
 
-    println!("{}", best_move);
+    // Output the best move found by the engine.
+    println!("Best Move: {}", best_move);
 }
 ```
 
 ## Cargo Features
 - `binary`: Enables binary builds, including NNUE and engine functionalities.
-- `nnue`: Adds support for NNUE (downloaded via `reqwest`).
+- `nnue_evaluation`: Adds support for NNUE (downloaded via `reqwest`).
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
 - `colored_output`: Displays all information in a visually appealing colored format for enhanced readability.
 - `serde`: Enables serialization and deserialization support via `serde`.

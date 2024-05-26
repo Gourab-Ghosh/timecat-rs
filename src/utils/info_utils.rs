@@ -46,7 +46,7 @@ pub fn print_engine_info() {
     print_engine_version(true);
     println!();
     TRANSPOSITION_TABLE.print_info();
-    #[cfg(feature = "nnue")]
+    #[cfg(feature = "nnue_evaluation")]
     EVALUATOR.print_info();
 }
 

@@ -1,4 +1,4 @@
-#[cfg(feature = "nnue")]
+#[cfg(feature = "nnue_evaluation")]
 mod nnue_features {
     pub use std::fs::File;
     pub use std::path::Path;
@@ -55,7 +55,7 @@ mod nnue_features {
     }
 }
 
-#[cfg(feature = "nnue")]
+#[cfg(feature = "nnue_evaluation")]
 fn main() {
     use nnue_features::*;
 
@@ -83,5 +83,5 @@ fn main() {
     }
 }
 
-#[cfg(not(feature = "nnue"))]
+#[cfg(not(feature = "nnue_evaluation"))]
 fn main() {}
