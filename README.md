@@ -69,7 +69,7 @@ fn main() {
 - `binary`: Enables binary builds, including NNUE and engine functionalities.
 - `nnue`: Adds support for NNUE (downloaded via `reqwest`).
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
-- `colored_output`: Displays all information in a visually appealing colored format for enhanced readability..
+- `colored_output`: Displays all information in a visually appealing colored format for enhanced readability.
 - `serde`: Enables serialization and deserialization support via `serde`.
 
 Default features include `binary` and `colored_output`

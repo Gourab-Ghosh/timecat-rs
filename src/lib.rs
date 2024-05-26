@@ -34,7 +34,6 @@ pub mod tests;
 pub mod engine_features {
     use super::*;
     pub use constants::engine::*;
-    pub use engine::{Engine, GoCommand};
     pub use parse::*;
     pub use search::*;
     pub use sort::*;
@@ -85,6 +84,9 @@ pub mod prelude {
     // pub use syzygy::*;
     // pub use std::hint;
     // pub use std::num;
+
+    #[cfg(feature = "engine")]
+    pub use engine::{Engine, GoCommand};
 
     #[cfg(feature = "engine")]
     pub use selfplay::self_play;
