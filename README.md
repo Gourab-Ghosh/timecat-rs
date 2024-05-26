@@ -39,7 +39,7 @@ cargo add timecat --no-default-features
 ```
 
 ### Examples
-This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize a chess engine to find optimal moves in Rust using the timecat library. Some features such as position evaluation (nnue_evaluation) and engine computation (engine) are optional and can be enabled via cargo features.
+This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize the inbuilt engine to find optimal moves in Rust using the `timecat` library. Some features such as position evaluation (`nnue_evaluation`) and engine computation (`engine`) are optional and can be enabled via cargo features.
 
 First, add the timecat crate to your project with the necessary features enabled:
 ```bash
