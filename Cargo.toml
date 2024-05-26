@@ -1,7 +1,7 @@
 [package]
 name = "timecat"
 authors = ["Gourab Ghosh"]
-version = "1.5.3"
+version = "1.5.4"
 edition = "2021"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
@@ -10,6 +10,7 @@ license-file = "LICENSE"
 # keywords = ["rust", "chess-engine", "chess", "uci", "alpha-beta-pruning", "negamax", "chess-ai", "uci-chess-engine", "nnue", "timecat", "timecat-rs"]
 keywords = ["chess-engine", "chess", "uci", "nnue", "ai"]
 readme = "README.md"
+documentation = "https://docs.rs/timecat"
 include = [
     "src/",
     "!src/**/*.bak",
@@ -58,3 +59,6 @@ nnue = ["dep:reqwest", "dep:sha256", "dep:binread", "dep:bytemuck"]
 engine = ["nnue"]
 colored_output = ["colored"]
 serde = ["dep:serde"]
+
+[package.metadata.docs.rs]
+all-features = true
