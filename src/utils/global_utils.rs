@@ -191,7 +191,7 @@ impl EngineUCIState {
 
 pub fn clear_all_hash_tables() {
     TRANSPOSITION_TABLE.clear();
-    #[cfg(feature = "nnue_evaluation")]
+    #[cfg(feature = "nnue")]
     EVALUATOR.clear();
     print_info::<&str>("All hash tables are cleared!", None);
 }

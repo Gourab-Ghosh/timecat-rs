@@ -39,11 +39,11 @@ cargo add timecat --no-default-features
 ```
 
 ### Examples
-This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize the inbuilt engine to find optimal moves in Rust using the `timecat` library. Some features such as position evaluation (`nnue_evaluation`) and engine computation (`engine`) are optional and can be enabled via cargo features.
+This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize the inbuilt engine to find optimal moves in Rust using the `timecat` library. Some features such as position evaluation (`nnue`) and engine computation (`engine`) are optional and can be enabled via cargo features.
 
-First, add the timecat crate to your project with the necessary features enabled:
+First, add the timecat crate to your project with the necessary features enabled (`nnue` evaluation feature is already included in the `engine` feature):
 ```bash
-cargo add timecat --no-default-features --features nnue_evaluation engine
+cargo add timecat --no-default-features --features engine
 ```
 
 Then, you can proceed with the following Rust code:
@@ -59,7 +59,7 @@ fn main() {
     board.push_san("e4").expect("Failed to make move: e4");
     board.push_san("e5").expect("Failed to make move: e5");
 
-    // Evaluate the current board position using the nnue_evaluation feature.
+    // Evaluate the current board position using the nnue feature.
     let evaluation = board.evaluate();
     println!("Current Evaluation: {}", evaluation);
 
@@ -78,7 +78,7 @@ fn main() {
 
 ## Cargo Features
 - `binary`: Enables binary builds, including NNUE and engine functionalities.
-- `nnue_evaluation`: Adds support for NNUE (downloaded via `reqwest`).
+- `nnue`: Adds support for NNUE (downloaded via `reqwest`).
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
 - `colored_output`: Displays all information in a visually appealing colored format for enhanced readability.
 - `serde`: Enables serialization and deserialization support via `serde`.

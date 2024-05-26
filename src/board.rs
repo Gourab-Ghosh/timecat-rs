@@ -186,7 +186,7 @@ impl Board {
             ]
             .join("\n"),
         );
-        #[cfg(feature = "nnue_evaluation")]
+        #[cfg(feature = "nnue")]
         skeleton.push_str(&format!(
             "\n{}",
             format_info("Current Evaluation", self.evaluate().stringify(), true)
@@ -731,7 +731,7 @@ copy_from_sub_board!(
     pub fn gives_checkmate(&self, move_: Move) -> bool,
 );
 
-#[cfg(feature = "nnue_evaluation")]
+#[cfg(feature = "nnue")]
 copy_from_sub_board!(
     pub fn evaluate(&self) -> Score,
     pub fn evaluate_flipped(&self) -> Score,

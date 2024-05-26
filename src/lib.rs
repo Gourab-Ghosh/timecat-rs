@@ -43,25 +43,25 @@ pub mod engine_features {
 #[cfg(feature = "engine")]
 pub use engine_features::*;
 
-#[cfg(feature = "nnue_evaluation")]
+#[cfg(feature = "nnue")]
 pub mod evaluate;
 
-#[cfg(feature = "nnue_evaluation")]
+#[cfg(feature = "nnue")]
 pub mod nnue;
 
-#[cfg(feature = "nnue_evaluation")]
+#[cfg(feature = "nnue")]
 pub mod nnue_rs;
 
-#[cfg(feature = "nnue_evaluation")]
+#[cfg(feature = "nnue")]
 pub mod nnue_features {
     use super::*;
     pub use evaluate::*;
 }
 
-#[cfg(feature = "nnue_evaluation")]
+#[cfg(feature = "nnue")]
 pub use nnue_features::*;
 
-#[cfg(feature = "nnue_evaluation")]
+#[cfg(feature = "nnue")]
 lazy_static! {
     pub static ref EVALUATOR: Evaluator = Evaluator::default();
 }
