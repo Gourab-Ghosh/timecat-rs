@@ -86,7 +86,7 @@ fn main() {
 Default features include `binary` and `colored_output`
 
 ## License
-Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](https://github.com/Gourab-Ghosh/timecat-rs/blob/master/LICENSE). You are free to use, modify, and distribute it under the same license.
+Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](./LICENSE). You are free to use, modify, and distribute it under the same license.
 
 ## Contributing
 We welcome contributions! Feel free to fork the repository, make improvements, and submit pull requests. You can also report issues or suggest features through the GitHub issue tracker.
