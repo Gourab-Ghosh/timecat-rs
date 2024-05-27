@@ -296,3 +296,4 @@ fn test_board_material_score_track() {
 // is_irreversible
 // ep_square
 // is_castling
+// is_double_pawn_push

@@ -13,7 +13,11 @@ pub enum BoardError {
 impl fmt::Display for BoardError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidSanMove { move_, fen } => write!(f, "san() and lan() expect move to be legal or null, but got {} in {}", move_, fen),
+            Self::InvalidSanMove { move_, fen } => write!(
+                f,
+                "san() and lan() expect move to be legal or null, but got {} in {}",
+                move_, fen
+            ),
             Self::CustomError { err_msg } => write!(f, "{err_msg}"),
         }
     }
@@ -578,11 +582,18 @@ impl Board {
         self.is_other_draw() || self.status() != BoardStatus::Ongoing
     }
 
-    // pub fn is_double_pawn_push(&self, move_: Move) -> bool {
-    //     let source = move_.get_source();
-    //     let dest = move_.get_dest();
-    //     let pawn_mask = self.get_piece_mask(Pawn);
-    // }
+    /// Check if the move is a double pawn push
+    pub fn is_double_pawn_push(&self, move_: Move) -> bool {
+        let source = move_.get_source();
+        let dest = move_.get_dest();
+        source.get_rank() == self.turn().to_second_rank()
+            && source
+                .get_rank()
+                .to_int()
+                .abs_diff(dest.get_rank().to_int())
+                == 2
+            && !self.get_piece_mask(Pawn).contains(source)
+    }
 
     /// The function `is_quiet` determines if a move is not a capture and does not give check.
     ///

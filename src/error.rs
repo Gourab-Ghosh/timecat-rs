@@ -9,34 +9,60 @@ pub enum EngineError {
     NotImplemented,
     ColoredOutputFeatureNotEnabled,
     EngineNotRunning,
-    BadFen { fen: String },
-    InvalidDepth { depth: Depth },
+    BadFen {
+        fen: String,
+    },
+    InvalidDepth {
+        depth: Depth,
+    },
     IllegalMove {
         move_text: String,
         board_fen: String,
     },
-    ColoredOutputUnchanged { b: bool },
+    ColoredOutputUnchanged {
+        b: bool,
+    },
     ConsoleModeUnchanged,
     EmptyStack,
-    BestMoveNotFound { fen: String },
-    NullMoveInCheck { fen: String },
+    BestMoveNotFound {
+        fen: String,
+    },
+    NullMoveInCheck {
+        fen: String,
+    },
     WTimeNotMentioned,
     BTimeNotMentioned,
     GameAlreadyOver,
-    UnknownDebugCommand { command: String },
+    UnknownDebugCommand {
+        command: String,
+    },
     InvalidSpinValue {
         name: String,
         value: Spin,
         min: Spin,
         max: Spin,
     },
-    InvalidSanMoveString { s: String },
-    InvalidRankString { s: String },
-    InvalidFileString { s: String },
-    InvalidSquareString { s: String },
-    InvalidUciMoveString { s: String },
-    InvalidSubBoard { board: SubBoard },
-    CustomError { err_msg: String },
+    InvalidSanMoveString {
+        s: String,
+    },
+    InvalidRankString {
+        s: String,
+    },
+    InvalidFileString {
+        s: String,
+    },
+    InvalidSquareString {
+        s: String,
+    },
+    InvalidUciMoveString {
+        s: String,
+    },
+    InvalidSubBoard {
+        board: SubBoard,
+    },
+    CustomError {
+        err_msg: String,
+    },
 }
 
 impl fmt::Display for EngineError {
