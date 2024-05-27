@@ -136,6 +136,7 @@ pub mod board {
     pub const EMPTY_SPACE_UNICODE_SYMBOL: &str = " ";
     pub const WHITE_PIECE_UNICODE_SYMBOLS: [&str; 6] = ["♙", "♘", "♗", "♖", "♕", "♔"];
     pub const BLACK_PIECE_UNICODE_SYMBOLS: [&str; 6] = ["♟", "♞", "♝", "♜", "♛", "♚"];
+    #[cfg(feature = "speed")]
     pub const REPETITION_TABLE_SIZE: usize = 1; // Should be in power of 2 (in MB)
 }
 

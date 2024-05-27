@@ -81,9 +81,10 @@ fn main() {
 - `nnue`: Adds support for NNUE (downloaded via `reqwest`).
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
 - `colored_output`: Displays all information in a visually appealing colored format for enhanced readability.
+- `speed`: Optimize the code to improve speed at the cost of increased memory usage and occasional unexpected outputs (which is extremely rare). Note that the gain in speed might be minimal compared to the additional memory required.
 - `serde`: Enables serialization and deserialization support via `serde`.
 
-Default features include `binary` and `colored_output`
+Default features include `binary`, `colored_output` and `speed`.
 
 ## License
 Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](https://github.com/Gourab-Ghosh/timecat-rs/blob/master/LICENSE). You are free to use, modify, and distribute it under the same license.
