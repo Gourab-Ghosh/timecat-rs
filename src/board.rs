@@ -19,6 +19,8 @@ impl fmt::Display for BoardError {
     }
 }
 
+impl Error for BoardError {}
+
 /// Ths code defines an enum `GameResult` that represents the result of a game. It has three
 /// variants: `Win(Color)`, `Draw`, and `InProgress`.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

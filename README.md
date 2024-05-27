@@ -47,7 +47,6 @@ cargo add timecat --no-default-features --features engine
 ```
 
 Then, you can proceed with the following Rust code:
-
 ```rust
 use timecat::prelude::*;
 
@@ -82,7 +81,6 @@ cargo add timecat --no-default-features --features engine
 ```
 
 Then, you can proceed with the following Rust code:
-
 ```rust
 use timecat::prelude::*;
 use std::error::Error;
@@ -116,12 +114,27 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
 ```
 
 > **Caution:** To ensure compatibility with UCI commands, activate UCI mode by using the following code:<br>
 > `timecat::UCI_STATE.set_uci_mode(true, false);`<br>
 > Failure to do so may result in some UCI commands not functioning as expected.
+
+Or just enjoy the engine play against itself:
+```rust
+use timecat::prelude::*;
+use std::error::Error;
+
+fn main() {
+    timecat::Parser::parse_command(
+        &mut Engine::default(),
+        // selfplay command has same format as go command
+        "selfplay movetime 10", // Adjust time according to your wish
+    ).unwrap();
+}
+```
+
+The `selfplay` command works on the binary as well.
 
 ## Cargo Features
 - `binary`: Enables binary builds, including NNUE and engine functionalities.

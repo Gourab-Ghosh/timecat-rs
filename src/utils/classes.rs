@@ -65,6 +65,7 @@ impl RepetitionTable {
 }
 
 #[cfg(not(feature = "speed"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Default, Debug, Clone)]
 pub struct RepetitionTable {
     count_map: std::collections::HashMap<u64, u8>,

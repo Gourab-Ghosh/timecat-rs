@@ -91,7 +91,7 @@ pub fn self_play(
         .sum::<f64>()
         / prediction_score_vec.len() as f64)
         .sqrt();
-    let prediction_accuracy = calculate_prediction_accuracy(prediction_score_rms);
+    // let prediction_accuracy = calculate_prediction_accuracy(prediction_score_rms);
     println!(
         "\n{}:\n\n{}",
         "Game PGN".colorize(INFO_MESSAGE_STYLE),
@@ -127,10 +127,10 @@ pub fn self_play(
         "Prediction Score RMS",
         format!("{:.3}", prediction_score_rms),
     );
-    println_info(
-        "Prediction Accuracy",
-        format!("{:.1} %", prediction_accuracy),
-    );
+    // println_info(
+    //     "Prediction Accuracy",
+    //     format!("{:.1} %", prediction_accuracy),
+    // );
     println_info("Max time taken", format!("{:.3} s", max_time_taken));
     println_info("Min time taken", format!("{:.3} s", min_time_taken));
     println_info("Max time taken by fen", max_time_taken_fen);
