@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 #![allow(clippy::enum_variant_names)]
 
-mod board_builder;
+mod sub_board_builder;
 mod castle;
 mod magic;
 mod move_generator;
@@ -10,7 +10,7 @@ mod sub_board;
 mod zobrist;
 
 use super::*;
-pub use board_builder::*;
+pub use sub_board_builder::*;
 pub use castle::*;
 pub use magic::*;
 pub use move_generator::*;

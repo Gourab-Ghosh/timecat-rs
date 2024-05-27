@@ -84,6 +84,15 @@ impl Piece {
     pub const fn get_color(self) -> Color {
         self.color
     }
+
+    #[inline(always)]
+    pub fn evaluate(self) -> Score {
+        if self.get_color() == White {
+            self.get_piece_type().evaluate()
+        } else {
+            -self.get_piece_type().evaluate()
+        }
+    }
 }
 
 impl fmt::Display for Piece {

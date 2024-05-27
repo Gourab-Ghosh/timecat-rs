@@ -834,11 +834,11 @@ impl SubBoard {
 impl TryFrom<&SubBoardBuilder> for SubBoard {
     type Error = EngineError;
 
-    fn try_from(board_builder: &SubBoardBuilder) -> Result<Self, Self::Error> {
+    fn try_from(sub_board_builder: &SubBoardBuilder) -> Result<Self, Self::Error> {
         let mut board = SubBoard::new_empty();
 
         for square in ALL_SQUARES {
-            if let Some(piece) = board_builder[square] {
+            if let Some(piece) = sub_board_builder[square] {
                 board.xor(
                     piece.get_piece_type(),
                     square.to_bitboard(),
@@ -847,19 +847,19 @@ impl TryFrom<&SubBoardBuilder> for SubBoard {
             }
         }
 
-        board._turn = board_builder.get_turn();
+        board._turn = sub_board_builder.get_turn();
 
-        if let Some(ep) = board_builder.get_en_passant() {
+        if let Some(ep) = sub_board_builder.get_en_passant() {
             board._turn = !board.turn();
             board.set_ep(ep);
             board._turn = !board.turn();
         }
 
-        board.add_castle_rights(White, board_builder.get_castle_rights(White));
-        board.add_castle_rights(Black, board_builder.get_castle_rights(Black));
+        board.add_castle_rights(White, sub_board_builder.get_castle_rights(White));
+        board.add_castle_rights(Black, sub_board_builder.get_castle_rights(Black));
 
-        board._halfmove_clock = board_builder.get_halfmove_clock();
-        board._fullmove_number = board_builder.get_fullmove_number();
+        board._halfmove_clock = sub_board_builder.get_halfmove_clock();
+        board._fullmove_number = sub_board_builder.get_fullmove_number();
 
         board.update_pin_and_checkers_info();
 
@@ -874,16 +874,16 @@ impl TryFrom<&SubBoardBuilder> for SubBoard {
 impl TryFrom<SubBoardBuilder> for SubBoard {
     type Error = EngineError;
 
-    fn try_from(board_builder: SubBoardBuilder) -> Result<Self, Self::Error> {
-        (&board_builder).try_into()
+    fn try_from(sub_board_builder: SubBoardBuilder) -> Result<Self, Self::Error> {
+        (&sub_board_builder).try_into()
     }
 }
 
 impl TryFrom<&mut SubBoardBuilder> for SubBoard {
     type Error = EngineError;
 
-    fn try_from(board_builder: &mut SubBoardBuilder) -> Result<Self, Self::Error> {
-        (board_builder.to_owned()).try_into()
+    fn try_from(sub_board_builder: &mut SubBoardBuilder) -> Result<Self, Self::Error> {
+        (sub_board_builder.to_owned()).try_into()
     }
 }
 

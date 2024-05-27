@@ -197,7 +197,7 @@ impl FromStr for SubBoardBuilder {
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let mut cur_rank = Rank::Eighth;
         let mut cur_file = File::A;
-        let mut board_builder = SubBoardBuilder::new();
+        let mut sub_board_builder = SubBoardBuilder::new();
 
         let tokens: Vec<&str> = value.split(' ').collect();
         if tokens.len() < 4 {
@@ -224,62 +224,62 @@ impl FromStr for SubBoardBuilder {
                         File::from_index(cur_file.to_index() + (x as usize) - ('0' as usize));
                 }
                 'r' => {
-                    board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Rook, Black));
                     cur_file = cur_file.right();
                 }
                 'R' => {
-                    board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Rook, White));
                     cur_file = cur_file.right();
                 }
                 'n' => {
-                    board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Knight, Black));
                     cur_file = cur_file.right();
                 }
                 'N' => {
-                    board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Knight, White));
                     cur_file = cur_file.right();
                 }
                 'b' => {
-                    board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Bishop, Black));
                     cur_file = cur_file.right();
                 }
                 'B' => {
-                    board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Bishop, White));
                     cur_file = cur_file.right();
                 }
                 'p' => {
-                    board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Pawn, Black));
                     cur_file = cur_file.right();
                 }
                 'P' => {
-                    board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Pawn, White));
                     cur_file = cur_file.right();
                 }
                 'q' => {
-                    board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Queen, Black));
                     cur_file = cur_file.right();
                 }
                 'Q' => {
-                    board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Queen, White));
                     cur_file = cur_file.right();
                 }
                 'k' => {
-                    board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(King, Black));
                     cur_file = cur_file.right();
                 }
                 'K' => {
-                    board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(King, White));
                     cur_file = cur_file.right();
                 }
@@ -291,8 +291,8 @@ impl FromStr for SubBoardBuilder {
             }
         }
         match side {
-            "w" | "W" => _ = board_builder.turn(White),
-            "b" | "B" => _ = board_builder.turn(Black),
+            "w" | "W" => _ = sub_board_builder.turn(White),
+            "b" | "B" => _ = sub_board_builder.turn(Black),
             _ => {
                 return Err(EngineError::BadFen {
                     fen: value.to_string(),
@@ -301,34 +301,34 @@ impl FromStr for SubBoardBuilder {
         }
 
         if castles.contains('K') && castles.contains('Q') {
-            board_builder.castle_rights[White.to_index()] = CastleRights::Both;
+            sub_board_builder.castle_rights[White.to_index()] = CastleRights::Both;
         } else if castles.contains('K') {
-            board_builder.castle_rights[White.to_index()] = CastleRights::KingSide;
+            sub_board_builder.castle_rights[White.to_index()] = CastleRights::KingSide;
         } else if castles.contains('Q') {
-            board_builder.castle_rights[White.to_index()] = CastleRights::QueenSide;
+            sub_board_builder.castle_rights[White.to_index()] = CastleRights::QueenSide;
         } else {
-            board_builder.castle_rights[White.to_index()] = CastleRights::None;
+            sub_board_builder.castle_rights[White.to_index()] = CastleRights::None;
         }
 
         if castles.contains('k') && castles.contains('q') {
-            board_builder.castle_rights[Black.to_index()] = CastleRights::Both;
+            sub_board_builder.castle_rights[Black.to_index()] = CastleRights::Both;
         } else if castles.contains('k') {
-            board_builder.castle_rights[Black.to_index()] = CastleRights::KingSide;
+            sub_board_builder.castle_rights[Black.to_index()] = CastleRights::KingSide;
         } else if castles.contains('q') {
-            board_builder.castle_rights[Black.to_index()] = CastleRights::QueenSide;
+            sub_board_builder.castle_rights[Black.to_index()] = CastleRights::QueenSide;
         } else {
-            board_builder.castle_rights[Black.to_index()] = CastleRights::None;
+            sub_board_builder.castle_rights[Black.to_index()] = CastleRights::None;
         }
 
         if let Ok(square) = Square::from_str(ep) {
-            board_builder.ep_file(Some(square.get_file()));
+            sub_board_builder.ep_file(Some(square.get_file()));
         }
 
-        board_builder
+        sub_board_builder
             .halfmove_clock(halfmove_clock)
             .fullmove_number(fullmove_number);
 
-        Ok(board_builder)
+        Ok(sub_board_builder)
     }
 }
 
