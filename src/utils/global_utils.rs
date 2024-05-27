@@ -95,12 +95,22 @@ impl EngineUCIState {
         self._console_mode.load(MEMORY_ORDERING)
     }
 
+    #[inline(always)]
+    pub fn is_in_uci_mode(&self) -> bool {
+        !self.is_in_console_mode()
+    }
+
     pub fn set_console_mode(&self, b: bool, print: bool) {
         self._console_mode.store(b, MEMORY_ORDERING);
         self._debug_mode.store(b, MEMORY_ORDERING);
         if print {
             print_info("UCI mode is set to", b);
         }
+    }
+
+    #[inline(always)]
+    pub fn set_uci_mode(&self, b: bool, print: bool) {
+        self.set_console_mode(!b, print);
     }
 
     #[inline(always)]

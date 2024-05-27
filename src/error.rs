@@ -2,105 +2,106 @@ use super::*;
 use EngineError::*;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Fail, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum EngineError {
-    #[fail(display = "No input! Please try again!")]
-    NoInput,
-
-    #[fail(display = "")]
     UnknownCommand,
-
-    #[fail(display = "Sorry, this command is not implemented yet :(")]
+    NoInput,
     NotImplemented,
-
-    #[fail(
-        display = "Colored Output Feature is not enabled. Recompile the chess engine enabling the feature!"
-    )]
     ColoredOutputFeatureNotEnabled,
-
-    #[fail(display = "Engine is not running! Please try again!")]
     EngineNotRunning,
-
-    #[fail(display = "Bad FEN string: {}! Please try Again!", fen)]
     BadFen { fen: String },
-
-    #[fail(display = "Invalid depth {}! Please try again!", depth)]
     InvalidDepth { depth: Depth },
-
-    #[fail(
-        display = "Illegal move {} in position {}! Please try again!",
-        move_text, board_fen
-    )]
     IllegalMove {
         move_text: String,
         board_fen: String,
     },
-
-    #[fail(display = "Colored output already set to {}! Please try again!", b)]
     ColoredOutputUnchanged { b: bool },
-
-    #[fail(display = "Already in Console Mode! Please try again!")]
     ConsoleModeUnchanged,
-
-    #[fail(display = "Move Stack is empty, pop not possible! Please try again!")]
     EmptyStack,
-
-    #[fail(display = "Best move not found in position {}! Please try again!", fen)]
     BestMoveNotFound { fen: String },
-
-    #[fail(
-        display = "Cannot apply null move in position {}, as king is in check! Please try again!",
-        fen
-    )]
     NullMoveInCheck { fen: String },
-
-    #[fail(display = "You didn't mention wtime! Please try again!")]
     WTimeNotMentioned,
-
-    #[fail(display = "You didn't mention btime! Please try again!")]
     BTimeNotMentioned,
-
-    #[fail(display = "Game is already over! Please start a game from another position!")]
     GameAlreadyOver,
-
-    #[fail(
-        display = "Debug command {} is unknown! The possible commands are on or off! Please try again!",
-        command
-    )]
     UnknownDebugCommand { command: String },
-
-    #[fail(
-        display = "Cannot set value of {} to {}, the value must be from {} to {}! Please try again!",
-        name, value, min, max
-    )]
     InvalidSpinValue {
         name: String,
         value: Spin,
         min: Spin,
         max: Spin,
     },
-
-    #[fail(display = "Got invalid SAN move string {}! Please try again!", s)]
     InvalidSanMoveString { s: String },
-
-    #[fail(display = "Got invalid rank string {}! Please try again!", s)]
     InvalidRankString { s: String },
-
-    #[fail(display = "Got invalid file string {}! Please try again!", s)]
     InvalidFileString { s: String },
-
-    #[fail(display = "Got invalid square string {}! Please try again!", s)]
     InvalidSquareString { s: String },
-
-    #[fail(display = "You didn't mention wtime! Please try again!")]
     InvalidUciMoveString { s: String },
-
-    #[fail(display = "Invalid sub board generated:\n\n{:#?}", board)]
     InvalidSubBoard { board: SubBoard },
-
-    #[fail(display = "{}", err_msg)]
     CustomError { err_msg: String },
 }
+
+impl fmt::Display for EngineError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            UnknownCommand => write!(f, "{}", UnknownCommand.stringify()),
+            NoInput => write!(f, "No input! Please try again!"),
+            NotImplemented => write!(f, "Sorry, this command is not implemented yet :("),
+            ColoredOutputFeatureNotEnabled => write!(f, "Colored Output Feature is not enabled. Recompile the chess engine enabling the feature!"),
+            EngineNotRunning => write!(f, "Engine is not running! Please try again!"),
+            BadFen { fen } => write!(f, "Bad FEN string: {fen}! Please try Again!"),
+            InvalidDepth { depth } => write!(f, "Invalid depth {depth}! Please try again!"),
+            IllegalMove { move_text, board_fen } => write!(f, "Illegal move {move_text} in position {board_fen}! Please try again!"),
+            ColoredOutputUnchanged { b } => write!(f, "Colored output already set to {b}! Please try again!"),
+            ConsoleModeUnchanged => write!(f, "Already in Console Mode! Please try again!"),
+            EmptyStack => write!(f, "Move Stack is empty, pop not possible! Please try again!"),
+            BestMoveNotFound { fen } => write!(f, "Best move not found in position {fen}! Please try again!"),
+            NullMoveInCheck { fen } => write!(f, "Cannot apply null move in position {fen}, as king is in check! Please try again!"),
+            WTimeNotMentioned => write!(f, "You didn't mention wtime! Please try again!"),
+            BTimeNotMentioned => write!(f, "You didn't mention btime! Please try again!"),
+            GameAlreadyOver => write!(f, "Game is already over! Please start a game from another position!"),
+            UnknownDebugCommand { command } => write!(f, "Debug command {command} is unknown! The possible commands are on or off! Please try again!"),
+            InvalidSpinValue {name, value, min, max} => write!(f, "Cannot set value of {name} to {value}, the value must be from {min} to {max}! Please try again!"),
+            InvalidSanMoveString { s } => write!(f, "Got invalid SAN move string {s}! Please try again!"),
+            InvalidRankString { s } => write!(f, "Got invalid rank string {s}! Please try again!"),
+            InvalidFileString { s } => write!(f, "Got invalid file string {s}! Please try again!"),
+            InvalidSquareString { s } => write!(f, "Got invalid square string {s}! Please try again!"),
+            InvalidUciMoveString { s } => write!(f, "Invalid uci move string {s}! Please try again!"),
+            InvalidSubBoard { board } => write!(f, "Invalid sub board generated:\n\n{board:#?}"),
+            CustomError { err_msg } => write!(f, "{err_msg}"),
+        }
+    }
+}
+
+impl Error for EngineError {}
+
+// impl fmt::Debug for EngineError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         #[fail(display = "No input! Please try again!")]
+//         #[fail(display = "")]
+//         #[fail(display = "Sorry, this command is not implemented yet :(")]
+//         #[fail(display = "Colored Output Feature is not enabled. Recompile the chess engine enabling the feature!")]
+//         #[fail(display = "Engine is not running! Please try again!")]
+//         #[fail(display = "Bad FEN string: {}! Please try Again!", fen)]
+//         #[fail(display = "Invalid depth {}! Please try again!", depth)]
+//         #[fail(display = "Illegal move {} in position {}! Please try again!", move_text, board_fen)]
+//         #[fail(display = "Colored output already set to {}! Please try again!", b)]
+//         #[fail(display = "Already in Console Mode! Please try again!")]
+//         #[fail(display = "Move Stack is empty, pop not possible! Please try again!")]
+//         #[fail(display = "Best move not found in position {}! Please try again!", fen)]
+//         #[fail(display = "Cannot apply null move in position {}, as king is in check! Please try again!", fen)]
+//         #[fail(display = "You didn't mention wtime! Please try again!")]
+//         #[fail(display = "You didn't mention btime! Please try again!")]
+//         #[fail(display = "Game is already over! Please start a game from another position!")]
+//         #[fail(display = "Debug command {} is unknown! The possible commands are on or off! Please try again!", command)]
+//         #[fail(display = "Cannot set value of {} to {}, the value must be from {} to {}! Please try again!", name, value, min, max)]
+//         #[fail(display = "Got invalid SAN move string {}! Please try again!", s)]
+//         #[fail(display = "Got invalid rank string {}! Please try again!", s)]
+//         #[fail(display = "Got invalid file string {}! Please try again!", s)]
+//         #[fail(display = "Got invalid square string {}! Please try again!", s)]
+//         #[fail(display = "You didn't mention wtime! Please try again!")]
+//         #[fail(display = "Invalid sub board generated:\n\n{:#?}", board)]
+//         #[fail(display = "{}", err_msg)]
+//     }
+// }
 
 impl EngineError {
     pub fn stringify_with_optional_raw_input(&self, optional_raw_input: Option<&str>) -> String {

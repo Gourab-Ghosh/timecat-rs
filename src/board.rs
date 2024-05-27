@@ -4,16 +4,19 @@ use super::*;
 
 /// This code defines an enum `BoardError` that represents different types of errors that can occur in a board-related context. The enum has two variants.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, Fail)]
+#[derive(Clone, Debug)]
 pub enum BoardError {
-    #[fail(
-        display = "san() and lan() expect move to be legal or null, but got {} in {}",
-        move_, fen
-    )]
     InvalidSanMove { move_: Move, fen: String },
-
-    #[fail(display = "{}", err_msg)]
     CustomError { err_msg: String },
+}
+
+impl fmt::Display for BoardError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidSanMove { move_, fen } => write!(f, "san() and lan() expect move to be legal or null, but got {} in {}", move_, fen),
+            Self::CustomError { err_msg } => write!(f, "{err_msg}"),
+        }
+    }
 }
 
 /// Ths code defines an enum `GameResult` that represents the result of a game. It has three
@@ -51,9 +54,9 @@ impl GameResult {
 }
 
 /// The `Board` struct represents a chess board with various methods for game logic and move generation.
-/// 
+///
 /// Properties:
-/// 
+///
 /// * `sub_board`: The `sub_board` property represents the sub-board within the main board. It contains
 /// the current state of the game board, including the positions of all pieces and other relevant game
 /// information.
@@ -77,9 +80,9 @@ pub struct Board {
 
 impl Board {
     /// The function `new` creates a new instance of `Board` from a starting position FEN string.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// A new instance of `Board` is being returned, initialized with the starting position FEN
     /// (Forsyth-Edwards Notation) string.
     pub fn new() -> Self {
@@ -87,15 +90,15 @@ impl Board {
     }
 
     /// The function `set_fen` sets the board state based on a given FEN string.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `fen`: FEN stands for Forsyth-Edwards Notation, which is a standard notation for describing a
     /// particular board position of a chess game. It includes information about the placement of pieces
     /// on the board, the player to move, castling rights, en passant square, halfmove clock, and full
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `set_fen` function returns a `Result<(), EngineError>`.
     pub fn set_fen(&mut self, fen: &str) -> Result<(), EngineError> {
         let fen = simplify_fen(fen);
@@ -115,15 +118,15 @@ impl Board {
     }
 
     /// The function `from_fen` parses a FEN string to create a new board state.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `fen`: Forsyth-Edwards Notation (FEN) is a standard notation for describing a particular board
     /// position of a chess game. It includes information about the placement of pieces on the board,
     /// the current player's turn, castling rights, en passant square, halfmove clock, and full
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `from_fen` function is returning a `Result` containing either a `ChessBoard` instance if the
     /// FEN string was successfully parsed and set on the board, or an `EngineError` if there was an
     /// error during the parsing or setting of the FEN string.
@@ -134,9 +137,9 @@ impl Board {
     }
 
     /// This function returns a reference to the SubBoard struct owned by the current struct.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// A reference to the `SubBoard` struct is being returned.
     pub fn get_sub_board(&self) -> &SubBoard {
         &self.sub_board
@@ -144,15 +147,15 @@ impl Board {
 
     /// The function `is_good_fen` checks if a given FEN string is valid based on certain
     /// criteria.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `fen`: The function `is_good_fen` takes a FEN (Forsyth-Edwards Notation) string as input and
     /// checks if it is a valid FEN representation of a chess position. The function performs the
     /// following checks:
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The function `is_good_fen` returns a boolean value - `true` if the FEN string passed as input is
     /// considered good based on certain conditions, and `false` otherwise.
     pub fn is_good_fen(fen: &str) -> bool {
@@ -171,9 +174,9 @@ impl Board {
     }
 
     /// The function `empty` returns a chess board with no pieces on it.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `empty` function is returning a chess board that is initialized with an empty position. It
     /// is using the `from_fen` method to create the board from a FEN (Forsyth-Edwards Notation) string
     /// representation of an empty board.
@@ -203,15 +206,15 @@ impl Board {
 
     /// The function `piece_symbol_at` returns the symbol of the piece at a given square or an empty
     /// space symbol if there is no piece.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `square`: Square is a parameter representing a specific square on a chessboard. It could be a
     /// coordinate like "A1" or a numerical representation like 0-63, depending on how the chessboard is
     /// implemented in your code.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `piece_symbol_at` function returns a `String` representing the symbol of the piece at the
     /// given square. If there is a piece at the square, it returns the string representation of that
     /// piece. If there is no piece at the square, it returns the string representation of an empty
@@ -225,18 +228,18 @@ impl Board {
 
     /// This function returns the Unicode symbol representing a chess piece at a given square, with an
     /// option to flip the color.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `square`: The `square` parameter represents a specific square on a chessboard where a piece is
     /// located. It is typically represented by a combination of a file (a-h) and a rank (1-8), such as
     /// "e4" or "h7".
     /// * `flip_color`: The `flip_color` parameter is a boolean flag that determines whether to flip the
     /// colors of the pieces. If `flip_color` is `true`, the colors of the pieces will be flipped (e.g.,
     /// white pieces will be displayed as black and vice versa). If `flip_color` is `
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The function `piece_unicode_symbol_at` returns a `String` value representing the Unicode symbol
     /// for the piece at the specified square. If there is a piece at the square, it returns the Unicode
     /// symbol for that piece based on its color and type. If there is no piece at the square, it
@@ -260,16 +263,16 @@ impl Board {
     /// The function `to_board_string` generates a string representation of a board with various
     /// styles and information displayed, such as pieces, last move highlights, FEN, transposition key,
     /// checkers, and evaluation.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `use_unicode`: The `use_unicode` parameter in the `to_board_string` function is a boolean flag
     /// that determines whether to use Unicode symbols for pieces on the board. If `use_unicode` is
     /// `true`, the function will use Unicode symbols for pieces, otherwise it will use non-Unicode
     /// symbols.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The function `to_board_string` is returning a formatted string representation of the board
     /// state, including the pieces, styles, last move highlight, and additional information such as
     /// FEN, Transposition Key, Checkers, and Current Evaluation (if the "nnue" feature is enabled).
@@ -330,9 +333,9 @@ impl Board {
 
     /// The `to_unicode_string` function returns a string representation of a board with Unicode
     /// characters.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `to_unicode_string` method is being called on `self`, which is likely a struct or object
     /// that has a method called `to_board_string`. The `to_board_string` method is being called with
     /// the argument `true`, and its return value is being returned by the `to_unicode_string` method.
@@ -344,9 +347,9 @@ impl Board {
 
     /// The function `result` determines the outcome of a game based on the current board status in a
     /// Rust program.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `result` function returns a `GameResult` enum based on the current state of the game. If the
     /// game is a draw due to some other reason, it returns `GameResult::Draw`. If the game is in a
     /// checkmate state, it returns `GameResult::Win` for the player who did not make the last move. If
@@ -363,9 +366,9 @@ impl Board {
     }
 
     /// The function `get_num_moves` returns the number of moves in a stack as a `NumMoves` type.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `get_num_moves` function is returning the number of elements in the `stack` as a `NumMoves`
     /// type.
     #[inline(always)]
@@ -374,9 +377,9 @@ impl Board {
     }
 
     /// The function `get_num_repetitions` returns the number of repetitions for a given hash value.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `get_num_repetitions` function is returning a `u8` value, which represents the number of
     /// repetitions for a given hash in the repetition table.
     #[inline(always)]
@@ -386,15 +389,15 @@ impl Board {
 
     /// The function `is_repetition` checks if the number of repetitions is greater than or equal to a
     /// specified value.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `n_times`: The `n_times` parameter in the `is_repetition` function represents the number of
     /// times a certain action or event should be repeated. The function checks if the number of
     /// repetitions recorded is greater than or equal to the specified `n_times` value.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// A boolean value is being returned.
     #[inline(always)]
     pub fn is_repetition(&self, n_times: usize) -> bool {
@@ -403,15 +406,15 @@ impl Board {
 
     /// The function `gives_repetition` checks if a move results in a repetition based on the repetition
     /// table.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `move_`: The `move_` parameter is of type `Move`. It is used as an argument for the
     /// `make_move_new` method of the `sub_board` field, and also as an argument for the
     /// `get_repetition` method of the `repetition_table` field.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The function `gives_repetition` is returning a boolean value, which indicates whether the result
     /// of the expression
     /// `self.repetition_table.get_repetition(self.sub_board.make_move_new(move_).hash())` is not equal
@@ -424,15 +427,15 @@ impl Board {
     }
 
     /// The function checks if a move results in a threefold repetition in a Rust program.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `move_`: The `move_` parameter in the `gives_threefold_repetition` function represents the
     /// move that is being made on the board. This move is used to calculate the hash of the resulting
     /// board state after the move is made.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The function `gives_threefold_repetition` is returning a boolean value, indicating whether the
     /// given move results in a threefold repetition in the game. It checks if the move leads to a
     /// position that has been repeated twice before in the game.
@@ -445,16 +448,16 @@ impl Board {
 
     /// The function `gives_claimable_threefold_repetition` checks if a move leads to a position with a
     /// claimable threefold repetition.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `move_`: The `move_` parameter in the `gives_claimable_threefold_repetition` function
     /// represents the move that is being made on the board. This move is used to generate a new board
     /// state, and then the function checks if making any legal move from that new board state would
     /// result in a
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The function `gives_claimable_threefold_repetition` returns a boolean value indicating whether
     /// the given move results in a position where a threefold repetition can be claimed.
     pub fn gives_claimable_threefold_repetition(&self, move_: Move) -> bool {
@@ -485,9 +488,9 @@ impl Board {
 
     /// The function `is_threefold_repetition` checks if a certain position has occurred three times in
     /// a game.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `is_threefold_repetition` function is being called, which in turn calls the `is_repetition`
     /// function with the argument 3. The `is_repetition` function checks if the current board position
     /// has been repeated a certain number of times (in this case, 3 times). The
@@ -499,15 +502,15 @@ impl Board {
 
     /// The function `is_halfmoves` checks if the halfmove clock is greater than or equal to a given
     /// number `n`.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `n`: The parameter `n` represents the number of halfmoves to check against the halfmove clock.
     /// The function `is_halfmoves` will return `true` if the halfmove clock value is greater than or
     /// equal to `n`, indicating that `n` or more halfmoves have been made since the
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// A boolean value is being returned.
     #[inline(always)]
     fn is_halfmoves(&self, n: u8) -> bool {
@@ -516,9 +519,9 @@ impl Board {
 
     /// The function `is_fifty_moves` checks if the game has reached the fifty-move rule
     /// condition.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `is_fifty_moves` function is returning a boolean value indicating whether the number of
     /// halfmoves is equal to 100.
     #[inline(always)]
@@ -527,9 +530,9 @@ impl Board {
     }
 
     /// The function `is_stalemate` checks if the current board status is a stalemate.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// A boolean value indicating whether the current board status is a stalemate.
     #[inline(always)]
     pub fn is_stalemate(&self) -> bool {
@@ -538,9 +541,9 @@ impl Board {
 
     /// The function `is_other_draw` checks if the game is a draw based on fifty-move rule,
     /// threefold repetition, or insufficient material.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `is_other_draw` function is returning a boolean value. It returns `true` if any of the
     /// conditions `self.is_fifty_moves()`, `self.is_threefold_repetition()`, or
     /// `self.is_insufficient_material()` are true. Otherwise, it returns `false`.
@@ -550,9 +553,9 @@ impl Board {
     }
 
     /// The function `is_draw` checks if a game is a draw by calling two other functions.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `is_draw` function is returning a boolean value. It returns `true` if either
     /// `is_other_draw()` or `is_stalemate()` methods return `true`, otherwise it returns `false`.
     #[inline(always)]
@@ -562,9 +565,9 @@ impl Board {
 
     /// The function `is_game_over` checks if the game is over based on whether it is a draw or
     /// the board status is not ongoing.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// A boolean value is being returned. The method `is_game_over` returns `true` if either
     /// `is_other_draw()` method returns `true` or the `status()` method does not return
     /// `BoardStatus::Ongoing`. Otherwise, it returns `false`.
@@ -580,15 +583,15 @@ impl Board {
     // }
 
     /// The function `is_quiet` determines if a move is not a capture and does not give check.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `move_`: The `move_` parameter in the `is_quiet` function represents a move in a chess game.
     /// It is used to check whether the move is a quiet move, meaning it is not a capture move and does
     /// not give check to the opponent's king.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The function `is_quiet` is returning a boolean value, which is determined by the logical NOT
     /// operation applied to the result of the expression `(self.is_capture(move_) ||
     /// self.gives_check(move_))`.
@@ -599,9 +602,9 @@ impl Board {
 
     /// The function `has_legal_en_passant` checks if there is a legal en passant move available in a
     /// game of chess.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `has_legal_en_passant` function is returning a boolean value. It returns `true` if the
     /// `ep_square` is not `None`, indicating that there is a legal en passant move available.
     /// Otherwise, it returns `false`.
@@ -612,9 +615,9 @@ impl Board {
 
     /// The function `clean_castling_rights` cleans up castling rights for both white and black
     /// players.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `clean_castling_rights` function returns a `BitBoard` representing the castling rights for
     /// both white and black players after cleaning up any invalid or unnecessary rights.
     pub fn clean_castling_rights(&self) -> BitBoard {
@@ -646,16 +649,16 @@ impl Board {
 
     /// The function reduces_castling_rights checks if certain conditions are met to reduce
     /// castling rights after a move.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `move_`: The `move_` parameter in the `reduces_castling_rights` function represents the move
     /// that is being made on the chessboard. It contains information about the source square and the
     /// destination square of the move. The function is checking the logic to determine if the castling
     /// rights should be reduced
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The function `reduces_castling_rights` returns a boolean value.
     fn reduces_castling_rights(&self, move_: Move) -> bool {
         // TODO: Check Logic
@@ -673,15 +676,15 @@ impl Board {
 
     /// The function `is_irreversible` checks if a move is irreversible based on certain
     /// conditions.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `move_`: The `move_` parameter in the `is_irreversible` function represents a move in a chess
     /// game. It is used to check if the move is irreversible based on certain conditions like having a
     /// legal en passant move, being a zeroing move, or reducing castling rights.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// A boolean value is being returned.
     #[inline(always)]
     pub fn is_irreversible(&self, move_: Move) -> bool {
@@ -690,9 +693,9 @@ impl Board {
 
     /// The function `is_endgame` determines if the current game state is in the endgame phase
     /// based on the number and types of pieces remaining on the board.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `is_endgame` function returns a boolean value based on certain conditions. If the number of
     /// pieces on the board is less than or equal to a threshold defined by `ENDGAME_PIECE_THRESHOLD`,
     /// it returns `true`. Otherwise, it checks the number of Queens on the board and applies different
@@ -724,9 +727,9 @@ impl Board {
 
     /// The `push` function takes an optional move, updates the sub-board accordingly, and adds
     /// the previous sub-board state and move to a stack.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `optional_move`: The `optional_move` parameter in the `push` function is of type `impl
     /// Into<Option<Move>>`. This means it can accept any type that can be converted into an
     /// `Option<Move>`. Inside the function, the `optional_move` is converted into an `Option<Move>`
@@ -746,9 +749,9 @@ impl Board {
 
     /// The `pop` function removes and returns the top element from a stack, updating internal
     /// state accordingly.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `pop` function returns an `Option<Move>`.
     pub fn pop(&mut self) -> Option<Move> {
         let (sub_board, optional_move) = self.stack.pop().unwrap();
@@ -758,9 +761,9 @@ impl Board {
     }
 
     /// The function `get_all_moves` returns a vector of references to all moves stored in a stack.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// A vector of references to `Option<Move>` values is being returned.
     #[inline(always)]
     pub fn get_all_moves(&self) -> Vec<&Option<Move>> {
@@ -768,9 +771,9 @@ impl Board {
     }
 
     /// The function `get_last_move` returns the last move made, if any, from a stack of moves.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `get_last_move` function returns an `Option` that contains either `Some(Move)` if there is a
     /// last move available in the stack, or `None` if the stack is empty.
     #[inline(always)]
@@ -779,9 +782,9 @@ impl Board {
     }
 
     /// The function checks if any element in the stack contains a null move.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `contains_null_move` function is returning a boolean value (`true` or `false`). It checks if
     /// there is any `None` value present in the `m` field of the tuples in the `stack` vector. If any
     /// `None` value is found, it returns `true`, indicating that a null move is present in the stack;
@@ -792,9 +795,9 @@ impl Board {
     }
 
     /// The function `get_ply` returns the length of the stack.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `get_ply` function is returning the length of the `stack` vector, which represents the
     /// number of elements currently stored in the stack.
     #[inline(always)]
@@ -803,9 +806,9 @@ impl Board {
     }
 
     /// The function `has_empty_stack` checks if the stack is empty.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// A boolean value indicating whether the stack is empty or not.
     #[inline(always)]
     pub fn has_empty_stack(&self) -> bool {
@@ -814,16 +817,16 @@ impl Board {
 
     /// The function `parse_san` parses a given SAN (Standard Algebraic Notation) string to
     /// return a corresponding chess move or an error if the move is invalid.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `san`: The `san` parameter in the `parse_san` function represents the Standard Algebraic
     /// Notation (SAN) string of a chess move that needs to be parsed and converted into a `Move`
     /// object. The function first trims any leading or trailing whitespace from the input `san` string
     /// and then
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `parse_san` function returns a `Result` containing either an `Option<Move>` or an
     /// `EngineError`. If the parsing is successful, it returns `Ok(Some(move))` with the parsed move.
     /// If the parsing fails due to an invalid SAN move string, it returns an `EngineError` with the
@@ -846,15 +849,15 @@ impl Board {
 
     /// The function `parse_uci` parses a UCI string into a Move object or returns None if the
     /// input is "0000".
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `uci`: The `uci` parameter is a string that represents a move in UCI (Universal Chess
     /// Interface) format. It is used to specify chess moves in a standardized way for communication
     /// between chess engines and graphical user interfaces.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `parse_uci` function returns a `Result` containing either `None` if the input `uci` is
     /// "0000", or `Some(Move)` if the input `uci` can be successfully parsed into a `Move` object.
     #[inline(always)]
@@ -867,15 +870,15 @@ impl Board {
 
     /// The function `parse_move` parses a move text input and returns a `Move` or an
     /// `EngineError`.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `move_text`: The `move_text` parameter is a reference to a string slice (`&str`) that
     /// represents the text input containing a chess move in either UCI (Universal Chess Interface) or
     /// SAN (Standard Algebraic Notation) format.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `parse_move` function returns a `Result` containing either `Some(Move)` if the move text can
     /// be parsed successfully, or `None` if the move text cannot be parsed. If an error occurs during
     /// parsing, an `EngineError` is returned.
@@ -886,14 +889,14 @@ impl Board {
 
     /// The function `push_san` takes a SAN (Standard Algebraic Notation) string, parses it into a move,
     /// pushes the move onto the board, and returns the move.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `san`: The `san` parameter in the `push_san` function is a reference to a string that
     /// represents a move in Standard Algebraic Notation (SAN).
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `push_san` function returns a `Result` containing an `Option` of `Move` or an `EngineError`.
     pub fn push_san(&mut self, san: &str) -> Result<Option<Move>, EngineError> {
         let move_ = self.parse_san(san)?;
@@ -903,16 +906,16 @@ impl Board {
 
     /// The `push_sans` function removes double spaces and trims a string, splits it into
     /// individual words, and then pushes each word as a move into a vector.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `sans`: The `sans` parameter in the `push_sans` function is a reference to a string (`&str`)
     /// that represents a sequence of chess moves in Standard Algebraic Notation (SAN). The function
     /// processes this input by removing double spaces and trimming the string, then splitting it into
     /// individual move tokens
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `push_sans` function is returning a `Result` containing a `Vec` of `Option<Move>` or an
     /// `EngineError`.
     #[inline(always)]
@@ -925,14 +928,14 @@ impl Board {
 
     /// The function `push_uci` takes a UCI string, parses it into a move, pushes the move onto a stack,
     /// and returns the move.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `uci`: The `uci` parameter in the `push_uci` function is a reference to a string that
     /// represents a move in UCI (Universal Chess Interface) notation.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The function `push_uci` returns a `Result` containing an `Option` of `Move` or an `EngineError`.
     pub fn push_uci(&mut self, uci: &str) -> Result<Option<Move>, EngineError> {
         let move_ = self.parse_uci(uci)?;
@@ -941,9 +944,9 @@ impl Board {
     }
 
     /// The `push_str` function pushes a string to a data structure using the UCI protocol.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `s`: The parameter `s` in the `push_str` function is a reference to a string slice (`&str`).
     #[inline(always)]
     pub fn push_str(&mut self, s: &str) {
@@ -952,14 +955,14 @@ impl Board {
 
     /// The function `push_uci_moves` takes a string of UCI moves, processes them, and pushes them onto
     /// a vector of optional Moves.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `uci_moves`: The `uci_moves` parameter is a string containing a series of UCI (Universal Chess
     /// Interface) formatted moves separated by spaces.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `push_uci_moves` function returns a `Result` containing a `Vec` of `Option<Move>` or an
     /// `EngineError`.
     #[inline(always)]
@@ -972,9 +975,9 @@ impl Board {
 
     /// The function `algebraic_and_push` takes an optional move, determines if it is a check or
     /// checkmate, and returns the algebraic notation of the move with appropriate suffixes.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `optional_move`: The `optional_move` parameter is of type `impl Into<Option<Move>>`, which
     /// means it can accept any type that can be converted into an `Option<Move>`. This parameter is
     /// used to provide an optional move that the function will process.
@@ -982,9 +985,9 @@ impl Board {
     /// indicates whether the algebraic notation should include long notation or not. When `long` is
     /// true, the algebraic notation will include additional information, typically the starting and
     /// ending squares of the move. When
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The function `algebraic_and_push` returns a `Result<String, BoardError>`. The result can either
     /// be an `Ok` containing a `String` value representing the algebraic notation of a move with
     /// optional suffixes like "#" for checkmate or "+" for check, or an `Err` containing a `BoardError`
@@ -1017,14 +1020,14 @@ impl Board {
 
     /// The function `san_and_push` takes an optional move and converts it into algebraic notation
     /// before pushing it onto the board.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `optional_move`: The `optional_move` parameter is a move that is optional and can be either
     /// `Some(Move)` or `None`. It is passed as an argument to the `san_and_push` method.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `san_and_push` function is returning a `Result<String, BoardError>`.
     #[inline(always)]
     pub fn san_and_push(
@@ -1036,15 +1039,15 @@ impl Board {
 
     /// The function `lan_and_push` takes an optional move and converts it into algebraic notation
     /// before pushing it onto the board.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `optional_move`: The `optional_move` parameter is of type `impl Into<Option<Move>>`, which
     /// means it can accept any type that can be converted into an `Option<Move>`. This parameter is
     /// used as an input to the `lan_and_push` method.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `lan_and_push` function returns a `Result<String, BoardError>`.
     #[inline(always)]
     pub fn lan_and_push(
@@ -1056,9 +1059,9 @@ impl Board {
 
     /// The `variation_san` function processes a sequence of moves in a chess game, converting
     /// them to Standard Algebraic Notation (SAN) format.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `board`: The `board` parameter in the `variation_san` function represents the current state of
     /// the chess board. It is of type `Board`, which likely contains information about the positions of
     /// the pieces on the board, the current player's turn, and other relevant data for playing a game
@@ -1067,9 +1070,9 @@ impl Board {
     /// vector of optional `Move`s called `variation`. The function iterates over the optional moves in
     /// the variation, checks if each move is legal on the board, and constructs the Standard Algebraic
     /// Notation (
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The function `variation_san` returns a `String` containing the Standard Algebraic Notation (SAN)
     /// representation of the moves in the provided variation on the chess board.
     fn variation_san(&self, board: &Board, variation: Vec<Option<Move>>) -> String {
@@ -1109,9 +1112,9 @@ impl Board {
 
     /// The function `get_pgn` constructs a PGN (Portable Game Notation) string representation
     /// of a chess game, including FEN (Forsyth-Edwards Notation) and move information.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `get_pgn` function returns a `String` containing the PGN (Portable Game Notation)
     /// representation of a chess game. The PGN includes information such as the FEN (Forsyth-Edwards
     /// Notation) of the starting position and the sequence of moves in standard algebraic notation.
@@ -1134,9 +1137,9 @@ impl Board {
 
     /// The function `perft_helper` recursively calculates the number of possible moves at a given depth
     /// in a chess game, optionally printing the moves.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `depth`: The `depth` parameter in the `perft_helper` function represents the depth to which the
     /// function should calculate the number of possible moves. It determines how many moves ahead the
     /// function should look to calculate the perft value.
@@ -1144,9 +1147,9 @@ impl Board {
     /// determines whether the function should print out the moves and their corresponding counts during
     /// the perft calculation. If `print_move` is set to `true`, the function will display the move and
     /// its count for each
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `perft_helper` function is returning the total number of positions reached after exploring the
     /// specified depth of the game tree.
     fn perft_helper(&mut self, depth: Depth, print_move: bool) -> usize {
@@ -1172,15 +1175,15 @@ impl Board {
     }
 
     /// The function `perft` calculates the number of possible moves at a given depth in a game.
-    /// 
+    ///
     /// Arguments:
-    /// 
+    ///
     /// * `depth`: The `depth` parameter represents the depth of the search tree to which the Perft
     /// algorithm will be applied. It determines how many moves ahead the algorithm will explore to
     /// calculate the number of possible positions.
-    /// 
+    ///
     /// Returns:
-    /// 
+    ///
     /// The `perft` function is returning the result of calling the `perft_helper` function with the
     /// specified depth and a boolean value of `true`.
     #[inline(always)]

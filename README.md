@@ -63,7 +63,7 @@ fn main() {
     let evaluation = board.evaluate();
     println!("Current Evaluation: {}\n", evaluation);
 
-    // Initialize the chess engine with the current board state.
+    // Initialize the engine with the current board state.
     let engine = Engine::new(board);
 
     // Configure the engine to search for the best move up to a depth of 10 plies.
@@ -75,6 +75,53 @@ fn main() {
     println!("\nBest Move: {}", best_move);
 }
 ```
+
+You can use UCI commands, although it's not recommended in production environments due to potential parsing delays and unpredictable outputs. The 'nnue' and 'engine' features are also required in this context.
+```bash
+cargo add timecat --no-default-features --features engine
+```
+
+Then, you can proceed with the following Rust code:
+
+```rust
+use timecat::prelude::*;
+use std::error::Error;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    // Create the default engine initialized with the standard starting position.
+    let mut engine = Engine::default();
+
+    // Enable UCI (Universal Chess Interface) mode explicitly.
+    // Some UCI commands may not work without this.
+    timecat::UCI_STATE.set_uci_mode(true, false);
+
+    // List of UCI commands to be executed on the chess engine.
+    let uci_commands = [
+        // Checks if the engine is ready to receive commands.
+        "isready",
+        // Sets the move overhead option.
+        "setoption name move overhead value 200",
+        // Display the current state of the chess board.
+        "d",
+        // Sets a new game position by applying the moves.
+        "position startpos e2e4 e7e5",
+        // Instructs the engine to calculate the best move within 3000 milliseconds.
+        "go movetime 3000",
+    ];
+
+    // Process each UCI command and handle potential errors.
+    for command in uci_commands {
+        timecat::Parser::parse_command(&mut engine, command)?;
+    }
+
+    Ok(())
+}
+
+```
+
+> **Caution:** To ensure compatibility with UCI commands, activate UCI mode by using the following code:<br>
+> `timecat::UCI_STATE.set_uci_mode(true, false);`<br>
+> Failure to do so may result in some UCI commands not functioning as expected.
 
 ## Cargo Features
 - `binary`: Enables binary builds, including NNUE and engine functionalities.

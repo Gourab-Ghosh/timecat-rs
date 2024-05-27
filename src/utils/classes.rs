@@ -64,7 +64,6 @@ impl RepetitionTable {
     }
 }
 
-
 #[cfg(not(feature = "speed"))]
 #[derive(Default, Debug, Clone)]
 pub struct RepetitionTable {

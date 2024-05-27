@@ -830,10 +830,10 @@ impl SubBoard {
     }
 }
 
-impl TryFrom<&BoardBuilder> for SubBoard {
+impl TryFrom<&SubBoardBuilder> for SubBoard {
     type Error = EngineError;
 
-    fn try_from(board_builder: &BoardBuilder) -> Result<Self, Self::Error> {
+    fn try_from(board_builder: &SubBoardBuilder) -> Result<Self, Self::Error> {
         let mut board = SubBoard::new_empty();
 
         for square in ALL_SQUARES {
@@ -870,18 +870,18 @@ impl TryFrom<&BoardBuilder> for SubBoard {
     }
 }
 
-impl TryFrom<BoardBuilder> for SubBoard {
+impl TryFrom<SubBoardBuilder> for SubBoard {
     type Error = EngineError;
 
-    fn try_from(board_builder: BoardBuilder) -> Result<Self, Self::Error> {
+    fn try_from(board_builder: SubBoardBuilder) -> Result<Self, Self::Error> {
         (&board_builder).try_into()
     }
 }
 
-impl TryFrom<&mut BoardBuilder> for SubBoard {
+impl TryFrom<&mut SubBoardBuilder> for SubBoard {
     type Error = EngineError;
 
-    fn try_from(board_builder: &mut BoardBuilder) -> Result<Self, Self::Error> {
+    fn try_from(board_builder: &mut SubBoardBuilder) -> Result<Self, Self::Error> {
         (board_builder.to_owned()).try_into()
     }
 }
@@ -890,7 +890,7 @@ impl FromStr for SubBoard {
     type Err = EngineError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        BoardBuilder::from_str(value)?.try_into()
+        SubBoardBuilder::from_str(value)?.try_into()
     }
 }
 
@@ -903,7 +903,7 @@ impl Default for SubBoard {
 
 impl fmt::Display for SubBoard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let fen: BoardBuilder = self.into();
+        let fen: SubBoardBuilder = self.into();
         write!(f, "{}", fen)
     }
 }

@@ -1,7 +1,7 @@
 use super::*;
 
 #[derive(Clone)]
-pub struct BoardBuilder {
+pub struct SubBoardBuilder {
     pieces: [Option<Piece>; 64],
     turn: Color,
     castle_rights: [CastleRights; 2],
@@ -10,7 +10,7 @@ pub struct BoardBuilder {
     fullmove_number: NumMoves,
 }
 
-impl BoardBuilder {
+impl SubBoardBuilder {
     /// Returns empty board builder with white to move
     pub fn new() -> Self {
         Self {
@@ -31,8 +31,8 @@ impl BoardBuilder {
         ep_file: Option<File>,
         halfmove_clock: u8,
         fullmove_number: u16,
-    ) -> BoardBuilder {
-        let mut result = BoardBuilder {
+    ) -> SubBoardBuilder {
+        let mut result = SubBoardBuilder {
             pieces: [None; 64],
             turn,
             castle_rights: [white_castle_rights, black_castle_rights],
@@ -107,7 +107,7 @@ impl BoardBuilder {
     }
 }
 
-impl Index<Square> for BoardBuilder {
+impl Index<Square> for SubBoardBuilder {
     type Output = Option<Piece>;
 
     fn index(&self, index: Square) -> &Self::Output {
@@ -115,13 +115,13 @@ impl Index<Square> for BoardBuilder {
     }
 }
 
-impl IndexMut<Square> for BoardBuilder {
+impl IndexMut<Square> for SubBoardBuilder {
     fn index_mut(&mut self, index: Square) -> &mut Self::Output {
         &mut self.pieces[index.to_index()]
     }
 }
 
-impl fmt::Display for BoardBuilder {
+impl fmt::Display for SubBoardBuilder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut count = 0;
         for &rank in ALL_RANKS.iter().rev() {
@@ -185,19 +185,19 @@ impl fmt::Display for BoardBuilder {
     }
 }
 
-impl Default for BoardBuilder {
-    fn default() -> BoardBuilder {
-        BoardBuilder::from_str(STARTING_POSITION_FEN).unwrap()
+impl Default for SubBoardBuilder {
+    fn default() -> SubBoardBuilder {
+        SubBoardBuilder::from_str(STARTING_POSITION_FEN).unwrap()
     }
 }
 
-impl FromStr for BoardBuilder {
+impl FromStr for SubBoardBuilder {
     type Err = EngineError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let mut cur_rank = Rank::Eighth;
         let mut cur_file = File::A;
-        let mut board_builder = BoardBuilder::new();
+        let mut board_builder = SubBoardBuilder::new();
 
         let tokens: Vec<&str> = value.split(' ').collect();
         if tokens.len() < 4 {
@@ -332,7 +332,7 @@ impl FromStr for BoardBuilder {
     }
 }
 
-impl From<&SubBoard> for BoardBuilder {
+impl From<&SubBoard> for SubBoardBuilder {
     fn from(board: &SubBoard) -> Self {
         let mut pieces = vec![];
         for square in ALL_SQUARES {
@@ -341,7 +341,7 @@ impl From<&SubBoard> for BoardBuilder {
             }
         }
 
-        BoardBuilder::setup(
+        SubBoardBuilder::setup(
             &pieces,
             board.turn(),
             board.castle_rights(White),
@@ -353,7 +353,7 @@ impl From<&SubBoard> for BoardBuilder {
     }
 }
 
-impl From<SubBoard> for BoardBuilder {
+impl From<SubBoard> for SubBoardBuilder {
     fn from(board: SubBoard) -> Self {
         (&board).into()
     }

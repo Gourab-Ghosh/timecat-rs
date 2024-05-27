@@ -194,7 +194,7 @@ generate_move_generator_functions!(
 #[test]
 fn move_generator_issue_15() {
     let board =
-        BoardBuilder::from_str("rnbqkbnr/ppp2pp1/4p3/3N4/3PpPp1/8/PPP3PP/R1B1KBNR b KQkq f3 0 1")
+        SubBoardBuilder::from_str("rnbqkbnr/ppp2pp1/4p3/3N4/3PpPp1/8/PPP3PP/R1B1KBNR b KQkq f3 0 1")
             .unwrap()
             .try_into()
             .unwrap();

@@ -393,7 +393,7 @@ impl UCIParser {
                 Ok(())
             }
             "isready" => {
-                println!("readyok");
+                println!("{}", "readyok".colorize(SUCCESS_MESSAGE_STYLE));
                 Ok(())
             }
             "ucinewgame" => {

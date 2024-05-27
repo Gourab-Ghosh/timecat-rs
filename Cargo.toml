@@ -1,7 +1,7 @@
 [package]
 name = "timecat"
 authors = ["Gourab Ghosh"]
-version = "1.6.0"
+version = "1.6.1"
 edition = "2021"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
@@ -44,7 +44,6 @@ arrayvec = "0.*"
 binread = { version = "2.2.0", features = ["const_generics"], optional = true }
 bytemuck = { version = "1.14.3", features = ["min_const_generics", "derive", "extern_crate_alloc"], optional = true }
 colored = { version = "2.*", optional = true }
-failure = "0.*"
 itertools = "0.*"
 lazy_static = "1.*"
 paste = "1.*"

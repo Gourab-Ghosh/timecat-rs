@@ -1,5 +1,4 @@
 #![doc = include_str!("../README.md")]
-
 // #![warn(missing_docs)]
 #![allow(dead_code)]
 
@@ -103,7 +102,6 @@ pub use constants::description::*;
 pub use constants::io::*;
 pub use constants::nnue::*;
 pub use constants::print_style::*;
-pub use failure::Fail;
 pub use lazy_static::lazy_static;
 pub use prelude::*;
 pub use std::cmp::Ordering;
