@@ -73,36 +73,6 @@ impl fmt::Display for EngineError {
 
 impl Error for EngineError {}
 
-// impl fmt::Debug for EngineError {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         #[fail(display = "No input! Please try again!")]
-//         #[fail(display = "")]
-//         #[fail(display = "Sorry, this command is not implemented yet :(")]
-//         #[fail(display = "Colored Output Feature is not enabled. Recompile the chess engine enabling the feature!")]
-//         #[fail(display = "Engine is not running! Please try again!")]
-//         #[fail(display = "Bad FEN string: {}! Please try Again!", fen)]
-//         #[fail(display = "Invalid depth {}! Please try again!", depth)]
-//         #[fail(display = "Illegal move {} in position {}! Please try again!", move_text, board_fen)]
-//         #[fail(display = "Colored output already set to {}! Please try again!", b)]
-//         #[fail(display = "Already in Console Mode! Please try again!")]
-//         #[fail(display = "Move Stack is empty, pop not possible! Please try again!")]
-//         #[fail(display = "Best move not found in position {}! Please try again!", fen)]
-//         #[fail(display = "Cannot apply null move in position {}, as king is in check! Please try again!", fen)]
-//         #[fail(display = "You didn't mention wtime! Please try again!")]
-//         #[fail(display = "You didn't mention btime! Please try again!")]
-//         #[fail(display = "Game is already over! Please start a game from another position!")]
-//         #[fail(display = "Debug command {} is unknown! The possible commands are on or off! Please try again!", command)]
-//         #[fail(display = "Cannot set value of {} to {}, the value must be from {} to {}! Please try again!", name, value, min, max)]
-//         #[fail(display = "Got invalid SAN move string {}! Please try again!", s)]
-//         #[fail(display = "Got invalid rank string {}! Please try again!", s)]
-//         #[fail(display = "Got invalid file string {}! Please try again!", s)]
-//         #[fail(display = "Got invalid square string {}! Please try again!", s)]
-//         #[fail(display = "You didn't mention wtime! Please try again!")]
-//         #[fail(display = "Invalid sub board generated:\n\n{:#?}", board)]
-//         #[fail(display = "{}", err_msg)]
-//     }
-// }
-
 impl EngineError {
     pub fn stringify_with_optional_raw_input(&self, optional_raw_input: Option<&str>) -> String {
         match self {
