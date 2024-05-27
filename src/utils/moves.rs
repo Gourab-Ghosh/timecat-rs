@@ -215,7 +215,7 @@ pub struct WeightedMove {
 
 impl PartialOrd for WeightedMove {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.weight.partial_cmp(&other.weight)
+        Some(self.cmp(other))
     }
 }
 
