@@ -157,7 +157,7 @@ Default features include `binary`, `colored_output` and `speed`.
 - [ ] Organize the Polyglot Table codes to make it usable.
 - [ ] Organize the pgn related codes to make it usable.
 - [ ] Implement xboard feature.
-- [ ] Add svg feature for support like the python package chess.
+- [ ] Add svg feature for support like the python package chess for better visualization.
 
 ## License
 Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](https://github.com/Gourab-Ghosh/timecat-rs/blob/master/LICENSE). You are free to use, modify, and distribute it under the same license.
