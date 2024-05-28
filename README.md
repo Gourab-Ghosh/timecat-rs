@@ -12,7 +12,7 @@ Timecat is a UCI-compatible chess engine designed in Rust that combines powerful
 Initially, Timecat was dependent on the external `chess` library, which is available at <https://github.com/jordanbray/chess>. To align more closely with specific requirements, the library was integrated directly into Timecat. This integration permitted significant modifications and extensions to its functionalities, thereby enhancing the engine's overall capabilities. Such integration demonstrates a commitment to adapting and evolving the tools to secure the best possible performance and accuracy in chess analytics.
 
 ## `pub` vs `pub(crate)`
-In the library, we only use `pub` or non-`pub` visibility modifiers. This approach ensures that all potentially useful functions and structures are accessible to the user, avoiding the situation where a `pub(crate)` might restrict access to valuable components—a problem I've encountered while using the `chess` library. Therefore, only the features I consider essential are included in `timecat::prelude`; all other functionalities are available for direct import from the timecat library.
+In the library, we only use `pub` or non-`pub` visibility modifiers. This approach ensures that all potentially useful functions and structures are accessible to the user, avoiding the situation where a `pub(crate)` might restrict access to valuable components—a problem I've encountered while using the `chess` library. Therefore, only the features I consider essential are included in `timecat::prelude`; all other functionalities are available for direct import from the `timecat` library.
 
 ## NNUE Support
 Timecat currently utilizes the Stockfish NNUE for evaluation. Plans are in place to transition to a custom-trained NNUE in the future.
@@ -79,6 +79,8 @@ fn main() {
 ```
 
 You can use UCI commands, although it's not recommended in production environments due to potential parsing delays and unpredictable outputs. The 'nnue' and 'engine' features are also required in this context.
+
+As previous, add the timecat crate to your project:
 ```bash
 cargo add timecat --no-default-features --features engine
 ```
@@ -144,7 +146,7 @@ The `selfplay` command works on the binary as well.
 - `nnue`: Adds support for NNUE (downloaded via `reqwest`).
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
 - `colored_output`: Displays all information in a visually appealing colored format for enhanced readability.
-- `speed`: Optimize the code to improve speed at the cost of increased memory usage and occasional unexpected outputs (which is extremely rare). Note that the gain in speed might be minimal compared to the additional memory required.
+- `speed`: Optimize the code to improve speed at the cost of increased memory usage and in extremely rare cases cause unpredictable behavior. Note that the gain in speed might be minimal compared to the additional memory required.
 - `serde`: Enables serialization and deserialization support via `serde`.
 
 Default features include `binary`, `colored_output` and `speed`.

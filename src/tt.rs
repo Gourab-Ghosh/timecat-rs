@@ -1,5 +1,29 @@
 use super::*;
 
+trait ToUnsigned {
+    type Unsigned;
+    fn to_unsigned(self) -> Self::Unsigned;
+}
+
+macro_rules! to_unsigned {
+    ($from:ty, $to:ty) => {
+        impl ToUnsigned for $from {
+            type Unsigned = $to;
+        
+            fn to_unsigned(self) -> Self::Unsigned {
+                self as Self::Unsigned
+            }
+        }
+    };
+}
+
+to_unsigned!(i8, u8);
+to_unsigned!(i16, u16);
+to_unsigned!(i32, u32);
+to_unsigned!(i64, u64);
+to_unsigned!(i128, u128);
+to_unsigned!(isize, usize);
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[allow(clippy::enum_variant_names)]
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
@@ -119,7 +143,7 @@ impl TranspositionTable {
         if save_score && is_checkmate(score) {
             let mate_distance = CHECKMATE_SCORE
                 .abs_diff(score.abs())
-                .abs_diff(ply.try_into().unwrap()) as Score;
+                .abs_diff(ply as <Score as ToUnsigned>::Unsigned) as Score;
             let mate_score = CHECKMATE_SCORE - mate_distance;
             score = if score.is_positive() {
                 mate_score
