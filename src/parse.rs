@@ -314,7 +314,7 @@ impl Pop {
     }
 }
 
-struct UCIParser;
+pub struct UCIParser;
 
 impl UCIParser {
     fn parse_uci_position_input(input: &str) -> Result<String, EngineError> {
@@ -381,7 +381,7 @@ impl UCIParser {
         println!("{}", "uciok".colorize(SUCCESS_MESSAGE_STYLE));
     }
 
-    fn parse_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
+    pub fn parse_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
         let commands = user_input.split_whitespace().collect_vec();
         let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
         match first_command.as_str() {
@@ -637,6 +637,7 @@ impl Parser {
             print_engine_version(false);
             return;
         }
+        #[cfg(feature = "debug")]
         if args.contains(&"--test") {
             test.run_and_print_time().unwrap();
             return;

@@ -1,9 +1,11 @@
 use super::*;
 
+#[cfg(feature = "debug")]
 fn prediction_accuracy_func(rms: f64) -> f64 {
     1.0 - 1.0 / (1.0 + ((10.0 - rms) / 3.0).exp())
 }
 
+#[cfg(feature = "debug")]
 fn calculate_prediction_accuracy(rms: f64) -> f64 {
     (prediction_accuracy_func(rms) * 100.0) / prediction_accuracy_func(0.0)
 }
@@ -83,7 +85,9 @@ pub fn self_play(
         .iter()
         .min_by(|a, b| a.partial_cmp(b).unwrap())
         .unwrap();
+    #[cfg(feature = "debug")]
     let max_abs_score = *prediction_score_vec.iter().max().unwrap();
+    #[cfg(feature = "debug")]
     let min_abs_score = *prediction_score_vec.iter().min().unwrap();
     let prediction_score_rms = (prediction_score_vec
         .iter()
@@ -91,7 +95,8 @@ pub fn self_play(
         .sum::<f64>()
         / prediction_score_vec.len() as f64)
         .sqrt();
-    // let prediction_accuracy = calculate_prediction_accuracy(prediction_score_rms);
+    #[cfg(feature = "debug")]
+    let prediction_accuracy = calculate_prediction_accuracy(prediction_score_rms);
     println!(
         "\n{}:\n\n{}",
         "Game PGN".colorize(INFO_MESSAGE_STYLE),
@@ -127,14 +132,17 @@ pub fn self_play(
         "Prediction Score RMS",
         format!("{:.3}", prediction_score_rms),
     );
-    // println_info(
-    //     "Prediction Accuracy",
-    //     format!("{:.1} %", prediction_accuracy),
-    // );
+    #[cfg(feature = "debug")]
+    println_info(
+        "Prediction Accuracy",
+        format!("{:.1} %", prediction_accuracy),
+    );
     println_info("Max time taken", format!("{:.3} s", max_time_taken));
     println_info("Min time taken", format!("{:.3} s", min_time_taken));
     println_info("Max time taken by fen", max_time_taken_fen);
+    #[cfg(feature = "debug")]
     println_info("Max prediction magnitude", max_abs_score.stringify());
+    #[cfg(feature = "debug")]
     println_info("Min prediction magnitude", min_abs_score.stringify());
     engine.set_fen(&stating_fen)?;
     Ok(())

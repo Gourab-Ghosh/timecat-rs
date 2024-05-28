@@ -94,10 +94,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Create the default engine initialized with the standard starting position.
     let mut engine = Engine::default();
 
-    // Enable UCI (Universal Chess Interface) mode explicitly.
-    // Some UCI commands may not work without this.
-    timecat::UCI_STATE.set_uci_mode(true, false);
-
     // List of UCI commands to be executed on the chess engine.
     let uci_commands = [
         // Checks if the engine is ready to receive commands.
@@ -114,16 +110,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Process each UCI command and handle potential errors.
     for command in uci_commands {
-        timecat::Parser::parse_command(&mut engine, command)?;
+        timecat::UCIParser::parse_command(&mut engine, command)?;
     }
 
     Ok(())
 }
 ```
-
-> **Caution:** To ensure compatibility with UCI commands, activate UCI mode by using the following code:<br>
-> `timecat::UCI_STATE.set_uci_mode(true, false);`<br>
-> Failure to do so may result in some UCI commands not functioning as expected.
 
 Or just enjoy the engine play against itself:
 ```rust

@@ -33,14 +33,14 @@ args = set(sys.argv)
 if "--update" in args:
     os.system("cargo update")
 
-is_error_free = True if {"--disable-check", "--no-check"}.intersection(args) else not os.system("cargo check")
+is_error_free = True if {"--disable-check", "--no-check"}.intersection(args) else not os.system("cargo check --all-features")
 
 if is_error_free:
     is_test = "--test" in args
     build_or_test_command = "cargo test" if is_test else "cargo build"
     is_release = "--debug" not in args
     if is_release:
-        build_or_test_command += " --release"
+        build_or_test_command += " --release --features debug"
         update_environment_variables()
         # update_environment_variables("-Ofast", "-mavx2", "-funroll-loops")
         # update_environment_variables("-mavx2", "-funroll-loops")

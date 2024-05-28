@@ -1,4 +1,5 @@
 #![doc = include_str!("../README.md")]
+#![allow(unused_imports)]
 // #![warn(missing_docs)]
 #![allow(dead_code)]
 
@@ -6,7 +7,9 @@ pub mod board;
 pub mod chess;
 pub mod constants;
 pub mod error;
+#[cfg(feature = "experimental")]
 pub mod polyglot;
+#[cfg(feature = "experimental")]
 pub mod syzygy;
 pub mod timer;
 pub mod tt;
@@ -30,6 +33,7 @@ pub mod selfplay;
 pub mod sort;
 
 #[cfg(feature = "engine")]
+#[cfg(feature = "debug")]
 pub mod tests;
 
 #[cfg(feature = "engine")]
@@ -39,11 +43,14 @@ pub mod engine_features {
     pub use parse::*;
     pub use search::*;
     pub use sort::*;
-    pub use tests::test;
 }
 
 #[cfg(feature = "engine")]
 pub use engine_features::*;
+
+#[cfg(feature = "engine")]
+#[cfg(feature = "debug")]
+pub use tests::test;
 
 #[cfg(feature = "nnue")]
 pub mod evaluate;
@@ -81,9 +88,12 @@ pub mod prelude {
     pub use error::*;
     pub use itertools::*;
     pub use paste::paste;
+    #[cfg(feature = "experimental")]
     pub use polyglot::*;
     pub use utils::*;
-    // pub use syzygy::*;
+    #[cfg(feature = "experimental")]
+    pub use syzygy::*;
+
     // pub use std::hint;
     // pub use std::num;
 
