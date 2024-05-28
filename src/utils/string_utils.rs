@@ -270,7 +270,7 @@ impl Stringify for Color {
 
 impl Stringify for Duration {
     fn stringify(&self) -> String {
-        if !UCI_STATE.is_in_console_mode() {
+        if UCI_STATE.is_in_uci_mode() {
             return self.as_millis().to_string();
         }
         if self < &Duration::from_secs(1) {

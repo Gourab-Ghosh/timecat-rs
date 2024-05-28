@@ -524,7 +524,7 @@ impl Parser {
             if sanitized_input.split_whitespace().nth(1).is_some() {
                 return Err(UnknownCommand);
             }
-            UCI_STATE.set_console_mode(false, false);
+            UCI_STATE.set_to_uci_mode();
             UCIParser::parse_command(engine, &first_command)?;
             return Ok(());
         }
@@ -535,7 +535,7 @@ impl Parser {
             if UCI_STATE.is_in_console_mode() {
                 return Err(ConsoleModeUnchanged);
             }
-            UCI_STATE.set_console_mode(true, false);
+            UCI_STATE.set_to_console_mode();
             return Ok(());
         }
         let user_inputs = sanitized_input.split("&&").map(|s| s.trim()).collect_vec();
@@ -556,7 +556,7 @@ impl Parser {
 
     fn parse_error_and_print(error: EngineError, optional_raw_input: Option<&str>) {
         let mut error_message = error.stringify_with_optional_raw_input(optional_raw_input);
-        if !UCI_STATE.is_in_console_mode() {
+        if UCI_STATE.is_in_uci_mode() {
             error_message = "info string ".to_string() + &error_message.to_lowercase();
         }
         println!("{}", error_message.colorize(ERROR_MESSAGE_STYLE));
@@ -607,13 +607,13 @@ impl Parser {
     }
 
     pub fn uci_loop() {
-        UCI_STATE.set_console_mode(false, false);
+        UCI_STATE.set_to_uci_mode();
         Self::main_loop.run_and_print_time();
     }
 
     pub fn parse_args_and_run_main_loop(args: &[&str]) {
         if args.contains(&"--uci") {
-            UCI_STATE.set_console_mode(false, false);
+            UCI_STATE.set_to_uci_mode();
         }
         #[cfg(feature = "colored_output")]
         if args.contains(&"--no-color") {

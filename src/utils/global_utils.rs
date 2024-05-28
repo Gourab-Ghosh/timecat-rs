@@ -17,7 +17,7 @@ fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
     } else {
         message.colorize(SUCCESS_MESSAGE_STYLE)
     };
-    if !UCI_STATE.is_in_console_mode() {
+    if UCI_STATE.is_in_uci_mode() {
         to_print = format!("{} {to_print}", "info string".colorize(INFO_MESSAGE_STYLE))
     }
     println!("{to_print}");
@@ -111,6 +111,16 @@ impl EngineUCIState {
     #[inline(always)]
     pub fn set_uci_mode(&self, b: bool, print: bool) {
         self.set_console_mode(!b, print);
+    }
+
+    #[inline(always)]
+    pub fn set_to_uci_mode(&self) {
+        self.set_uci_mode(true, false);
+    }
+
+    #[inline(always)]
+    pub fn set_to_console_mode(&self) {
+        self.set_console_mode(true, false);
     }
 
     #[inline(always)]
