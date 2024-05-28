@@ -9,7 +9,7 @@ macro_rules! to_unsigned {
     ($from:ty, $to:ty) => {
         impl ToUnsigned for $from {
             type Unsigned = $to;
-        
+
             fn to_unsigned(self) -> Self::Unsigned {
                 self as Self::Unsigned
             }
@@ -143,7 +143,8 @@ impl TranspositionTable {
         if save_score && is_checkmate(score) {
             let mate_distance = CHECKMATE_SCORE
                 .abs_diff(score.abs())
-                .abs_diff(ply as <Score as ToUnsigned>::Unsigned) as Score;
+                .abs_diff(ply as <Score as ToUnsigned>::Unsigned)
+                as Score;
             let mate_score = CHECKMATE_SCORE - mate_distance;
             score = if score.is_positive() {
                 mate_score

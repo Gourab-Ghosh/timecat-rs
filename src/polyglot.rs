@@ -202,11 +202,11 @@ const POLYGLOT_RANDOM_64: [u64; 781] = [
     0xF8D626AAAF278509,
 ];
 
-fn get_polyglot_piece_value(piece: Piece) -> usize {
-    2 * piece.get_piece_type() as usize + (1 - piece.get_color() as usize)
+pub fn get_polyglot_piece_value(piece: Piece) -> usize {
+    2 * piece.get_piece_type().to_index() + (1 - piece.get_color().to_index())
 }
 
-fn polyglot_hash_from_board(board: &Board) -> u64 {
+pub fn polyglot_hash_from_board(board: &Board) -> u64 {
     let mut hash = 0;
     for piece_square in board.occupied() {
         let piece = board.piece_at(piece_square).unwrap();
@@ -236,7 +236,7 @@ fn polyglot_hash_from_board(board: &Board) -> u64 {
     hash
 }
 
-fn get_move_from_move_int(move_int: usize) -> Result<Move, EngineError> {
+pub fn get_move_from_polyglot_move_int(move_int: usize) -> Result<Move, EngineError> {
     let dest_file = File::from_index(move_int & 0x7);
     let dest_rank = Rank::from_index(move_int >> 3 & 0x7);
     let source_file = File::from_index(move_int >> 6 & 0x7);
@@ -375,7 +375,7 @@ mod array_implementation {
                 let learn = u32::from_be_bytes(bytes[offset + 12..offset + 16].try_into().unwrap());
                 entries.push(PolyglotBookEntry {
                     hash,
-                    move_: get_move_from_move_int(move_int as usize)?,
+                    move_: get_move_from_polyglot_move_int(move_int as usize)?,
                     weight,
                     learn,
                 });
@@ -398,7 +398,7 @@ mod array_implementation {
                 let learn = u32::from_be_bytes(buffer[12..16].try_into()?);
                 entries.push(PolyglotBookEntry {
                     hash,
-                    move_: get_move_from_move_int(move_int as usize)?,
+                    move_: get_move_from_polyglot_move_int(move_int as usize)?,
                     weight,
                     learn,
                 });
@@ -524,7 +524,7 @@ mod map_implementation {
                     u16::from_be_bytes(bytes[offset + 10..offset + 12].try_into().unwrap());
                 let learn = u32::from_be_bytes(bytes[offset + 12..offset + 16].try_into().unwrap());
                 let entry = PolyglotBookEntry {
-                    move_: get_move_from_move_int(move_int as usize)?,
+                    move_: get_move_from_polyglot_move_int(move_int as usize)?,
                     weight,
                     learn,
                 };
@@ -549,7 +549,7 @@ mod map_implementation {
                 let weight = u16::from_be_bytes(buffer[10..12].try_into()?);
                 let learn = u32::from_be_bytes(buffer[12..16].try_into()?);
                 let entry = PolyglotBookEntry {
-                    move_: get_move_from_move_int(move_int as usize)?,
+                    move_: get_move_from_polyglot_move_int(move_int as usize)?,
                     weight,
                     learn,
                 };
@@ -626,7 +626,7 @@ pub fn search_all_moves_from_file(
             let move_int = u16::from_be_bytes(buffer[8..10].try_into()?);
             let weight = u16::from_be_bytes(buffer[10..12].try_into()?);
             if hash == target_hash {
-                let move_ = get_move_from_move_int(move_int as usize)?;
+                let move_ = get_move_from_polyglot_move_int(move_int as usize)?;
                 moves.push(WeightedMove::new(move_, weight as MoveWeight));
                 idx += 1;
             } else {
