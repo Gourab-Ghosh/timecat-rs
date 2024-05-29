@@ -15,13 +15,13 @@ COPY documentation ./documentation
 ENV RUSTFLAGS="-C target-cpu=native"
 
 # Build the application
-RUN cargo build --release --bins
+RUN cargo install --path .
 
 # Use a minimal base image for the final stage
 FROM debian:bullseye-slim
 
 # Copy the built executable from the builder stage
-COPY --from=builder /root/timecat/target/release/timecat /usr/local/bin/timecat
+COPY --from=builder /usr/local/cargo/bin/timecat /usr/local/bin/timecat
 
 # Set up runtime command
-CMD ["/usr/local/bin/timecat", "--no-color", "--uci"]
+CMD ["timecat", "--no-color", "--uci"]
