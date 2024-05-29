@@ -8,6 +8,8 @@ WORKDIR /root/timecat
 COPY src ./src
 COPY Cargo.toml .
 COPY build.rs .
+COPY README.md .
+COPY documentation ./documentation
 
 # Set environment variables to optimize build
 ENV RUSTFLAGS="-C target-cpu=native"
