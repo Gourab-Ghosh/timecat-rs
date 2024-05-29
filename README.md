@@ -14,8 +14,10 @@ Timecat was originally conceived as a personal project. However, with the onset 
 ## Integration of the Chess Library
 Initially, Timecat was dependent on the external `chess` library, which is available at <https://github.com/jordanbray/chess>. To align more closely with specific requirements, the library was integrated directly into Timecat. This integration permitted significant modifications and extensions to its functionalities, thereby enhancing the engine's overall capabilities. Such integration demonstrates a commitment to adapting and evolving the tools to secure the best possible performance and accuracy in chess analytics.
 
-## `pub` vs `pub(crate)`
-In the library, we only use `pub` or non-`pub` visibility modifiers. This approach ensures that all potentially useful functions and structures are accessible to the user, avoiding the situation where a `pub(crate)` might restrict access to valuable components—a problem I've encountered while using the `chess` library. Therefore, only the features I consider essential are included in `timecat::prelude`; all other functionalities are available for direct import from the `timecat` library.
+## User Controls
+In the library, only `pub` or non-`pub` visibility modifiers are used. This approach ensures that all potentially useful functions and structures are accessible to the user, avoiding the situation where a `pub(crate)` might restrict access to valuable components—a problem I've encountered while using the `chess` library. Therefore, only the features that is considered essential are included in `timecat::prelude`; all other functionalities are available for direct import from the `timecat` library.
+
+Also several cargo features have been introduced to provide users with complete control over the code's behavior.
 
 ## NNUE Support
 Timecat currently utilizes the Stockfish NNUE for evaluation. Plans are in place to transition to a custom-trained NNUE in the future.
@@ -142,6 +144,7 @@ The `selfplay` command works on the binary as well.
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
 - `colored_output`: Displays all information in a visually appealing colored format for enhanced readability.
 - `speed`: Optimize the code to improve speed at the cost of increased memory usage and in extremely rare cases cause unpredictable behavior. Note that the gain in speed might be minimal compared to the additional memory required.
+- `copy_large_structs`: Activates the Copy trait for large structs where implementation is still feasible. However, it is not recommended to use this feature; the Clone trait is the preferred approach.
 - `serde`: Enables serialization and deserialization support via `serde`.
 - `debug`: Intended solely for development use.
 - `experimental`: Codes under development for upcoming features.
@@ -160,4 +163,4 @@ Default features include `binary`, `colored_output` and `speed`.
 Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](https://github.com/Gourab-Ghosh/timecat-rs/blob/master/LICENSE). You are free to use, modify, and distribute it under the same license.
 
 ## Contributing
-We welcome contributions! Feel free to fork the repository, make improvements, and submit pull requests. You can also report issues or suggest features through the GitHub issue tracker.
+Feel free to fork the repository, make improvements, and submit pull requests. You can also report issues or suggest features through the GitHub issue tracker.

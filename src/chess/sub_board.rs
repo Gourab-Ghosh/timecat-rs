@@ -9,7 +9,7 @@ pub enum BoardStatus {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(not(feature = "speed"), derive(Copy))]
+#[cfg_attr(feature = "copy_large_structs", derive(Copy))]
 #[derive(Clone, Debug, Eq)]
 pub struct SubBoard {
     _pieces: [BitBoard; NUM_PIECE_TYPES],
