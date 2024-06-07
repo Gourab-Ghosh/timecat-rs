@@ -31,29 +31,41 @@ impl Rank {
     }
 
     #[inline(always)]
+    pub const fn up(self) -> Option<Self> {
+        match self {
+            Self::First => Some(Self::Second),
+            Self::Second => Some(Self::Third),
+            Self::Third => Some(Self::Fourth),
+            Self::Fourth => Some(Self::Fifth),
+            Self::Fifth => Some(Self::Sixth),
+            Self::Sixth => Some(Self::Seventh),
+            Self::Seventh => Some(Self::Eighth),
+            Self::Eighth => None,
+        }
+    }
+
+    #[inline(always)]
     pub const fn down(self) -> Option<Self> {
         match self {
             Self::First => None,
-            _ => Some(Self::from_index(self.to_index() - 1)),
+            Self::Second => Some(Self::First),
+            Self::Third => Some(Self::Second),
+            Self::Fourth => Some(Self::Third),
+            Self::Fifth => Some(Self::Fourth),
+            Self::Sixth => Some(Self::Fifth),
+            Self::Seventh => Some(Self::Sixth),
+            Self::Eighth => Some(Self::Seventh),
         }
-    }
-
-    #[inline(always)]
-    pub const fn up(self) -> Option<Self> {
-        match self {
-            Self::Eighth => None,
-            _ => Some(Self::from_index(self.to_index() + 1)),
-        }
-    }
-
-    #[inline(always)]
-    pub fn wrapping_down(self) -> Self {
-        self.down().unwrap_or(Self::Eighth)
     }
 
     #[inline(always)]
     pub fn wrapping_up(self) -> Self {
         self.up().unwrap_or(Self::First)
+    }
+    
+    #[inline(always)]
+    pub fn wrapping_down(self) -> Self {
+        self.down().unwrap_or(Self::Eighth)
     }
 
     #[inline(always)]

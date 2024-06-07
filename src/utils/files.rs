@@ -34,15 +34,27 @@ impl File {
     pub const fn left(self) -> Option<Self> {
         match self {
             Self::A => None,
-            _ => Some(Self::from_index(self.to_index() - 1)),
+            Self::B => Some(Self::A),
+            Self::C => Some(Self::B),
+            Self::D => Some(Self::C),
+            Self::E => Some(Self::D),
+            Self::F => Some(Self::E),
+            Self::G => Some(Self::F),
+            Self::H => Some(Self::G),
         }
     }
 
     #[inline(always)]
     pub const fn right(self) -> Option<Self> {
         match self {
+            Self::A => Some(Self::B),
+            Self::B => Some(Self::C),
+            Self::C => Some(Self::D),
+            Self::D => Some(Self::E),
+            Self::E => Some(Self::F),
+            Self::F => Some(Self::G),
+            Self::G => Some(Self::H),
             Self::H => None,
-            _ => Some(Self::from_index(self.to_index() + 1)),
         }
     }
 
