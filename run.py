@@ -33,7 +33,7 @@ args = set(sys.argv)
 if "--update" in args:
     os.system("cargo update")
 
-is_error_free = True if {"--disable-check", "--no-check"}.intersection(args) else not os.system("cargo check --all-features")
+is_error_free = True if {"--disable-check", "--no-check"}.intersection(args) else not (os.system("cargo check --no-default-features") or os.system("cargo check --all-features"))
 
 if is_error_free:
     is_test = "--test" in args
