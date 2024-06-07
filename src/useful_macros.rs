@@ -1,4 +1,4 @@
-#[cfg(debug_assertions)]
+#[cfg(not(feature = "speed"))]
 #[macro_export]
 macro_rules! get_item_unchecked {
     ($vec:expr, $index:expr) => {
@@ -12,7 +12,7 @@ macro_rules! get_item_unchecked {
     };
 }
 
-#[cfg(debug_assertions)]
+#[cfg(not(feature = "speed"))]
 #[macro_export]
 macro_rules! get_item_unchecked_mut {
     ($vec:expr, $index:expr) => {
@@ -26,7 +26,7 @@ macro_rules! get_item_unchecked_mut {
     };
 }
 
-#[cfg(not(debug_assertions))]
+#[cfg(feature = "speed")]
 #[macro_export]
 macro_rules! get_item_unchecked {
     ($vec:expr, $index:expr) => {
@@ -44,7 +44,7 @@ macro_rules! get_item_unchecked {
     };
 }
 
-#[cfg(not(debug_assertions))]
+#[cfg(feature = "speed")]
 #[macro_export]
 macro_rules! get_item_unchecked_mut {
     ($vec:expr, $index:expr) => {
@@ -80,9 +80,9 @@ macro_rules! inverse_interpolate {
 macro_rules! match_interpolate {
     ($new_start:expr, $new_end:expr, $old_start:expr, $old_end:expr, $old_value:expr) => {
         interpolate!(
-            ($new_start) as f64,
-            ($new_end) as f64,
-            inverse_interpolate!(($old_start) as f64, ($old_end) as f64, ($old_value) as f64)
+            $new_start,
+            $new_end,
+            inverse_interpolate!($old_start, $old_end, $old_value)
         )
     };
 }

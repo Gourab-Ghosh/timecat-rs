@@ -197,7 +197,7 @@ impl Evaluator {
     }
 
     fn hashed_evaluate(&self, sub_board: &SubBoard) -> Score {
-        let hash = sub_board.hash();
+        let hash = sub_board.get_hash();
         if let Some(score) = self.score_cache.get(hash) {
             return score;
         }

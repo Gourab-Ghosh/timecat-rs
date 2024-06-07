@@ -1,12 +1,13 @@
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
 pub enum CastleRights {
-    None,
-    KingSide,
-    QueenSide,
-    Both,
+    None = 0,
+    KingSide = 1,
+    QueenSide = 2,
+    Both = 3,
 }
 
 const CASTLES_PER_SQUARE: [[usize; 64]; 2] = [

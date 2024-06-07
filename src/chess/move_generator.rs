@@ -179,9 +179,9 @@ impl PieceMoves for PawnMoves {
         if let Some(dest) = board.ep_square() {
             let dest_rank = dest.get_rank();
             let rank_bb = get_rank_bb(if dest_rank.to_int() > 3 {
-                dest_rank.down()
+                dest_rank.wrapping_down()
             } else {
-                dest_rank.up()
+                dest_rank.wrapping_up()
             });
             let files_bb = get_adjacent_files(dest.get_file());
             for src in rank_bb & files_bb & pieces {
@@ -599,19 +599,11 @@ impl MoveGenerator {
         } else {
             iterable.set_iterator_mask(targets);
             for x in &mut iterable {
-                let mut board_result = mem::MaybeUninit::<SubBoard>::uninit();
-                unsafe {
-                    board.make_move(x, &mut *board_result.as_mut_ptr());
-                    result += MoveGenerator::perft_test(&*board_result.as_ptr(), depth - 1);
-                }
+                result += MoveGenerator::perft_test(&board.make_move_new(x), depth - 1);
             }
             iterable.set_iterator_mask(!BB_EMPTY);
             for x in &mut iterable {
-                let mut board_result = mem::MaybeUninit::<SubBoard>::uninit();
-                unsafe {
-                    board.make_move(x, &mut *board_result.as_mut_ptr());
-                    result += MoveGenerator::perft_test(&*board_result.as_ptr(), depth - 1);
-                }
+                result += MoveGenerator::perft_test(&board.make_move_new(x), depth - 1);
             }
             result
         }

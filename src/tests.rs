@@ -151,7 +151,7 @@ pub fn test() -> Result<(), EngineError> {
     //     let move_ = board.parse_san(move_san).unwrap();
     //     let gives_repetition = board.gives_repetition(move_.unwrap());
     //     board.push(move_);
-    //     println!("{move_san}: {gives_repetition} {} {}", board.get_num_repetitions(), board.hash().stringify());
+    //     println!("{move_san}: {gives_repetition} {} {}", board.get_num_repetitions(), board.get_hash().stringify());
     // }
 
     Ok(())

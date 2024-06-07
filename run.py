@@ -40,7 +40,7 @@ if is_error_free:
     build_or_test_command = "cargo test" if is_test else "cargo build"
     is_release = "--debug" not in args
     if is_release:
-        build_or_test_command += " --release --features debug"
+        build_or_test_command += " --release --no-default-features --features debug"
         update_environment_variables()
         # update_environment_variables("-Ofast", "-mavx2", "-funroll-loops")
         # update_environment_variables("-mavx2", "-funroll-loops")

@@ -240,7 +240,7 @@ impl Searcher {
             .get_weighted_moves_sorted(
                 &self.board,
                 0,
-                TRANSPOSITION_TABLE.read_best_move(self.board.hash()),
+                TRANSPOSITION_TABLE.read_best_move(self.board.get_hash()),
                 self.get_best_move(),
                 Evaluator::is_easily_winning_position(
                     self.board.get_sub_board(),
@@ -282,7 +282,7 @@ impl Searcher {
         if self.timer.check_stop(enable_timer) {
             return None;
         }
-        let key = self.board.hash();
+        let key = self.board.get_hash();
         let mut score = -CHECKMATE_SCORE;
         let mut max_score = score;
         let mut flag = HashAlpha;
@@ -373,7 +373,7 @@ impl Searcher {
         let min_depth = self.move_sorter.is_following_pv() as Depth;
         depth = depth.max(min_depth);
         let is_pv_node = alpha != beta - 1;
-        let key = self.board.hash();
+        let key = self.board.get_hash();
         let best_move = if is_pv_node && self.is_main_threaded() {
             TRANSPOSITION_TABLE.read_best_move(key)
         } else {

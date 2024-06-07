@@ -297,7 +297,7 @@ impl fmt::Display for BitBoard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut skeleton = get_board_skeleton();
         let occupied_symbol = "X".colorize(BITBOARD_OCCUPIED_SQUARE_STYLE);
-        for square in SQUARES_180 {
+        for square in SQUARES_HORIZONTAL_MIRROR {
             skeleton = skeleton.replacen(
                 'O',
                 if self.contains(square) {

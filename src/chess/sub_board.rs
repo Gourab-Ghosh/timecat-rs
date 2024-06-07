@@ -375,7 +375,7 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn get_hash(&self) -> u64 {
-        self._transposition_key
+        (self._transposition_key
             ^ if let Some(ep) = self.ep_square() {
                 Zobrist::en_passant(ep.get_file(), !self.turn())
             } else {
@@ -393,7 +393,8 @@ impl SubBoard {
                 Zobrist::color()
             } else {
                 0
-            }
+            })
+        .max(1)
     }
 
     #[inline(always)]
@@ -522,9 +523,9 @@ impl SubBoard {
         // Only set self._ep_square if the pawn can actually be captured next move.
         let mut rank = square.get_rank();
         rank = if rank.to_int() > 3 {
-            rank.down()
+            rank.wrapping_down()
         } else {
-            rank.up()
+            rank.wrapping_up()
         };
         if !(get_adjacent_files(square.get_file())
             & get_rank_bb(rank)
@@ -561,35 +562,7 @@ impl SubBoard {
     }
 
     pub fn make_move_new(&self, move_: Move) -> Self {
-        let mut result = mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            self.make_move(move_, &mut *result.as_mut_ptr());
-            result.assume_init()
-        }
-    }
-
-    pub fn is_castling(&self, move_: Move) -> bool {
-        if !self.get_piece_mask(King).contains(move_.get_source()) {
-            return false;
-        }
-        let rank_diff = move_
-            .get_source()
-            .get_file()
-            .to_index()
-            .abs_diff(move_.get_dest().get_file().to_index());
-        rank_diff > 1
-            || (self.get_piece_mask(Rook) & self.occupied_co(self.turn()))
-                .contains(move_.get_dest())
-    }
-
-    pub fn is_zeroing(&self, move_: Move) -> bool {
-        let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
-        !(touched & self.get_piece_mask(Pawn)).is_empty()
-            || !(touched & self.occupied_co(!self.turn())).is_empty()
-    }
-
-    pub fn make_move(&self, move_: Move, result: &mut Self) {
-        self.clone_into(result);
+        let mut result = self.clone();
 
         if result.is_zeroing(move_) {
             result._halfmove_clock = 0;
@@ -705,6 +678,31 @@ impl SubBoard {
         }
 
         result._turn = !result.turn();
+        result
+    }
+
+    pub fn is_castling(&self, move_: Move) -> bool {
+        if !self.get_piece_mask(King).contains(move_.get_source()) {
+            return false;
+        }
+        let rank_diff = move_
+            .get_source()
+            .get_file()
+            .to_index()
+            .abs_diff(move_.get_dest().get_file().to_index());
+        rank_diff > 1
+            || (self.get_piece_mask(Rook) & self.occupied_co(self.turn()))
+                .contains(move_.get_dest())
+    }
+
+    pub fn is_zeroing(&self, move_: Move) -> bool {
+        let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
+        !(touched & self.get_piece_mask(Pawn)).is_empty()
+            || !(touched & self.occupied_co(!self.turn())).is_empty()
+    }
+
+    pub fn make_move(&mut self, move_: Move) {
+        *self = self.make_move_new(move_);
     }
 
     pub fn flip_vertical(&mut self) {
@@ -718,7 +716,7 @@ impl SubBoard {
         self._castle_rights = [CastleRights::None; NUM_COLORS];
         self.update_pin_and_checkers_info();
         // self._transposition_key = self._transposition_key;
-        self._ep_square = self._ep_square.map(|square| square.mirror());
+        self._ep_square = self._ep_square.map(|square| square.horizontal_mirror());
     }
 
     fn update_pin_and_checkers_info(&mut self) {
@@ -906,5 +904,11 @@ impl fmt::Display for SubBoard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let fen: SubBoardBuilder = self.into();
         write!(f, "{}", fen)
+    }
+}
+
+impl Hash for SubBoard {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.get_hash().hash(state);
     }
 }

@@ -117,7 +117,7 @@ impl Board {
         }
         self.sub_board = SubBoard::from_str(&fen)?;
         self.repetition_table.clear();
-        self.repetition_table.insert(self.hash());
+        self.repetition_table.insert(self.get_hash());
         self.starting_fen = self.get_fen();
         self.stack.clear();
         Ok(())
@@ -287,7 +287,7 @@ impl Board {
         let checkers = self.get_checkers();
         let king_square = self.get_king_square(self.sub_board.turn());
         let last_move = self.stack.last().and_then(|(_, m)| *m);
-        for square in SQUARES_180 {
+        for square in SQUARES_HORIZONTAL_MIRROR {
             let symbol = if use_unicode {
                 self.piece_unicode_symbol_at(square, false)
             } else {
@@ -320,7 +320,7 @@ impl Board {
             &[
                 String::new(),
                 format_info("Fen", self.get_fen(), true),
-                format_info("Transposition Key", self.hash().stringify(), true),
+                format_info("Transposition Key", self.get_hash().stringify(), true),
                 format_info(
                     "Checkers",
                     checkers.stringify().colorize(CHECKERS_STYLE),
@@ -390,7 +390,7 @@ impl Board {
     /// repetitions for a given hash in the repetition table.
     #[inline(always)]
     pub fn get_num_repetitions(&self) -> u8 {
-        self.repetition_table.get_repetition(self.hash())
+        self.repetition_table.get_repetition(self.get_hash())
     }
 
     /// The function `is_repetition` checks if the number of repetitions is greater than or equal to a
@@ -423,12 +423,12 @@ impl Board {
     ///
     /// The function `gives_repetition` is returning a boolean value, which indicates whether the result
     /// of the expression
-    /// `self.repetition_table.get_repetition(self.sub_board.make_move_new(move_).hash())` is not equal
+    /// `self.repetition_table.get_repetition(self.sub_board.make_move_new(move_).get_hash())` is not equal
     /// to 0.
     #[inline(always)]
     pub fn gives_repetition(&self, move_: Move) -> bool {
         self.repetition_table
-            .get_repetition(self.sub_board.make_move_new(move_).hash())
+            .get_repetition(self.sub_board.make_move_new(move_).get_hash())
             != 0
     }
 
@@ -448,7 +448,7 @@ impl Board {
     #[inline(always)]
     pub fn gives_threefold_repetition(&self, move_: Move) -> bool {
         self.repetition_table
-            .get_repetition(self.sub_board.make_move_new(move_).hash())
+            .get_repetition(self.sub_board.make_move_new(move_).get_hash())
             == 2
     }
 
@@ -470,7 +470,7 @@ impl Board {
         //TODO: check if this is correct
         let new_board = self.sub_board.make_move_new(move_);
         MoveGenerator::new_legal(&new_board).any(|m| {
-            let hash = new_board.make_move_new(m).hash();
+            let hash = new_board.make_move_new(m).get_hash();
             self.repetition_table.get_repetition(hash) == 2
         })
     }
@@ -756,7 +756,7 @@ impl Board {
                 .null_move()
                 .expect("Trying to push null move while in check!")
         };
-        self.repetition_table.insert(self.hash());
+        self.repetition_table.insert(self.get_hash());
         self.stack.push((sub_board_copy, optional_move));
     }
 
@@ -768,7 +768,7 @@ impl Board {
     /// The `pop` function returns an `Option<Move>`.
     pub fn pop(&mut self) -> Option<Move> {
         let (sub_board, optional_move) = self.stack.pop().unwrap();
-        self.repetition_table.remove(self.hash());
+        self.repetition_table.remove(self.get_hash());
         self.sub_board = sub_board;
         optional_move
     }
@@ -1239,7 +1239,7 @@ impl From<SubBoard> for Board {
             starting_fen: STARTING_POSITION_FEN.to_string(),
             repetition_table: RepetitionTable::new(),
         };
-        board.repetition_table.insert(board.hash());
+        board.repetition_table.insert(board.get_hash());
         board
     }
 }
@@ -1268,7 +1268,7 @@ copy_from_sub_board!(
     pub fn generate_legal_moves(&self) -> MoveGenerator,
     pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGenerator,
     pub fn generate_legal_captures(&self) -> MoveGenerator,
-    pub fn hash(&self) -> u64,
+    pub fn get_hash(&self) -> u64,
     pub fn get_pawn_hash(&self) -> u64,
     pub fn get_material_score(&self) -> Score,
     pub fn get_non_pawn_material_score_abs(&self) -> Score,

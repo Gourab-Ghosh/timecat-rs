@@ -2,7 +2,7 @@ use super::*;
 
 pub fn extract_pv_from_t_table(sub_board: &SubBoard) -> Vec<Move> {
     let mut pv = Vec::new();
-    let best_move = TRANSPOSITION_TABLE.read_best_move(sub_board.hash());
+    let best_move = TRANSPOSITION_TABLE.read_best_move(sub_board.get_hash());
     if let Some(best_move) = best_move {
         pv.push(best_move);
         pv.append(&mut extract_pv_from_t_table(

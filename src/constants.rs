@@ -34,7 +34,8 @@ pub mod bitboard_and_square {
                 )*
                 pub const ALL_SQUARES: [Square; NUM_SQUARES] = [$( Square::[<$file$rank>] ), *];
                 pub const BB_SQUARES: [BitBoard; NUM_SQUARES] = [$( [<BB_$file$rank>] ), *];
-                // const SQUARES_180: [Square; NUM_SQUARES] = [$( Square::[<$file$rank>] ), *];
+                pub const SQUARES_VERTICAL_MIRROR: [Square; NUM_SQUARES] = [$( Square::[<$file$rank>].vertical_mirror() ), *];
+                pub const SQUARES_HORIZONTAL_MIRROR: [Square; NUM_SQUARES] = [$( Square::[<$file$rank>].horizontal_mirror() ), *];
             }
         };
 
@@ -45,12 +46,6 @@ pub mod bitboard_and_square {
                     pub const [<BB_FILE_$file>]: BitBoard = BitBoard::new(0x0101_0101_0101_0101 << ($rank - 1));
                 }
             )*
-        };
-    }
-
-    macro_rules! generate_squares_180 {
-        [$( $square:ident ), *$(,)?] => {
-            pub const SQUARES_180: [Square; NUM_SQUARES] = [$( Square::$square ), *];
         };
     }
 
@@ -70,17 +65,6 @@ pub mod bitboard_and_square {
         @bb_ranks_and_files
         (A, 1), (B, 2), (C, 3), (D, 4), (E, 5), (F, 6), (G, 7), (H, 8),
     );
-    #[rustfmt::skip]
-    generate_squares_180![
-        A8, B8, C8, D8, E8, F8, G8, H8,
-        A7, B7, C7, D7, E7, F7, G7, H7,
-        A6, B6, C6, D6, E6, F6, G6, H6,
-        A5, B5, C5, D5, E5, F5, G5, H5,
-        A4, B4, C4, D4, E4, F4, G4, H4,
-        A3, B3, C3, D3, E3, F3, G3, H3,
-        A2, B2, C2, D2, E2, F2, G2, H2,
-        A1, B1, C1, D1, E1, F1, G1, H1,
-    ];
 
     pub const BB_CORNERS: BitBoard =
         BitBoard::new(BB_A1.get_mask() ^ BB_H1.get_mask() ^ BB_A8.get_mask() ^ BB_H8.get_mask());

@@ -133,7 +133,7 @@ pub use std::env;
 pub use std::error::Error;
 pub use std::fmt;
 pub use std::fs;
-pub use std::mem::{self, transmute};
+pub use std::hash::{Hash, Hasher};
 pub use std::num::ParseIntError;
 pub use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Index,

@@ -216,72 +216,72 @@ impl FromStr for SubBoardBuilder {
         for x in pieces.chars() {
             match x {
                 '/' => {
-                    cur_rank = cur_rank.down();
+                    cur_rank = cur_rank.wrapping_down();
                     cur_file = File::A;
                 }
                 '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' => {
                     cur_file =
-                        File::from_index(cur_file.to_index() + (x as usize) - ('0' as usize));
+                        File::from_index((cur_file.to_index() + (x as usize) - ('0' as usize)) & 7);
                 }
                 'r' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Rook, Black));
-                    cur_file = cur_file.right();
+                    cur_file = cur_file.wrapping_right();
                 }
                 'R' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Rook, White));
-                    cur_file = cur_file.right();
+                    cur_file = cur_file.wrapping_right();
                 }
                 'n' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Knight, Black));
-                    cur_file = cur_file.right();
+                    cur_file = cur_file.wrapping_right();
                 }
                 'N' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Knight, White));
-                    cur_file = cur_file.right();
+                    cur_file = cur_file.wrapping_right();
                 }
                 'b' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Bishop, Black));
-                    cur_file = cur_file.right();
+                    cur_file = cur_file.wrapping_right();
                 }
                 'B' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Bishop, White));
-                    cur_file = cur_file.right();
+                    cur_file = cur_file.wrapping_right();
                 }
                 'p' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Pawn, Black));
-                    cur_file = cur_file.right();
+                    cur_file = cur_file.wrapping_right();
                 }
                 'P' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Pawn, White));
-                    cur_file = cur_file.right();
+                    cur_file = cur_file.wrapping_right();
                 }
                 'q' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Queen, Black));
-                    cur_file = cur_file.right();
+                    cur_file = cur_file.wrapping_right();
                 }
                 'Q' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(Queen, White));
-                    cur_file = cur_file.right();
+                    cur_file = cur_file.wrapping_right();
                 }
                 'k' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(King, Black));
-                    cur_file = cur_file.right();
+                    cur_file = cur_file.wrapping_right();
                 }
                 'K' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(Piece::new(King, White));
-                    cur_file = cur_file.right();
+                    cur_file = cur_file.wrapping_right();
                 }
                 _ => {
                     return Err(EngineError::BadFen {
