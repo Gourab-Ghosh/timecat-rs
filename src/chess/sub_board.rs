@@ -394,7 +394,7 @@ impl SubBoard {
             } else {
                 0
             })
-        .max(1)
+        .max(1) // 0 is used for empty space in transposition table
     }
 
     #[inline(always)]
