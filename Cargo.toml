@@ -53,8 +53,8 @@ reqwest = { version = "0", features = ["blocking"], optional = true }
 sha256 = { version = "1", optional = true }
 
 [features]
-default = []
-# default = ["binary", "colored_output", "speed"]
+# default = []
+default = ["binary", "colored_output", "speed"]
 binary = ["nnue", "engine"]
 nnue = ["dep:reqwest", "dep:sha256", "dep:binread", "dep:bytemuck"]
 engine = ["nnue"]
