@@ -60,7 +60,7 @@ pub enum EngineError {
         board: SubBoard,
     },
     FeatureNotEnabled {
-        s: String
+        s: String,
     },
     CustomError {
         err_msg: String,

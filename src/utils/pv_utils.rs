@@ -1,6 +1,9 @@
 use super::*;
 
-pub fn extract_pv_from_t_table(sub_board: &SubBoard, transposition_table: &TranspositionTable) -> Vec<Move> {
+pub fn extract_pv_from_t_table(
+    sub_board: &SubBoard,
+    transposition_table: &TranspositionTable,
+) -> Vec<Move> {
     let mut pv = Vec::new();
     let best_move = transposition_table.read_best_move(sub_board.get_hash());
     if let Some(best_move) = best_move {
@@ -57,7 +60,11 @@ pub fn get_pv_as_lan(sub_board: &SubBoard, pv: &[Option<Move>]) -> String {
 #[inline(always)]
 pub fn get_pv_string(sub_board: &SubBoard, pv: &[Option<Move>]) -> String {
     if GLOBAL_UCI_STATE.is_in_console_mode() {
-        get_pv_as_algebraic(sub_board, pv, GLOBAL_UCI_STATE.use_long_algebraic_notation())
+        get_pv_as_algebraic(
+            sub_board,
+            pv,
+            GLOBAL_UCI_STATE.use_long_algebraic_notation(),
+        )
     } else {
         get_pv_as_uci(pv)
     }

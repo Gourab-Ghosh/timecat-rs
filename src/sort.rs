@@ -327,7 +327,11 @@ impl MoveSorter {
         }))
     }
 
-    pub fn get_weighted_capture_moves_sorted(&self, board: &Board, transposition_table: &TranspositionTable) -> WeightedMoveListSorter {
+    pub fn get_weighted_capture_moves_sorted(
+        &self,
+        board: &Board,
+        transposition_table: &TranspositionTable,
+    ) -> WeightedMoveListSorter {
         let best_move = transposition_table.read_best_move(board.get_hash());
         WeightedMoveListSorter::from_iter(board.generate_legal_captures().enumerate().map(
             |(idx, m)| {
@@ -345,7 +349,17 @@ impl MoveSorter {
         board: &Board,
         move_: Move,
         pv_move: impl Into<Option<Move>>,
+        best_moves: &[Move],
     ) -> MoveWeight {
+        if !board.is_endgame() {
+            if let Some(index) = best_moves
+                .iter()
+                .take(NUM_BEST_ROOT_MOVES_TO_SEARCH_FIRST)
+                .position(|&best_move| best_move == move_)
+            {
+                return 200_000 - index as MoveWeight;
+            }
+        }
         if Some(move_) == pv_move.into() {
             return 100_000;
         }
@@ -363,7 +377,7 @@ impl MoveSorter {
         }
         if is_endgame {
             if move_.get_promotion().is_some() {
-                score += 30000;
+                score += 30_000;
             }
             if board.is_capture(move_) {
                 score += 2000 * evaluation.signum() + Self::score_capture(move_, None, board);

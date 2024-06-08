@@ -155,6 +155,7 @@ pub struct Searcher {
     board: Board,
     transposition_table: Arc<TranspositionTable>,
     pv_table: PVTable,
+    best_moves: Vec<Move>,
     move_sorter: MoveSorter,
     timer: Timer,
     num_nodes_searched: Arc<AtomicUsize>,
@@ -179,6 +180,7 @@ impl Searcher {
             board,
             transposition_table,
             pv_table: PVTable::new(),
+            best_moves: Vec::new(),
             move_sorter: MoveSorter::new(),
             timer: if id == 0 {
                 Timer::new(stopper)
@@ -237,6 +239,13 @@ impl Searcher {
             || self.board.gives_claimable_threefold_repetition(move_)
     }
 
+    fn update_best_moves(&mut self) {
+        if let Some(best_move) = self.get_best_move() {
+            self.best_moves.retain(|&move_| move_ != best_move);
+            self.best_moves.insert(0, best_move);
+        }
+    }
+
     fn get_sorted_root_node_moves(&mut self) -> Vec<(Move, MoveWeight)> {
         let mut moves_vec_sorted = self
             .move_sorter
@@ -244,7 +253,8 @@ impl Searcher {
                 &self.board,
                 &self.transposition_table,
                 0,
-                self.transposition_table.read_best_move(self.board.get_hash()),
+                self.transposition_table
+                    .read_best_move(self.board.get_hash()),
                 self.get_best_move(),
                 Evaluator::is_easily_winning_position(
                     self.board.get_sub_board(),
@@ -254,7 +264,12 @@ impl Searcher {
             .map(|WeightedMove { move_, .. }| {
                 (
                     move_,
-                    MoveSorter::score_root_moves(&self.board, move_, self.get_best_move()),
+                    MoveSorter::score_root_moves(
+                        &self.board,
+                        move_,
+                        self.get_best_move(),
+                        &self.best_moves,
+                    ),
                 )
             })
             .collect_vec();
@@ -283,7 +298,10 @@ impl Searcher {
             };
         }
         let enable_timer = depth > 1 && self.is_main_threaded();
-        if self.timer.check_stop(GLOBAL_UCI_STATE.get_move_overhead(), enable_timer) {
+        if self
+            .timer
+            .check_stop(GLOBAL_UCI_STATE.get_move_overhead(), enable_timer)
+        {
             return None;
         }
         let key = self.board.get_hash();
@@ -323,14 +341,20 @@ impl Searcher {
                 alpha = score;
                 self.pv_table.update_table(self.ply, move_);
                 if score >= beta {
-                    self.transposition_table.write(key, depth, self.ply, beta, HashBeta, move_);
+                    self.transposition_table
+                        .write(key, depth, self.ply, beta, HashBeta, move_);
                     return Some(beta);
                 }
             }
         }
-        if !self.timer.check_stop(GLOBAL_UCI_STATE.get_move_overhead(), enable_timer) {
-            self.transposition_table.write(key, depth, self.ply, alpha, flag, self.get_best_move());
+        if !self
+            .timer
+            .check_stop(GLOBAL_UCI_STATE.get_move_overhead(), enable_timer)
+        {
+            self.transposition_table
+                .write(key, depth, self.ply, alpha, flag, self.get_best_move());
         }
+        self.update_best_moves();
         Some(max_score)
     }
 
@@ -411,7 +435,10 @@ impl Searcher {
             return Some(self.board.evaluate_flipped());
         }
         // enable_timer &= depth > 3;
-        if self.timer.check_stop(GLOBAL_UCI_STATE.get_move_overhead(), enable_timer) {
+        if self
+            .timer
+            .check_stop(GLOBAL_UCI_STATE.get_move_overhead(), enable_timer)
+        {
             return None;
         }
         if depth == 0 {
@@ -547,7 +574,8 @@ impl Searcher {
                     self.move_sorter.add_history_move(move_, &self.board, depth);
                 }
                 if score >= beta {
-                    self.transposition_table.write(key, depth, self.ply, beta, HashBeta, move_);
+                    self.transposition_table
+                        .write(key, depth, self.ply, beta, HashBeta, move_);
                     if not_capture_move {
                         self.move_sorter.update_killer_moves(move_, self.ply);
                     }
@@ -555,7 +583,10 @@ impl Searcher {
                 }
             }
         }
-        if !self.timer.check_stop(GLOBAL_UCI_STATE.get_move_overhead(), enable_timer) {
+        if !self
+            .timer
+            .check_stop(GLOBAL_UCI_STATE.get_move_overhead(), enable_timer)
+        {
             self.transposition_table.write(
                 key,
                 depth,
@@ -750,7 +781,10 @@ impl Searcher {
             if print_info && self.is_main_threaded() {
                 search_info.print_info();
             }
-            if self.timer.check_stop(GLOBAL_UCI_STATE.get_move_overhead(), true) {
+            if self
+                .timer
+                .check_stop(GLOBAL_UCI_STATE.get_move_overhead(), true)
+            {
                 break;
             }
             if self.score <= alpha || self.score >= beta {

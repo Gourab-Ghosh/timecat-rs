@@ -241,7 +241,9 @@ impl Set {
             #[cfg(feature = "colored_output")]
             "color" => Self::color(commands),
             #[cfg(not(feature = "colored_output"))]
-            "color" => Err(FeatureNotEnabled { s: "colored_output".to_string() }),
+            "color" => Err(FeatureNotEnabled {
+                s: "colored_output".to_string(),
+            }),
             _ => Err(UnknownCommand),
         }
     }

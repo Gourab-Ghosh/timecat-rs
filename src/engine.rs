@@ -133,7 +133,10 @@ impl Engine {
     }
 
     pub fn from_fen(fen: &str) -> Result<Self, EngineError> {
-        Ok(Engine::new(Board::from_fen(fen)?, TranspositionTable::default()))
+        Ok(Engine::new(
+            Board::from_fen(fen)?,
+            TranspositionTable::default(),
+        ))
     }
 
     pub fn get_num_nodes_searched(&self) -> usize {

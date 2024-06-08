@@ -62,7 +62,7 @@ impl Rank {
     pub fn wrapping_up(self) -> Self {
         self.up().unwrap_or(Self::First)
     }
-    
+
     #[inline(always)]
     pub fn wrapping_down(self) -> Self {
         self.down().unwrap_or(Self::Eighth)

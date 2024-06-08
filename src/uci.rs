@@ -228,7 +228,12 @@ impl UCIOptions {
         self.options.lock().unwrap().to_owned()
     }
 
-    pub fn set_option(&self, engine: &Engine, command_name: &str, value_string: String) -> Result<(), EngineError> {
+    pub fn set_option(
+        &self,
+        engine: &Engine,
+        command_name: &str,
+        value_string: String,
+    ) -> Result<(), EngineError> {
         self.get_option(command_name)
             .ok_or(EngineError::UnknownCommand)?
             .set_option(engine, value_string)
@@ -274,9 +279,15 @@ fn get_uci_options() -> Vec<UCIOption> {
         .add_alternate_name("Thread"),
         UCIOption::new_spin("Hash", t_table_size_uci, {
             |engine, value| {
-            GLOBAL_UCI_STATE.set_t_table_size(engine.get_transposition_table(), CacheTableSize::Exact(value as usize))
-        }}),
-        UCIOption::new_button("Clear Hash", |engine| clear_all_cache_tables(engine.get_transposition_table())),
+                GLOBAL_UCI_STATE.set_t_table_size(
+                    engine.get_transposition_table(),
+                    CacheTableSize::Exact(value as usize),
+                )
+            }
+        }),
+        UCIOption::new_button("Clear Hash", |engine| {
+            clear_all_cache_tables(engine.get_transposition_table())
+        }),
         UCIOption::new_spin("Move Overhead", move_overhead_uci, |_, value| {
             GLOBAL_UCI_STATE.set_move_overhead(Duration::from_millis(value as u64))
         }),
