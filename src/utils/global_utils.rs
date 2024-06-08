@@ -4,6 +4,7 @@ pub fn identity_function<T>(object: T) -> T {
     object
 }
 
+#[cfg(feature = "engine")]
 fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
     if !UCI_STATE.is_in_debug_mode() {
         return;
@@ -23,6 +24,8 @@ fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
     println!("{to_print}");
 }
 
+#[cfg(feature = "engine")]
+#[derive(Debug)]
 pub struct EngineUCIState {
     _terminate_engine: AtomicBool,
     #[cfg(feature = "colored_output")]
@@ -37,12 +40,14 @@ pub struct EngineUCIState {
     _chess960_mode: AtomicBool,
 }
 
+#[cfg(feature = "engine")]
 impl Default for EngineUCIState {
     fn default() -> Self {
         Self::new()
     }
 }
 
+#[cfg(feature = "engine")]
 impl EngineUCIState {
     pub const fn new() -> Self {
         EngineUCIState {
@@ -128,12 +133,12 @@ impl EngineUCIState {
         self._t_table_size.lock().unwrap().to_owned()
     }
 
-    pub fn set_t_table_size(&self, size: CacheTableSize) {
+    pub fn set_t_table_size(&self, transposition_table: &TranspositionTable, size: CacheTableSize) {
         //TODO: modify such that T Table and evaluation function takes same amount of space
         *self._t_table_size.lock().unwrap() = size;
-        TRANSPOSITION_TABLE.reset_size();
+        transposition_table.reset_size();
         if UCI_STATE.is_in_debug_mode() {
-            TRANSPOSITION_TABLE.print_info();
+            transposition_table.print_info();
         }
         print_info(
             "Transposition table is set to size to",
@@ -209,8 +214,9 @@ impl EngineUCIState {
     }
 }
 
-pub fn clear_all_hash_tables() {
-    TRANSPOSITION_TABLE.clear();
+#[cfg(feature = "engine")]
+pub fn clear_all_hash_tables(transposition_table: &TranspositionTable) {
+    transposition_table.clear();
     #[cfg(feature = "nnue")]
     EVALUATOR.clear();
     print_info::<&str>("All hash tables are cleared!", None);

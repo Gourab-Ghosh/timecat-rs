@@ -177,7 +177,7 @@ impl Go {
 pub struct SetOption;
 
 impl SetOption {
-    fn parse_sub_commands(commands: &[&str]) -> Result<(), EngineError> {
+    fn parse_sub_commands(engine: &Engine, commands: &[&str]) -> Result<(), EngineError> {
         if commands.first().ok_or(UnknownCommand)?.to_lowercase() != "setoption" {
             return Err(UnknownCommand);
         }
@@ -195,7 +195,7 @@ impl SetOption {
             .skip_while(|&&s| s != "value")
             .skip(1)
             .join(" ");
-        UCI_OPTIONS.set_option(&command_name, value_string)
+        UCI_OPTIONS.set_option(engine, &command_name, value_string)
     }
 }
 
@@ -241,7 +241,7 @@ impl Set {
             #[cfg(feature = "colored_output")]
             "color" => Self::color(commands),
             #[cfg(not(feature = "colored_output"))]
-            "color" => Err(ColoredOutputFeatureNotEnabled),
+            "color" => Err(FeatureNotEnabled { s: "colored_output".to_string() }),
             _ => Err(UnknownCommand),
         }
     }
@@ -497,7 +497,7 @@ impl Parser {
         match first_command.as_str() {
             "go" => Go::parse_sub_commands(engine, &commands),
             "set" => Set::parse_sub_commands(engine, &commands),
-            "setoption" => SetOption::parse_sub_commands(&commands),
+            "setoption" => SetOption::parse_sub_commands(engine, &commands),
             "push" => Push::parse_sub_commands(engine, &commands),
             "pop" => Pop::parse_sub_commands(engine, &commands),
             "selfplay" => SelfPlay::parse_sub_commands(engine, &commands),
@@ -588,9 +588,8 @@ impl Parser {
         }
     }
 
-    pub fn main_loop() {
+    pub fn main_loop(engine: &mut Engine) {
         thread::spawn(|| IO_READER.start_reader());
-        let mut engine = Engine::default();
         loop {
             if UCI_STATE.terminate_engine() {
                 Self::print_exit_message();
@@ -602,13 +601,13 @@ impl Parser {
             } else {
                 Self::get_input("")
             };
-            Self::run_raw_input_checked(&mut engine, &raw_input);
+            Self::run_raw_input_checked(engine, &raw_input);
         }
     }
 
-    pub fn uci_loop() {
+    pub fn uci_loop(engine: &mut Engine) {
         UCI_STATE.set_to_uci_mode();
-        Self::main_loop.run_and_print_time();
+        Self::main_loop.run_and_print_time(engine);
     }
 
     pub fn parse_args_and_run_main_loop(args: &[&str]) {
@@ -637,9 +636,10 @@ impl Parser {
             print_engine_version(false);
             return;
         }
+        let mut engine = Engine::default();
         #[cfg(feature = "debug")]
         if args.contains(&"--test") {
-            test.run_and_print_time().unwrap();
+            test.run_and_print_time(&mut engine).unwrap();
             return;
         }
         if args.contains(&"-c") || args.contains(&"--command") {
@@ -649,13 +649,13 @@ impl Parser {
                 .skip(1)
                 .take_while(|&&arg| !arg.starts_with("--"))
                 .join(" ");
-            let mut engine = Engine::default();
             println!();
             Self::run_raw_input_checked(&mut engine, &command);
             return;
         }
-        print_engine_info();
-        Self::main_loop.run_and_print_time();
+        let mut engine = Engine::default();
+        print_engine_info(engine.get_transposition_table());
+        Self::main_loop.run_and_print_time(&mut engine);
     }
 
     pub fn get_help_message() -> String {

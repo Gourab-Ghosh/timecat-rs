@@ -7,7 +7,7 @@ pub fn parse_command(engine: &mut Engine, raw_input: &str) {
 
 #[allow(unused_variables)]
 #[rustfmt::skip]
-pub fn test() -> Result<(), EngineError> {
+pub fn test(engine: &mut Engine) -> Result<(), EngineError> {
     thread::spawn(|| IO_READER.start_reader());
 
     // open_tablebase("directory", true, true, None, Board::new());
@@ -38,7 +38,6 @@ pub fn test() -> Result<(), EngineError> {
         "r1bqr1k1/p1p2pp1/1b5p/3n4/2Q1N3/5N1P/PPP2PP1/R1B2RK1 b - - 2 16", // Taking really long to best move at depth 12
     ];
 
-    // let mut engine = Engine::default();
     // // engine.set_fen("8/8/8/1R5K/3k4/8/8/5rq1 b - - 1 96")?;
     // // engine.set_fen("7K/8/8/8/3k4/8/8/R7 w - - 15 57")?;
     // // engine.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1")?; // test endgame

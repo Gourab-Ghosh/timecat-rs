@@ -12,8 +12,6 @@ pub mod polyglot;
 #[cfg(feature = "experimental")]
 pub mod syzygy;
 pub mod timer;
-pub mod tt;
-pub mod uci;
 pub mod useful_macros;
 pub mod utils;
 
@@ -21,7 +19,13 @@ pub mod utils;
 pub mod engine;
 
 #[cfg(feature = "engine")]
+pub mod tt;
+
+#[cfg(feature = "engine")]
 pub mod parse;
+
+#[cfg(feature = "engine")]
+pub mod uci;
 
 #[cfg(feature = "engine")]
 pub mod search;
@@ -45,6 +49,8 @@ pub mod engine_features {
     pub use search::*;
     pub use selfplay::self_play;
     pub use sort::*;
+    pub use uci::*;
+    pub use tt::*;
 }
 
 #[cfg(feature = "engine")]
@@ -82,7 +88,7 @@ pub mod prelude {
     pub use super::{
         between, get_adjacent_files, get_bishop_moves, get_bishop_rays, get_castle_moves,
         get_file_bb, get_king_moves, get_knight_moves, get_pawn_attacks, get_pawn_moves,
-        get_pawn_quiets, get_pv_as_san, get_pv_as_uci, get_pv_string, get_queen_moves, get_rank_bb,
+        get_pawn_quiets, get_queen_moves, get_rank_bb,
         get_rook_moves, get_rook_rays, is_checkmate, line, simplify_fen, Bishop, BitBoard, Black,
         Board, BoardStatus, CacheTable, CastleMoveType, CastleRights, Color, EngineError, File,
         GameResult, King, Knight, Move, MoveGenerator, Pawn, Piece, PieceType, Queen, Rank,
@@ -104,7 +110,7 @@ pub mod prelude {
     };
 
     #[cfg(feature = "engine")]
-    pub use super::{self_play, Engine, GoCommand};
+    pub use super::{self_play, get_pv_string, Engine, GoCommand, TranspositionTable, get_pv_as_san, get_pv_as_uci,};
 }
 
 pub use arrayvec::ArrayVec;
@@ -145,17 +151,19 @@ pub use std::sync::{Arc, Mutex};
 pub use std::thread;
 pub use std::time::{Duration, Instant};
 pub use timer::Timer;
-pub use tt::*;
-pub use uci::*;
 pub use utils::*;
 
 // pub use std::hint;
 // pub use std::num;
 
 lazy_static! {
-    pub static ref TRANSPOSITION_TABLE: TranspositionTable = TranspositionTable::default();
     pub static ref IO_READER: IoReader = IoReader::default();
+}
+
+#[cfg(feature = "engine")]
+lazy_static! {
     pub static ref UCI_OPTIONS: UCIOptions = UCIOptions::default();
 }
 
+#[cfg(feature = "engine")]
 pub static UCI_STATE: EngineUCIState = EngineUCIState::new();

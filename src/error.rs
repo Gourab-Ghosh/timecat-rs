@@ -7,7 +7,6 @@ pub enum EngineError {
     UnknownCommand,
     NoInput,
     NotImplemented,
-    ColoredOutputFeatureNotEnabled,
     EngineNotRunning,
     BadFen {
         fen: String,
@@ -60,6 +59,9 @@ pub enum EngineError {
     InvalidSubBoard {
         board: SubBoard,
     },
+    FeatureNotEnabled {
+        s: String
+    },
     CustomError {
         err_msg: String,
     },
@@ -71,7 +73,6 @@ impl fmt::Display for EngineError {
             UnknownCommand => write!(f, "{}", UnknownCommand.stringify()),
             NoInput => write!(f, "No input! Please try again!"),
             NotImplemented => write!(f, "Sorry, this command is not implemented yet :("),
-            ColoredOutputFeatureNotEnabled => write!(f, "Colored Output Feature is not enabled. Recompile the chess engine enabling the feature!"),
             EngineNotRunning => write!(f, "Engine is not running! Please try again!"),
             BadFen { fen } => write!(f, "Bad FEN string: {fen}! Please try Again!"),
             InvalidDepth { depth } => write!(f, "Invalid depth {depth}! Please try again!"),
@@ -92,6 +93,7 @@ impl fmt::Display for EngineError {
             InvalidSquareString { s } => write!(f, "Got invalid square string {s}! Please try again!"),
             InvalidUciMoveString { s } => write!(f, "Invalid uci move string {s}! Please try again!"),
             InvalidSubBoard { board } => write!(f, "Invalid sub board generated:\n\n{board:#?}"),
+            FeatureNotEnabled { s } => write!(f, "The feature {s:?} is not enabled. Please recompile the chess engine with this feature enabled!"),
             CustomError { err_msg } => write!(f, "{err_msg}"),
         }
     }
@@ -100,6 +102,7 @@ impl fmt::Display for EngineError {
 impl Error for EngineError {}
 
 impl EngineError {
+    #[cfg(feature = "engine")]
     pub fn stringify_with_optional_raw_input(&self, optional_raw_input: Option<&str>) -> String {
         match self {
             Self::UnknownCommand => {
@@ -122,8 +125,14 @@ impl EngineError {
 }
 
 impl Stringify for EngineError {
+    #[cfg(feature = "engine")]
     fn stringify(&self) -> String {
         self.stringify_with_optional_raw_input(None)
+    }
+
+    #[cfg(not(feature = "engine"))]
+    fn stringify(&self) -> String {
+        self.to_string()
     }
 }
 

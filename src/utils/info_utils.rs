@@ -1,5 +1,6 @@
 use super::*;
 
+#[cfg(feature = "engine")]
 pub fn format_info<T: fmt::Display>(desc: &str, info: T, add_info_string: bool) -> String {
     let mut desc = desc.trim().trim_end_matches(':').to_string();
     if UCI_STATE.is_in_uci_mode() {
@@ -17,10 +18,18 @@ pub fn format_info<T: fmt::Display>(desc: &str, info: T, add_info_string: bool) 
     }
 }
 
+#[cfg(not(feature = "engine"))]
+pub fn format_info<T: fmt::Display>(desc: &str, info: T, _: bool) -> String {
+    let desc = desc.trim().trim_end_matches(':').colorize(INFO_MESSAGE_STYLE);
+    format!("{desc}: {info}")
+}
+
+#[cfg(feature = "engine")]
 pub fn force_println_info<T: fmt::Display>(desc: &str, info: T) {
     println!("{}", format_info(desc, info, true));
 }
 
+#[cfg(feature = "engine")]
 #[inline(always)]
 pub fn println_info<T: fmt::Display>(desc: &str, info: T) {
     if UCI_STATE.is_in_debug_mode() {
@@ -42,14 +51,16 @@ pub fn print_engine_version(color: bool) {
     println!("{version}");
 }
 
-pub fn print_engine_info() {
+#[cfg(feature = "engine")]
+pub fn print_engine_info(transposition_table: &TranspositionTable) {
     print_engine_version(true);
     println!();
-    TRANSPOSITION_TABLE.print_info();
+    transposition_table.print_info();
     #[cfg(feature = "nnue")]
     EVALUATOR.print_info();
 }
 
+#[cfg(feature = "engine")]
 pub fn print_cache_table_info(
     name: &str,
     table_len: impl fmt::Display,

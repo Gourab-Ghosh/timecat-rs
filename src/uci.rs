@@ -29,26 +29,26 @@ impl_into_spin!(Duration, as_millis);
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum UCIOptionType {
     Button {
-        function: fn(),
+        function: fn(&Engine),
     },
     Check {
         default: bool,
-        function: fn(bool),
+        function: fn(&Engine, bool),
     },
     String {
         default: String,
-        function: fn(&str),
+        function: fn(&Engine, &str),
     },
     Spin {
         default: Spin,
         min: Spin,
         max: Spin,
-        function: fn(Spin),
+        function: fn(&Engine, Spin),
     },
     Combo {
         default: String,
         options: Vec<String>,
-        function: fn(&str),
+        function: fn(&Engine, &str),
     },
 }
 
@@ -106,7 +106,7 @@ impl UCIOption {
     fn new_spin<T: Clone + Copy + IntoSpin>(
         name: &str,
         values: SpinValue<T>,
-        function: fn(Spin),
+        function: fn(&Engine, Spin),
     ) -> Self {
         UCIOption::new(
             name,
@@ -119,18 +119,18 @@ impl UCIOption {
         )
     }
 
-    fn new_check(name: &str, default: bool, function: fn(bool)) -> Self {
+    fn new_check(name: &str, default: bool, function: fn(&Engine, bool)) -> Self {
         UCIOption::new(name, UCIOptionType::Check { default, function })
     }
 
-    fn new_button(name: &str, function: fn()) -> Self {
+    fn new_button(name: &str, function: fn(&Engine)) -> Self {
         UCIOption::new(name, UCIOptionType::Button { function })
     }
 
-    fn set_option(&self, value_string: String) -> Result<(), EngineError> {
+    fn set_option(&self, engine: &Engine, value_string: String) -> Result<(), EngineError> {
         match self.option_type {
             UCIOptionType::Check { function, .. } => {
-                function(value_string.parse()?);
+                function(engine, value_string.parse()?);
             }
             UCIOptionType::Spin {
                 min, max, function, ..
@@ -144,16 +144,16 @@ impl UCIOption {
                         max,
                     });
                 }
-                function(value);
+                function(engine, value);
             }
             UCIOptionType::Combo { function, .. } => {
-                function(&value_string);
+                function(engine, &value_string);
             }
             UCIOptionType::Button { function } => {
-                function();
+                function(engine);
             }
             UCIOptionType::String { function, .. } => {
-                function(&value_string);
+                function(engine, &value_string);
             }
         }
         Ok(())
@@ -228,10 +228,10 @@ impl UCIOptions {
         self.options.lock().unwrap().to_owned()
     }
 
-    pub fn set_option(&self, command_name: &str, value_string: String) -> Result<(), EngineError> {
+    pub fn set_option(&self, engine: &Engine, command_name: &str, value_string: String) -> Result<(), EngineError> {
         self.get_option(command_name)
             .ok_or(EngineError::UnknownCommand)?
-            .set_option(value_string)
+            .set_option(engine, value_string)
     }
 }
 
@@ -269,14 +269,15 @@ fn get_uci_options() -> Vec<UCIOption> {
         UCIOption::new_spin(
             "Threads",
             SpinValue::new(default_uci_state.get_num_threads(), 1, 1024),
-            |value| UCI_STATE.set_num_threads(value as usize, true),
+            |_, value| UCI_STATE.set_num_threads(value as usize, true),
         )
         .add_alternate_name("Thread"),
-        UCIOption::new_spin("Hash", t_table_size_uci, |value| {
-            UCI_STATE.set_t_table_size(CacheTableSize::Exact(value as usize))
-        }),
-        UCIOption::new_button("Clear Hash", clear_all_hash_tables),
-        UCIOption::new_spin("Move Overhead", move_overhead_uci, |value| {
+        UCIOption::new_spin("Hash", t_table_size_uci, {
+            |engine, value| {
+            UCI_STATE.set_t_table_size(engine.get_transposition_table(), CacheTableSize::Exact(value as usize))
+        }}),
+        UCIOption::new_button("Clear Hash", |engine| clear_all_hash_tables(engine.get_transposition_table())),
+        UCIOption::new_spin("Move Overhead", move_overhead_uci, |_, value| {
             UCI_STATE.set_move_overhead(Duration::from_millis(value as u64))
         }),
         // UCIOption::new_check(

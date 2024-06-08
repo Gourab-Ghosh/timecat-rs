@@ -83,17 +83,20 @@ impl GoResponse {
     }
 }
 
+#[derive(Debug)]
 pub struct Engine {
     board: Board,
+    transposition_table: Arc<TranspositionTable>,
     num_nodes_searched: Arc<AtomicUsize>,
     selective_depth: Arc<AtomicUsize>,
     stopper: Arc<AtomicBool>,
 }
 
 impl Engine {
-    pub fn new(board: Board) -> Self {
+    pub fn new(board: Board, transposition_table: TranspositionTable) -> Self {
         Self {
             board,
+            transposition_table: Arc::new(transposition_table),
             num_nodes_searched: Arc::new(AtomicUsize::new(0)),
             selective_depth: Arc::new(AtomicUsize::new(0)),
             stopper: Arc::new(AtomicBool::new(false)),
@@ -108,14 +111,18 @@ impl Engine {
         &mut self.board
     }
 
+    pub fn get_transposition_table(&self) -> &TranspositionTable {
+        &self.transposition_table
+    }
+
     fn reset_variables(&self) {
         self.num_nodes_searched.store(0, MEMORY_ORDERING);
         self.selective_depth.store(0, MEMORY_ORDERING);
         self.stopper.store(false, MEMORY_ORDERING);
-        TRANSPOSITION_TABLE.reset_variables();
+        self.transposition_table.reset_variables();
         EVALUATOR.reset_variables();
         if CLEAR_TABLE_AFTER_EACH_SEARCH {
-            TRANSPOSITION_TABLE.clear()
+            self.transposition_table.clear()
         }
     }
 
@@ -126,7 +133,7 @@ impl Engine {
     }
 
     pub fn from_fen(fen: &str) -> Result<Self, EngineError> {
-        Ok(Engine::new(Board::from_fen(fen)?))
+        Ok(Engine::new(Board::from_fen(fen)?, TranspositionTable::default()))
     }
 
     pub fn get_num_nodes_searched(&self) -> usize {
@@ -141,6 +148,7 @@ impl Engine {
         Searcher::new(
             id,
             self.board.clone(),
+            self.transposition_table.clone(),
             self.num_nodes_searched.clone(),
             self.selective_depth.clone(),
             self.stopper.clone(),
@@ -202,8 +210,14 @@ impl Engine {
     }
 }
 
+// impl Clone for Engine {
+//     fn clone(&self) -> Self {
+//         Self { board: self.board.clone(), transposition_table: (*self.transposition_table).clone().into(), num_nodes_searched: Default::default(), selective_depth: Default::default(), stopper: Default::default() }
+//     }
+// }
+
 impl Default for Engine {
     fn default() -> Self {
-        Self::new(Board::default())
+        Self::new(Board::default(), TranspositionTable::default())
     }
 }

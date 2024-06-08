@@ -285,6 +285,7 @@ impl MoveSorter {
     pub fn get_weighted_moves_sorted(
         &mut self,
         board: &Board,
+        transposition_table: &TranspositionTable,
         ply: Ply,
         optional_best_move: impl Into<Option<Move>>,
         optional_pv_move: impl Into<Option<Move>>,
@@ -292,7 +293,7 @@ impl MoveSorter {
     ) -> WeightedMoveListSorter {
         let mut best_move = optional_best_move.into();
         if best_move.is_none() {
-            best_move = TRANSPOSITION_TABLE.read_best_move(board.get_hash());
+            best_move = transposition_table.read_best_move(board.get_hash());
         }
         let optional_pv_move = optional_pv_move.into();
         let moves_vec = Vec::from_iter(board.generate_legal_moves());
@@ -326,8 +327,8 @@ impl MoveSorter {
         }))
     }
 
-    pub fn get_weighted_capture_moves_sorted(&self, board: &Board) -> WeightedMoveListSorter {
-        let best_move = TRANSPOSITION_TABLE.read_best_move(board.get_hash());
+    pub fn get_weighted_capture_moves_sorted(&self, board: &Board, transposition_table: &TranspositionTable) -> WeightedMoveListSorter {
+        let best_move = transposition_table.read_best_move(board.get_hash());
         WeightedMoveListSorter::from_iter(board.generate_legal_captures().enumerate().map(
             |(idx, m)| {
                 WeightedMove::new(

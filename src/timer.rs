@@ -62,15 +62,15 @@ impl Timer {
         self.max_time
     }
 
-    pub fn is_time_up(&mut self) -> bool {
+    pub fn is_time_up(&mut self, move_overhead: Duration) -> bool {
         if self.max_time == Duration::MAX {
             return false;
         }
-        self.stop_search = self.time_elapsed() + UCI_STATE.get_move_overhead() >= self.max_time;
+        self.stop_search = self.time_elapsed() + move_overhead >= self.max_time;
         self.stop_search
     }
 
-    pub fn check_stop(&mut self, enable_timer: bool) -> bool {
+    pub fn check_stop(&mut self, move_overhead: Duration, enable_timer: bool) -> bool {
         if self.stopper.load(MEMORY_ORDERING) {
             return true;
         }
@@ -80,7 +80,7 @@ impl Timer {
         if self.stop_search {
             return true;
         }
-        self.is_time_up()
+        self.is_time_up(move_overhead)
     }
 }
 

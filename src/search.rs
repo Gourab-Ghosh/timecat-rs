@@ -153,6 +153,7 @@ pub struct Searcher {
     id: usize,
     initial_sub_board: SubBoard,
     board: Board,
+    transposition_table: Arc<TranspositionTable>,
     pv_table: PVTable,
     move_sorter: MoveSorter,
     timer: Timer,
@@ -167,6 +168,7 @@ impl Searcher {
     pub fn new(
         id: usize,
         board: Board,
+        transposition_table: Arc<TranspositionTable>,
         num_nodes_searched: Arc<AtomicUsize>,
         selective_depth: Arc<AtomicUsize>,
         stopper: Arc<AtomicBool>,
@@ -175,6 +177,7 @@ impl Searcher {
             id,
             initial_sub_board: board.get_sub_board().to_owned(),
             board,
+            transposition_table,
             pv_table: PVTable::new(),
             move_sorter: MoveSorter::new(),
             timer: if id == 0 {
@@ -239,8 +242,9 @@ impl Searcher {
             .move_sorter
             .get_weighted_moves_sorted(
                 &self.board,
+                &self.transposition_table,
                 0,
-                TRANSPOSITION_TABLE.read_best_move(self.board.get_hash()),
+                self.transposition_table.read_best_move(self.board.get_hash()),
                 self.get_best_move(),
                 Evaluator::is_easily_winning_position(
                     self.board.get_sub_board(),
@@ -279,7 +283,7 @@ impl Searcher {
             };
         }
         let enable_timer = depth > 1 && self.is_main_threaded();
-        if self.timer.check_stop(enable_timer) {
+        if self.timer.check_stop(UCI_STATE.get_move_overhead(), enable_timer) {
             return None;
         }
         let key = self.board.get_hash();
@@ -319,13 +323,13 @@ impl Searcher {
                 alpha = score;
                 self.pv_table.update_table(self.ply, move_);
                 if score >= beta {
-                    TRANSPOSITION_TABLE.write(key, depth, self.ply, beta, HashBeta, move_);
+                    self.transposition_table.write(key, depth, self.ply, beta, HashBeta, move_);
                     return Some(beta);
                 }
             }
         }
-        if !self.timer.check_stop(enable_timer) {
-            TRANSPOSITION_TABLE.write(key, depth, self.ply, alpha, flag, self.get_best_move());
+        if !self.timer.check_stop(UCI_STATE.get_move_overhead(), enable_timer) {
+            self.transposition_table.write(key, depth, self.ply, alpha, flag, self.get_best_move());
         }
         Some(max_score)
     }
@@ -375,9 +379,9 @@ impl Searcher {
         let is_pv_node = alpha != beta - 1;
         let key = self.board.get_hash();
         let best_move = if is_pv_node && self.is_main_threaded() {
-            TRANSPOSITION_TABLE.read_best_move(key)
+            self.transposition_table.read_best_move(key)
         } else {
-            let (optional_data, best_move) = TRANSPOSITION_TABLE.read(key, depth, self.ply);
+            let (optional_data, best_move) = self.transposition_table.read(key, depth, self.ply);
             if let Some((score, flag)) = optional_data {
                 // match flag {
                 //     HashExact => return Some(score),
@@ -407,7 +411,7 @@ impl Searcher {
             return Some(self.board.evaluate_flipped());
         }
         // enable_timer &= depth > 3;
-        if self.timer.check_stop(enable_timer) {
+        if self.timer.check_stop(UCI_STATE.get_move_overhead(), enable_timer) {
             return None;
         }
         if depth == 0 {
@@ -465,6 +469,7 @@ impl Searcher {
         let mut flag = HashAlpha;
         let weighted_moves = self.move_sorter.get_weighted_moves_sorted(
             &self.board,
+            &self.transposition_table,
             self.ply,
             best_move,
             self.get_nth_pv_move(self.ply),
@@ -542,7 +547,7 @@ impl Searcher {
                     self.move_sorter.add_history_move(move_, &self.board, depth);
                 }
                 if score >= beta {
-                    TRANSPOSITION_TABLE.write(key, depth, self.ply, beta, HashBeta, move_);
+                    self.transposition_table.write(key, depth, self.ply, beta, HashBeta, move_);
                     if not_capture_move {
                         self.move_sorter.update_killer_moves(move_, self.ply);
                     }
@@ -550,8 +555,8 @@ impl Searcher {
                 }
             }
         }
-        if !self.timer.check_stop(enable_timer) {
-            TRANSPOSITION_TABLE.write(
+        if !self.timer.check_stop(UCI_STATE.get_move_overhead(), enable_timer) {
+            self.transposition_table.write(
                 key,
                 depth,
                 self.ply,
@@ -584,7 +589,7 @@ impl Searcher {
         }
         for WeightedMove { move_, weight } in self
             .move_sorter
-            .get_weighted_capture_moves_sorted(&self.board)
+            .get_weighted_capture_moves_sorted(&self.board, &&self.transposition_table)
         {
             if weight.is_negative() {
                 break;
@@ -620,15 +625,15 @@ impl Searcher {
     }
 
     pub fn get_hash_full(&self) -> f64 {
-        TRANSPOSITION_TABLE.get_hash_full()
+        self.transposition_table.get_hash_full()
     }
 
     pub fn get_num_overwrites(&self) -> usize {
-        TRANSPOSITION_TABLE.get_num_overwrites()
+        self.transposition_table.get_num_overwrites()
     }
 
     pub fn get_num_collisions(&self) -> usize {
-        TRANSPOSITION_TABLE.get_num_collisions()
+        self.transposition_table.get_num_collisions()
     }
 
     pub fn get_pv(&self) -> Vec<Option<Move>> {
@@ -637,7 +642,7 @@ impl Searcher {
     }
 
     pub fn get_pv_from_t_table(&self) -> Vec<Option<Move>> {
-        extract_pv_from_t_table(&self.initial_sub_board)
+        extract_pv_from_t_table(&self.initial_sub_board, &self.transposition_table)
             .into_iter()
             .map_into()
             .collect_vec()
@@ -745,7 +750,7 @@ impl Searcher {
             if print_info && self.is_main_threaded() {
                 search_info.print_info();
             }
-            if self.timer.check_stop(true) {
+            if self.timer.check_stop(UCI_STATE.get_move_overhead(), true) {
                 break;
             }
             if self.score <= alpha || self.score >= beta {

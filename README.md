@@ -71,7 +71,10 @@ fn main() {
     println!("Current Evaluation: {}\n", evaluation);
 
     // Initialize the engine with the current board state.
-    let engine = Engine::new(board);
+    let engine = Engine::new(
+        board,
+        TranspositionTable::default(),
+    );
 
     // Configure the engine to search for the best move up to a depth of 10 plies.
     let response = engine.go_verbose(GoCommand::Depth(10));

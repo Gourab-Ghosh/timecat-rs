@@ -113,6 +113,7 @@ impl StringifyScore for Score {
     }
 }
 
+#[cfg(feature = "engine")]
 impl Stringify for Score {
     fn stringify(&self) -> String {
         if UCI_STATE.is_in_console_mode() {
@@ -126,6 +127,7 @@ impl Stringify for Score {
 pub trait StringifyMove {
     fn uci(self) -> String;
     fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String, BoardError>;
+    #[cfg(feature = "engine")]
     fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError>;
 
     fn san(self, sub_board: &SubBoard) -> Result<String, BoardError>
@@ -152,6 +154,7 @@ impl StringifyMove for Move {
         Ok(self.algebraic_and_new_sub_board(sub_board, long)?.0)
     }
 
+    #[cfg(feature = "engine")]
     fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError> {
         Some(self).stringify_move(sub_board)
     }
@@ -172,6 +175,7 @@ impl StringifyMove for Option<Move> {
         }
     }
 
+    #[cfg(feature = "engine")]
     fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError> {
         match UCI_STATE.is_in_console_mode() {
             true => self.algebraic(sub_board, UCI_STATE.use_long_algebraic_notation()),
@@ -268,6 +272,7 @@ impl Stringify for Color {
     }
 }
 
+#[cfg(feature = "engine")]
 impl Stringify for Duration {
     fn stringify(&self) -> String {
         if UCI_STATE.is_in_uci_mode() {

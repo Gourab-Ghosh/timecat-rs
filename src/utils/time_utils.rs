@@ -1,13 +1,14 @@
 use super::*;
 
-pub trait MeasureTime<T>: Fn() -> T {
-    fn run_and_measure_time(&self) -> (T, Duration) {
+#[cfg(feature = "engine")]
+pub trait MeasureTime<T>: FnMut(&mut Engine) -> T {
+    fn run_and_measure_time(&mut self, engine: &mut Engine) -> (T, Duration) {
         let clock = Instant::now();
-        (self(), clock.elapsed())
+        (self(engine), clock.elapsed())
     }
 
-    fn run_and_print_time(&self) -> T {
-        let (res, time_taken) = self.run_and_measure_time();
+    fn run_and_print_time(&mut self, engine: &mut Engine) -> T {
+        let (res, time_taken) = self.run_and_measure_time(engine);
         if UCI_STATE.is_in_console_mode() {
             println!();
         }
@@ -16,4 +17,5 @@ pub trait MeasureTime<T>: Fn() -> T {
     }
 }
 
-impl<T, Func: Fn() -> T> MeasureTime<T> for Func {}
+#[cfg(feature = "engine")]
+impl<T, Func: FnMut(&mut Engine) -> T> MeasureTime<T> for Func {}
