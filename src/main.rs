@@ -17,11 +17,11 @@ fn main() {
         std::env::set_var("RUST_BACKTRACE", "1");
     }
     if !std::io::stdin().is_terminal() {
-        UCI_STATE.set_to_uci_mode();
+        GLOBAL_UCI_STATE.set_to_uci_mode();
     }
     #[cfg(feature = "colored_output")]
     if !std::io::stdout().is_terminal() {
-        UCI_STATE.set_colored_output(false, false);
+        GLOBAL_UCI_STATE.set_colored_output(false, false);
     }
     Parser::parse_args_and_run_main_loop(&args);
 }

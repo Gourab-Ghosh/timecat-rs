@@ -102,11 +102,10 @@ impl fmt::Display for EngineError {
 impl Error for EngineError {}
 
 impl EngineError {
-    #[cfg(feature = "engine")]
     pub fn stringify_with_optional_raw_input(&self, optional_raw_input: Option<&str>) -> String {
         match self {
             Self::UnknownCommand => {
-                let command_type = if UCI_STATE.is_in_console_mode() {
+                let command_type = if GLOBAL_UCI_STATE.is_in_console_mode() {
                     "Console"
                 } else {
                     "UCI"
@@ -125,14 +124,8 @@ impl EngineError {
 }
 
 impl Stringify for EngineError {
-    #[cfg(feature = "engine")]
     fn stringify(&self) -> String {
         self.stringify_with_optional_raw_input(None)
-    }
-
-    #[cfg(not(feature = "engine"))]
-    fn stringify(&self) -> String {
-        self.to_string()
     }
 }
 

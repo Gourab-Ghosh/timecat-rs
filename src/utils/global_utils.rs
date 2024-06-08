@@ -4,9 +4,8 @@ pub fn identity_function<T>(object: T) -> T {
     object
 }
 
-#[cfg(feature = "engine")]
 fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
-    if !UCI_STATE.is_in_debug_mode() {
+    if !GLOBAL_UCI_STATE.is_in_debug_mode() {
         return;
     }
     let mut to_print = if let Some(info_message) = info.into() {
@@ -18,15 +17,14 @@ fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
     } else {
         message.colorize(SUCCESS_MESSAGE_STYLE)
     };
-    if UCI_STATE.is_in_uci_mode() {
+    if GLOBAL_UCI_STATE.is_in_uci_mode() {
         to_print = format!("{} {to_print}", "info string".colorize(INFO_MESSAGE_STYLE))
     }
     println!("{to_print}");
 }
 
-#[cfg(feature = "engine")]
 #[derive(Debug)]
-pub struct EngineUCIState {
+pub struct GlobalUCIState {
     _terminate_engine: AtomicBool,
     #[cfg(feature = "colored_output")]
     _colored_output: AtomicBool,
@@ -40,17 +38,15 @@ pub struct EngineUCIState {
     _chess960_mode: AtomicBool,
 }
 
-#[cfg(feature = "engine")]
-impl Default for EngineUCIState {
+impl Default for GlobalUCIState {
     fn default() -> Self {
         Self::new()
     }
 }
 
-#[cfg(feature = "engine")]
-impl EngineUCIState {
+impl GlobalUCIState {
     pub const fn new() -> Self {
-        EngineUCIState {
+        GlobalUCIState {
             _terminate_engine: AtomicBool::new(false),
             #[cfg(feature = "colored_output")]
             _colored_output: AtomicBool::new(true),
@@ -128,16 +124,18 @@ impl EngineUCIState {
         self.set_console_mode(true, false);
     }
 
+    #[cfg(feature = "engine")]
     #[inline(always)]
     pub fn get_t_table_size(&self) -> CacheTableSize {
         self._t_table_size.lock().unwrap().to_owned()
     }
 
+    #[cfg(feature = "engine")]
     pub fn set_t_table_size(&self, transposition_table: &TranspositionTable, size: CacheTableSize) {
         //TODO: modify such that T Table and evaluation function takes same amount of space
         *self._t_table_size.lock().unwrap() = size;
         transposition_table.reset_size();
-        if UCI_STATE.is_in_debug_mode() {
+        if GLOBAL_UCI_STATE.is_in_debug_mode() {
             transposition_table.print_info();
         }
         print_info(
@@ -215,7 +213,7 @@ impl EngineUCIState {
 }
 
 #[cfg(feature = "engine")]
-pub fn clear_all_hash_tables(transposition_table: &TranspositionTable) {
+pub fn clear_all_cache_tables(transposition_table: &TranspositionTable) {
     transposition_table.clear();
     #[cfg(feature = "nnue")]
     EVALUATOR.clear();

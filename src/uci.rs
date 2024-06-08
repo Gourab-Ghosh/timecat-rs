@@ -242,7 +242,7 @@ impl Default for UCIOptions {
 }
 
 fn get_uci_options() -> Vec<UCIOption> {
-    let default_uci_state = EngineUCIState::default();
+    let default_uci_state = GlobalUCIState::default();
     let t_table_size_uci = SpinValue::new(
         default_uci_state.get_t_table_size(),
         CacheTableSize::Exact(1),
@@ -269,21 +269,21 @@ fn get_uci_options() -> Vec<UCIOption> {
         UCIOption::new_spin(
             "Threads",
             SpinValue::new(default_uci_state.get_num_threads(), 1, 1024),
-            |_, value| UCI_STATE.set_num_threads(value as usize, true),
+            |_, value| GLOBAL_UCI_STATE.set_num_threads(value as usize, true),
         )
         .add_alternate_name("Thread"),
         UCIOption::new_spin("Hash", t_table_size_uci, {
             |engine, value| {
-            UCI_STATE.set_t_table_size(engine.get_transposition_table(), CacheTableSize::Exact(value as usize))
+            GLOBAL_UCI_STATE.set_t_table_size(engine.get_transposition_table(), CacheTableSize::Exact(value as usize))
         }}),
-        UCIOption::new_button("Clear Hash", |engine| clear_all_hash_tables(engine.get_transposition_table())),
+        UCIOption::new_button("Clear Hash", |engine| clear_all_cache_tables(engine.get_transposition_table())),
         UCIOption::new_spin("Move Overhead", move_overhead_uci, |_, value| {
-            UCI_STATE.set_move_overhead(Duration::from_millis(value as u64))
+            GLOBAL_UCI_STATE.set_move_overhead(Duration::from_millis(value as u64))
         }),
         // UCIOption::new_check(
         //     "OwnBook",
         //     DEFAULT_USE_OWN_BOOK,
-        //     UCI_STATE.set_using_own_book,
+        //     GLOBAL_UCI_STATE.set_using_own_book,
         // ),
     ];
     options

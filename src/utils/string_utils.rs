@@ -41,7 +41,7 @@ pub trait CustomColorize {
 impl<T: ToString> CustomColorize for T {
     fn colorize(&self, style_functions: &[ColoredStringFunction]) -> String {
         let self_string = self.to_string();
-        if style_functions.is_empty() || !UCI_STATE.is_colored_output() {
+        if style_functions.is_empty() || !GLOBAL_UCI_STATE.is_colored_output() {
             return self_string;
         }
         let mut colorized_string = self_string.as_str().into();
@@ -113,10 +113,9 @@ impl StringifyScore for Score {
     }
 }
 
-#[cfg(feature = "engine")]
 impl Stringify for Score {
     fn stringify(&self) -> String {
-        if UCI_STATE.is_in_console_mode() {
+        if GLOBAL_UCI_STATE.is_in_console_mode() {
             self.stringify_score()
         } else {
             self.stringify_score_uci()
@@ -127,7 +126,6 @@ impl Stringify for Score {
 pub trait StringifyMove {
     fn uci(self) -> String;
     fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String, BoardError>;
-    #[cfg(feature = "engine")]
     fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError>;
 
     fn san(self, sub_board: &SubBoard) -> Result<String, BoardError>
@@ -154,7 +152,6 @@ impl StringifyMove for Move {
         Ok(self.algebraic_and_new_sub_board(sub_board, long)?.0)
     }
 
-    #[cfg(feature = "engine")]
     fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError> {
         Some(self).stringify_move(sub_board)
     }
@@ -175,10 +172,9 @@ impl StringifyMove for Option<Move> {
         }
     }
 
-    #[cfg(feature = "engine")]
     fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError> {
-        match UCI_STATE.is_in_console_mode() {
-            true => self.algebraic(sub_board, UCI_STATE.use_long_algebraic_notation()),
+        match GLOBAL_UCI_STATE.is_in_console_mode() {
+            true => self.algebraic(sub_board, GLOBAL_UCI_STATE.use_long_algebraic_notation()),
             false => Ok(self.uci()),
         }
     }
@@ -272,10 +268,9 @@ impl Stringify for Color {
     }
 }
 
-#[cfg(feature = "engine")]
 impl Stringify for Duration {
     fn stringify(&self) -> String {
-        if UCI_STATE.is_in_uci_mode() {
+        if GLOBAL_UCI_STATE.is_in_uci_mode() {
             return self.as_millis().to_string();
         }
         if self < &Duration::from_secs(1) {

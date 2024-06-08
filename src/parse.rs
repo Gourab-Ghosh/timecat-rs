@@ -44,7 +44,7 @@ struct Go;
 
 impl Go {
     fn perft(engine: &mut Engine, depth: Depth) -> usize {
-        if UCI_STATE.is_in_console_mode() {
+        if GLOBAL_UCI_STATE.is_in_console_mode() {
             println!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
@@ -105,7 +105,7 @@ impl Go {
     }
 
     fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<(), EngineError> {
-        if UCI_STATE.is_in_console_mode() {
+        if GLOBAL_UCI_STATE.is_in_console_mode() {
             println!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
@@ -122,7 +122,7 @@ impl Go {
             (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
         );
         let pv_string = get_pv_string(engine.get_board().get_sub_board(), response.get_pv());
-        if UCI_STATE.is_in_console_mode() {
+        if GLOBAL_UCI_STATE.is_in_console_mode() {
             println!();
         }
         println_info("Score", response.get_score().stringify());
@@ -130,7 +130,7 @@ impl Go {
         println_info("Position Count", position_count);
         println_info("Time", elapsed_time.stringify());
         println_info("Speed", nps);
-        if UCI_STATE.is_in_console_mode() {
+        if GLOBAL_UCI_STATE.is_in_console_mode() {
             println_info(
                 "Best Move",
                 best_move
@@ -211,7 +211,7 @@ impl Set {
             return Err(BadFen { fen });
         };
         engine.set_fen(&fen)?;
-        if UCI_STATE.is_in_console_mode() {
+        if GLOBAL_UCI_STATE.is_in_console_mode() {
             println!("{}", engine.get_board());
         }
         Ok(())
@@ -221,10 +221,10 @@ impl Set {
     fn color(commands: &[&str]) -> Result<(), EngineError> {
         let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
         let b = third_command.parse()?;
-        if UCI_STATE.is_colored_output() == b {
+        if GLOBAL_UCI_STATE.is_colored_output() == b {
             return Err(ColoredOutputUnchanged { b });
         }
-        UCI_STATE.set_colored_output(b, true);
+        GLOBAL_UCI_STATE.set_colored_output(b, true);
         Ok(())
     }
 
@@ -437,7 +437,7 @@ impl DebugMode {
         if commands.get(2).is_some() {
             return Err(UnknownCommand);
         }
-        UCI_STATE.set_debug_mode(Self::get_debug_mode(
+        GLOBAL_UCI_STATE.set_debug_mode(Self::get_debug_mode(
             &commands.get(1).ok_or(UnknownCommand)?.to_lowercase(),
         )?);
         Ok(())
@@ -477,7 +477,7 @@ impl Parser {
                 .set_fen(STARTING_POSITION_FEN)
                 .map_err(EngineError::from),
             "stop" => {
-                if UCI_STATE.is_in_console_mode() {
+                if GLOBAL_UCI_STATE.is_in_console_mode() {
                     Err(EngineNotRunning)
                 } else {
                     Ok(())
@@ -508,11 +508,11 @@ impl Parser {
 
     pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Result<(), EngineError> {
         let sanitized_input = Self::sanitize_string(raw_input);
-        if UCI_STATE.is_in_console_and_debug_mode() {
+        if GLOBAL_UCI_STATE.is_in_console_and_debug_mode() {
             println!();
         }
         if Self::EXIT_CODES.contains(&sanitized_input.as_str()) {
-            UCI_STATE.set_engine_termination(true);
+            GLOBAL_UCI_STATE.set_engine_termination(true);
             return Ok(());
         }
         let first_command = sanitized_input
@@ -524,7 +524,7 @@ impl Parser {
             if sanitized_input.split_whitespace().nth(1).is_some() {
                 return Err(UnknownCommand);
             }
-            UCI_STATE.set_to_uci_mode();
+            GLOBAL_UCI_STATE.set_to_uci_mode();
             UCIParser::parse_command(engine, &first_command)?;
             return Ok(());
         }
@@ -532,16 +532,16 @@ impl Parser {
             if sanitized_input.split_whitespace().nth(1).is_some() {
                 return Err(UnknownCommand);
             }
-            if UCI_STATE.is_in_console_mode() {
+            if GLOBAL_UCI_STATE.is_in_console_mode() {
                 return Err(ConsoleModeUnchanged);
             }
-            UCI_STATE.set_to_console_mode();
+            GLOBAL_UCI_STATE.set_to_console_mode();
             return Ok(());
         }
         let user_inputs = sanitized_input.split("&&").map(|s| s.trim()).collect_vec();
         let mut first_loop = true;
         for user_input in user_inputs {
-            if UCI_STATE.is_in_console_mode() {
+            if GLOBAL_UCI_STATE.is_in_console_mode() {
                 if !first_loop {
                     println!();
                     first_loop = false;
@@ -556,7 +556,7 @@ impl Parser {
 
     fn parse_error_and_print(error: EngineError, optional_raw_input: Option<&str>) {
         let mut error_message = error.stringify_with_optional_raw_input(optional_raw_input);
-        if UCI_STATE.is_in_uci_mode() {
+        if GLOBAL_UCI_STATE.is_in_uci_mode() {
             error_message = "info string ".to_string() + &error_message.to_lowercase();
         }
         println!("{}", error_message.colorize(ERROR_MESSAGE_STYLE));
@@ -564,10 +564,10 @@ impl Parser {
 
     fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) {
         if raw_input.is_empty() {
-            if UCI_STATE.is_in_console_mode() {
+            if GLOBAL_UCI_STATE.is_in_console_mode() {
                 println!("\n");
             }
-            UCI_STATE.set_engine_termination(true);
+            GLOBAL_UCI_STATE.set_engine_termination(true);
             return;
         }
         if raw_input.trim().is_empty() {
@@ -580,7 +580,7 @@ impl Parser {
     }
 
     fn print_exit_message() {
-        if UCI_STATE.is_in_console_mode() {
+        if GLOBAL_UCI_STATE.is_in_console_mode() {
             println!(
                 "{}",
                 "Program ended successfully!".colorize(SUCCESS_MESSAGE_STYLE)
@@ -591,11 +591,11 @@ impl Parser {
     pub fn main_loop(engine: &mut Engine) {
         thread::spawn(|| IO_READER.start_reader());
         loop {
-            if UCI_STATE.terminate_engine() {
+            if GLOBAL_UCI_STATE.terminate_engine() {
                 Self::print_exit_message();
                 break;
             }
-            let raw_input = if UCI_STATE.is_in_console_mode() {
+            let raw_input = if GLOBAL_UCI_STATE.is_in_console_mode() {
                 println!();
                 Self::get_input("Enter Command: ".colorize(INPUT_MESSAGE_STYLE))
             } else {
@@ -606,17 +606,17 @@ impl Parser {
     }
 
     pub fn uci_loop(engine: &mut Engine) {
-        UCI_STATE.set_to_uci_mode();
+        GLOBAL_UCI_STATE.set_to_uci_mode();
         Self::main_loop.run_and_print_time(engine);
     }
 
     pub fn parse_args_and_run_main_loop(args: &[&str]) {
         if args.contains(&"--uci") {
-            UCI_STATE.set_to_uci_mode();
+            GLOBAL_UCI_STATE.set_to_uci_mode();
         }
         #[cfg(feature = "colored_output")]
         if args.contains(&"--no-color") {
-            UCI_STATE.set_colored_output(false, false);
+            GLOBAL_UCI_STATE.set_colored_output(false, false);
         }
         if args.contains(&"--threads") {
             let num_threads = args
@@ -625,8 +625,8 @@ impl Parser {
                 .nth(1)
                 .unwrap_or(&"")
                 .parse()
-                .unwrap_or(EngineUCIState::default().get_num_threads());
-            UCI_STATE.set_num_threads(num_threads, false);
+                .unwrap_or(GlobalUCIState::default().get_num_threads());
+            GLOBAL_UCI_STATE.set_num_threads(num_threads, false);
         }
         if args.contains(&"--help") {
             println!("{}", Self::get_help_message());

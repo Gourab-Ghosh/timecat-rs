@@ -165,5 +165,4 @@ lazy_static! {
     pub static ref UCI_OPTIONS: UCIOptions = UCIOptions::default();
 }
 
-#[cfg(feature = "engine")]
-pub static UCI_STATE: EngineUCIState = EngineUCIState::new();
+pub static GLOBAL_UCI_STATE: GlobalUCIState = GlobalUCIState::new();
