@@ -22,6 +22,9 @@ Also several cargo features have been introduced to provide users with complete 
 ## NNUE Support
 Timecat currently utilizes the Stockfish NNUE for evaluation (only `HalfKP` supported). Plans are in place to transition to a custom-trained NNUE in the future.
 
+## Engine Strength
+Although it hasn't been thoroughly tested yet, but my chess engine is capable of defeating [chess.com's max bot](https://www.chess.com/play/computer/Komodo25), which has an Elo rating of 3200.
+
 ## Installation
 
 ### Installing as a Binary
