@@ -11,7 +11,6 @@ mod info_utils;
 mod io_utils;
 mod moves;
 mod piece;
-#[cfg(feature = "engine")]
 mod pv_utils;
 mod ranks;
 mod square;
@@ -32,7 +31,6 @@ pub use info_utils::*;
 pub use io_utils::*;
 pub use moves::*;
 pub use piece::*;
-#[cfg(feature = "engine")]
 pub use pv_utils::*;
 pub use ranks::*;
 pub use square::*;

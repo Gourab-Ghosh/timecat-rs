@@ -91,9 +91,9 @@ impl TranspositionTable {
         CacheTable::new(cache_table_size, TranspositionTableEntry::default())
     }
 
-    pub fn new() -> Self {
+    pub fn new(cache_table_size: CacheTableSize) -> Self {
         Self {
-            table: Self::generate_new_table(GLOBAL_UCI_STATE.get_t_table_size()),
+            table: Self::generate_new_table(cache_table_size),
         }
     }
 
@@ -212,6 +212,6 @@ impl TranspositionTable {
 
 impl Default for TranspositionTable {
     fn default() -> Self {
-        Self::new()
+        Self::new(GLOBAL_UCI_STATE.get_t_table_size())
     }
 }

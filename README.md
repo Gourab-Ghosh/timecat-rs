@@ -50,9 +50,9 @@ cargo add timecat --no-default-features
 ```
 
 ### Examples
-This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize the inbuilt engine to find optimal moves in Rust using the `timecat` library. Some features such as position evaluation (`nnue`) and engine computation (`engine`) are optional and can be enabled via cargo features.
+This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize the inbuilt engine to find optimal moves using the `timecat` library. Some features such as position evaluation (`nnue`) and engine computation (`engine`) are optional and can be enabled via cargo features.
 
-First, add the timecat crate to your project with the necessary features enabled (`nnue` feature is already included in the `engine` feature):
+First, add the timecat crate to your project with the necessary features enabled (`nnue` feature is already enabled within the `engine` feature):
 ```bash
 cargo add timecat --no-default-features --features engine
 ```
@@ -89,7 +89,7 @@ fn main() {
 }
 ```
 
-You can use UCI commands, although it's not recommended in production environments due to potential parsing delays and unpredictable outputs. The 'nnue' and 'engine' features are also required in this context.
+You can use UCI commands, although it's not recommended in production environments due to potential parsing delays and unpredictable outputs. The `nnue` and `engine` features are also required in this context.
 
 As previous, add the timecat crate to your project:
 ```bash
@@ -114,7 +114,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Display the current state of the chess board.
         "d",
         // Sets a new game position by applying the moves.
-        "position startpos e2e4 e7e5",
+        "position startpos moves e2e4 e7e5",
         // Instructs the engine to calculate the best move within 3000 milliseconds.
         "go movetime 3000",
     ];
@@ -149,7 +149,7 @@ The `selfplay` command works on the binary as well.
 - `nnue`: Adds support for NNUE (downloaded via `reqwest`).
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
 - `colored_output`: Displays all information in a visually appealing colored format for enhanced readability.
-- `speed`: Optimize the code to improve speed at the cost of increased memory usage and in extremely rare cases cause unpredictable behavior. Note that the gain in speed might be minimal compared to the additional memory required.
+- `speed`: Optimize the code to improve speed at the cost of increased memory usage and in extremely rare cases cause unexpected behavior. Note that the gain in speed might be minimal compared to the additional memory required.
 - `copy_large_structs`: Activates the Copy trait for large structs where implementation is still feasible. However, it is not recommended to use this feature; the Clone trait is the preferred approach.
 - `serde`: Enables serialization and deserialization support via `serde`.
 - `debug`: Intended solely for development use.
@@ -163,7 +163,7 @@ Default features include `binary`, `colored_output` and `speed`.
 - [ ] Organize the Polyglot Table codes to make it usable.
 - [ ] Organize the pgn related codes to make it usable.
 - [ ] Implement xboard feature.
-- [ ] Add svg feature for support like the python package chess for better visualization.
+- [ ] Add svg feature like the python package chess for better visualization.
 
 ## License
 Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](https://github.com/Gourab-Ghosh/timecat-rs/blob/master/LICENSE). You are free to use, modify, and distribute it under the same license.

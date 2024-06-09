@@ -124,13 +124,11 @@ impl GlobalUCIState {
         self.set_console_mode(true, false);
     }
 
-    #[cfg(feature = "engine")]
     #[inline(always)]
     pub fn get_t_table_size(&self) -> CacheTableSize {
         self._t_table_size.lock().unwrap().to_owned()
     }
 
-    #[cfg(feature = "engine")]
     pub fn set_t_table_size(&self, transposition_table: &TranspositionTable, size: CacheTableSize) {
         //TODO: modify such that T Table and evaluation function takes same amount of space
         *self._t_table_size.lock().unwrap() = size;
