@@ -210,7 +210,7 @@ pub mod engine {
     pub const FOLLOW_PV: bool = true;
     pub const PRINT_MOVE_INFO_DURATION_THRESHOLD: Duration = Duration::from_millis(1000);
 
-    pub const NUM_BEST_ROOT_MOVES_TO_SEARCH_FIRST: usize = 5;
+    pub const NUM_BEST_ROOT_MOVES_TO_SEARCH_FIRST: usize = 3;
 
     #[rustfmt::skip]
     pub const MVV_LVA: [[MoveWeight; 6]; 6] = [

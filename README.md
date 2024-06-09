@@ -20,7 +20,7 @@ In the library, only `pub` or non-`pub` visibility modifiers are used. This appr
 Also several cargo features have been introduced to provide users with complete control over the code's behavior.
 
 ## NNUE Support
-Timecat currently utilizes the Stockfish NNUE for evaluation. Plans are in place to transition to a custom-trained NNUE in the future.
+Timecat currently utilizes the Stockfish NNUE for evaluation (only `HalfKP` supported). Plans are in place to transition to a custom-trained NNUE in the future.
 
 ## Installation
 
