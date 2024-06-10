@@ -39,7 +39,7 @@ def main():
         run_package(os.path.dirname(__file__), args = binary_args)
 
     if "backup" in args:
-        pass
+        backup_code()
 
     if "publish" in args:
         publish_package()
