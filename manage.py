@@ -26,17 +26,28 @@ def main():
     if which("cargo") is None:
         print("Cargo not found. Please install Rust from https://www.rust-lang.org/tools/install")
         sys.exit(1)
-    
+
     args, binary_args = process_args()
-    
+
     if "check" in args:
-        errors_check()
+        feature_sets_check = [
+            set(),
+            {"default"},
+            {"nnue"},
+            {"nnue", "speed"},
+            {"binary"},
+            {"binary", "speed"},
+            {"binary", "serde"},
+            {"binary", "speed", "serde"},
+        ]
+        
+        errors_check(feature_sets_check)
 
     if "test" in args:
         test_package()
 
     if "run" in args:
-        run_package(os.path.dirname(__file__), args = binary_args)
+        run_package(os.path.dirname(__file__), args = args, binary_args = binary_args)
 
     if "backup" in args:
         backup_code()
