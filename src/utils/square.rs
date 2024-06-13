@@ -280,6 +280,12 @@ impl Square {
             A8 => A1, B8 => B1, C8 => C1, D8 => D1, E8 => E1, F8 => F1, G8 => G1, H8 => H1,
         }
     }
+
+    #[rustfmt::skip]
+    #[inline(always)]
+    pub const fn rotate(self) -> Self {
+        self.vertical_mirror().horizontal_mirror()
+    }
 }
 
 impl FromStr for Square {
