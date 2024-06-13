@@ -12,7 +12,7 @@ pub enum BoardStatus {
 #[cfg_attr(feature = "copy_large_structs", derive(Copy))]
 #[derive(Clone, Debug, Eq)]
 pub struct SubBoard {
-    _pieces: [BitBoard; NUM_PIECE_TYPES],
+    _piece_masks: [BitBoard; NUM_PIECE_TYPES],
     _occupied_co: [BitBoard; NUM_COLORS],
     _occupied: BitBoard,
     _turn: Color,
@@ -47,7 +47,7 @@ impl SubBoard {
         Option<Square>,
     ) {
         (
-            self._pieces,
+            self._piece_masks,
             self._occupied_co,
             self.turn(),
             self._castle_rights,
@@ -58,7 +58,7 @@ impl SubBoard {
     #[inline(always)]
     fn new_empty() -> Self {
         Self {
-            _pieces: [BB_EMPTY; NUM_PIECE_TYPES],
+            _piece_masks: [BB_EMPTY; NUM_PIECE_TYPES],
             _occupied_co: [BB_EMPTY; NUM_COLORS],
             _occupied: BB_EMPTY,
             _turn: White,
@@ -121,7 +121,7 @@ impl SubBoard {
 
     #[inline(always)]
     pub fn get_piece_mask(&self, piece: PieceType) -> BitBoard {
-        *get_item_unchecked!(self._pieces, piece.to_index())
+        *get_item_unchecked!(self._piece_masks, piece.to_index())
     }
 
     pub fn has_insufficient_material(&self, color: Color) -> bool {
@@ -223,7 +223,7 @@ impl SubBoard {
     }
 
     fn xor(&mut self, piece_type: PieceType, bb: BitBoard, color: Color) {
-        *get_item_unchecked_mut!(self._pieces, piece_type.to_index()) ^= bb;
+        *get_item_unchecked_mut!(self._piece_masks, piece_type.to_index()) ^= bb;
         let colored_piece_mask = get_item_unchecked_mut!(self._occupied_co, color.to_index());
         let colored_piece_mask_before = *colored_piece_mask;
         *colored_piece_mask ^= bb;
@@ -707,7 +707,7 @@ impl SubBoard {
 
     pub fn flip_vertical(&mut self) {
         // TODO: Change Transposition Key
-        self._pieces
+        self._piece_masks
             .iter_mut()
             .chain(self._occupied_co.iter_mut())
             .for_each(|bb| *bb = bb.flip_vertical());
@@ -827,6 +827,10 @@ impl SubBoard {
     pub fn evaluate_flipped(&self) -> Score {
         self.score_flipped(self.evaluate())
     }
+
+    // pub fn iter(&self) -> impl Iterator<Item = (Piece, Square)> {
+    //     ALL_PIECE_TYPES.iter().cartesian_product(ALL_COLORS).map(|(&piece_type, color)| Piece::new(piece_type, color))
+    // }
 }
 
 impl TryFrom<&SubBoardBuilder> for SubBoard {
