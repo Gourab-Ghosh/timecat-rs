@@ -136,7 +136,7 @@ pub use std::cmp::Ordering;
 pub use std::convert::From;
 pub use std::env;
 pub use std::error::Error;
-pub use std::fmt;
+pub use std::fmt::{self, Debug};
 pub use std::fs;
 pub use std::hash::{Hash, Hasher};
 pub use std::num::ParseIntError;
