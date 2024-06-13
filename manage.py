@@ -18,6 +18,17 @@ def process_args():
     return args, binary_args
 
 def main():
+    FEATURE_SETS_CHECK = [
+        set(),
+        {"default"},
+        {"nnue"},
+        {"nnue", "speed"},
+        {"binary"},
+        {"binary", "speed"},
+        {"binary", "serde"},
+        {"binary", "speed", "serde"},
+    ]
+    
     if sys.platform == "linux":
         home_dir = os.path.expanduser("~")
         possible_cargo_path = os.path.join(home_dir, ".cargo", "bin")
@@ -30,18 +41,7 @@ def main():
     args, binary_args = process_args()
 
     if "check" in args:
-        feature_sets_check = [
-            set(),
-            {"default"},
-            {"nnue"},
-            {"nnue", "speed"},
-            {"binary"},
-            {"binary", "speed"},
-            {"binary", "serde"},
-            {"binary", "speed", "serde"},
-        ]
-        
-        errors_check(feature_sets_check)
+        errors_check(FEATURE_SETS_CHECK)
 
     if "test" in args:
         test_package()
@@ -53,7 +53,9 @@ def main():
         backup_code()
 
     if "publish" in args:
-        publish_package()
+        has_errors = errors_check(FEATURE_SETS_CHECK)
+        if not has_errors:
+            publish_package()
 
 if __name__ == "__main__":
     main()
