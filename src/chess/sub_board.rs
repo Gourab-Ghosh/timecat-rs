@@ -828,9 +828,17 @@ impl SubBoard {
         self.score_flipped(self.evaluate())
     }
 
-    // pub fn iter(&self) -> impl Iterator<Item = (Piece, Square)> {
-    //     ALL_PIECE_TYPES.iter().cartesian_product(ALL_COLORS).map(|(&piece_type, color)| Piece::new(piece_type, color))
-    // }
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = (Piece, Square)> + 'a {
+        ALL_PIECE_TYPES
+            .iter()
+            .cartesian_product(ALL_COLORS)
+            .map(|(&piece_type, color)| {
+                (self.get_piece_mask(piece_type) & self.occupied())
+                    .into_iter()
+                    .map(move |square| (Piece::new(piece_type, color), square))
+            })
+            .flatten()
+    }
 }
 
 impl TryFrom<&SubBoardBuilder> for SubBoard {
