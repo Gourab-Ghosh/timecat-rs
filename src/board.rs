@@ -1203,6 +1203,10 @@ impl Board {
     pub fn perft(&mut self, depth: Depth) -> usize {
         self.perft_helper(depth, true)
     }
+
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = (Piece, Square)> + 'a {
+        self.sub_board.iter()
+    }
 }
 
 impl fmt::Display for Board {
