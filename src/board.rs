@@ -1203,10 +1203,6 @@ impl Board {
     pub fn perft(&mut self, depth: Depth) -> usize {
         self.perft_helper(depth, true)
     }
-
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = (Piece, Square)> + 'a {
-        self.sub_board.iter()
-    }
 }
 
 impl fmt::Display for Board {
@@ -1254,69 +1250,10 @@ impl From<&SubBoard> for Board {
     }
 }
 
-macro_rules! copy_from_sub_board {
-    ($($visibility:vis fn $function:ident(&self $(, $argument:ident: $argument_type:ty)* $(,)?) -> $return_type:ty),* $(,)?) => {
-        /// All the functions are copied from `SubBoard` struct.
-        impl Board {
-            $(
-                #[inline(always)]
-                $visibility fn $function(&self, $($argument: $argument_type),*) -> $return_type {
-                    self.sub_board.$function($($argument),*)
-                }
-            )*
-        }
-    };
+impl Deref for Board {
+    type Target = SubBoard;
+
+    fn deref(&self) -> &Self::Target {
+        &self.sub_board
+    }
 }
-
-copy_from_sub_board!(
-    pub fn generate_legal_moves(&self) -> MoveGenerator,
-    pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGenerator,
-    pub fn generate_legal_captures(&self) -> MoveGenerator,
-    pub fn get_hash(&self) -> u64,
-    pub fn get_pawn_hash(&self) -> u64,
-    pub fn get_material_score(&self) -> Score,
-    pub fn get_non_pawn_material_score_abs(&self) -> Score,
-    pub fn get_winning_side(&self) -> Option<Color>,
-    pub fn get_material_score_flipped(&self) -> Score,
-    pub fn get_material_score_abs(&self) -> Score,
-    pub fn is_legal(&self, move_: Move) -> bool,
-    pub fn score_flipped(&self, score: Score) -> Score,
-    pub fn get_masked_material_score_abs(&self, mask: BitBoard) -> Score,
-    pub fn get_fen(&self) -> String,
-    pub fn color_at(&self, square: Square) -> Option<Color>,
-    pub fn piece_type_at(&self, square: Square) -> Option<PieceType>,
-    pub fn piece_at(&self, square: Square) -> Option<Piece>,
-    pub fn get_checkers(&self) -> BitBoard,
-    pub fn get_king_square(&self, color: Color) -> Square,
-    pub fn turn(&self) -> Color,
-    pub fn occupied(&self) -> BitBoard,
-    pub fn occupied_co(&self, color: Color) -> BitBoard,
-    pub fn get_black_occupied(&self) -> BitBoard,
-    pub fn get_white_occupied(&self) -> BitBoard,
-    pub fn is_check(&self) -> bool,
-    pub fn is_checkmate(&self) -> bool,
-    pub fn status(&self) -> BoardStatus,
-    pub fn get_halfmove_clock(&self) -> u8,
-    pub fn get_fullmove_number(&self) -> NumMoves,
-    pub fn has_non_pawn_material(&self) -> bool,
-    pub fn get_non_king_pieces_mask(&self) -> BitBoard,
-    pub fn has_only_same_colored_bishop(&self) -> bool,
-    pub fn is_insufficient_material(&self) -> bool,
-    pub fn is_en_passant(&self, move_: Move) -> bool,
-    pub fn is_passed_pawn(&self, square: Square) -> bool,
-    pub fn is_capture(&self, move_: Move) -> bool,
-    pub fn is_zeroing(&self, move_: Move) -> bool,
-    pub fn get_piece_mask(&self, piece: PieceType) -> BitBoard,
-    pub fn ep_square(&self) -> Option<Square>,
-    pub fn is_castling(&self, move_: Move) -> bool,
-    pub fn get_num_pieces(&self) -> u32,
-    pub fn has_insufficient_material(&self, color: Color) -> bool,
-    pub fn gives_check(&self, move_: Move) -> bool,
-    pub fn gives_checkmate(&self, move_: Move) -> bool,
-);
-
-#[cfg(feature = "nnue")]
-copy_from_sub_board!(
-    pub fn evaluate(&self) -> Score,
-    pub fn evaluate_flipped(&self) -> Score,
-);

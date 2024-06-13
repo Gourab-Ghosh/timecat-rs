@@ -141,8 +141,9 @@ pub use std::fs;
 pub use std::hash::{Hash, Hasher};
 pub use std::num::ParseIntError;
 pub use std::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Index,
-    IndexMut, Mul, MulAssign, Not, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Deref,
+    DerefMut, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Not, Range, Rem, RemAssign,
+    Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 pub use std::str::{FromStr, ParseBoolError};
 pub use std::sync::atomic::{AtomicBool, AtomicUsize};

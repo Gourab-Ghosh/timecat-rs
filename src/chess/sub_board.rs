@@ -828,7 +828,11 @@ impl SubBoard {
         self.score_flipped(self.evaluate())
     }
 
-    pub fn custom_iter<'a>(&'a self, piece_types: &'a [PieceType], colors: &'a [Color]) -> impl Iterator<Item = (Piece, Square)> + 'a {
+    pub fn custom_iter<'a>(
+        &'a self,
+        piece_types: &'a [PieceType],
+        colors: &'a [Color],
+    ) -> impl Iterator<Item = (Piece, Square)> + 'a {
         piece_types
             .into_iter()
             .cartesian_product(colors)
