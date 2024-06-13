@@ -830,9 +830,9 @@ impl SubBoard {
 
     pub fn iter<'a>(&'a self) -> impl Iterator<Item = (Piece, Square)> + 'a {
         ALL_PIECE_TYPES
-            .iter()
+            .into_iter()
             .cartesian_product(ALL_COLORS)
-            .map(|(&piece_type, color)| {
+            .map(|(piece_type, color)| {
                 (self.get_piece_mask(piece_type) & self.occupied())
                     .into_iter()
                     .map(move |square| (Piece::new(piece_type, color), square))
