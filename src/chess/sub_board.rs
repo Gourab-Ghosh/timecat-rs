@@ -828,16 +828,20 @@ impl SubBoard {
         self.score_flipped(self.evaluate())
     }
 
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = (Piece, Square)> + 'a {
-        ALL_PIECE_TYPES
+    pub fn custom_iter<'a>(&'a self, piece_types: &'a [PieceType], colors: &'a [Color]) -> impl Iterator<Item = (Piece, Square)> + 'a {
+        piece_types
             .into_iter()
-            .cartesian_product(ALL_COLORS)
-            .map(|(piece_type, color)| {
+            .cartesian_product(colors)
+            .map(|(&piece_type, &color)| {
                 (self.get_piece_mask(piece_type) & self.occupied())
                     .into_iter()
                     .map(move |square| (Piece::new(piece_type, color), square))
             })
             .flatten()
+    }
+
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = (Piece, Square)> + 'a {
+        self.custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS)
     }
 }
 
