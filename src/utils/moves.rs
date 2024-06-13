@@ -9,7 +9,7 @@ pub struct Move {
 }
 
 impl Move {
-    #[inline(always)]
+    #[inline]
     pub const fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
         Self {
             source,
@@ -18,17 +18,17 @@ impl Move {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn get_source(&self) -> Square {
         self.source
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn get_dest(&self) -> Square {
         self.dest
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn get_promotion(&self) -> Option<PieceType> {
         self.promotion
     }

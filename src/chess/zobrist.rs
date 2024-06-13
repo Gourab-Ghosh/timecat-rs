@@ -6,7 +6,7 @@ include!("zobrist_gen.rs");
 
 impl Zobrist {
     /// Get the value for a particular piece
-    #[inline(always)]
+    #[inline]
     pub fn piece(piece: PieceType, square: Square, color: Color) -> u64 {
         unsafe {
             *ZOBRIST_PIECES
@@ -16,7 +16,7 @@ impl Zobrist {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn castles(castle_rights: CastleRights, color: Color) -> u64 {
         unsafe {
             *ZOBRIST_CASTLES
@@ -25,7 +25,7 @@ impl Zobrist {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn en_passant(file: File, color: Color) -> u64 {
         unsafe {
             *ZOBRIST_EP
@@ -34,7 +34,7 @@ impl Zobrist {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn color() -> u64 {
         TURN
     }

@@ -16,17 +16,17 @@ pub enum Square {
 }
 
 impl Square {
-    #[inline(always)]
+    #[inline]
     pub const fn to_int(self) -> u8 {
         self as u8
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_index(self) -> usize {
         self as usize
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn from_int(int: u8) -> Self {
         match int {
             0 => A1,
@@ -97,27 +97,27 @@ impl Square {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn from_index(index: usize) -> Self {
         Self::from_int(index as u8)
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Self {
         Self::from_int((rank.to_int() << 3) ^ file.to_int())
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_rank(self) -> Rank {
         Rank::from_index(self.to_index() >> 3)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_file(self) -> File {
         File::from_index(self.to_index() & 7)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn up(self) -> Option<Square> {
         Some(Square::from_rank_and_file(
             self.get_rank().up()?,
@@ -125,7 +125,7 @@ impl Square {
         ))
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn down(self) -> Option<Square> {
         Some(Square::from_rank_and_file(
             self.get_rank().down()?,
@@ -133,7 +133,7 @@ impl Square {
         ))
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn left(self) -> Option<Square> {
         Some(Square::from_rank_and_file(
             self.get_rank(),
@@ -141,7 +141,7 @@ impl Square {
         ))
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn right(self) -> Option<Square> {
         Some(Square::from_rank_and_file(
             self.get_rank(),
@@ -149,7 +149,7 @@ impl Square {
         ))
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn forward(self, color: Color) -> Option<Square> {
         match color {
             White => self.up(),
@@ -157,7 +157,7 @@ impl Square {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn backward(self, color: Color) -> Option<Square> {
         match color {
             White => self.down(),
@@ -165,27 +165,27 @@ impl Square {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_up(self) -> Square {
         Square::from_rank_and_file(self.get_rank().wrapping_up(), self.get_file())
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_down(self) -> Square {
         Square::from_rank_and_file(self.get_rank().wrapping_down(), self.get_file())
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_left(self) -> Square {
         Square::from_rank_and_file(self.get_rank(), self.get_file().wrapping_left())
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_right(self) -> Square {
         Square::from_rank_and_file(self.get_rank(), self.get_file().wrapping_right())
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_forward(self, color: Color) -> Square {
         match color {
             White => self.wrapping_up(),
@@ -193,7 +193,7 @@ impl Square {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_backward(self, color: Color) -> Square {
         match color {
             White => self.wrapping_down(),
@@ -201,7 +201,7 @@ impl Square {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn to_bitboard(self) -> BitBoard {
         *get_item_unchecked!(BB_SQUARES, self.to_index())
     }
@@ -252,7 +252,7 @@ impl Square {
     }
 
     #[rustfmt::skip]
-    #[inline(always)]
+    #[inline]
     pub const fn vertical_mirror(self) -> Self {
         match self {
             A1 => H1, B1 => G1, C1 => F1, D1 => E1, E1 => D1, F1 => C1, G1 => B1, H1 => A1,
@@ -267,7 +267,7 @@ impl Square {
     }
 
     #[rustfmt::skip]
-    #[inline(always)]
+    #[inline]
     pub const fn horizontal_mirror(self) -> Self {
         match self {
             A1 => A8, B1 => B8, C1 => C8, D1 => D8, E1 => E8, F1 => F8, G1 => G8, H1 => H8,
@@ -282,7 +282,7 @@ impl Square {
     }
 
     #[rustfmt::skip]
-    #[inline(always)]
+    #[inline]
     pub const fn rotate(self) -> Self {
         self.vertical_mirror().horizontal_mirror()
     }

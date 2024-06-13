@@ -346,7 +346,7 @@ impl Board {
     /// that has a method called `to_board_string`. The `to_board_string` method is being called with
     /// the argument `true`, and its return value is being returned by the `to_unicode_string` method.
     /// Therefore, the return value of the `to_unicode_string` method is a `String
-    #[inline(always)]
+    #[inline]
     pub fn to_unicode_string(&self) -> String {
         self.to_board_string(true)
     }
@@ -377,7 +377,7 @@ impl Board {
     ///
     /// The `get_num_moves` function is returning the number of elements in the `stack` as a `NumMoves`
     /// type.
-    #[inline(always)]
+    #[inline]
     pub fn get_num_moves(&self) -> NumMoves {
         self.stack.len() as NumMoves
     }
@@ -388,7 +388,7 @@ impl Board {
     ///
     /// The `get_num_repetitions` function is returning a `u8` value, which represents the number of
     /// repetitions for a given hash in the repetition table.
-    #[inline(always)]
+    #[inline]
     pub fn get_num_repetitions(&self) -> u8 {
         self.repetition_table.get_repetition(self.get_hash())
     }
@@ -405,7 +405,7 @@ impl Board {
     /// Returns:
     ///
     /// A boolean value is being returned.
-    #[inline(always)]
+    #[inline]
     pub fn is_repetition(&self, n_times: usize) -> bool {
         self.get_num_repetitions() as usize >= n_times
     }
@@ -425,7 +425,7 @@ impl Board {
     /// of the expression
     /// `self.repetition_table.get_repetition(self.sub_board.make_move_new(move_).get_hash())` is not equal
     /// to 0.
-    #[inline(always)]
+    #[inline]
     pub fn gives_repetition(&self, move_: Move) -> bool {
         self.repetition_table
             .get_repetition(self.sub_board.make_move_new(move_).get_hash())
@@ -445,7 +445,7 @@ impl Board {
     /// The function `gives_threefold_repetition` is returning a boolean value, indicating whether the
     /// given move results in a threefold repetition in the game. It checks if the move leads to a
     /// position that has been repeated twice before in the game.
-    #[inline(always)]
+    #[inline]
     pub fn gives_threefold_repetition(&self, move_: Move) -> bool {
         self.repetition_table
             .get_repetition(self.sub_board.make_move_new(move_).get_hash())
@@ -501,7 +501,7 @@ impl Board {
     /// function with the argument 3. The `is_repetition` function checks if the current board position
     /// has been repeated a certain number of times (in this case, 3 times). The
     /// `is_threefold_repetition` function then returns the result of this check as a boolean value
-    #[inline(always)]
+    #[inline]
     pub fn is_threefold_repetition(&self) -> bool {
         self.is_repetition(3)
     }
@@ -518,7 +518,7 @@ impl Board {
     /// Returns:
     ///
     /// A boolean value is being returned.
-    #[inline(always)]
+    #[inline]
     fn is_halfmoves(&self, n: u8) -> bool {
         self.get_halfmove_clock() >= n
     }
@@ -530,7 +530,7 @@ impl Board {
     ///
     /// The `is_fifty_moves` function is returning a boolean value indicating whether the number of
     /// halfmoves is equal to 100.
-    #[inline(always)]
+    #[inline]
     pub fn is_fifty_moves(&self) -> bool {
         self.is_halfmoves(100)
     }
@@ -540,7 +540,7 @@ impl Board {
     /// Returns:
     ///
     /// A boolean value indicating whether the current board status is a stalemate.
-    #[inline(always)]
+    #[inline]
     pub fn is_stalemate(&self) -> bool {
         self.status() == BoardStatus::Stalemate
     }
@@ -553,7 +553,7 @@ impl Board {
     /// The `is_other_draw` function is returning a boolean value. It returns `true` if any of the
     /// conditions `self.is_fifty_moves()`, `self.is_threefold_repetition()`, or
     /// `self.is_insufficient_material()` are true. Otherwise, it returns `false`.
-    #[inline(always)]
+    #[inline]
     pub fn is_other_draw(&self) -> bool {
         self.is_fifty_moves() || self.is_threefold_repetition() || self.is_insufficient_material()
     }
@@ -564,7 +564,7 @@ impl Board {
     ///
     /// The `is_draw` function is returning a boolean value. It returns `true` if either
     /// `is_other_draw()` or `is_stalemate()` methods return `true`, otherwise it returns `false`.
-    #[inline(always)]
+    #[inline]
     pub fn is_draw(&self) -> bool {
         self.is_other_draw() || self.is_stalemate()
     }
@@ -577,7 +577,7 @@ impl Board {
     /// A boolean value is being returned. The method `is_game_over` returns `true` if either
     /// `is_other_draw()` method returns `true` or the `status()` method does not return
     /// `BoardStatus::Ongoing`. Otherwise, it returns `false`.
-    #[inline(always)]
+    #[inline]
     pub fn is_game_over(&self) -> bool {
         self.is_other_draw() || self.status() != BoardStatus::Ongoing
     }
@@ -608,7 +608,7 @@ impl Board {
     /// The function `is_quiet` is returning a boolean value, which is determined by the logical NOT
     /// operation applied to the result of the expression `(self.is_capture(move_) ||
     /// self.gives_check(move_))`.
-    #[inline(always)]
+    #[inline]
     pub fn is_quiet(&self, move_: Move) -> bool {
         !(self.is_capture(move_) || self.gives_check(move_))
     }
@@ -621,7 +621,7 @@ impl Board {
     /// The `has_legal_en_passant` function is returning a boolean value. It returns `true` if the
     /// `ep_square` is not `None`, indicating that there is a legal en passant move available.
     /// Otherwise, it returns `false`.
-    #[inline(always)]
+    #[inline]
     pub fn has_legal_en_passant(&self) -> bool {
         self.ep_square().is_some()
     }
@@ -699,7 +699,7 @@ impl Board {
     /// Returns:
     ///
     /// A boolean value is being returned.
-    #[inline(always)]
+    #[inline]
     pub fn is_irreversible(&self, move_: Move) -> bool {
         self.has_legal_en_passant() || self.is_zeroing(move_) || self.reduces_castling_rights(move_)
     }
@@ -713,7 +713,7 @@ impl Board {
     /// pieces on the board is less than or equal to a threshold defined by `ENDGAME_PIECE_THRESHOLD`,
     /// it returns `true`. Otherwise, it checks the number of Queens on the board and applies different
     /// conditions based on the count of Queens to determine if the game is in the endgame phase.
-    #[inline(always)]
+    #[inline]
     pub fn is_endgame(&self) -> bool {
         if self.get_num_pieces() <= ENDGAME_PIECE_THRESHOLD {
             return true;
@@ -778,7 +778,7 @@ impl Board {
     /// Returns:
     ///
     /// A vector of references to `Option<Move>` values is being returned.
-    #[inline(always)]
+    #[inline]
     pub fn get_all_moves(&self) -> Vec<&Option<Move>> {
         self.stack.iter().map(|(_, m)| m).collect_vec()
     }
@@ -789,7 +789,7 @@ impl Board {
     ///
     /// The `get_last_move` function returns an `Option` that contains either `Some(Move)` if there is a
     /// last move available in the stack, or `None` if the stack is empty.
-    #[inline(always)]
+    #[inline]
     pub fn get_last_move(&self) -> Option<Option<Move>> {
         self.stack.last().map(|(_, m)| *m)
     }
@@ -802,7 +802,7 @@ impl Board {
     /// there is any `None` value present in the `m` field of the tuples in the `stack` vector. If any
     /// `None` value is found, it returns `true`, indicating that a null move is present in the stack;
     /// otherwise, it returns `false`.
-    #[inline(always)]
+    #[inline]
     pub fn contains_null_move(&self) -> bool {
         self.stack.iter().any(|(_, m)| m.is_none())
     }
@@ -813,7 +813,7 @@ impl Board {
     ///
     /// The `get_ply` function is returning the length of the `stack` vector, which represents the
     /// number of elements currently stored in the stack.
-    #[inline(always)]
+    #[inline]
     pub fn get_ply(&self) -> usize {
         self.stack.len()
     }
@@ -823,7 +823,7 @@ impl Board {
     /// Returns:
     ///
     /// A boolean value indicating whether the stack is empty or not.
-    #[inline(always)]
+    #[inline]
     pub fn has_empty_stack(&self) -> bool {
         self.stack.is_empty()
     }
@@ -873,7 +873,7 @@ impl Board {
     ///
     /// The `parse_uci` function returns a `Result` containing either `None` if the input `uci` is
     /// "0000", or `Some(Move)` if the input `uci` can be successfully parsed into a `Move` object.
-    #[inline(always)]
+    #[inline]
     pub fn parse_uci(&self, uci: &str) -> Result<Option<Move>, EngineError> {
         if uci == "0000" {
             return Ok(None);
@@ -895,7 +895,7 @@ impl Board {
     /// The `parse_move` function returns a `Result` containing either `Some(Move)` if the move text can
     /// be parsed successfully, or `None` if the move text cannot be parsed. If an error occurs during
     /// parsing, an `EngineError` is returned.
-    #[inline(always)]
+    #[inline]
     pub fn parse_move(&self, move_text: &str) -> Result<Option<Move>, EngineError> {
         self.parse_uci(move_text).or(self.parse_san(move_text))
     }
@@ -931,7 +931,7 @@ impl Board {
     ///
     /// The `push_sans` function is returning a `Result` containing a `Vec` of `Option<Move>` or an
     /// `EngineError`.
-    #[inline(always)]
+    #[inline]
     pub fn push_sans(&mut self, sans: &str) -> Result<Vec<Option<Move>>, EngineError> {
         remove_double_spaces_and_trim(sans)
             .split(' ')
@@ -961,7 +961,7 @@ impl Board {
     /// Arguments:
     ///
     /// * `s`: The parameter `s` in the `push_str` function is a reference to a string slice (`&str`).
-    #[inline(always)]
+    #[inline]
     pub fn push_str(&mut self, s: &str) {
         self.push_uci(s).unwrap();
     }
@@ -978,7 +978,7 @@ impl Board {
     ///
     /// The `push_uci_moves` function returns a `Result` containing a `Vec` of `Option<Move>` or an
     /// `EngineError`.
-    #[inline(always)]
+    #[inline]
     pub fn push_uci_moves(&mut self, uci_moves: &str) -> Result<Vec<Option<Move>>, EngineError> {
         remove_double_spaces_and_trim(uci_moves)
             .split(' ')
@@ -1042,7 +1042,7 @@ impl Board {
     /// Returns:
     ///
     /// The `san_and_push` function is returning a `Result<String, BoardError>`.
-    #[inline(always)]
+    #[inline]
     pub fn san_and_push(
         &mut self,
         optional_move: impl Into<Option<Move>>,
@@ -1062,7 +1062,7 @@ impl Board {
     /// Returns:
     ///
     /// The `lan_and_push` function returns a `Result<String, BoardError>`.
-    #[inline(always)]
+    #[inline]
     pub fn lan_and_push(
         &mut self,
         optional_move: impl Into<Option<Move>>,
@@ -1199,7 +1199,7 @@ impl Board {
     ///
     /// The `perft` function is returning the result of calling the `perft_helper` function with the
     /// specified depth and a boolean value of `true`.
-    #[inline(always)]
+    #[inline]
     pub fn perft(&mut self, depth: Depth) -> usize {
         self.perft_helper(depth, true)
     }

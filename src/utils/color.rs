@@ -9,12 +9,12 @@ pub enum Color {
 }
 
 impl Color {
-    #[inline(always)]
+    #[inline]
     pub const fn to_index(self) -> usize {
         self as usize
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_my_backrank(self) -> Rank {
         match self {
             White => Rank::First,
@@ -22,7 +22,7 @@ impl Color {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_their_backrank(self) -> Rank {
         match self {
             White => Rank::Eighth,
@@ -30,7 +30,7 @@ impl Color {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_second_rank(self) -> Rank {
         match self {
             White => Rank::Second,
@@ -38,7 +38,7 @@ impl Color {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_third_rank(self) -> Rank {
         match self {
             White => Rank::Third,
@@ -46,7 +46,7 @@ impl Color {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_fourth_rank(self) -> Rank {
         match self {
             White => Rank::Fourth,
@@ -54,7 +54,7 @@ impl Color {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_seventh_rank(self) -> Rank {
         match self {
             White => Rank::Seventh,
@@ -66,7 +66,7 @@ impl Color {
 impl Not for Color {
     type Output = Self;
 
-    #[inline(always)]
+    #[inline]
     fn not(self) -> Self {
         match self {
             White => Black,

@@ -121,12 +121,12 @@ impl PieceMoves for PawnMoves {
         Pawn
     }
 
-    #[inline(always)]
+    #[inline]
     fn pseudo_legals(src: Square, color: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
         get_pawn_moves(src, color, occupied) & mask
     }
 
-    #[inline(always)]
+    #[inline]
     fn legals<T>(move_list: &mut MoveList, board: &SubBoard, mask: BitBoard)
     where
         T: CheckMoves,
@@ -208,7 +208,7 @@ impl PieceMoves for BishopMoves {
         Bishop
     }
 
-    #[inline(always)]
+    #[inline]
     fn pseudo_legals(src: Square, _color: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
         get_bishop_moves(src, occupied) & mask
     }
@@ -223,12 +223,12 @@ impl PieceMoves for KnightMoves {
         Knight
     }
 
-    #[inline(always)]
+    #[inline]
     fn pseudo_legals(src: Square, _color: Color, _occupied: BitBoard, mask: BitBoard) -> BitBoard {
         get_knight_moves(src) & mask
     }
 
-    #[inline(always)]
+    #[inline]
     fn legals<T>(move_list: &mut MoveList, board: &SubBoard, mask: BitBoard)
     where
         T: CheckMoves,
@@ -284,7 +284,7 @@ impl PieceMoves for RookMoves {
         Rook
     }
 
-    #[inline(always)]
+    #[inline]
     fn pseudo_legals(src: Square, _color: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
         get_rook_moves(src, occupied) & mask
     }
@@ -299,14 +299,14 @@ impl PieceMoves for QueenMoves {
         Queen
     }
 
-    #[inline(always)]
+    #[inline]
     fn pseudo_legals(src: Square, _color: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
         (get_rook_moves(src, occupied) ^ get_bishop_moves(src, occupied)) & mask
     }
 }
 
 impl KingMoves {
-    #[inline(always)]
+    #[inline]
     fn legal_king_move(board: &SubBoard, dest: Square) -> bool {
         let occupied = board.occupied()
             ^ (board.get_piece_mask(King) & board.occupied_co(board.turn()))
@@ -349,12 +349,12 @@ impl PieceMoves for KingMoves {
         King
     }
 
-    #[inline(always)]
+    #[inline]
     fn pseudo_legals(src: Square, _color: Color, _occupied: BitBoard, mask: BitBoard) -> BitBoard {
         get_king_moves(src) & mask
     }
 
-    #[inline(always)]
+    #[inline]
     fn legals<T>(move_list: &mut MoveList, board: &SubBoard, mask: BitBoard)
     where
         T: CheckMoves,
@@ -445,7 +445,7 @@ pub struct MoveGenerator {
 }
 
 impl MoveGenerator {
-    #[inline(always)]
+    #[inline]
     fn enumerate_moves(board: &SubBoard) -> MoveList {
         let checkers = board.get_checkers();
         let mask = !board.occupied_co(board.turn());
@@ -472,7 +472,7 @@ impl MoveGenerator {
         move_list
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn new_legal(board: &SubBoard) -> MoveGenerator {
         MoveGenerator {
             square_and_bitboard_array: MoveGenerator::enumerate_moves(board),

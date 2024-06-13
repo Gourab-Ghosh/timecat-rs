@@ -13,17 +13,17 @@ pub enum PieceType {
 }
 
 impl PieceType {
-    #[inline(always)]
+    #[inline]
     pub const fn to_int(self) -> u8 {
         self as u8
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_index(self) -> usize {
         self as usize
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn to_string(self, color: Color) -> String {
         match color {
             White => format!("{self}").to_uppercase(),
@@ -31,7 +31,7 @@ impl PieceType {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn evaluate(self) -> i16 {
         // never reset knight and bishop values as some logic depends on the current values in knight bishop endgame
         match self {
@@ -70,22 +70,22 @@ pub struct Piece {
 }
 
 impl Piece {
-    #[inline(always)]
+    #[inline]
     pub const fn new(type_: PieceType, color: Color) -> Self {
         Self { type_, color }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn get_piece_type(self) -> PieceType {
         self.type_
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn get_color(self) -> Color {
         self.color
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn evaluate(self) -> Score {
         if self.get_color() == White {
             self.get_piece_type().evaluate()

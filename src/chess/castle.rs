@@ -35,18 +35,18 @@ const CASTLES_PER_SQUARE: [[usize; 64]; 2] = [
 
 impl CastleRights {
     /// Can I castle kingside?
-    #[inline(always)]
+    #[inline]
     pub const fn has_kingside(self) -> bool {
         self.to_index() & 1 == 1
     }
 
     /// Can I castle queenside?
-    #[inline(always)]
+    #[inline]
     pub const fn has_queenside(self) -> bool {
         self.to_index() & 2 == 2
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn square_to_castle_rights(color: Color, square: Square) -> Self {
         Self::from_index(*get_item_unchecked!(
             CASTLES_PER_SQUARE,
@@ -56,31 +56,31 @@ impl CastleRights {
     }
 
     /// What squares need to be empty to castle kingside?
-    #[inline(always)]
+    #[inline]
     pub fn kingside_squares(self, color: Color) -> BitBoard {
         *get_item_unchecked!(KINGSIDE_CASTLE_SQUARES, color.to_index())
     }
 
     /// What squares need to be empty to castle queenside?
-    #[inline(always)]
+    #[inline]
     pub fn queenside_squares(self, color: Color) -> BitBoard {
         *get_item_unchecked!(QUEENSIDE_CASTLE_SQUARES, color.to_index())
     }
 
     /// Remove castle rights, and return a new `CastleRights`.
-    #[inline(always)]
+    #[inline]
     pub const fn remove(self, remove: Self) -> Self {
         Self::from_index(self.to_index() & !remove.to_index())
     }
 
     /// Convert `CastleRights` to `usize` for table lookups
-    #[inline(always)]
+    #[inline]
     pub const fn to_index(self) -> usize {
         self as usize
     }
 
     /// Convert `usize` to `CastleRights`.  Panic if invalid number.
-    #[inline(always)]
+    #[inline]
     pub const fn from_index(i: usize) -> Self {
         match i {
             0 => Self::None,
@@ -92,7 +92,7 @@ impl CastleRights {
     }
 
     /// Which rooks can we "guarantee" we haven't moved yet?
-    #[inline(always)]
+    #[inline]
     pub fn unmoved_rooks(self, color: Color) -> BitBoard {
         match self {
             Self::None => BB_EMPTY,
@@ -122,7 +122,7 @@ impl CastleRights {
 
     /// Given a square of a rook, which side is it on?
     /// Note: It is invalid to pass in a non-rook square.  The code may panic.
-    #[inline(always)]
+    #[inline]
     pub fn rook_square_to_castle_rights(square: Square) -> Self {
         match square.get_file() {
             File::A => Self::QueenSide,
@@ -136,14 +136,14 @@ impl Add for CastleRights {
     type Output = Self;
 
     #[allow(clippy::suspicious_arithmetic_impl)]
-    #[inline(always)]
+    #[inline]
     fn add(self, rhs: Self) -> Self::Output {
         Self::from_index(self.to_index() | rhs.to_index())
     }
 }
 
 impl AddAssign for CastleRights {
-    #[inline(always)]
+    #[inline]
     fn add_assign(&mut self, rhs: Self) {
         *self = *self + rhs;
     }
@@ -152,14 +152,14 @@ impl AddAssign for CastleRights {
 impl Sub for CastleRights {
     type Output = Self;
 
-    #[inline(always)]
+    #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
         self.remove(rhs)
     }
 }
 
 impl SubAssign for CastleRights {
-    #[inline(always)]
+    #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         *self = *self - rhs;
     }

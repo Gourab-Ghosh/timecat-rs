@@ -61,24 +61,24 @@ impl GlobalUCIState {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn terminate_engine(&self) -> bool {
         self._terminate_engine.load(MEMORY_ORDERING)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn set_engine_termination(&self, b: bool) {
         self._terminate_engine.store(b, MEMORY_ORDERING);
     }
 
     #[cfg(feature = "colored_output")]
-    #[inline(always)]
+    #[inline]
     pub fn is_colored_output(&self) -> bool {
         self._colored_output.load(MEMORY_ORDERING)
     }
 
     #[cfg(not(feature = "colored_output"))]
-    #[inline(always)]
+    #[inline]
     pub fn is_colored_output(&self) -> bool {
         false
     }
@@ -91,12 +91,12 @@ impl GlobalUCIState {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_in_console_mode(&self) -> bool {
         self._console_mode.load(MEMORY_ORDERING)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_in_uci_mode(&self) -> bool {
         !self.is_in_console_mode()
     }
@@ -109,22 +109,22 @@ impl GlobalUCIState {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn set_uci_mode(&self, b: bool, print: bool) {
         self.set_console_mode(!b, print);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn set_to_uci_mode(&self) {
         self.set_uci_mode(true, false);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn set_to_console_mode(&self) {
         self.set_console_mode(true, false);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_t_table_size(&self) -> CacheTableSize {
         self._t_table_size.lock().unwrap().to_owned()
     }
@@ -142,7 +142,7 @@ impl GlobalUCIState {
         );
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn use_long_algebraic_notation(&self) -> bool {
         self._long_algebraic_notation.load(MEMORY_ORDERING)
     }
@@ -152,7 +152,7 @@ impl GlobalUCIState {
         print_info("Long algebraic notation is set to", b);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_num_threads(&self) -> usize {
         self._num_threads.load(MEMORY_ORDERING)
     }
@@ -164,7 +164,7 @@ impl GlobalUCIState {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_move_overhead(&self) -> Duration {
         self._move_overhead.lock().unwrap().to_owned()
     }
@@ -174,7 +174,7 @@ impl GlobalUCIState {
         print_info("Move Overhead is set to", duration.stringify());
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn use_own_book(&self) -> bool {
         self._use_own_book.load(MEMORY_ORDERING)
     }
@@ -184,7 +184,7 @@ impl GlobalUCIState {
         print_info("Own Book Usage is set to", b);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_in_debug_mode(&self) -> bool {
         self._debug_mode.load(MEMORY_ORDERING)
     }
@@ -194,12 +194,12 @@ impl GlobalUCIState {
         print_info("Debug Mode is set to", b);
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_in_console_and_debug_mode(&self) -> bool {
         self.is_in_console_mode() && self.is_in_debug_mode()
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_in_chess960_mode(&self) -> bool {
         self._chess960_mode.load(MEMORY_ORDERING)
     }

@@ -15,7 +15,7 @@ pub enum File {
 }
 
 impl File {
-    #[inline(always)]
+    #[inline]
     pub const fn from_index(i: usize) -> Self {
         match i {
             0 => Self::A,
@@ -30,7 +30,7 @@ impl File {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn left(self) -> Option<Self> {
         match self {
             Self::A => None,
@@ -44,7 +44,7 @@ impl File {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn right(self) -> Option<Self> {
         match self {
             Self::A => Some(Self::B),
@@ -58,22 +58,22 @@ impl File {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_left(self) -> Self {
         self.left().unwrap_or(Self::H)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_right(self) -> Self {
         self.right().unwrap_or(Self::A)
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_index(self) -> usize {
         self as usize
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_int(self) -> u8 {
         self as u8
     }

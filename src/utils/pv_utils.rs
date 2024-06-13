@@ -47,17 +47,17 @@ pub fn get_pv_as_algebraic(sub_board: &SubBoard, pv: &[Option<Move>], long: bool
     return pv_string.trim().to_string();
 }
 
-#[inline(always)]
+#[inline]
 pub fn get_pv_as_san(sub_board: &SubBoard, pv: &[Option<Move>]) -> String {
     get_pv_as_algebraic(sub_board, pv, false)
 }
 
-#[inline(always)]
+#[inline]
 pub fn get_pv_as_lan(sub_board: &SubBoard, pv: &[Option<Move>]) -> String {
     get_pv_as_algebraic(sub_board, pv, true)
 }
 
-#[inline(always)]
+#[inline]
 pub fn get_pv_string(sub_board: &SubBoard, pv: &[Option<Move>]) -> String {
     if GLOBAL_UCI_STATE.is_in_console_mode() {
         get_pv_as_algebraic(

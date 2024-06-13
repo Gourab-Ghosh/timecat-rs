@@ -54,7 +54,7 @@ impl SearchInfo {
         self.clock.elapsed()
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn format_info<T: fmt::Display>(desc: &str, info: T) -> String {
         format!(
             "{} {info}",
@@ -136,7 +136,7 @@ impl PVTable {
         self.set_length(ply, *get_item_unchecked!(self.length, ply + 1));
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn set_length(&mut self, ply: Ply, length: usize) {
         *get_item_unchecked_mut!(self.length, ply) = length;
     }
@@ -195,7 +195,7 @@ impl Searcher {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_main_threaded(&self) -> bool {
         self.id == 0
     }

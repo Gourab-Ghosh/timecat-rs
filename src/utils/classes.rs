@@ -25,17 +25,17 @@ impl RepetitionTable {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     const fn get_index(&self, key: u64) -> usize {
         (key as usize) & self.mask
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_repetition(&self, key: u64) -> u8 {
         *get_item_unchecked!(self.count_map, self.get_index(key))
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn insert(&mut self, key: u64) {
         *get_item_unchecked_mut!(self.count_map, self.get_index(key)) += 1;
     }
@@ -58,7 +58,7 @@ impl RepetitionTable {
         *entry -= 1;
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn clear(&mut self) {
         self.count_map.iter_mut().for_each(|entry| *entry = 0);
     }
@@ -77,12 +77,12 @@ impl RepetitionTable {
         Self::default()
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn get_repetition(&self, key: u64) -> u8 {
         self.count_map.get(&key).copied().unwrap_or_default()
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn insert(&mut self, key: u64) {
         *self.count_map.entry(key).or_insert(0) += 1;
     }
@@ -107,7 +107,7 @@ impl RepetitionTable {
         *count_entry -= 1;
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn clear(&mut self) {
         self.count_map.clear();
     }

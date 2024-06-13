@@ -1,6 +1,6 @@
 use super::*;
 
-#[inline(always)]
+#[inline]
 pub fn remove_double_spaces_and_trim(s: &str) -> String {
     s.trim()
         .chars()
@@ -8,7 +8,7 @@ pub fn remove_double_spaces_and_trim(s: &str) -> String {
         .join("")
 }
 
-#[inline(always)]
+#[inline]
 pub fn simplify_fen(fen: &str) -> String {
     remove_double_spaces_and_trim(fen)
 }
@@ -59,7 +59,7 @@ pub trait CustomColorize {
 
 #[cfg(not(feature = "colored_output"))]
 impl<T: ToString> CustomColorize for T {
-    #[inline(always)]
+    #[inline]
     fn colorize(&self, _: &[fn(String) -> String]) -> String {
         self.to_string()
     }

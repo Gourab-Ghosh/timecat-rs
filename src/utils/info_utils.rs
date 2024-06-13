@@ -21,14 +21,14 @@ pub fn force_println_info<T: fmt::Display>(desc: &str, info: T) {
     println!("{}", format_info(desc, info, true));
 }
 
-#[inline(always)]
+#[inline]
 pub fn println_info<T: fmt::Display>(desc: &str, info: T) {
     if GLOBAL_UCI_STATE.is_in_debug_mode() {
         force_println_info(desc, info);
     }
 }
 
-#[inline(always)]
+#[inline]
 pub fn get_engine_version() -> String {
     format!("{ENGINE_NAME} v{ENGINE_VERSION}")
 }

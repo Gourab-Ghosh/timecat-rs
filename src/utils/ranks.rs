@@ -15,7 +15,7 @@ pub enum Rank {
 }
 
 impl Rank {
-    #[inline(always)]
+    #[inline]
     pub const fn from_index(i: usize) -> Self {
         match i {
             0 => Self::First,
@@ -30,7 +30,7 @@ impl Rank {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn up(self) -> Option<Self> {
         match self {
             Self::First => Some(Self::Second),
@@ -44,7 +44,7 @@ impl Rank {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn down(self) -> Option<Self> {
         match self {
             Self::First => None,
@@ -58,22 +58,22 @@ impl Rank {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_up(self) -> Self {
         self.up().unwrap_or(Self::First)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn wrapping_down(self) -> Self {
         self.down().unwrap_or(Self::Eighth)
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_index(self) -> usize {
         self as usize
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn to_int(self) -> u8 {
         self as u8
     }

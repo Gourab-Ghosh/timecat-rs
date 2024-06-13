@@ -61,22 +61,22 @@ pub struct SpinValue<T: Clone + Copy + IntoSpin> {
 }
 
 impl<T: Clone + Copy + IntoSpin> SpinValue<T> {
-    #[inline(always)]
+    #[inline]
     pub const fn new(default: T, min: T, max: T) -> Self {
         Self { default, min, max }
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn get_default(self) -> T {
         self.default
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn get_min(self) -> T {
         self.min
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn get_max(self) -> T {
         self.max
     }
