@@ -1,7 +1,7 @@
 [package]
 name = "timecat"
 authors = ["Gourab Ghosh"]
-version = "1.11.0"
+version = "1.12.0"
 edition = "2021"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
@@ -41,7 +41,6 @@ panic = "abort"
 [dependencies]
 arrayvec = "0"
 binread = { version = "2", features = ["const_generics"], optional = true }
-bytemuck = { version = "1.14.3", features = ["min_const_generics", "derive", "extern_crate_alloc"], optional = true }
 colored = { version = "2", optional = true }
 itertools = "0"
 lazy_static = "1"
@@ -56,7 +55,7 @@ sha256 = { version = "1", optional = true }
 # default = []
 default = ["binary", "colored_output", "speed"]
 binary = ["nnue", "engine"]
-nnue = ["dep:reqwest", "dep:sha256", "dep:binread", "dep:bytemuck"]
+nnue = ["dep:reqwest", "dep:sha256", "dep:binread"]
 engine = ["nnue"]
 colored_output = ["colored"]
 speed = []
