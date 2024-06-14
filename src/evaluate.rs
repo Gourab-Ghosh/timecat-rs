@@ -1,5 +1,15 @@
 use super::*;
 
+lazy_static! {
+    pub static ref HALFKP_MODEL_READER: HalfKPModelReader = {
+        let mut reader = std::io::Cursor::new(include_bytes!(concat!(
+            env!("OUT_DIR"),
+            "/nnue_dir/nn.nnue"
+        )));
+        HalfKPModelReader::read(&mut reader).expect("Bad NNUE file!")
+    };
+}
+
 #[derive(Debug)]
 pub struct Evaluator {
     model: HalfKPModel,
@@ -16,14 +26,8 @@ impl Evaluator {
     }
 
     pub fn new() -> Self {
-        let mut reader = std::io::Cursor::new(include_bytes!(concat!(
-            env!("OUT_DIR"),
-            "/nnue_dir/nn.nnue"
-        )));
         Self {
-            model: HalfKPModelReader::read(&mut reader)
-                .expect("Bad NNUE file!")
-                .to_default_model(),
+            model: HALFKP_MODEL_READER.clone().to_default_model(),
             score_cache: CacheTable::new(EVALUATOR_SIZE, 0),
         }
     }

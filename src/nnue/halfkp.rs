@@ -142,7 +142,7 @@ impl BinRead for Architecture {
     }
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, Clone, BinRead)]
 pub struct HalfKPModelReader {
     #[br(args(VERSION))]
     version: Architecture,
@@ -267,7 +267,7 @@ impl HalfKPModel {
         ];
         self.update_empty_model(sub_board)
     }
-    
+
     pub fn update_king(&mut self, turn: Color, square: Square, sub_board: &SubBoard) {
         self.accumulator.king_squares_rotated[turn.to_index()] = if turn == White {
             square
@@ -328,8 +328,8 @@ impl HalfKPModel {
                 king_squares_rotated: [
                     sub_board.get_king_square(White),
                     sub_board.get_king_square(Black).rotate(),
-                ]
-            }
+                ],
+            },
         };
         model.update_empty_model(sub_board);
         model.evaluate(sub_board.turn())
