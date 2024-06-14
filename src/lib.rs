@@ -14,6 +14,7 @@ pub mod syzygy;
 pub mod timer;
 pub mod useful_macros;
 pub mod utils;
+pub mod nnue;
 
 #[cfg(feature = "engine")]
 pub mod engine;
@@ -61,15 +62,11 @@ pub use tests::test;
 #[cfg(feature = "nnue")]
 pub mod evaluate;
 
-#[cfg(feature = "nnue")]
-pub mod nnue;
 
 #[cfg(feature = "nnue")]
 pub mod nnue_features {
     use super::*;
-    pub use binread::{BinRead, BinResult};
     pub use evaluate::*;
-    pub use nnue::*;
 }
 
 #[cfg(feature = "nnue")]
@@ -126,9 +123,11 @@ pub use constants::nnue::*;
 pub use constants::piece::*;
 pub use constants::print_style::*;
 pub use constants::ranks::*;
+pub use binread::{BinRead, BinResult};
 pub use constants::types::*;
 pub use error::*;
 pub use itertools::*;
+pub use nnue::*;
 pub use lazy_static::lazy_static;
 pub use paste::paste;
 pub use std::cmp::Ordering;
