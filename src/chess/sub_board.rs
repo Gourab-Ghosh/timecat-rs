@@ -838,7 +838,7 @@ impl SubBoard {
             .into_iter()
             .cartesian_product(colors)
             .map(|(&piece_type, &color)| {
-                (self.get_piece_mask(piece_type) & self.occupied())
+                (self.get_piece_mask(piece_type) & self.occupied_co(color))
                     .into_iter()
                     .map(move |square| (Piece::new(piece_type, color), square))
             })
