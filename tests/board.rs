@@ -250,19 +250,19 @@ macro_rules! board_material_check_command {
     ($command: expr; $board: expr; $white_material_score: expr; $black_material_score: expr) => {
         $command;
         assert_eq!(
-            $board.get_sub_board().get_white_material_score(),
+            $board.get_white_material_score(),
             $white_material_score,
             "Expected {} found {} for White. Failed after running the command:\n{}",
             $white_material_score,
-            $board.get_sub_board().get_white_material_score(),
+            $board.get_white_material_score(),
             stringify!($command)
         );
         assert_eq!(
-            $board.get_sub_board().get_black_material_score(),
+            $board.get_black_material_score(),
             $black_material_score,
             "Expected {} found {} for Black. Failed after running the command:\n{}",
             $black_material_score,
-            $board.get_sub_board().get_black_material_score(),
+            $board.get_black_material_score(),
             stringify!($command)
         );
     };

@@ -222,7 +222,7 @@ impl Searcher {
             "{} {} {} {} {} {} {} {} {} {} {}",
             "info".colorize(INFO_MESSAGE_STYLE),
             "curr move".colorize(INFO_MESSAGE_STYLE),
-            curr_move.stringify_move(board.get_sub_board()).unwrap(),
+            curr_move.stringify_move(board).unwrap(),
             "depth".colorize(INFO_MESSAGE_STYLE),
             depth,
             "score".colorize(INFO_MESSAGE_STYLE),
@@ -257,7 +257,7 @@ impl Searcher {
                     .read_best_move(self.board.get_hash()),
                 self.get_best_move(),
                 Evaluator::is_easily_winning_position(
-                    self.board.get_sub_board(),
+                    &self.board,
                     self.board.get_material_score(),
                 ),
             )
@@ -501,7 +501,7 @@ impl Searcher {
             best_move,
             self.get_nth_pv_move(self.ply),
             Evaluator::is_easily_winning_position(
-                self.board.get_sub_board(),
+                &self.board,
                 self.board.get_material_score(),
             ),
         );

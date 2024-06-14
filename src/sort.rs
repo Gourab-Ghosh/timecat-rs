@@ -181,7 +181,7 @@ impl MoveSorter {
         if Some(move_) == best_move {
             return 10000;
         }
-        Self::see_capture(move_.get_dest(), board.get_sub_board()) as MoveWeight
+        Self::see_capture(move_.get_dest(), board) as MoveWeight
         // Self::mvv_lva(move_, board)
     }
 
@@ -263,7 +263,7 @@ impl MoveSorter {
                 .abs_diff(source.get_rank().to_index());
             return 122000000 - promotion_distance as MoveWeight;
         }
-        let move_made_sub_board = board.get_sub_board().make_move_new(move_);
+        let move_made_sub_board = board.make_move_new(move_);
         // check
         let checkers = move_made_sub_board.get_checkers();
         let moving_piece = board.piece_type_at(source).unwrap();
