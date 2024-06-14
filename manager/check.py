@@ -10,8 +10,9 @@ def generate_command(feature_set, quiet):
         commands += ["--features", ",".join(features)]
     return " ".join(commands)
 
-def errors_check(feature_sets_check, verbose = True) -> bool:
-    print("Updating Packages...")
+def check_errors(feature_sets_check, verbose = True) -> bool:
+    if verbose:
+        print("Updating Packages...")
     if os.system("cargo update --quiet"):
         sys.exit(1)
     try:
@@ -22,6 +23,8 @@ def errors_check(feature_sets_check, verbose = True) -> bool:
                     print(f"Feature Set {feature_set} has errors!")
                     print(f"Command: {generate_command(feature_set, False)}")
                 return True
-        return False
+        if verbose:
+            print("Checking with all features!")
+        return os.system("cargo check --all-features --quiet")
     finally:
         del os.environ["NNUE_DOWNLOAD"]

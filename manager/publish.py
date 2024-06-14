@@ -1,5 +1,5 @@
 import os
-from .check import errors_check
+from .check import check_errors
 
 def publish_package():
     os.system("cargo publish")

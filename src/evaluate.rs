@@ -1,7 +1,7 @@
 use super::*;
 
 lazy_static! {
-    pub static ref HALFKP_MODEL_READER: HalfKPModelReader = {
+    static ref HALFKP_MODEL_READER: HalfKPModelReader = {
         let mut reader = std::io::Cursor::new(include_bytes!(concat!(
             env!("OUT_DIR"),
             "/nnue_dir/nn.nnue"

@@ -41,7 +41,7 @@ def main():
     args, binary_args = process_args()
 
     if "check" in args:
-        errors_check(FEATURE_SETS_CHECK)
+        check_errors(FEATURE_SETS_CHECK)
 
     if "test" in args:
         test_package()
@@ -53,7 +53,7 @@ def main():
         backup_code()
 
     if "publish" in args:
-        if not errors_check(FEATURE_SETS_CHECK):
+        if not check_errors(FEATURE_SETS_CHECK):
             if not test_package():
                 backup_code()
                 publish_package()

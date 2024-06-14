@@ -1055,7 +1055,7 @@ impl SubBoard {
     #[cfg(feature = "nnue")]
     #[inline]
     pub fn slow_evaluate(&self) -> Score {
-        HALFKP_MODEL_READER.to_model(self).evaluate(self.turn())
+        Evaluator::slow_evaluate(self)
     }
 
     #[cfg(feature = "nnue")]

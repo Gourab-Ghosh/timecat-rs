@@ -450,22 +450,22 @@ impl Board {
         };
         self.repetition_table.insert(self.get_hash());
         self.stack.push((sub_board_copy, optional_move));
-        #[cfg(feature = "nnue")]
-        {
-            self.evaluator_stack.push(self.evaluator.clone());
-            // let updated = self.stack.last().unwrap().0.occupied() ^ self.occupied();
-            // for (piece, square) in
-            //     self.sub_board
-            //         .custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS, updated)
-            // {
-            //     if self.occupied().contains(square) {
-            //         self.evaluator.activate_nnue(&self.sub_board, piece, square);
-            //     } else {
-            //         self.evaluator
-            //             .deactivate_nnue(&self.sub_board, piece, square);
-            //     }
-            // }
-        }
+        // #[cfg(feature = "nnue")]
+        // {
+        //     self.evaluator_stack.push(self.evaluator.clone());
+        //     let updated = self.stack.last().unwrap().0.occupied() ^ self.occupied();
+        //     for (piece, square) in
+        //         self.sub_board
+        //             .custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS, updated)
+        //     {
+        //         if self.occupied().contains(square) {
+        //             self.evaluator.activate_nnue(&self.sub_board, piece, square);
+        //         } else {
+        //             self.evaluator
+        //                 .deactivate_nnue(&self.sub_board, piece, square);
+        //         }
+        //     }
+        // }
     }
 
     #[cfg(feature = "nnue")]
@@ -473,7 +473,7 @@ impl Board {
         let (sub_board, optional_move) = self.stack.pop().unwrap();
         self.repetition_table.remove(self.get_hash());
         self.sub_board = sub_board;
-        self.evaluator = self.evaluator_stack.pop().unwrap();
+        // self.evaluator = self.evaluator_stack.pop().unwrap();
         optional_move
     }
 
