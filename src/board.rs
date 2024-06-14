@@ -759,7 +759,6 @@ impl Board {
         self.evaluator_stack.push(self.evaluator.clone());
     }
 
-    
     #[cfg(feature = "nnue")]
     pub fn pop(&mut self) -> Option<Move> {
         let (sub_board, optional_move) = self.stack.pop().unwrap();

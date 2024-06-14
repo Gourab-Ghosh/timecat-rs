@@ -6,39 +6,33 @@
 pub mod board;
 pub mod chess;
 pub mod constants;
-pub mod error;
-#[cfg(feature = "experimental")]
-pub mod polyglot;
-#[cfg(feature = "experimental")]
-pub mod syzygy;
-pub mod timer;
-pub mod useful_macros;
-pub mod utils;
-pub mod nnue;
-
 #[cfg(feature = "engine")]
 pub mod engine;
-
-pub mod tt;
-
+pub mod error;
+#[cfg(feature = "nnue")]
+pub mod evaluate;
+pub mod nnue;
 #[cfg(feature = "engine")]
 pub mod parse;
-
-#[cfg(feature = "engine")]
-pub mod uci;
-
+#[cfg(feature = "experimental")]
+pub mod polyglot;
 #[cfg(feature = "engine")]
 pub mod search;
-
 #[cfg(feature = "engine")]
 pub mod selfplay;
-
 #[cfg(feature = "engine")]
 pub mod sort;
-
+#[cfg(feature = "experimental")]
+pub mod syzygy;
 #[cfg(feature = "engine")]
 #[cfg(feature = "debug")]
 pub mod tests;
+pub mod timer;
+pub mod tt;
+#[cfg(feature = "engine")]
+pub mod uci;
+pub mod useful_macros;
+pub mod utils;
 
 #[cfg(feature = "engine")]
 pub mod engine_features {
@@ -52,28 +46,11 @@ pub mod engine_features {
     pub use uci::*;
 }
 
-#[cfg(feature = "engine")]
-pub use engine_features::*;
-
-#[cfg(feature = "engine")]
-#[cfg(feature = "debug")]
-pub use tests::test;
-
 #[cfg(feature = "nnue")]
-pub mod evaluate;
-
-
-#[cfg(feature = "nnue")]
-pub mod nnue_features {
+mod nnue_features {
     use super::*;
     pub use evaluate::*;
 }
-
-#[cfg(feature = "nnue")]
-pub use nnue_features::*;
-
-#[cfg(feature = "serde")]
-pub use serde::{Serialize, Deserialize};
 
 pub mod prelude {
     use super::*;
@@ -107,6 +84,7 @@ pub mod prelude {
 }
 
 pub use arrayvec::ArrayVec;
+pub use binread::{BinRead, BinResult};
 pub use board::*;
 pub use chess::*;
 pub use constants::atomic::*;
@@ -121,13 +99,18 @@ pub use constants::nnue::*;
 pub use constants::piece::*;
 pub use constants::print_style::*;
 pub use constants::ranks::*;
-pub use binread::{BinRead, BinResult};
 pub use constants::types::*;
+#[cfg(feature = "engine")]
+pub use engine_features::*;
 pub use error::*;
 pub use itertools::*;
-pub use nnue::*;
 pub use lazy_static::lazy_static;
+pub use nnue::*;
+#[cfg(feature = "nnue")]
+pub use nnue_features::*;
 pub use paste::paste;
+#[cfg(feature = "serde")]
+pub use serde::{Deserialize, Serialize};
 pub use std::cmp::Ordering;
 pub use std::convert::From;
 pub use std::env;
@@ -148,6 +131,9 @@ pub use std::sync::atomic::{AtomicBool, AtomicUsize};
 pub use std::sync::{Arc, Mutex};
 pub use std::thread;
 pub use std::time::{Duration, Instant};
+#[cfg(feature = "engine")]
+#[cfg(feature = "debug")]
+pub use tests::test;
 pub use timer::Timer;
 pub use tt::*;
 pub use utils::*;

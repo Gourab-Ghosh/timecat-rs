@@ -256,10 +256,7 @@ impl Searcher {
                 self.transposition_table
                     .read_best_move(self.board.get_hash()),
                 self.get_best_move(),
-                Evaluator::is_easily_winning_position(
-                    &self.board,
-                    self.board.get_material_score(),
-                ),
+                Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
             )
             .map(|WeightedMove { move_, .. }| {
                 (
@@ -500,10 +497,7 @@ impl Searcher {
             self.ply,
             best_move,
             self.get_nth_pv_move(self.ply),
-            Evaluator::is_easily_winning_position(
-                &self.board,
-                self.board.get_material_score(),
-            ),
+            Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
         );
         #[allow(clippy::single_match)]
         match weighted_moves.len() {
