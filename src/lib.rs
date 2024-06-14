@@ -65,12 +65,11 @@ pub mod evaluate;
 pub mod nnue;
 
 #[cfg(feature = "nnue")]
-pub mod nnue_rs;
-
-#[cfg(feature = "nnue")]
 pub mod nnue_features {
     use super::*;
+    pub use binread::{BinRead, BinResult};
     pub use evaluate::*;
+    pub use nnue::*;
 }
 
 #[cfg(feature = "nnue")]
@@ -139,6 +138,8 @@ pub use std::error::Error;
 pub use std::fmt::{self, Debug};
 pub use std::fs;
 pub use std::hash::{Hash, Hasher};
+use std::io::{Read, Seek};
+pub use std::iter::Sum;
 pub use std::num::ParseIntError;
 pub use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Deref,

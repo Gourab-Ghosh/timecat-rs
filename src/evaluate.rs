@@ -1,9 +1,8 @@
 use super::*;
-use nnue::StockfishNetwork;
 
 #[derive(Debug)]
 pub struct Evaluator {
-    stockfish_network: StockfishNetwork,
+    model: HalfKPModel,
     score_cache: CacheTable<Score>,
 }
 
@@ -17,20 +16,26 @@ impl Evaluator {
     }
 
     pub fn new() -> Self {
+        let mut reader = std::io::Cursor::new(include_bytes!(concat!(
+            env!("OUT_DIR"),
+            "/nnue_dir/nn.nnue"
+        )));
         Self {
-            stockfish_network: StockfishNetwork::new(),
+            model: HalfKPModelReader::read(&mut reader)
+                .expect("Bad NNUE file!")
+                .to_default_model(),
             score_cache: CacheTable::new(EVALUATOR_SIZE, 0),
         }
     }
 
     #[allow(unused_variables)]
     pub fn activate_nnue(&mut self, piece: PieceType, color: Color, square: Square) {
-        // self.stockfish_network.activate();
+        // self.model.activate();
     }
 
     #[allow(unused_variables)]
     pub fn deactivate_nnue(&mut self, piece: PieceType, color: Color, square: Square) {
-        // self.stockfish_network.activate();
+        // self.model.activate();
     }
 
     fn force_opponent_king_to_corner(
@@ -167,7 +172,7 @@ impl Evaluator {
         if Self::is_easily_winning_position(sub_board, material_score) {
             return self.king_corner_forcing_evaluation(sub_board, material_score);
         }
-        let mut nnue_eval = self.stockfish_network.eval(sub_board);
+        let mut nnue_eval = self.model.evaluate_from_sub_board(sub_board);
         if nnue_eval.abs() > WINNING_SCORE_THRESHOLD {
             let multiplier = match_interpolate!(
                 0,
