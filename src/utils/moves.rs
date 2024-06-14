@@ -18,6 +18,36 @@ impl Move {
         }
     }
 
+    pub fn from_san(sub_board: &SubBoard, san: &str) -> Result<Option<Move>, EngineError> {
+        // TODO: Make the logic better
+        let san = san.trim().replace('0', "O");
+        if san == "--" {
+            return Ok(None);
+        }
+        let san = san.replace('0', "O");
+        for move_ in sub_board.generate_legal_moves() {
+            if move_.san(&sub_board).unwrap() == san {
+                return Ok(Some(move_));
+            }
+        }
+        Err(EngineError::InvalidSanMoveString { s: san.to_string() })
+    }
+
+    pub fn from_lan(sub_board: &SubBoard, lan: &str) -> Result<Option<Move>, EngineError> {
+        // TODO: Make the logic better
+        let lan = lan.trim().replace('0', "O");
+        if lan == "--" {
+            return Ok(None);
+        }
+        let lan = lan.replace('0', "O");
+        for move_ in sub_board.generate_legal_moves() {
+            if move_.lan(&sub_board).unwrap() == lan {
+                return Ok(Some(move_));
+            }
+        }
+        Err(EngineError::InvalidLanMoveString { s: lan.to_string() })
+    }
+
     #[inline]
     pub const fn get_source(&self) -> Square {
         self.source

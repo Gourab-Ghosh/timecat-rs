@@ -44,6 +44,12 @@ pub enum EngineError {
     InvalidSanMoveString {
         s: String,
     },
+    InvalidLanMoveString {
+        s: String,
+    },
+    InvalidMoveString {
+        s: String,
+    },
     InvalidRankString {
         s: String,
     },
@@ -88,6 +94,8 @@ impl fmt::Display for EngineError {
             UnknownDebugCommand { command } => write!(f, "Debug command {command} is unknown! The possible commands are on or off! Please try again!"),
             InvalidSpinValue {name, value, min, max} => write!(f, "Cannot set value of {name} to {value}, the value must be from {min} to {max}! Please try again!"),
             InvalidSanMoveString { s } => write!(f, "Got invalid SAN move string {s}! Please try again!"),
+            InvalidLanMoveString { s } => write!(f, "Got invalid LAN move string {s}! Please try again!"),
+            InvalidMoveString { s } => write!(f, "Got invalid move string {s}! Please try again!"),
             InvalidRankString { s } => write!(f, "Got invalid rank string {s}! Please try again!"),
             InvalidFileString { s } => write!(f, "Got invalid file string {s}! Please try again!"),
             InvalidSquareString { s } => write!(f, "Got invalid square string {s}! Please try again!"),

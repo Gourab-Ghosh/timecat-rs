@@ -240,7 +240,11 @@ impl HalfKPModel {
     #[inline]
     pub fn update_empty_model_with_color(&mut self, sub_board: &SubBoard, turn: Color) {
         sub_board
-            .custom_iter(&[Pawn, Knight, Bishop, Rook, Queen], &[White, Black])
+            .custom_iter(
+                &[Pawn, Knight, Bishop, Rook, Queen],
+                &[White, Black],
+                BB_ALL,
+            )
             .for_each(|(piece, square)| self.activate_non_king_piece(turn, piece, square))
     }
 
@@ -256,7 +260,7 @@ impl HalfKPModel {
         self.accumulator
             .accumulators
             .iter_mut()
-            .for_each(|x| *x = self.transformer.get_biases().clone());
+            .for_each(|x| x.clone_from(self.transformer.get_biases()));
     }
 
     pub fn reset_model(&mut self, sub_board: &SubBoard) {
@@ -268,15 +272,15 @@ impl HalfKPModel {
         self.update_empty_model(sub_board)
     }
 
-    pub fn update_king(&mut self, turn: Color, square: Square, sub_board: &SubBoard) {
-        self.accumulator.king_squares_rotated[turn.to_index()] = if turn == White {
-            square
-        } else {
-            square.rotate()
-        };
-        self.clear();
-        self.update_empty_model(sub_board);
-    }
+    // pub fn update_king(&mut self, turn: Color, square: Square, sub_board: &SubBoard) {
+    //     self.accumulator.king_squares_rotated[turn.to_index()] = if turn == White {
+    //         square
+    //     } else {
+    //         square.rotate()
+    //     };
+    //     self.clear();
+    //     self.update_empty_model(sub_board);
+    // }
 
     pub fn evaluate(&self, turn: Color) -> Score {
         let mut inputs: [i8; 512] = [0; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS * 2];

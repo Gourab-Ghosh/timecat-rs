@@ -174,6 +174,22 @@ impl SubBoard {
         *get_item_unchecked!(self._castle_rights, color.to_index())
     }
 
+    pub fn clean_castling_rights(&self) -> BitBoard {
+        let white_castling_rights = match self.castle_rights(White) {
+            CastleRights::Both => BB_A1 ^ BB_H1,
+            CastleRights::KingSide => BB_H1,
+            CastleRights::QueenSide => BB_A1,
+            CastleRights::None => BB_EMPTY,
+        };
+        let black_castling_rights = match self.castle_rights(Black) {
+            CastleRights::Both => BB_A8 ^ BB_H8,
+            CastleRights::KingSide => BB_H8,
+            CastleRights::QueenSide => BB_A8,
+            CastleRights::None => BB_EMPTY,
+        };
+        white_castling_rights ^ black_castling_rights
+    }
+
     #[inline]
     fn add_castle_rights(&mut self, color: Color, add: CastleRights) {
         *get_item_unchecked_mut!(self._castle_rights, color.to_index()) =
@@ -711,11 +727,32 @@ impl SubBoard {
             .chain(self._occupied_co.iter_mut())
             .for_each(|bb| *bb = bb.flip_vertical());
         self._occupied = self._occupied.flip_vertical();
-        self._turn = !self._turn;
         self._castle_rights = [CastleRights::None; NUM_COLORS];
         self.update_pin_and_checkers_info();
         // self._transposition_key = self._transposition_key;
         self._ep_square = self._ep_square.map(|square| square.horizontal_mirror());
+    }
+
+    pub fn flip_horizontal(&mut self) {
+        // TODO: Change Transposition Key
+        self._piece_masks
+            .iter_mut()
+            .chain(self._occupied_co.iter_mut())
+            .for_each(|bb| *bb = bb.flip_horizontal());
+        self._occupied = self._occupied.flip_horizontal();
+        self._castle_rights = [CastleRights::None; NUM_COLORS];
+        self.update_pin_and_checkers_info();
+        // self._transposition_key = self._transposition_key;
+        self._ep_square = self._ep_square.map(|square| square.vertical_mirror());
+    }
+
+    pub fn flip_turn(&mut self) {
+        self._turn = !self._turn;
+    }
+
+    pub fn flip_vertical_and_flip_turn(&mut self) {
+        self.flip_vertical();
+        self.flip_turn();
     }
 
     fn update_pin_and_checkers_info(&mut self) {
@@ -765,6 +802,206 @@ impl SubBoard {
     #[inline]
     pub fn is_checkmate(&self) -> bool {
         self.status() == BoardStatus::Checkmate
+    }
+
+    pub fn piece_symbol_at(&self, square: Square) -> String {
+        match self.piece_at(square) {
+            Some(piece) => piece.to_string(),
+            None => EMPTY_SPACE_SYMBOL.to_string(),
+        }
+    }
+
+    pub fn piece_unicode_symbol_at(&self, square: Square, flip_color: bool) -> String {
+        if let Some(piece) = self.piece_at(square) {
+            let piece_index = piece.get_piece_type().to_index();
+            let (white_pieces, black_pieces) = match flip_color {
+                true => (BLACK_PIECE_UNICODE_SYMBOLS, WHITE_PIECE_UNICODE_SYMBOLS),
+                false => (WHITE_PIECE_UNICODE_SYMBOLS, BLACK_PIECE_UNICODE_SYMBOLS),
+            };
+            return match piece.get_color() {
+                White => get_item_unchecked!(white_pieces, piece_index),
+                Black => get_item_unchecked!(black_pieces, piece_index),
+            }
+            .to_string();
+        }
+        EMPTY_SPACE_UNICODE_SYMBOL.to_string()
+    }
+
+    pub fn to_board_string(&self, last_move: Option<Move>, use_unicode: bool) -> String {
+        let mut skeleton = get_board_skeleton();
+        let checkers = self.get_checkers();
+        let king_square = self.get_king_square(self.turn());
+        for square in SQUARES_HORIZONTAL_MIRROR {
+            let symbol = if use_unicode {
+                self.piece_unicode_symbol_at(square, false)
+            } else {
+                self.piece_symbol_at(square)
+            };
+            let mut styles = vec![];
+            if symbol != " " {
+                styles.extend_from_slice(match self.color_at(square).unwrap() {
+                    White => WHITE_PIECES_STYLE,
+                    Black => BLACK_PIECES_STYLE,
+                });
+                if square == king_square && !checkers.is_empty() {
+                    styles.extend_from_slice(CHECK_STYLE);
+                }
+            }
+            if last_move.is_some()
+                && [
+                    last_move.unwrap().get_source(),
+                    last_move.unwrap().get_dest(),
+                ]
+                .contains(&square)
+            {
+                styles.extend_from_slice(LAST_MOVE_HIGHLIGHT_STYLE);
+            }
+            styles.dedup();
+            skeleton = skeleton.replacen('O', &symbol.colorize(&styles), 1);
+        }
+        skeleton.push('\n');
+        skeleton.push_str(
+            &[
+                String::new(),
+                format_info("Fen", self.get_fen(), true),
+                format_info("Transposition Key", self.get_hash().stringify(), true),
+                format_info(
+                    "Checkers",
+                    checkers.stringify().colorize(CHECKERS_STYLE),
+                    true,
+                ),
+            ]
+            .join("\n"),
+        );
+        #[cfg(feature = "nnue")]
+        skeleton.push_str(&format!(
+            "\n{}",
+            format_info("Current Evaluation", self.slow_evaluate().stringify(), true)
+        ));
+        skeleton
+    }
+
+    #[inline]
+    pub fn to_unicode_string(&self, last_move: Option<Move>) -> String {
+        self.to_board_string(last_move, true)
+    }
+
+    #[inline]
+    fn is_halfmoves(&self, n: u8) -> bool {
+        self.get_halfmove_clock() >= n
+    }
+
+    #[inline]
+    pub fn is_fifty_moves(&self) -> bool {
+        self.is_halfmoves(100)
+    }
+
+    #[inline]
+    pub fn is_stalemate(&self) -> bool {
+        self.status() == BoardStatus::Stalemate
+    }
+
+    pub fn is_double_pawn_push(&self, move_: Move) -> bool {
+        let source = move_.get_source();
+        let dest = move_.get_dest();
+        source.get_rank() == self.turn().to_second_rank()
+            && source
+                .get_rank()
+                .to_int()
+                .abs_diff(dest.get_rank().to_int())
+                == 2
+            && !self.get_piece_mask(Pawn).contains(source)
+    }
+
+    #[inline]
+    pub fn is_quiet(&self, move_: Move) -> bool {
+        !(self.is_capture(move_) || self.gives_check(move_))
+    }
+
+    #[inline]
+    pub fn has_legal_en_passant(&self) -> bool {
+        self.ep_square().is_some()
+    }
+
+    // fn reduces_castling_rights(&self, move_: Move) -> bool {
+    //     let cr = self.clean_castling_rights();
+    //     let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
+    //     let touched_cr = touched & cr;
+    //     let kings = self.get_piece_mask(King);
+    //     let touched_kings_cr = touched_cr & kings;
+    //     !touched_cr.is_empty()
+    //         || !(BB_RANK_1 & touched_kings_cr & self.occupied_co(White)).is_empty()
+    //         || !(BB_RANK_8 & touched_kings_cr & self.occupied_co(Black)).is_empty()
+    // }
+
+    pub fn reduces_castling_rights(&self, move_: Move) -> bool {
+        // TODO: Check Logic
+        let cr = self.clean_castling_rights();
+        let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
+        let touched_cr = touched & cr;
+        let touched_kings_cr_is_empty = (touched_cr & self.get_piece_mask(King)).is_empty();
+        !(touched_cr.is_empty()
+            && touched_kings_cr_is_empty
+            && BB_RANK_1.is_empty()
+            && self.occupied_co(White).is_empty()
+            && BB_RANK_8.is_empty()
+            && self.occupied_co(Black).is_empty())
+    }
+
+    #[inline]
+    pub fn is_irreversible(&self, move_: Move) -> bool {
+        self.has_legal_en_passant() || self.is_zeroing(move_) || self.reduces_castling_rights(move_)
+    }
+
+    #[inline]
+    pub fn is_endgame(&self) -> bool {
+        if self.get_num_pieces() <= ENDGAME_PIECE_THRESHOLD {
+            return true;
+        }
+        match self.get_piece_mask(Queen).popcnt() {
+            0 => {
+                (self.get_piece_mask(Rook)
+                    ^ self.get_piece_mask(Bishop)
+                    ^ self.get_piece_mask(Knight))
+                .popcnt()
+                    <= 4
+            }
+            1 => {
+                self.get_piece_mask(Rook).popcnt() <= 2
+                    && (self.get_piece_mask(Bishop) ^ self.get_piece_mask(Knight)).is_empty()
+            }
+            2 => (self.get_piece_mask(Rook)
+                ^ self.get_piece_mask(Bishop)
+                ^ self.get_piece_mask(Knight))
+            .is_empty(),
+            _ => false,
+        }
+    }
+
+    pub fn parse_san(&self, san: &str) -> Result<Option<Move>, EngineError> {
+        Move::from_san(self, san)
+    }
+
+    pub fn parse_lan(&self, lan: &str) -> Result<Option<Move>, EngineError> {
+        Move::from_lan(self, lan)
+    }
+
+    #[inline]
+    pub fn parse_uci(&self, uci: &str) -> Result<Option<Move>, EngineError> {
+        if uci == "0000" {
+            return Ok(None);
+        }
+        Ok(Some(Move::from_str(uci)?))
+    }
+
+    #[inline]
+    pub fn parse_move(&self, move_text: &str) -> Result<Option<Move>, EngineError> {
+        self.parse_uci(move_text)
+            .or(self.parse_san(move_text))
+            .or(self.parse_lan(move_text))
+            .map_err(|_| EngineError::InvalidMoveString {
+                s: move_text.to_string(),
+            })
     }
 
     #[inline]
@@ -832,12 +1069,13 @@ impl SubBoard {
         &'a self,
         piece_types: &'a [PieceType],
         colors: &'a [Color],
+        mask: BitBoard,
     ) -> impl Iterator<Item = (Piece, Square)> + 'a {
         piece_types
             .into_iter()
             .cartesian_product(colors)
-            .map(|(&piece_type, &color)| {
-                (self.get_piece_mask(piece_type) & self.occupied_co(color))
+            .map(move |(&piece_type, &color)| {
+                (self.get_piece_mask(piece_type) & self.occupied_co(color) & mask)
                     .into_iter()
                     .map(move |square| (Piece::new(piece_type, color), square))
             })
@@ -846,7 +1084,7 @@ impl SubBoard {
 
     #[inline]
     pub fn iter<'a>(&'a self) -> impl Iterator<Item = (Piece, Square)> + 'a {
-        self.custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS)
+        self.custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS, BB_ALL)
     }
 }
 

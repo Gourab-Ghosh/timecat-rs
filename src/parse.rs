@@ -254,9 +254,13 @@ struct Push;
 impl Push {
     fn moves(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
+        if !["san", "lan", "uci", "move", "moves"].contains(&second_command.as_str()) {
+            return Err(UnknownCommand);
+        }
         for move_text in commands.iter().skip(2) {
             let optional_move = match second_command.as_str() {
                 "san" => engine.get_board().parse_san(move_text)?,
+                "lan" => engine.get_board().parse_lan(move_text)?,
                 "uci" => engine.get_board().parse_uci(move_text)?,
                 "move" | "moves" => engine.get_board().parse_move(move_text)?,
                 _ => return Err(UnknownCommand),

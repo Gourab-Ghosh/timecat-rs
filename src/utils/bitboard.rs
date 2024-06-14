@@ -70,6 +70,16 @@ impl BitBoard {
         Self::new(bb)
     }
 
+    /// <https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating#MirrorHorizontally>
+    #[inline]
+    pub const fn flip_horizontal(self) -> Self {
+        let mut bb = self.0;
+        bb = ((bb >> 1) & 0x5555_5555_5555_5555) | ((bb & 0x5555_5555_5555_5555) << 1);
+        bb = ((bb >> 2) & 0x3333_3333_3333_3333) | ((bb & 0x3333_3333_3333_3333) << 2);
+        bb = ((bb >> 4) & 0x0f0f_0f0f_0f0f_0f0f) | ((bb & 0x0f0f_0f0f_0f0f_0f0f) << 4);
+        Self::new(bb)
+    }
+
     #[inline]
     pub fn contains(self, square: Square) -> bool {
         !(self & square.to_bitboard()).is_empty()

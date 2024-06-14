@@ -3,39 +3,39 @@
 // #![warn(missing_docs)]
 #![allow(dead_code)]
 
-pub mod board;
-pub mod chess;
-pub mod constants;
+mod board;
+mod chess;
+mod constants;
 #[cfg(feature = "engine")]
-pub mod engine;
-pub mod error;
+mod engine;
+mod error;
 #[cfg(feature = "nnue")]
-pub mod evaluate;
-pub mod nnue;
+mod evaluate;
+mod nnue;
 #[cfg(feature = "engine")]
-pub mod parse;
+mod parse;
 #[cfg(feature = "experimental")]
-pub mod polyglot;
+mod polyglot;
 #[cfg(feature = "engine")]
-pub mod search;
+mod search;
 #[cfg(feature = "engine")]
-pub mod selfplay;
+mod selfplay;
 #[cfg(feature = "engine")]
-pub mod sort;
+mod sort;
 #[cfg(feature = "experimental")]
-pub mod syzygy;
+mod syzygy;
 #[cfg(feature = "engine")]
 #[cfg(feature = "debug")]
-pub mod tests;
-pub mod timer;
-pub mod tt;
+mod tests;
+mod timer;
+mod tt;
 #[cfg(feature = "engine")]
-pub mod uci;
-pub mod useful_macros;
-pub mod utils;
+mod uci;
+mod useful_macros;
+mod utils;
 
 #[cfg(feature = "engine")]
-pub mod engine_features {
+mod engine_features {
     use super::*;
     pub use constants::engine::*;
     pub use engine::{Engine, GoCommand};

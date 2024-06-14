@@ -33,13 +33,23 @@ impl Evaluator {
     }
 
     #[allow(unused_variables)]
-    pub fn activate_nnue(&mut self, piece: PieceType, color: Color, square: Square) {
-        // self.model.activate();
+    pub fn activate_nnue(&mut self, sub_board: &SubBoard, piece: Piece, square: Square) {
+        let turn = sub_board.turn();
+        if piece.get_piece_type() == King {
+            self.model.reset_model(sub_board)
+        } else {
+            self.model.activate_non_king_piece(turn, piece, square);
+        }
     }
 
     #[allow(unused_variables)]
-    pub fn deactivate_nnue(&mut self, piece: PieceType, color: Color, square: Square) {
-        // self.model.activate();
+    pub fn deactivate_nnue(&mut self, sub_board: &SubBoard, piece: Piece, square: Square) {
+        let turn = sub_board.turn();
+        if piece.get_piece_type() == King {
+            self.model.reset_model(sub_board)
+        } else {
+            self.model.deactivate_non_king_piece(turn, piece, square);
+        }
     }
 
     fn force_opponent_king_to_corner(
@@ -167,7 +177,7 @@ impl Evaluator {
         false
     }
 
-    pub fn evaluate_raw(&self, sub_board: &SubBoard) -> Score {
+    fn evaluate_raw(&self, sub_board: &SubBoard) -> Score {
         let knights_mask = sub_board.get_piece_mask(Knight);
         if sub_board.get_non_king_pieces_mask() == knights_mask && knights_mask.popcnt() < 3 {
             return 0;
@@ -177,6 +187,7 @@ impl Evaluator {
             return self.king_corner_forcing_evaluation(sub_board, material_score);
         }
         let mut nnue_eval = self.model.evaluate_from_sub_board(sub_board);
+        // let mut nnue_eval = self.model.evaluate(sub_board.turn());
         if nnue_eval.abs() > WINNING_SCORE_THRESHOLD {
             let multiplier = match_interpolate!(
                 0,
@@ -215,8 +226,14 @@ impl Evaluator {
         score
     }
 
-    pub fn evaluate(&self, sub_board: &SubBoard) -> Score {
+    pub(crate) fn evaluate(&self, sub_board: &SubBoard) -> Score {
         self.hashed_evaluate(sub_board)
+    }
+
+    pub fn slow_evaluate(sub_board: &SubBoard) -> Score {
+        HALFKP_MODEL_READER
+            .to_model(sub_board)
+            .evaluate(sub_board.turn())
     }
 
     pub fn reset_variables(&self) {

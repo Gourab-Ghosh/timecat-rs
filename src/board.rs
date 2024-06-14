@@ -28,6 +28,7 @@ impl Error for BoardError {}
 /// Ths code defines an enum `GameResult` that represents the result of a game. It has three
 /// variants: `Win(Color)`, `Draw`, and `InProgress`.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum GameResult {
     Win(Color),
     Draw,
@@ -207,145 +208,34 @@ impl Board {
         self.starting_fen = self.get_fen();
     }
 
-    /// The function `piece_symbol_at` returns the symbol of the piece at a given square or an empty
-    /// space symbol if there is no piece.
-    ///
-    /// Arguments:
-    ///
-    /// * `square`: Square is a parameter representing a specific square on a chessboard. It could be a
-    /// coordinate like "A1" or a numerical representation like 0-63, depending on how the chessboard is
-    /// implemented in your code.
-    ///
-    /// Returns:
-    ///
-    /// The `piece_symbol_at` function returns a `String` representing the symbol of the piece at the
-    /// given square. If there is a piece at the square, it returns the string representation of that
-    /// piece. If there is no piece at the square, it returns the string representation of an empty
-    /// space symbol.
-    pub fn piece_symbol_at(&self, square: Square) -> String {
-        match self.piece_at(square) {
-            Some(piece) => piece.to_string(),
-            None => EMPTY_SPACE_SYMBOL.to_string(),
-        }
+    /// The `flip_vertical_and_flip_turn` function flips the game board vertically and flips the turn and resets certain game
+    /// state variables.
+    pub fn flip_vertical_and_flip_turn(&mut self) {
+        self.sub_board.flip_vertical_and_flip_turn();
+        self.stack.clear();
+        self.repetition_table.clear();
+        self.starting_fen = self.get_fen();
     }
 
-    /// This function returns the Unicode symbol representing a chess piece at a given square, with an
-    /// option to flip the color.
-    ///
-    /// Arguments:
-    ///
-    /// * `square`: The `square` parameter represents a specific square on a chessboard where a piece is
-    /// located. It is typically represented by a combination of a file (a-h) and a rank (1-8), such as
-    /// "e4" or "h7".
-    /// * `flip_color`: The `flip_color` parameter is a boolean flag that determines whether to flip the
-    /// colors of the pieces. If `flip_color` is `true`, the colors of the pieces will be flipped (e.g.,
-    /// white pieces will be displayed as black and vice versa). If `flip_color` is `
-    ///
-    /// Returns:
-    ///
-    /// The function `piece_unicode_symbol_at` returns a `String` value representing the Unicode symbol
-    /// for the piece at the specified square. If there is a piece at the square, it returns the Unicode
-    /// symbol for that piece based on its color and type. If there is no piece at the square, it
-    /// returns the Unicode symbol for an empty space.
-    pub fn piece_unicode_symbol_at(&self, square: Square, flip_color: bool) -> String {
-        if let Some(piece) = self.piece_at(square) {
-            let piece_index = piece.get_piece_type().to_index();
-            let (white_pieces, black_pieces) = match flip_color {
-                true => (BLACK_PIECE_UNICODE_SYMBOLS, WHITE_PIECE_UNICODE_SYMBOLS),
-                false => (WHITE_PIECE_UNICODE_SYMBOLS, BLACK_PIECE_UNICODE_SYMBOLS),
-            };
-            return match piece.get_color() {
-                White => get_item_unchecked!(white_pieces, piece_index),
-                Black => get_item_unchecked!(black_pieces, piece_index),
-            }
-            .to_string();
-        }
-        EMPTY_SPACE_UNICODE_SYMBOL.to_string()
+    /// The `flip_horizontal` function flips the game board horizontally and resets certain game
+    /// state variables.
+    pub fn flip_horizontal(&mut self) {
+        self.sub_board.flip_horizontal();
+        self.stack.clear();
+        self.repetition_table.clear();
+        self.starting_fen = self.get_fen();
     }
 
-    /// The function `to_board_string` generates a string representation of a board with various
-    /// styles and information displayed, such as pieces, last move highlights, FEN, transposition key,
-    /// checkers, and evaluation.
-    ///
-    /// Arguments:
-    ///
-    /// * `use_unicode`: The `use_unicode` parameter in the `to_board_string` function is a boolean flag
-    /// that determines whether to use Unicode symbols for pieces on the board. If `use_unicode` is
-    /// `true`, the function will use Unicode symbols for pieces, otherwise it will use non-Unicode
-    /// symbols.
-    ///
-    /// Returns:
-    ///
-    /// The function `to_board_string` is returning a formatted string representation of the board
-    /// state, including the pieces, styles, last move highlight, and additional information such as
-    /// FEN, Transposition Key, Checkers, and Current Evaluation (if the "nnue" feature is enabled).
-    fn to_board_string(&self, use_unicode: bool) -> String {
-        let mut skeleton = get_board_skeleton();
-        let checkers = self.get_checkers();
-        let king_square = self.get_king_square(self.sub_board.turn());
-        let last_move = self.stack.last().and_then(|(_, m)| *m);
-        for square in SQUARES_HORIZONTAL_MIRROR {
-            let symbol = if use_unicode {
-                self.piece_unicode_symbol_at(square, false)
-            } else {
-                self.piece_symbol_at(square)
-            };
-            let mut styles = vec![];
-            if symbol != " " {
-                styles.extend_from_slice(match self.color_at(square).unwrap() {
-                    White => WHITE_PIECES_STYLE,
-                    Black => BLACK_PIECES_STYLE,
-                });
-                if square == king_square && !checkers.is_empty() {
-                    styles.extend_from_slice(CHECK_STYLE);
-                }
-            }
-            if last_move.is_some()
-                && [
-                    last_move.unwrap().get_source(),
-                    last_move.unwrap().get_dest(),
-                ]
-                .contains(&square)
-            {
-                styles.extend_from_slice(LAST_MOVE_HIGHLIGHT_STYLE);
-            }
-            styles.dedup();
-            skeleton = skeleton.replacen('O', &symbol.colorize(&styles), 1);
-        }
-        skeleton.push('\n');
-        skeleton.push_str(
-            &[
-                String::new(),
-                format_info("Fen", self.get_fen(), true),
-                format_info("Transposition Key", self.get_hash().stringify(), true),
-                format_info(
-                    "Checkers",
-                    checkers.stringify().colorize(CHECKERS_STYLE),
-                    true,
-                ),
-            ]
-            .join("\n"),
-        );
-        #[cfg(feature = "nnue")]
-        skeleton.push_str(&format!(
-            "\n{}",
-            format_info("Current Evaluation", self.evaluate().stringify(), true)
-        ));
-        skeleton
+    #[inline]
+    pub fn to_board_string(&self, use_unicode: bool) -> String {
+        self.sub_board
+            .to_board_string(self.stack.last().and_then(|(_, m)| *m), use_unicode)
     }
 
-    /// The `to_unicode_string` function returns a string representation of a board with Unicode
-    /// characters.
-    ///
-    /// Returns:
-    ///
-    /// The `to_unicode_string` method is being called on `self`, which is likely a struct or object
-    /// that has a method called `to_board_string`. The `to_board_string` method is being called with
-    /// the argument `true`, and its return value is being returned by the `to_unicode_string` method.
-    /// Therefore, the return value of the `to_unicode_string` method is a `String
     #[inline]
     pub fn to_unicode_string(&self) -> String {
-        self.to_board_string(true)
+        self.sub_board
+            .to_unicode_string(self.stack.last().and_then(|(_, m)| *m))
     }
 
     /// The function `result` determines the outcome of a game based on the current board status in a
@@ -503,45 +393,6 @@ impl Board {
         self.is_repetition(3)
     }
 
-    /// The function `is_halfmoves` checks if the halfmove clock is greater than or equal to a given
-    /// number `n`.
-    ///
-    /// Arguments:
-    ///
-    /// * `n`: The parameter `n` represents the number of halfmoves to check against the halfmove clock.
-    /// The function `is_halfmoves` will return `true` if the halfmove clock value is greater than or
-    /// equal to `n`, indicating that `n` or more halfmoves have been made since the
-    ///
-    /// Returns:
-    ///
-    /// A boolean value is being returned.
-    #[inline]
-    fn is_halfmoves(&self, n: u8) -> bool {
-        self.get_halfmove_clock() >= n
-    }
-
-    /// The function `is_fifty_moves` checks if the game has reached the fifty-move rule
-    /// condition.
-    ///
-    /// Returns:
-    ///
-    /// The `is_fifty_moves` function is returning a boolean value indicating whether the number of
-    /// halfmoves is equal to 100.
-    #[inline]
-    pub fn is_fifty_moves(&self) -> bool {
-        self.is_halfmoves(100)
-    }
-
-    /// The function `is_stalemate` checks if the current board status is a stalemate.
-    ///
-    /// Returns:
-    ///
-    /// A boolean value indicating whether the current board status is a stalemate.
-    #[inline]
-    pub fn is_stalemate(&self) -> bool {
-        self.status() == BoardStatus::Stalemate
-    }
-
     /// The function `is_other_draw` checks if the game is a draw based on fifty-move rule,
     /// threefold repetition, or insufficient material.
     ///
@@ -579,162 +430,6 @@ impl Board {
         self.is_other_draw() || self.status() != BoardStatus::Ongoing
     }
 
-    /// Check if the move is a double pawn push
-    pub fn is_double_pawn_push(&self, move_: Move) -> bool {
-        let source = move_.get_source();
-        let dest = move_.get_dest();
-        source.get_rank() == self.turn().to_second_rank()
-            && source
-                .get_rank()
-                .to_int()
-                .abs_diff(dest.get_rank().to_int())
-                == 2
-            && !self.get_piece_mask(Pawn).contains(source)
-    }
-
-    /// The function `is_quiet` determines if a move is not a capture and does not give check.
-    ///
-    /// Arguments:
-    ///
-    /// * `move_`: The `move_` parameter in the `is_quiet` function represents a move in a chess game.
-    /// It is used to check whether the move is a quiet move, meaning it is not a capture move and does
-    /// not give check to the opponent's king.
-    ///
-    /// Returns:
-    ///
-    /// The function `is_quiet` is returning a boolean value, which is determined by the logical NOT
-    /// operation applied to the result of the expression `(self.is_capture(move_) ||
-    /// self.gives_check(move_))`.
-    #[inline]
-    pub fn is_quiet(&self, move_: Move) -> bool {
-        !(self.is_capture(move_) || self.gives_check(move_))
-    }
-
-    /// The function `has_legal_en_passant` checks if there is a legal en passant move available in a
-    /// game of chess.
-    ///
-    /// Returns:
-    ///
-    /// The `has_legal_en_passant` function is returning a boolean value. It returns `true` if the
-    /// `ep_square` is not `None`, indicating that there is a legal en passant move available.
-    /// Otherwise, it returns `false`.
-    #[inline]
-    pub fn has_legal_en_passant(&self) -> bool {
-        self.ep_square().is_some()
-    }
-
-    /// The function `clean_castling_rights` cleans up castling rights for both white and black
-    /// players.
-    ///
-    /// Returns:
-    ///
-    /// The `clean_castling_rights` function returns a `BitBoard` representing the castling rights for
-    /// both white and black players after cleaning up any invalid or unnecessary rights.
-    pub fn clean_castling_rights(&self) -> BitBoard {
-        let white_castling_rights = match self.sub_board.castle_rights(White) {
-            CastleRights::Both => BB_A1 ^ BB_H1,
-            CastleRights::KingSide => BB_H1,
-            CastleRights::QueenSide => BB_A1,
-            CastleRights::None => BB_EMPTY,
-        };
-        let black_castling_rights = match self.sub_board.castle_rights(Black) {
-            CastleRights::Both => BB_A8 ^ BB_H8,
-            CastleRights::KingSide => BB_H8,
-            CastleRights::QueenSide => BB_A8,
-            CastleRights::None => BB_EMPTY,
-        };
-        white_castling_rights ^ black_castling_rights
-    }
-
-    // fn reduces_castling_rights(&self, move_: Move) -> bool {
-    //     let cr = self.clean_castling_rights();
-    //     let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
-    //     let touched_cr = touched & cr;
-    //     let kings = self.get_piece_mask(King);
-    //     let touched_kings_cr = touched_cr & kings;
-    //     !touched_cr.is_empty()
-    //         || !(BB_RANK_1 & touched_kings_cr & self.occupied_co(White)).is_empty()
-    //         || !(BB_RANK_8 & touched_kings_cr & self.occupied_co(Black)).is_empty()
-    // }
-
-    /// The function reduces_castling_rights checks if certain conditions are met to reduce
-    /// castling rights after a move.
-    ///
-    /// Arguments:
-    ///
-    /// * `move_`: The `move_` parameter in the `reduces_castling_rights` function represents the move
-    /// that is being made on the chessboard. It contains information about the source square and the
-    /// destination square of the move. The function is checking the logic to determine if the castling
-    /// rights should be reduced
-    ///
-    /// Returns:
-    ///
-    /// The function `reduces_castling_rights` returns a boolean value.
-    fn reduces_castling_rights(&self, move_: Move) -> bool {
-        // TODO: Check Logic
-        let cr = self.clean_castling_rights();
-        let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
-        let touched_cr = touched & cr;
-        let touched_kings_cr_is_empty = (touched_cr & self.get_piece_mask(King)).is_empty();
-        !(touched_cr.is_empty()
-            && touched_kings_cr_is_empty
-            && BB_RANK_1.is_empty()
-            && self.occupied_co(White).is_empty()
-            && BB_RANK_8.is_empty()
-            && self.occupied_co(Black).is_empty())
-    }
-
-    /// The function `is_irreversible` checks if a move is irreversible based on certain
-    /// conditions.
-    ///
-    /// Arguments:
-    ///
-    /// * `move_`: The `move_` parameter in the `is_irreversible` function represents a move in a chess
-    /// game. It is used to check if the move is irreversible based on certain conditions like having a
-    /// legal en passant move, being a zeroing move, or reducing castling rights.
-    ///
-    /// Returns:
-    ///
-    /// A boolean value is being returned.
-    #[inline]
-    pub fn is_irreversible(&self, move_: Move) -> bool {
-        self.has_legal_en_passant() || self.is_zeroing(move_) || self.reduces_castling_rights(move_)
-    }
-
-    /// The function `is_endgame` determines if the current game state is in the endgame phase
-    /// based on the number and types of pieces remaining on the board.
-    ///
-    /// Returns:
-    ///
-    /// The `is_endgame` function returns a boolean value based on certain conditions. If the number of
-    /// pieces on the board is less than or equal to a threshold defined by `ENDGAME_PIECE_THRESHOLD`,
-    /// it returns `true`. Otherwise, it checks the number of Queens on the board and applies different
-    /// conditions based on the count of Queens to determine if the game is in the endgame phase.
-    #[inline]
-    pub fn is_endgame(&self) -> bool {
-        if self.get_num_pieces() <= ENDGAME_PIECE_THRESHOLD {
-            return true;
-        }
-        match self.get_piece_mask(Queen).popcnt() {
-            0 => {
-                (self.get_piece_mask(Rook)
-                    ^ self.get_piece_mask(Bishop)
-                    ^ self.get_piece_mask(Knight))
-                .popcnt()
-                    <= 4
-            }
-            1 => {
-                self.get_piece_mask(Rook).popcnt() <= 2
-                    && (self.get_piece_mask(Bishop) ^ self.get_piece_mask(Knight)).is_empty()
-            }
-            2 => (self.get_piece_mask(Rook)
-                ^ self.get_piece_mask(Bishop)
-                ^ self.get_piece_mask(Knight))
-            .is_empty(),
-            _ => false,
-        }
-    }
-
     /// The `push` function takes an optional move, updates the sub-board accordingly, and adds
     /// the previous sub-board state and move to a stack.
     ///
@@ -756,7 +451,21 @@ impl Board {
         self.repetition_table.insert(self.get_hash());
         self.stack.push((sub_board_copy, optional_move));
         #[cfg(feature = "nnue")]
-        self.evaluator_stack.push(self.evaluator.clone());
+        {
+            self.evaluator_stack.push(self.evaluator.clone());
+            // let updated = self.stack.last().unwrap().0.occupied() ^ self.occupied();
+            // for (piece, square) in
+            //     self.sub_board
+            //         .custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS, updated)
+            // {
+            //     if self.occupied().contains(square) {
+            //         self.evaluator.activate_nnue(&self.sub_board, piece, square);
+            //     } else {
+            //         self.evaluator
+            //             .deactivate_nnue(&self.sub_board, piece, square);
+            //     }
+            // }
+        }
     }
 
     #[cfg(feature = "nnue")]
@@ -829,78 +538,6 @@ impl Board {
     #[inline]
     pub fn has_empty_stack(&self) -> bool {
         self.stack.is_empty()
-    }
-
-    /// The function `parse_san` parses a given SAN (Standard Algebraic Notation) string to
-    /// return a corresponding chess move or an error if the move is invalid.
-    ///
-    /// Arguments:
-    ///
-    /// * `san`: The `san` parameter in the `parse_san` function represents the Standard Algebraic
-    /// Notation (SAN) string of a chess move that needs to be parsed and converted into a `Move`
-    /// object. The function first trims any leading or trailing whitespace from the input `san` string
-    /// and then
-    ///
-    /// Returns:
-    ///
-    /// The `parse_san` function returns a `Result` containing either an `Option<Move>` or an
-    /// `EngineError`. If the parsing is successful, it returns `Ok(Some(move))` with the parsed move.
-    /// If the parsing fails due to an invalid SAN move string, it returns an `EngineError` with the
-    /// specific error message.
-    pub fn parse_san(&self, mut san: &str) -> Result<Option<Move>, EngineError> {
-        // TODO: Make the logic better
-        san = san.trim();
-        if san == "--" {
-            return Ok(None);
-        }
-        let san = san.replace('0', "O");
-        for move_ in self.generate_legal_moves() {
-            if move_.san(self.get_sub_board()).unwrap() == san {
-                return Ok(Some(move_));
-            }
-        }
-        Err(EngineError::InvalidSanMoveString { s: san.to_string() })
-        // Move::from_san(&self.sub_board, &san.replace('0', "O"))
-    }
-
-    /// The function `parse_uci` parses a UCI string into a Move object or returns None if the
-    /// input is "0000".
-    ///
-    /// Arguments:
-    ///
-    /// * `uci`: The `uci` parameter is a string that represents a move in UCI (Universal Chess
-    /// Interface) format. It is used to specify chess moves in a standardized way for communication
-    /// between chess engines and graphical user interfaces.
-    ///
-    /// Returns:
-    ///
-    /// The `parse_uci` function returns a `Result` containing either `None` if the input `uci` is
-    /// "0000", or `Some(Move)` if the input `uci` can be successfully parsed into a `Move` object.
-    #[inline]
-    pub fn parse_uci(&self, uci: &str) -> Result<Option<Move>, EngineError> {
-        if uci == "0000" {
-            return Ok(None);
-        }
-        Ok(Some(Move::from_str(uci)?))
-    }
-
-    /// The function `parse_move` parses a move text input and returns a `Move` or an
-    /// `EngineError`.
-    ///
-    /// Arguments:
-    ///
-    /// * `move_text`: The `move_text` parameter is a reference to a string slice (`&str`) that
-    /// represents the text input containing a chess move in either UCI (Universal Chess Interface) or
-    /// SAN (Standard Algebraic Notation) format.
-    ///
-    /// Returns:
-    ///
-    /// The `parse_move` function returns a `Result` containing either `Some(Move)` if the move text can
-    /// be parsed successfully, or `None` if the move text cannot be parsed. If an error occurs during
-    /// parsing, an `EngineError` is returned.
-    #[inline]
-    pub fn parse_move(&self, move_text: &str) -> Result<Option<Move>, EngineError> {
-        self.parse_uci(move_text).or(self.parse_san(move_text))
     }
 
     /// The function `push_san` takes a SAN (Standard Algebraic Notation) string, parses it into a move,
@@ -1091,7 +728,7 @@ impl Board {
     ///
     /// The function `variation_san` returns a `String` containing the Standard Algebraic Notation (SAN)
     /// representation of the moves in the provided variation on the chess board.
-    fn variation_san(&self, board: &Board, variation: Vec<Option<Move>>) -> String {
+    fn variation_san(board: &Board, variation: Vec<Option<Move>>) -> String {
         let mut board = board.clone();
         let mut san = Vec::new();
         for optional_move in variation {
@@ -1139,7 +776,7 @@ impl Board {
         if self.starting_fen != STARTING_POSITION_FEN {
             pgn += &format!("[FEN \"{}\"]\n", self.starting_fen);
         }
-        pgn += &self.variation_san(
+        pgn += &Self::variation_san(
             &Self::from_fen(&self.starting_fen).unwrap(),
             Vec::from_iter(
                 self.stack
