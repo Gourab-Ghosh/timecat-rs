@@ -180,12 +180,14 @@ impl_operation!(@zero_implementation i16);
 impl_operation!(@zero_implementation i32);
 impl_operation!(@zero_implementation i64);
 impl_operation!(@zero_implementation i128);
+impl_operation!(@zero_implementation isize);
 
 impl_operation!(@zero_implementation u8);
 impl_operation!(@zero_implementation u16);
 impl_operation!(@zero_implementation u32);
 impl_operation!(@zero_implementation u64);
 impl_operation!(@zero_implementation u128);
+impl_operation!(@zero_implementation usize);
 
 impl<T: Neg<Output = T> + Clone, const N: usize> Neg for MathVec<T, N> {
     type Output = Self;
@@ -230,7 +232,7 @@ impl<T, const N: usize> IndexMut<usize> for MathVec<T, N> {
     }
 }
 
-pub trait ClippedRelu<InputType, OutputType: binread::BinRead<Args = ()>, const N: usize> {
+pub trait ClippedRelu<InputType, OutputType, const N: usize> {
     fn clipped_relu(
         &self,
         scale_by_pow_of_two: OutputType,
@@ -285,12 +287,14 @@ macro_rules! impl_clipped_relu {
         impl_clipped_relu!($from, i32);
         impl_clipped_relu!($from, i64);
         impl_clipped_relu!($from, i128);
+        impl_clipped_relu!($from, isize);
 
         impl_clipped_relu!($from, u8);
         impl_clipped_relu!($from, u16);
         impl_clipped_relu!($from, u32);
         impl_clipped_relu!($from, u64);
         impl_clipped_relu!($from, u128);
+        impl_clipped_relu!($from, usize);
     };
 }
 
@@ -299,9 +303,11 @@ impl_clipped_relu!(i16);
 impl_clipped_relu!(i32);
 impl_clipped_relu!(i64);
 impl_clipped_relu!(i128);
+impl_clipped_relu!(isize);
 
 impl_clipped_relu!(u8);
 impl_clipped_relu!(u16);
 impl_clipped_relu!(u32);
 impl_clipped_relu!(u64);
 impl_clipped_relu!(u128);
+impl_clipped_relu!(usize);
