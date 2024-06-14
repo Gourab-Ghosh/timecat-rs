@@ -1,6 +1,6 @@
 use super::*;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
 pub struct BitBoard(u64);
 

@@ -1,6 +1,6 @@
 use super::*;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum BoardStatus {
     Ongoing,
@@ -8,8 +8,7 @@ pub enum BoardStatus {
     Checkmate,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "copy_large_structs", derive(Copy))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq)]
 pub struct SubBoard {
     _piece_masks: [BitBoard; NUM_PIECE_TYPES],
@@ -818,14 +817,14 @@ impl SubBoard {
 
     #[cfg(feature = "nnue")]
     #[inline]
-    pub fn evaluate(&self) -> Score {
-        EVALUATOR.evaluate(self)
+    pub fn slow_evaluate(&self) -> Score {
+        HALFKP_MODEL_READER.to_model(self).evaluate(self.turn())
     }
 
     #[cfg(feature = "nnue")]
     #[inline]
-    pub fn evaluate_flipped(&self) -> Score {
-        self.score_flipped(self.evaluate())
+    pub fn slow_evaluate_flipped(&self) -> Score {
+        self.score_flipped(self.slow_evaluate())
     }
 
     #[inline]

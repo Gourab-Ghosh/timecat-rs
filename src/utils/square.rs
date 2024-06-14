@@ -2,7 +2,7 @@ use super::*;
 pub use Square::*;
 
 #[rustfmt::skip]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
 pub enum Square {
     A1, B1, C1, D1, E1, F1, G1, H1,

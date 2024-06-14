@@ -1,7 +1,7 @@
 use super::*;
 use EngineError::*;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum EngineError {
     UnknownCommand,

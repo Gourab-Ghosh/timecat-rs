@@ -3,7 +3,7 @@
 use super::*;
 
 /// This code defines an enum `BoardError` that represents different types of errors that can occur in a board-related context. The enum has two variants.
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub enum BoardError {
     InvalidSanMove { move_: Move, fen: String },
@@ -27,7 +27,7 @@ impl Error for BoardError {}
 
 /// Ths code defines an enum `GameResult` that represents the result of a game. It has three
 /// variants: `Win(Color)`, `Draw`, and `InProgress`.
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum GameResult {
     Win(Color),
     Draw,
@@ -59,29 +59,16 @@ impl GameResult {
     }
 }
 
-/// The `Board` struct represents a chess board with various methods for game logic and move generation.
-///
-/// Properties:
-///
-/// * `sub_board`: The `sub_board` property represents the sub-board within the main board. It contains
-/// the current state of the game board, including the positions of all pieces and other relevant game
-/// information.
-/// * `stack`: The `stack` property in the `Board` struct is a vector that stores the history of moves
-/// made on the board. Each element in the vector represents a tuple containing the previous `SubBoard`
-/// state and the optional move that was made from that state. This history allows for tracking and
-/// undoing moves.
-/// * `starting_fen`: The `starting_fen` property in the `Board` struct represents the FEN
-/// (Forsyth-Edwards Notation) string of the starting position of the chess board. This property stores
-/// the initial configuration of the chess pieces on the board.
-/// * `repetition_table`: The `repetition_table` property in the `Board` struct is used to keep track of
-/// the positions that have occurred in the game to detect threefold repetition.
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Board {
     sub_board: SubBoard,
     stack: Vec<(SubBoard, Option<Move>)>,
+    #[cfg(feature = "nnue")]
+    evaluator_stack: Vec<Evaluator>,
     starting_fen: String,
     repetition_table: RepetitionTable,
+    #[cfg(feature = "nnue")]
+    evaluator: Evaluator,
 }
 
 impl Board {
@@ -149,6 +136,16 @@ impl Board {
     /// A reference to the `SubBoard` struct is being returned.
     pub fn get_sub_board(&self) -> &SubBoard {
         &self.sub_board
+    }
+
+    #[cfg(feature = "nnue")]
+    pub fn get_evaluator(&self) -> &Evaluator {
+        &self.evaluator
+    }
+
+    #[cfg(feature = "nnue")]
+    pub fn get_evaluator_mut(&mut self) -> &mut Evaluator {
+        &mut self.evaluator
     }
 
     /// The function `is_good_fen` checks if a given FEN string is valid based on certain
@@ -758,14 +755,21 @@ impl Board {
         };
         self.repetition_table.insert(self.get_hash());
         self.stack.push((sub_board_copy, optional_move));
+        #[cfg(feature = "nnue")]
+        self.evaluator_stack.push(self.evaluator.clone());
     }
 
-    /// The `pop` function removes and returns the top element from a stack, updating internal
-    /// state accordingly.
-    ///
-    /// Returns:
-    ///
-    /// The `pop` function returns an `Option<Move>`.
+    
+    #[cfg(feature = "nnue")]
+    pub fn pop(&mut self) -> Option<Move> {
+        let (sub_board, optional_move) = self.stack.pop().unwrap();
+        self.repetition_table.remove(self.get_hash());
+        self.sub_board = sub_board;
+        self.evaluator = self.evaluator_stack.pop().unwrap();
+        optional_move
+    }
+
+    #[cfg(not(feature = "nnue"))]
     pub fn pop(&mut self) -> Option<Move> {
         let (sub_board, optional_move) = self.stack.pop().unwrap();
         self.repetition_table.remove(self.get_hash());
@@ -1203,6 +1207,18 @@ impl Board {
     pub fn perft(&mut self, depth: Depth) -> usize {
         self.perft_helper(depth, true)
     }
+
+    #[cfg(feature = "nnue")]
+    #[inline]
+    pub fn evaluate(&self) -> Score {
+        self.evaluator.evaluate(self)
+    }
+
+    #[cfg(feature = "nnue")]
+    #[inline]
+    pub fn evaluate_flipped(&self) -> Score {
+        self.score_flipped(self.evaluate())
+    }
 }
 
 impl fmt::Display for Board {
@@ -1234,8 +1250,12 @@ impl From<&str> for Board {
 impl From<SubBoard> for Board {
     fn from(sub_board: SubBoard) -> Self {
         let mut board = Self {
+            #[cfg(feature = "nnue")]
+            evaluator: Evaluator::new(&sub_board),
             sub_board,
             stack: Vec::new(),
+            #[cfg(feature = "nnue")]
+            evaluator_stack: vec![],
             starting_fen: STARTING_POSITION_FEN.to_string(),
             repetition_table: RepetitionTable::new(),
         };

@@ -10,10 +10,10 @@ lazy_static! {
     };
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Evaluator {
     model: HalfKPModel,
-    score_cache: CacheTable<Score>,
+    score_cache: Arc<CacheTable<Score>>,
 }
 
 impl Evaluator {
@@ -25,10 +25,10 @@ impl Evaluator {
         );
     }
 
-    pub fn new() -> Self {
+    pub fn new(sub_board: &SubBoard) -> Self {
         Self {
-            model: HALFKP_MODEL_READER.clone().to_default_model(),
-            score_cache: CacheTable::new(EVALUATOR_SIZE, 0),
+            model: HALFKP_MODEL_READER.to_model(sub_board),
+            score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE, 0)),
         }
     }
 
@@ -234,6 +234,6 @@ impl Evaluator {
 
 impl Default for Evaluator {
     fn default() -> Self {
-        Self::new()
+        Self::new(&SubBoard::default())
     }
 }

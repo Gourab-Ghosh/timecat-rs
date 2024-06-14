@@ -1,7 +1,7 @@
 use super::*;
 
 #[cfg(feature = "speed")]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct RepetitionTable {
     count_map: Box<[u8]>,
@@ -65,7 +65,7 @@ impl RepetitionTable {
 }
 
 #[cfg(not(feature = "speed"))]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Default, Debug, Clone)]
 pub struct RepetitionTable {
     count_map: std::collections::HashMap<u64, u8>,

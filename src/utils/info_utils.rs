@@ -47,8 +47,6 @@ pub fn print_engine_info(transposition_table: &TranspositionTable) {
     print_engine_version(true);
     println!();
     transposition_table.print_info();
-    #[cfg(feature = "nnue")]
-    EVALUATOR.print_info();
 }
 
 pub fn print_cache_table_info(

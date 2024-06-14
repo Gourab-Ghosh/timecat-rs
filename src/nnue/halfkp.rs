@@ -160,7 +160,7 @@ pub struct HalfKPModelReader {
 }
 
 impl HalfKPModelReader {
-    pub fn to_model(self, sub_board: &SubBoard) -> HalfKPModel {
+    pub fn to_model(&self, sub_board: &SubBoard) -> HalfKPModel {
         let accumulators = [
             self.transformer.get_biases().clone(),
             self.transformer.get_biases().clone(),
@@ -176,14 +176,14 @@ impl HalfKPModelReader {
                     &format!("Accumulators[{}x2]", HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS),
                 ),
             },
-            transformer: self.transformer,
-            network: self.network,
+            transformer: self.transformer.clone(),
+            network: self.network.clone(),
         };
         halfkp_model.update_empty_model(sub_board);
         halfkp_model
     }
 
-    pub fn to_default_model(self) -> HalfKPModel {
+    pub fn to_default_model(&self) -> HalfKPModel {
         self.to_model(&SubBoard::default())
     }
 }

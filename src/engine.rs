@@ -1,6 +1,6 @@
 use super::*;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum GoCommand {
     Infinite,
@@ -120,7 +120,7 @@ impl Engine {
         self.selective_depth.store(0, MEMORY_ORDERING);
         self.stopper.store(false, MEMORY_ORDERING);
         self.transposition_table.reset_variables();
-        EVALUATOR.reset_variables();
+        self.board.get_evaluator().reset_variables();
         if CLEAR_TABLE_AFTER_EACH_SEARCH {
             self.transposition_table.clear()
         }

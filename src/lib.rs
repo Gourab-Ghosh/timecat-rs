@@ -72,10 +72,8 @@ pub mod nnue_features {
 #[cfg(feature = "nnue")]
 pub use nnue_features::*;
 
-#[cfg(feature = "nnue")]
-lazy_static! {
-    pub static ref EVALUATOR: Evaluator = Evaluator::default();
-}
+#[cfg(feature = "serde")]
+pub use serde::{Serialize, Deserialize};
 
 pub mod prelude {
     use super::*;

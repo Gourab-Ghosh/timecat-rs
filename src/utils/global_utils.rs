@@ -213,7 +213,5 @@ impl GlobalUCIState {
 #[cfg(feature = "engine")]
 pub fn clear_all_cache_tables(transposition_table: &TranspositionTable) {
     transposition_table.clear();
-    #[cfg(feature = "nnue")]
-    EVALUATOR.clear();
     print_info::<&str>("All hash tables are cleared!", None);
 }

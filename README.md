@@ -150,7 +150,6 @@ The `selfplay` command works on the binary as well.
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
 - `colored_output`: Displays all information in a visually appealing colored format for enhanced readability.
 - `speed`: Optimize the code to improve speed at the cost of increased memory usage and in extremely rare cases cause unexpected behavior. Note that the gain in speed might be minimal compared to the additional memory required.
-- `copy_large_structs`: Activates the Copy trait for large structs where implementation is still feasible. However, it is not recommended to use this feature; the Clone trait is the preferred approach.
 - `serde`: Enables serialization and deserialization support via `serde`.
 - `debug`: Intended solely for development use.
 - `experimental`: Codes under development for upcoming features.

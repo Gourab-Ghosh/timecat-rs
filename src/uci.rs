@@ -52,7 +52,7 @@ enum UCIOptionType {
     },
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct SpinValue<T: Clone + Copy + IntoSpin> {
     default: T,
@@ -260,7 +260,7 @@ fn get_uci_options() -> Vec<UCIOption> {
             } else {
                 evaluator_entry_size
             };
-            (usize::MAX >> 21) / max_size // Assuming that Evaluator and Transposition Table will take same amount of space, so 21 not 20.
+            (usize::MAX >> 20) / max_size
         }),
     );
 
