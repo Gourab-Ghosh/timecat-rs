@@ -33,8 +33,7 @@ impl Evaluator {
     }
 
     #[allow(unused_variables)]
-    pub fn activate_nnue(&mut self, sub_board: &SubBoard, piece: Piece, square: Square) {
-        let turn = sub_board.turn();
+    pub fn activate_nnue(&mut self, turn: Color, piece: Piece, square: Square, sub_board: &SubBoard) {
         if piece.get_piece_type() == King {
             self.model.reset_model(sub_board)
         } else {
@@ -43,8 +42,7 @@ impl Evaluator {
     }
 
     #[allow(unused_variables)]
-    pub fn deactivate_nnue(&mut self, sub_board: &SubBoard, piece: Piece, square: Square) {
-        let turn = sub_board.turn();
+    pub fn deactivate_nnue(&mut self, turn: Color, piece: Piece, square: Square, sub_board: &SubBoard) {
         if piece.get_piece_type() == King {
             self.model.reset_model(sub_board)
         } else {

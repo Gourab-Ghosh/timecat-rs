@@ -459,29 +459,24 @@ impl Board {
         //             .custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS, updated)
         //     {
         //         if self.occupied().contains(square) {
-        //             self.evaluator.activate_nnue(&self.sub_board, piece, square);
+        //             self.evaluator.activate_nnue(self.turn(), piece, square, &self.sub_board);
         //         } else {
         //             self.evaluator
-        //                 .deactivate_nnue(&self.sub_board, piece, square);
+        //                 .deactivate_nnue(self.turn(), piece, square, &self.sub_board);
         //         }
         //     }
         // }
     }
 
-    #[cfg(feature = "nnue")]
     pub fn pop(&mut self) -> Option<Move> {
         let (sub_board, optional_move) = self.stack.pop().unwrap();
         self.repetition_table.remove(self.get_hash());
         self.sub_board = sub_board;
-        // self.evaluator = self.evaluator_stack.pop().unwrap();
-        optional_move
-    }
-
-    #[cfg(not(feature = "nnue"))]
-    pub fn pop(&mut self) -> Option<Move> {
-        let (sub_board, optional_move) = self.stack.pop().unwrap();
-        self.repetition_table.remove(self.get_hash());
-        self.sub_board = sub_board;
+        // #[cfg(feature = "nnue")]
+        // std::mem::drop(std::mem::replace(
+        //     &mut self.evaluator,
+        //     self.evaluator_stack.pop().unwrap(),
+        // ));
         optional_move
     }
 
@@ -491,8 +486,8 @@ impl Board {
     ///
     /// A vector of references to `Option<Move>` values is being returned.
     #[inline]
-    pub fn get_all_moves(&self) -> Vec<&Option<Move>> {
-        self.stack.iter().map(|(_, m)| m).collect_vec()
+    pub fn get_all_moves(&self) -> Vec<Option<Move>> {
+        self.stack.iter().map(|(_, m)| *m).collect_vec()
     }
 
     /// The function `get_last_move` returns the last move made, if any, from a stack of moves.

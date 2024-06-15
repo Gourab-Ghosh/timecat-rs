@@ -19,14 +19,14 @@ def process_args():
 
 def main():
     FEATURE_SETS_CHECK = [
-        set(),
-        {"default"},
-        {"nnue"},
-        {"nnue", "speed"},
-        {"binary"},
-        {"binary", "speed"},
-        {"binary", "serde"},
-        {"binary", "speed", "serde"},
+        [],
+        ["default"],
+        ["nnue"],
+        ["nnue", "speed"],
+        ["binary"],
+        ["binary", "speed"],
+        ["binary", "serde"],
+        ["binary", "speed", "serde"],
     ]
     
     if sys.platform == "linux":
