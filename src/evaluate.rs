@@ -166,7 +166,7 @@ impl Evaluator {
         if Self::is_easily_winning_position(sub_board, material_score) {
             return self.king_corner_forcing_evaluation(sub_board, material_score);
         }
-        let mut nnue_eval = self.model.update_and_evaluate(sub_board);
+        let mut nnue_eval = self.model.update_model_and_evaluate(sub_board);
         if nnue_eval.abs() > WINNING_SCORE_THRESHOLD {
             let multiplier = match_interpolate!(
                 0,

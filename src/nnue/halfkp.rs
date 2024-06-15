@@ -240,14 +240,14 @@ impl HalfKPModel {
     }
 
     #[inline]
-    pub fn update_empty_model_with_color(&mut self, sub_board: &SubBoard, turn: Color) {
+    fn update_empty_model_with_color(&mut self, sub_board: &SubBoard, turn: Color) {
         sub_board
             .custom_iter(&ALL_PIECE_TYPES[..5], &[White, Black], BB_ALL)
             .for_each(|(piece, square)| self.activate_non_king_piece(turn, piece, square))
     }
 
     #[inline]
-    pub fn update_empty_model(&mut self, sub_board: &SubBoard) {
+    fn update_empty_model(&mut self, sub_board: &SubBoard) {
         ALL_COLORS
             .into_iter()
             .for_each(|turn| self.update_empty_model_with_color(sub_board, turn));
@@ -267,7 +267,8 @@ impl HalfKPModel {
             sub_board.get_king_square(White),
             sub_board.get_king_square(Black).rotate(),
         ];
-        self.update_empty_model(sub_board)
+        self.update_empty_model(sub_board);
+        self.last_sub_board = sub_board.clone();
     }
 
     // pub fn update_king(&mut self, turn: Color, square: Square, sub_board: &SubBoard) {
@@ -278,6 +279,7 @@ impl HalfKPModel {
     //     };
     //     self.clear();
     //     self.update_empty_model(sub_board);
+    //     self.last_sub_board = sub_board.clone();
     // }
 
     pub fn update_model(&mut self, sub_board: &SubBoard) {
@@ -304,8 +306,8 @@ impl HalfKPModel {
             .into_iter()
             .cartesian_product(ALL_COLORS)
             .map(|(&piece_type, color)| {
-                let prev_occupied = occupied_cos[color.to_index()]
-                    & piece_masks[piece_type.to_index()];
+                let prev_occupied =
+                    occupied_cos[color.to_index()] & piece_masks[piece_type.to_index()];
                 let new_occupied =
                     sub_board.occupied_co(color) & sub_board.get_piece_mask(piece_type);
                 (!prev_occupied & new_occupied)
@@ -317,16 +319,14 @@ impl HalfKPModel {
             .flatten()
             .cartesian_product(ALL_COLORS)
             .for_each(|(change, turn)| match change {
-                Change::Added((piece, square)) => {
-                    self.activate_non_king_piece(turn, piece, square)
-                }
+                Change::Added((piece, square)) => self.activate_non_king_piece(turn, piece, square),
                 Change::Removed((piece, square)) => {
                     self.deactivate_non_king_piece(turn, piece, square)
                 }
             });
         self.last_sub_board = sub_board.clone();
     }
-    
+
     pub fn evaluate(&self, turn: Color) -> Score {
         let mut inputs: [i8; 512] = [0; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS * 2];
         for color in ALL_COLORS {
@@ -362,7 +362,7 @@ impl HalfKPModel {
         }
     }
 
-    pub fn update_and_evaluate(&mut self, sub_board: &SubBoard) -> Score {
+    pub fn update_model_and_evaluate(&mut self, sub_board: &SubBoard) -> Score {
         self.update_model(sub_board);
         self.evaluate(sub_board.turn())
     }
