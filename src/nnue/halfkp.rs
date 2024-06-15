@@ -240,11 +240,7 @@ impl HalfKPModel {
     #[inline]
     pub fn update_empty_model_with_color(&mut self, sub_board: &SubBoard, turn: Color) {
         sub_board
-            .custom_iter(
-                &[Pawn, Knight, Bishop, Rook, Queen],
-                &[White, Black],
-                BB_ALL,
-            )
+            .custom_iter(&ALL_PIECE_TYPES[..5], &[White, Black], BB_ALL)
             .for_each(|(piece, square)| self.activate_non_king_piece(turn, piece, square))
     }
 

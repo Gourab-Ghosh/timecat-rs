@@ -1,7 +1,7 @@
 use super::*;
 
 lazy_static! {
-    static ref HALFKP_MODEL_READER: HalfKPModelReader = {
+    pub static ref HALFKP_MODEL_READER: HalfKPModelReader = {
         let mut reader = std::io::Cursor::new(include_bytes!(concat!(
             env!("OUT_DIR"),
             "/nnue_dir/nn.nnue"
@@ -33,21 +33,22 @@ impl Evaluator {
     }
 
     #[allow(unused_variables)]
-    pub fn activate_nnue(&mut self, turn: Color, piece: Piece, square: Square, sub_board: &SubBoard) {
-        if piece.get_piece_type() == King {
-            self.model.reset_model(sub_board)
-        } else {
-            self.model.activate_non_king_piece(turn, piece, square);
-        }
+    pub fn activate_non_king_piece(&mut self, piece: Piece, square: Square) {
+        ALL_COLORS
+            .into_iter()
+            .for_each(|turn| self.model.activate_non_king_piece(turn, piece, square));
     }
 
     #[allow(unused_variables)]
-    pub fn deactivate_nnue(&mut self, turn: Color, piece: Piece, square: Square, sub_board: &SubBoard) {
-        if piece.get_piece_type() == King {
-            self.model.reset_model(sub_board)
-        } else {
-            self.model.deactivate_non_king_piece(turn, piece, square);
-        }
+    pub fn deactivate_non_king_piece(&mut self, piece: Piece, square: Square) {
+        ALL_COLORS
+            .into_iter()
+            .for_each(|turn| self.model.deactivate_non_king_piece(turn, piece, square));
+    }
+
+    #[allow(unused_variables)]
+    pub fn update_king(&mut self, sub_board: &SubBoard) {
+        self.model.reset_model(sub_board);
     }
 
     fn force_opponent_king_to_corner(

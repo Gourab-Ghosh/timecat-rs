@@ -119,8 +119,13 @@ impl SubBoard {
     }
 
     #[inline]
-    pub fn get_piece_mask(&self, piece: PieceType) -> BitBoard {
-        *get_item_unchecked!(self._piece_masks, piece.to_index())
+    pub fn get_piece_masks(&self) -> &[BitBoard] {
+        &self._piece_masks
+    }
+
+    #[inline]
+    pub fn get_piece_mask(&self, piece_type: PieceType) -> BitBoard {
+        *get_item_unchecked!(self._piece_masks, piece_type.to_index())
     }
 
     pub fn has_insufficient_material(&self, color: Color) -> bool {

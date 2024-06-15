@@ -1,7 +1,7 @@
 [package]
 name = "timecat"
 authors = ["Gourab Ghosh"]
-version = "1.15.1"
+version = "1.15.2"
 edition = "2021"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
@@ -52,8 +52,9 @@ reqwest = { version = "0", features = ["blocking"], optional = true }
 sha256 = { version = "1", optional = true }
 
 [features]
-# default = []
-default = ["binary", "colored_output", "speed"]
+default = []
+# default = ["debug"]
+# default = ["binary", "colored_output", "speed"]
 binary = ["nnue", "engine"]
 nnue = ["dep:reqwest", "dep:sha256"]
 engine = ["nnue"]
