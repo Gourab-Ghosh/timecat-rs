@@ -476,7 +476,10 @@ impl Parser {
         let res = match user_input.to_lowercase().as_str() {
             "d" => Ok(println!("{}", engine.get_board())),
             "eval" => {
-                force_println_info("Current Score", engine.get_board().evaluate().stringify());
+                force_println_info(
+                    "Current Score",
+                    engine.get_board_mut().evaluate().stringify(),
+                );
                 Ok(())
             }
             "reset board" => engine

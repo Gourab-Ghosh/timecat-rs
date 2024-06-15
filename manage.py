@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys
+import sys, time
 from manager import *
 
 def process_args():
@@ -54,6 +54,7 @@ def main():
 
     if "publish" in args:
         if not check_errors(FEATURE_SETS_CHECK):
+            time.sleep(2)
             if not test_package():
                 backup_code()
                 publish_package()

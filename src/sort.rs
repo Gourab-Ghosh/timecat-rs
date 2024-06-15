@@ -346,7 +346,7 @@ impl MoveSorter {
     }
 
     pub fn score_root_moves(
-        board: &Board,
+        board: &mut Board,
         move_: Move,
         pv_move: impl Into<Option<Move>>,
         best_moves: &[Move],

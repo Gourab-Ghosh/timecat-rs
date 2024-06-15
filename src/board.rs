@@ -430,47 +430,6 @@ impl Board {
         self.is_other_draw() || self.status() != BoardStatus::Ongoing
     }
 
-    #[cfg(feature = "nnue")]
-    fn store_and_update_evaluator(&mut self) {
-        self.evaluator_stack.push(self.evaluator.clone());
-        let last_sub_board = &self.stack.last().unwrap().0;
-        if last_sub_board.get_king_square(last_sub_board.turn())
-            != self.sub_board.get_king_square(last_sub_board.turn())
-        {
-            self.evaluator.update_king(&self.sub_board);
-            return;
-        }
-        enum Change {
-            Added((Piece, Square)),
-            Removed((Piece, Square)),
-        }
-        ALL_PIECE_TYPES[..5]
-            .into_iter()
-            .cartesian_product(ALL_COLORS)
-            .map(|(&piece_type, color)| {
-                let prev_occupied =
-                    last_sub_board.occupied_co(color) & last_sub_board.get_piece_mask(piece_type);
-                let new_occupied =
-                    self.sub_board.occupied_co(color) & self.sub_board.get_piece_mask(piece_type);
-                (!prev_occupied & new_occupied)
-                    .map(move |square| Change::Added((Piece::new(piece_type, color), square)))
-                    .chain((prev_occupied & !new_occupied).map(move |square| {
-                        Change::Removed((Piece::new(piece_type, color), square))
-                    }))
-            })
-            .flatten()
-            .for_each(|change| {
-                match change {
-                    Change::Added((piece, square)) => {
-                        self.evaluator.activate_non_king_piece(piece, square)
-                    }
-                    Change::Removed((piece, square)) => {
-                        self.evaluator.deactivate_non_king_piece(piece, square)
-                    }
-                };
-            });
-    }
-
     /// The `push` function takes an optional move, updates the sub-board accordingly, and adds
     /// the previous sub-board state and move to a stack.
     ///
@@ -499,11 +458,6 @@ impl Board {
         let (sub_board, optional_move) = self.stack.pop().unwrap();
         self.repetition_table.remove(self.get_hash());
         self.sub_board = sub_board;
-        // #[cfg(feature = "nnue")]
-        // std::mem::drop(std::mem::replace(
-        //     &mut self.evaluator,
-        //     self.evaluator_stack.pop().unwrap(),
-        // ));
         optional_move
     }
 
@@ -868,14 +822,15 @@ impl Board {
 
     #[cfg(feature = "nnue")]
     #[inline]
-    pub fn evaluate(&self) -> Score {
-        self.evaluator.evaluate(self)
+    pub fn evaluate(&mut self) -> Score {
+        self.evaluator.evaluate(&self.sub_board)
     }
 
     #[cfg(feature = "nnue")]
     #[inline]
-    pub fn evaluate_flipped(&self) -> Score {
-        self.score_flipped(self.evaluate())
+    pub fn evaluate_flipped(&mut self) -> Score {
+        let score = self.evaluate();
+        self.score_flipped(score)
     }
 }
 

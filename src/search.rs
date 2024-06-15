@@ -259,14 +259,10 @@ impl Searcher {
                 Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
             )
             .map(|WeightedMove { move_, .. }| {
+                let pv_move = self.get_best_move();
                 (
                     move_,
-                    MoveSorter::score_root_moves(
-                        &self.board,
-                        move_,
-                        self.get_best_move(),
-                        &self.best_moves,
-                    ),
+                    MoveSorter::score_root_moves(&mut self.board, move_, pv_move, &self.best_moves),
                 )
             })
             .collect_vec();
