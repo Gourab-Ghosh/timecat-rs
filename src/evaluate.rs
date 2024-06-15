@@ -13,7 +13,6 @@ lazy_static! {
 #[derive(Clone, Debug)]
 pub struct Evaluator {
     model: HalfKPModel,
-    last_sub_board: SubBoard,
     score_cache: Arc<CacheTable<Score>>,
 }
 
@@ -29,51 +28,8 @@ impl Evaluator {
     pub fn new(sub_board: &SubBoard) -> Self {
         Self {
             model: HALFKP_MODEL_READER.to_model(sub_board),
-            last_sub_board: sub_board.clone(),
             score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE, 0)),
         }
-    }
-
-    pub fn update_model(&mut self, sub_board: &SubBoard) {
-        if self
-            .last_sub_board
-            .get_king_square(self.last_sub_board.turn())
-            != sub_board.get_king_square(self.last_sub_board.turn())
-            || UPDATE_EVALUATOR_FROM_SCRATCH
-        {
-            self.model.reset_model(sub_board);
-            return;
-        }
-        #[derive(Clone)]
-        enum Change {
-            Added((Piece, Square)),
-            Removed((Piece, Square)),
-        }
-        ALL_PIECE_TYPES[..5]
-            .into_iter()
-            .cartesian_product(ALL_COLORS)
-            .map(|(&piece_type, color)| {
-                let prev_occupied = self.last_sub_board.occupied_co(color)
-                    & self.last_sub_board.get_piece_mask(piece_type);
-                let new_occupied =
-                    sub_board.occupied_co(color) & sub_board.get_piece_mask(piece_type);
-                (!prev_occupied & new_occupied)
-                    .map(move |square| Change::Added((Piece::new(piece_type, color), square)))
-                    .chain((prev_occupied & !new_occupied).map(move |square| {
-                        Change::Removed((Piece::new(piece_type, color), square))
-                    }))
-            })
-            .flatten()
-            .cartesian_product(ALL_COLORS)
-            .for_each(|(change, turn)| match change {
-                Change::Added((piece, square)) => {
-                    self.model.activate_non_king_piece(turn, piece, square)
-                }
-                Change::Removed((piece, square)) => {
-                    self.model.deactivate_non_king_piece(turn, piece, square)
-                }
-            });
-        self.last_sub_board = sub_board.clone();
     }
 
     fn force_opponent_king_to_corner(
@@ -210,8 +166,7 @@ impl Evaluator {
         if Self::is_easily_winning_position(sub_board, material_score) {
             return self.king_corner_forcing_evaluation(sub_board, material_score);
         }
-        self.update_model(sub_board);
-        let mut nnue_eval = self.model.evaluate(sub_board.turn());
+        let mut nnue_eval = self.model.update_and_evaluate(sub_board);
         if nnue_eval.abs() > WINNING_SCORE_THRESHOLD {
             let multiplier = match_interpolate!(
                 0,

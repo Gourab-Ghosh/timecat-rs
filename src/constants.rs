@@ -181,7 +181,7 @@ pub mod nnue {
         + 2 * Queen.evaluate();
     pub const MAX_MATERIAL_SCORE: Score = INITIAL_MATERIAL_SCORE_ABS / 2;
     pub const WINNING_SCORE_THRESHOLD: Score = 15 * PAWN_VALUE;
-    pub const UPDATE_EVALUATOR_FROM_SCRATCH: bool = true;
+    pub const UPDATE_MODEL_FROM_SCRATCH: bool = true;
 }
 
 #[cfg(feature = "engine")]
