@@ -44,7 +44,7 @@ def main():
         check_errors(FEATURE_SETS_CHECK)
 
     if "test" in args:
-        test_package()
+        test_package("--release" in args)
 
     if "run" in args:
         run_package(os.path.dirname(__file__), args = args, binary_args = binary_args)

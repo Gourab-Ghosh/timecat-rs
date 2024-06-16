@@ -171,14 +171,13 @@ impl HalfKPModelReader {
                     sub_board.get_king_square(White),
                     sub_board.get_king_square(Black).rotate(),
                 ],
-                accumulators: CustomDebug::new(
-                    accumulators,
-                    &format!("Accumulators[{}x2]", HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS),
-                ),
+                accumulators: CustomDebug::new(accumulators, |_| {
+                    format!("Accumulators[{}x2]", HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS)
+                }),
             },
             transformer: self.transformer.clone(),
             network: self.network.clone(),
-            last_sub_board: sub_board.clone(),
+            last_sub_board: CustomDebug::new(sub_board.clone(), |sub_board| sub_board.get_fen()),
         };
         halfkp_model.update_empty_model(sub_board);
         halfkp_model
@@ -200,7 +199,7 @@ pub struct HalfKPModel {
     transformer: HalfKPFeatureTransformer,
     network: HalfKPNetwork,
     accumulator: Accumulator,
-    last_sub_board: SubBoard,
+    last_sub_board: CustomDebug<SubBoard>,
 }
 
 impl HalfKPModel {
@@ -261,6 +260,11 @@ impl HalfKPModel {
             .for_each(|x| x.clone_from(self.transformer.get_biases()));
     }
 
+    #[inline]
+    fn update_last_sub_board(&mut self, sub_board: SubBoard) {
+        self.last_sub_board = CustomDebug::new(sub_board.clone(), |sub_board| sub_board.get_fen());
+    }
+
     pub fn reset_model(&mut self, sub_board: &SubBoard) {
         self.clear();
         self.accumulator.king_squares_rotated = [
@@ -268,7 +272,7 @@ impl HalfKPModel {
             sub_board.get_king_square(Black).rotate(),
         ];
         self.update_empty_model(sub_board);
-        self.last_sub_board = sub_board.clone();
+        self.update_last_sub_board(sub_board.clone());
     }
 
     // pub fn update_king(&mut self, turn: Color, square: Square, sub_board: &SubBoard) {
@@ -279,15 +283,12 @@ impl HalfKPModel {
     //     };
     //     self.clear();
     //     self.update_empty_model(sub_board);
-    //     self.last_sub_board = sub_board.clone();
+    //     self.update_last_sub_board(sub_board.clone());
     // }
 
     pub fn update_model(&mut self, sub_board: &SubBoard) {
-        if self
-            .last_sub_board
-            .get_king_square(self.last_sub_board.turn())
-            != sub_board.get_king_square(self.last_sub_board.turn())
-            || UPDATE_MODEL_FROM_SCRATCH
+        if self.last_sub_board.get_king_square(White) != sub_board.get_king_square(White)
+            || self.last_sub_board.get_king_square(Black) != sub_board.get_king_square(Black)
         {
             self.reset_model(sub_board);
             return;
@@ -324,10 +325,10 @@ impl HalfKPModel {
                     self.deactivate_non_king_piece(turn, piece, square)
                 }
             });
-        self.last_sub_board = sub_board.clone();
+        self.update_last_sub_board(sub_board.clone());
     }
 
-    pub fn evaluate(&self, turn: Color) -> Score {
+    pub(crate) fn evaluate_flipped(&self, turn: Color) -> Score {
         let mut inputs: [i8; 512] = [0; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS * 2];
         for color in ALL_COLORS {
             let input = if color == turn {
@@ -354,11 +355,15 @@ impl HalfKPModel {
             .forward(inputs)
             .clipped_relu(6, 0, 127);
         let outputs = self.network.output_layer.forward(inputs);
-        let score = (get_item_unchecked!(outputs, 0) / 16) as Score;
+        (get_item_unchecked!(outputs, 0) / 16) as Score
+    }
+
+    pub(crate) fn evaluate(&self, turn: Color) -> Score {
+        let score_flipped = self.evaluate_flipped(turn);
         if turn == White {
-            score
+            score_flipped
         } else {
-            -score
+            -score_flipped
         }
     }
 
@@ -377,14 +382,17 @@ impl HalfKPModel {
                         self.transformer.get_biases().clone(),
                         self.transformer.get_biases().clone(),
                     ],
-                    self.accumulator.accumulators.get_debug_message(),
+                    self.accumulator
+                        .accumulators
+                        .get_debug_message_func()
+                        .to_owned(),
                 ),
                 king_squares_rotated: [
                     sub_board.get_king_square(White),
                     sub_board.get_king_square(Black).rotate(),
                 ],
             },
-            last_sub_board: sub_board.clone(),
+            last_sub_board: CustomDebug::new(sub_board.clone(), |sub_board| sub_board.get_fen()),
         };
         model.update_empty_model(sub_board);
         model.evaluate(sub_board.turn())

@@ -1,9 +1,6 @@
 import os, sys, time
 from shutil import which
-
-def get_environment_variables(*flags):
-    rustflags = "-C target-cpu=native {}".format(" ".join("-C link-args=" + flag.strip() for flag in set(flags))).strip()
-    return f"RUSTFLAGS={repr(rustflags)}"
+from .constants import RUST_FLAGS_STRING
 
 def timed_run(func):
     start = time.time()
@@ -31,7 +28,7 @@ def run_package(current_path, args = None, binary_args = None, environment_varia
     is_release = "--debug" not in args
     if is_release:
         commands.append("--release")
-        commands.insert(0, get_environment_variables(*environment_variables))
+        commands.insert(0, RUST_FLAGS_STRING)
         # commands.insert(0, get_environment_variables("-Ofast", "-mavx2", "-funroll-loops"))
         # commands.insert(0, get_environment_variables("-mavx2", "-funroll-loops"))
     if not os.system(" ".join(commands)):

@@ -13,32 +13,37 @@ pub fn print_line<T: fmt::Display>(line: T) {
 
 use super::*;
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CustomDebug<T> {
     item: T,
-    debug_message: Arc<String>,
+    debug_message_func: Arc<fn(&T) -> String>,
 }
 
 impl<T> CustomDebug<T> {
-    pub fn new(item: T, debug_message: &str) -> Self {
+    pub fn new(item: T, debug_message_func: fn(&T) -> String) -> Self {
         Self {
             item,
-            debug_message: Arc::new(debug_message.to_string()),
+            debug_message_func: Arc::new(debug_message_func),
         }
     }
 
-    pub fn get_debug_message(&self) -> &str {
-        &self.debug_message
+    pub fn get_debug_message_func(&self) -> &fn(&T) -> String {
+        &self.debug_message_func
+    }
+
+    pub fn get_debug_message(&self) -> String {
+        (self.debug_message_func)(&self.item)
+    }
+
+    pub fn into_inner(&self) -> &T {
+        &self.item
     }
 }
 
 impl<T: Debug> Debug for CustomDebug<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.debug_message.is_empty() {
-            write!(f, "{:?}", self.item)
-        } else {
-            write!(f, "{}", self.debug_message)
-        }
+        let debug_message = self.get_debug_message();
+        write!(f, "{}", debug_message)
     }
 }
 
@@ -56,9 +61,9 @@ impl<T> DerefMut for CustomDebug<T> {
     }
 }
 
-impl<T> From<T> for CustomDebug<T> {
+impl<T: Debug> From<T> for CustomDebug<T> {
     fn from(value: T) -> Self {
-        Self::new(value, "")
+        Self::new(value, |item| format!("{item:?}"))
     }
 }
 

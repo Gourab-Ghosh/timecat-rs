@@ -177,17 +177,6 @@ impl Board {
         true
     }
 
-    /// The function `empty` returns a chess board with no pieces on it.
-    ///
-    /// Returns:
-    ///
-    /// The `empty` function is returning a chess board that is initialized with an empty position. It
-    /// is using the `from_fen` method to create the board from a FEN (Forsyth-Edwards Notation) string
-    /// representation of an empty board.
-    pub fn empty() -> Self {
-        Self::from_fen(EMPTY_FEN).unwrap()
-    }
-
     /// The `reset` function sets the position to the starting position.
     pub fn reset(&mut self) {
         self.set_fen(STARTING_POSITION_FEN).unwrap();
@@ -704,7 +693,7 @@ impl Board {
     ///
     /// The function `variation_san` returns a `String` containing the Standard Algebraic Notation (SAN)
     /// representation of the moves in the provided variation on the chess board.
-    fn variation_san(board: &Board, variation: Vec<Option<Move>>) -> String {
+    pub fn variation_san(board: &Board, variation: Vec<Option<Move>>) -> String {
         let mut board = board.clone();
         let mut san = Vec::new();
         for optional_move in variation {
@@ -754,12 +743,11 @@ impl Board {
         }
         pgn += &Self::variation_san(
             &Self::from_fen(&self.starting_fen).unwrap(),
-            Vec::from_iter(
-                self.stack
-                    .clone()
-                    .into_iter()
-                    .map(|(_, optional_m)| optional_m),
-            ),
+            self.stack
+                .clone()
+                .into_iter()
+                .map(|(_, optional_m)| optional_m)
+                .collect_vec(),
         );
         pgn
     }

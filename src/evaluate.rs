@@ -32,6 +32,14 @@ impl Evaluator {
         }
     }
 
+    pub fn get_model(&self) -> &HalfKPModel {
+        &self.model
+    }
+
+    pub fn get_model_mut(&mut self) -> &mut HalfKPModel {
+        &mut self.model
+    }
+
     fn force_opponent_king_to_corner(
         &self,
         sub_board: &SubBoard,
