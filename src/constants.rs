@@ -165,7 +165,7 @@ pub mod print_style {
     generate_constants!(WARNING_MESSAGE_STYLE, [bright_yellow, bold]);
 }
 
-pub mod nnue {
+pub mod evaluate {
     use super::*;
 
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;

@@ -21,8 +21,10 @@ def main():
     FEATURE_SETS_CHECK = [
         [],
         ["default"],
-        ["nnue"],
-        ["nnue", "speed"],
+        ["nnue_reader"],
+        ["nnue_reader", "speed"],
+        ["inbuilt_nnue"],
+        ["inbuilt_nnue", "speed"],
         ["binary"],
         ["binary", "speed"],
         ["binary", "serde"],

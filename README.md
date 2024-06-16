@@ -146,7 +146,8 @@ The `selfplay` command works on the binary as well.
 
 ## Cargo Features
 - `binary`: Enables binary builds, including NNUE and engine functionalities.
-- `nnue`: Adds support for NNUE (downloaded via `reqwest`).
+- `nnue_reader`: Adds support for NNUE evaluation by reading nnue files.
+- `inbuilt_nnue`: Integrate built-in NNUE evaluation support by including the nnue file directly into the binary, fetched using the reqwest library.
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
 - `colored_output`: Displays all information in a visually appealing colored format for enhanced readability.
 - `speed`: Optimize the code to improve speed at the cost of increased memory usage and in extremely rare cases cause unexpected behavior. Note that the gain in speed might be minimal compared to the additional memory required.

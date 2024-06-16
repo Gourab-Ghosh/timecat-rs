@@ -878,7 +878,7 @@ impl SubBoard {
             ]
             .join("\n"),
         );
-        #[cfg(feature = "nnue")]
+        #[cfg(feature = "inbuilt_nnue")]
         skeleton.push_str(&format!(
             "\n{}",
             format_info("Current Evaluation", self.slow_evaluate().stringify(), true)
@@ -1057,13 +1057,13 @@ impl SubBoard {
         self.get_material_score() - Pawn.evaluate() * self.get_piece_mask(Pawn).popcnt() as Score
     }
 
-    #[cfg(feature = "nnue")]
+    #[cfg(feature = "inbuilt_nnue")]
     #[inline]
     pub fn slow_evaluate(&self) -> Score {
         Evaluator::slow_evaluate(self)
     }
 
-    #[cfg(feature = "nnue")]
+    #[cfg(feature = "inbuilt_nnue")]
     #[inline]
     pub fn slow_evaluate_flipped(&self) -> Score {
         self.score_flipped(self.slow_evaluate())

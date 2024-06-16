@@ -9,8 +9,9 @@ mod constants;
 #[cfg(feature = "engine")]
 mod engine;
 mod error;
-#[cfg(feature = "nnue")]
+#[cfg(feature = "inbuilt_nnue")]
 mod evaluate;
+#[cfg(feature = "nnue_reader")]
 mod nnue;
 #[cfg(feature = "engine")]
 mod parse;
@@ -46,12 +47,6 @@ mod engine_features {
     pub use uci::*;
 }
 
-#[cfg(feature = "nnue")]
-mod nnue_features {
-    use super::*;
-    pub use evaluate::*;
-}
-
 pub mod prelude {
     use super::*;
     pub use super::{
@@ -84,6 +79,7 @@ pub mod prelude {
 }
 
 pub use arrayvec::ArrayVec;
+#[cfg(feature = "nnue_reader")]
 pub use binread::{BinRead, BinResult};
 pub use board::*;
 pub use chess::*;
@@ -95,7 +91,7 @@ pub use constants::description::*;
 pub use constants::fen::*;
 pub use constants::files::*;
 pub use constants::io::*;
-pub use constants::nnue::*;
+pub use constants::evaluate::*;
 pub use constants::piece::*;
 pub use constants::print_style::*;
 pub use constants::ranks::*;
@@ -105,9 +101,10 @@ pub use engine_features::*;
 pub use error::*;
 pub use itertools::*;
 pub use lazy_static::lazy_static;
+#[cfg(feature = "nnue_reader")]
 pub use nnue::*;
-#[cfg(feature = "nnue")]
-pub use nnue_features::*;
+#[cfg(feature = "inbuilt_nnue")]
+pub use evaluate::*;
 pub use paste::paste;
 #[cfg(feature = "serde")]
 pub use serde::{Deserialize, Serialize};
