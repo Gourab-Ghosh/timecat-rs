@@ -64,8 +64,6 @@ impl GameResult {
 pub struct Board {
     sub_board: SubBoard,
     stack: Vec<(SubBoard, Option<Move>)>,
-    #[cfg(feature = "nnue")]
-    evaluator_stack: Vec<Evaluator>,
     starting_fen: String,
     repetition_table: RepetitionTable,
     #[cfg(feature = "nnue")]
@@ -855,8 +853,6 @@ impl From<SubBoard> for Board {
             evaluator: Evaluator::new(&sub_board),
             sub_board,
             stack: Vec::new(),
-            #[cfg(feature = "nnue")]
-            evaluator_stack: vec![],
             starting_fen: STARTING_POSITION_FEN.to_string(),
             repetition_table: RepetitionTable::new(),
         };
