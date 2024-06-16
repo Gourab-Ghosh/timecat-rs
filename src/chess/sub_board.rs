@@ -36,7 +36,7 @@ impl PartialEq for SubBoard {
 
 impl SubBoard {
     #[inline]
-    fn transposition_key_components(
+    pub fn transposition_key_components(
         &self,
     ) -> (
         [BitBoard; 6],

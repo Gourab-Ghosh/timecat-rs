@@ -38,6 +38,10 @@ impl<T> CustomDebug<T> {
     pub fn into_inner(&self) -> &T {
         &self.item
     }
+
+    pub fn into_inner_mut(&mut self) -> &mut T {
+        &mut self.item
+    }
 }
 
 impl<T: Debug> Debug for CustomDebug<T> {

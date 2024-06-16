@@ -16,7 +16,12 @@ const QUANTIZATION_SCALE_BY_POW_OF_TWO: i8 = 4;
 
 #[derive(Clone)]
 struct HalfKPFeatureTransformer {
-    weights: Arc<Box<[MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS]>>,
+    weights: Arc<
+        Box<
+            [MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>;
+                HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS],
+        >,
+    >,
     // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=75296
     bona_piece_zero_weights: Arc<Box<[[i16; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS]; NUM_SQUARES]>>,
     biases: Arc<MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>>,
@@ -235,7 +240,7 @@ impl HalfKPModel {
     }
 
     #[inline]
-    fn update_empty_model_with_color(&mut self, sub_board: &SubBoard, turn: Color) {
+    fn update_empty_model_of_one_side(&mut self, sub_board: &SubBoard, turn: Color) {
         sub_board
             .custom_iter(&ALL_PIECE_TYPES[..5], &[White, Black], BB_ALL)
             .for_each(|(piece, square)| self.activate_non_king_piece(turn, piece, square))
@@ -245,15 +250,19 @@ impl HalfKPModel {
     fn update_empty_model(&mut self, sub_board: &SubBoard) {
         ALL_COLORS
             .into_iter()
-            .for_each(|turn| self.update_empty_model_with_color(sub_board, turn));
+            .for_each(|turn| self.update_empty_model_of_one_side(sub_board, turn));
+    }
+
+    #[inline]
+    pub fn clear_one_side(&mut self, turn: Color) {
+        self.accumulator.accumulators[turn.to_index()].clone_from(self.transformer.get_biases());
     }
 
     #[inline]
     pub fn clear(&mut self) {
-        self.accumulator
-            .accumulators
-            .iter_mut()
-            .for_each(|x| x.clone_from(self.transformer.get_biases()));
+        ALL_COLORS
+            .into_iter()
+            .for_each(|turn| self.clear_one_side(turn));
     }
 
     #[inline]
@@ -271,40 +280,52 @@ impl HalfKPModel {
         self.update_last_sub_board(sub_board.clone());
     }
 
-    // pub fn update_king(&mut self, turn: Color, square: Square, sub_board: &SubBoard) {
-    //     self.accumulator.king_squares_rotated[turn.to_index()] = if turn == White {
-    //         square
-    //     } else {
-    //         square.rotate()
-    //     };
-    //     self.clear();
-    //     self.update_empty_model(sub_board);
-    //     self.update_last_sub_board(sub_board.clone());
-    // }
+    fn update_king(&mut self, sub_board: &SubBoard, color: Color) {
+        let new_king_square = if color == White {
+            sub_board.get_king_square(color)
+        } else {
+            sub_board.get_king_square(color).rotate()
+        };
+        self.accumulator.king_squares_rotated[color.to_index()] = new_king_square;
+        self.clear_one_side(color);
+        self.update_empty_model_of_one_side(sub_board, color);
+    }
 
     pub fn update_model(&mut self, sub_board: &SubBoard) {
-        if self.last_sub_board.get_king_square(White) != sub_board.get_king_square(White)
-            || self.last_sub_board.get_king_square(Black) != sub_board.get_king_square(Black)
-        {
-            self.reset_model(sub_board);
-            return;
+        let mut white_king_updated = false;
+        let mut black_king_updated = false;
+        if self.last_sub_board.get_king_square(White) != sub_board.get_king_square(White) {
+            self.update_king(sub_board, White);
+            white_king_updated = true;
+        }
+        if self.last_sub_board.get_king_square(Black) != sub_board.get_king_square(Black) {
+            self.update_king(sub_board, Black);
+            black_king_updated = true;
+        }
+
+        let mut colors_to_update = Vec::with_capacity(2);
+        if !white_king_updated {
+            colors_to_update.push(White);
+        }
+        if !black_king_updated {
+            colors_to_update.push(Black);
         }
         #[derive(Clone)]
         enum Change {
             Added((Piece, Square)),
             Removed((Piece, Square)),
         }
-        let piece_masks = self.last_sub_board.get_piece_masks().to_owned();
-        let occupied_cos = [
+        let last_sub_board_piece_masks = self.last_sub_board.get_piece_masks().to_owned();
+        let last_sub_board_occupied_cos = [
             self.last_sub_board.occupied_co(White),
             self.last_sub_board.occupied_co(Black),
         ];
         ALL_PIECE_TYPES[..5]
-            .iter()
+            .into_iter()
             .cartesian_product(ALL_COLORS)
             .flat_map(|(&piece_type, color)| {
-                let prev_occupied =
-                    occupied_cos[color.to_index()] & piece_masks[piece_type.to_index()];
+                let prev_occupied = last_sub_board_occupied_cos[color.to_index()]
+                    & last_sub_board_piece_masks[piece_type.to_index()];
                 let new_occupied =
                     sub_board.occupied_co(color) & sub_board.get_piece_mask(piece_type);
                 (!prev_occupied & new_occupied)
@@ -313,7 +334,7 @@ impl HalfKPModel {
                         Change::Removed((Piece::new(piece_type, color), square))
                     }))
             })
-            .cartesian_product(ALL_COLORS)
+            .cartesian_product(colors_to_update.into_iter())
             .for_each(|(change, turn)| match change {
                 Change::Added((piece, square)) => self.activate_non_king_piece(turn, piece, square),
                 Change::Removed((piece, square)) => {
@@ -323,7 +344,7 @@ impl HalfKPModel {
         self.update_last_sub_board(sub_board.clone());
     }
 
-    pub(crate) fn evaluate_flipped(&self, turn: Color) -> Score {
+    pub fn evaluate_current_state_flipped(&self, turn: Color) -> Score {
         let mut inputs: [i8; 512] = [0; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS * 2];
         for color in ALL_COLORS {
             let input = if color == turn {
@@ -353,8 +374,8 @@ impl HalfKPModel {
         (get_item_unchecked!(outputs, 0) / 16) as Score
     }
 
-    pub(crate) fn evaluate(&self, turn: Color) -> Score {
-        let score_flipped = self.evaluate_flipped(turn);
+    pub fn evaluate_current_state(&self, turn: Color) -> Score {
+        let score_flipped = self.evaluate_current_state_flipped(turn);
         if turn == White {
             score_flipped
         } else {
@@ -364,10 +385,10 @@ impl HalfKPModel {
 
     pub fn update_model_and_evaluate(&mut self, sub_board: &SubBoard) -> Score {
         self.update_model(sub_board);
-        self.evaluate(sub_board.turn())
+        self.evaluate_current_state(sub_board.turn())
     }
 
-    pub fn evaluate_from_sub_board(&self, sub_board: &SubBoard) -> Score {
+    pub fn slow_evaluate_from_sub_board(&self, sub_board: &SubBoard) -> Score {
         let mut model = Self {
             transformer: self.transformer.clone(),
             network: self.network.clone(),
@@ -390,6 +411,6 @@ impl HalfKPModel {
             last_sub_board: CustomDebug::new(sub_board.clone(), |sub_board| sub_board.get_fen()),
         };
         model.update_empty_model(sub_board);
-        model.evaluate(sub_board.turn())
+        model.evaluate_current_state(sub_board.turn())
     }
 }

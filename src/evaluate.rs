@@ -220,7 +220,7 @@ impl Evaluator {
     pub fn slow_evaluate(sub_board: &SubBoard) -> Score {
         HALFKP_MODEL_READER
             .to_model(sub_board)
-            .evaluate(sub_board.turn())
+            .evaluate_current_state(sub_board.turn())
     }
 
     pub fn reset_variables(&self) {
