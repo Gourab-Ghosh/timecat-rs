@@ -8,7 +8,7 @@ pub struct Layer<
     const NUM_OUTPUTS: usize,
 > {
     weights_transpose: Arc<Box<[MathVec<W, NUM_INPUTS>; NUM_OUTPUTS]>>,
-    biases: Arc<Box<MathVec<B, NUM_OUTPUTS>>>,
+    biases: Arc<MathVec<B, NUM_OUTPUTS>>,
 }
 
 impl<
@@ -31,8 +31,8 @@ impl<
             weights_transpose.push(BinRead::read_options(reader, options, ())?);
         }
         Ok(Self {
-            biases: Arc::new(biases),
             weights_transpose: Arc::new(weights_transpose.try_into().unwrap()),
+            biases: Arc::new(biases),
         })
     }
 }
@@ -63,7 +63,7 @@ impl<
     > Layer<W, B, NUM_INPUTS, NUM_OUTPUTS>
 {
     pub fn forward(&self, inputs: MathVec<W, NUM_INPUTS>) -> MathVec<B, NUM_OUTPUTS> {
-        let mut outputs = self.biases.as_ref().as_ref().clone();
+        let mut outputs = self.biases.as_ref().clone();
         for (o, w) in outputs.iter_mut().zip(self.weights_transpose.iter()) {
             *o += inputs.dot(w);
         }

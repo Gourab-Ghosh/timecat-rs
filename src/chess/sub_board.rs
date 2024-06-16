@@ -1077,18 +1077,17 @@ impl SubBoard {
         mask: BitBoard,
     ) -> impl Iterator<Item = (Piece, Square)> + 'a {
         piece_types
-            .into_iter()
+            .iter()
             .cartesian_product(colors)
-            .map(move |(&piece_type, &color)| {
+            .flat_map(move |(&piece_type, &color)| {
                 (self.get_piece_mask(piece_type) & self.occupied_co(color) & mask)
                     .into_iter()
                     .map(move |square| (Piece::new(piece_type, color), square))
             })
-            .flatten()
     }
 
     #[inline]
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = (Piece, Square)> + 'a {
+    pub fn iter(&self) -> impl Iterator<Item = (Piece, Square)> + '_ {
         self.custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS, BB_ALL)
     }
 }

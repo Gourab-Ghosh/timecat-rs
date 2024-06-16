@@ -26,7 +26,7 @@ impl Move {
         }
         let san = san.replace('0', "O");
         for move_ in sub_board.generate_legal_moves() {
-            if move_.san(&sub_board).unwrap() == san {
+            if move_.san(sub_board).unwrap() == san {
                 return Ok(Some(move_));
             }
         }
@@ -41,7 +41,7 @@ impl Move {
         }
         let lan = lan.replace('0', "O");
         for move_ in sub_board.generate_legal_moves() {
-            if move_.lan(&sub_board).unwrap() == lan {
+            if move_.lan(sub_board).unwrap() == lan {
                 return Ok(Some(move_));
             }
         }

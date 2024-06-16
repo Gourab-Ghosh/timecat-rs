@@ -610,7 +610,7 @@ impl Searcher {
         }
         for WeightedMove { move_, weight } in self
             .move_sorter
-            .get_weighted_capture_moves_sorted(&self.board, &&self.transposition_table)
+            .get_weighted_capture_moves_sorted(&self.board, &self.transposition_table)
         {
             if weight.is_negative() {
                 break;

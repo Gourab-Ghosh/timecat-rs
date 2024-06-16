@@ -16,15 +16,10 @@ const QUANTIZATION_SCALE_BY_POW_OF_TWO: i8 = 4;
 
 #[derive(Clone)]
 struct HalfKPFeatureTransformer {
-    weights: Arc<
-        Box<
-            [MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>;
-                HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS],
-        >,
-    >,
+    weights: Arc<Box<[MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS]>>,
     // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=75296
     bona_piece_zero_weights: Arc<Box<[[i16; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS]; NUM_SQUARES]>>,
-    biases: Arc<Box<MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>>>,
+    biases: Arc<MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>>,
 }
 
 impl BinRead for HalfKPFeatureTransformer {
@@ -35,7 +30,7 @@ impl BinRead for HalfKPFeatureTransformer {
         options: &binread::ReadOptions,
         _: Self::Args,
     ) -> binread::BinResult<Self> {
-        let biases: Box<MathVec<i16, 256>> = BinRead::read_options(reader, options, ())?;
+        let biases: MathVec<i16, 256> = BinRead::read_options(reader, options, ())?;
         let mut weights: Vec<MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>> =
             Vec::with_capacity(HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS);
         let mut bona_piece_zero_weights: Vec<[i16; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS]> =
@@ -305,9 +300,9 @@ impl HalfKPModel {
             self.last_sub_board.occupied_co(Black),
         ];
         ALL_PIECE_TYPES[..5]
-            .into_iter()
+            .iter()
             .cartesian_product(ALL_COLORS)
-            .map(|(&piece_type, color)| {
+            .flat_map(|(&piece_type, color)| {
                 let prev_occupied =
                     occupied_cos[color.to_index()] & piece_masks[piece_type.to_index()];
                 let new_occupied =
@@ -318,7 +313,6 @@ impl HalfKPModel {
                         Change::Removed((Piece::new(piece_type, color), square))
                     }))
             })
-            .flatten()
             .cartesian_product(ALL_COLORS)
             .for_each(|(change, turn)| match change {
                 Change::Added((piece, square)) => self.activate_non_king_piece(turn, piece, square),
