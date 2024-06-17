@@ -15,7 +15,7 @@ pub fn self_play(
     go_command: GoCommand,
     print: bool,
     move_limit: impl Into<Option<NumMoves>> + Copy,
-) -> Result<(), EngineError> {
+) -> Result<(), TimecatError> {
     let move_limit = move_limit.into().unwrap_or(NumMoves::MAX);
     if move_limit == 0 {
         return Ok(());
@@ -26,7 +26,7 @@ pub fn self_play(
     let mut prediction_score_vec = Vec::new();
     println!("{}", engine.get_board());
     if engine.get_board().is_game_over() {
-        return Err(EngineError::GameAlreadyOver);
+        return Err(TimecatError::GameAlreadyOver);
     }
     let initial_num_moves = engine.get_board().get_num_moves();
     while !engine.get_board().is_game_over()
@@ -39,7 +39,7 @@ pub fn self_play(
         }
         let response = engine.go(go_command, print);
         let Some(best_move) = response.get_best_move() else {
-            return Err(EngineError::BestMoveNotFound {
+            return Err(TimecatError::BestMoveNotFound {
                 fen: engine.get_board().get_fen(),
             });
         };

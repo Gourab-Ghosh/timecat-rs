@@ -1,9 +1,9 @@
 use super::*;
-use EngineError::*;
+use TimecatError::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub enum EngineError {
+pub enum TimecatError {
     UnknownCommand,
     NoInput,
     NotImplemented,
@@ -73,7 +73,7 @@ pub enum EngineError {
     },
 }
 
-impl fmt::Display for EngineError {
+impl fmt::Display for TimecatError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             UnknownCommand => write!(f, "{}", UnknownCommand.stringify()),
@@ -107,9 +107,9 @@ impl fmt::Display for EngineError {
     }
 }
 
-impl Error for EngineError {}
+impl Error for TimecatError {}
 
-impl EngineError {
+impl TimecatError {
     pub fn stringify_with_optional_raw_input(&self, optional_raw_input: Option<&str>) -> String {
         match self {
             Self::UnknownCommand => {
@@ -131,25 +131,25 @@ impl EngineError {
     }
 }
 
-impl Stringify for EngineError {
+impl Stringify for TimecatError {
     fn stringify(&self) -> String {
         self.stringify_with_optional_raw_input(None)
     }
 }
 
-impl From<EngineError> for String {
-    fn from(error: EngineError) -> Self {
+impl From<TimecatError> for String {
+    fn from(error: TimecatError) -> Self {
         error.stringify()
     }
 }
 
-impl From<&Self> for EngineError {
+impl From<&Self> for TimecatError {
     fn from(error: &Self) -> Self {
         error.clone()
     }
 }
 
-impl From<ParseBoolError> for EngineError {
+impl From<ParseBoolError> for TimecatError {
     fn from(error: ParseBoolError) -> Self {
         CustomError {
             err_msg: format!("Failed to parse bool, {error}! Please try again!"),
@@ -157,7 +157,7 @@ impl From<ParseBoolError> for EngineError {
     }
 }
 
-impl From<ParseIntError> for EngineError {
+impl From<ParseIntError> for TimecatError {
     fn from(error: ParseIntError) -> Self {
         CustomError {
             err_msg: format!("Failed to parse integer, {error}! Please try again!"),
@@ -167,7 +167,7 @@ impl From<ParseIntError> for EngineError {
 
 macro_rules! impl_error_convert {
     ($class:ty) => {
-        impl From<$class> for EngineError {
+        impl From<$class> for TimecatError {
             fn from(error: $class) -> Self {
                 CustomError {
                     err_msg: format!("{error}! Please try again!"),
@@ -180,13 +180,13 @@ macro_rules! impl_error_convert {
 impl_error_convert!(std::io::Error);
 impl_error_convert!(std::array::TryFromSliceError);
 
-impl From<String> for EngineError {
+impl From<String> for TimecatError {
     fn from(err_msg: String) -> Self {
         CustomError { err_msg }
     }
 }
 
-impl From<&str> for EngineError {
+impl From<&str> for TimecatError {
     fn from(err_msg: &str) -> Self {
         err_msg.to_string().into()
     }

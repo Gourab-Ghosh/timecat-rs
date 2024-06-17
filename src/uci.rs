@@ -127,7 +127,7 @@ impl UCIOption {
         UCIOption::new(name, UCIOptionType::Button { function })
     }
 
-    fn set_option(&self, engine: &Engine, value_string: String) -> Result<(), EngineError> {
+    fn set_option(&self, engine: &Engine, value_string: String) -> Result<(), TimecatError> {
         match self.option_type {
             UCIOptionType::Check { function, .. } => {
                 function(engine, value_string.parse()?);
@@ -137,7 +137,7 @@ impl UCIOption {
             } => {
                 let value = value_string.parse()?;
                 if value < min || value > max {
-                    return Err(EngineError::InvalidSpinValue {
+                    return Err(TimecatError::InvalidSpinValue {
                         name: self.name.to_owned(),
                         value,
                         min,
@@ -233,9 +233,9 @@ impl UCIOptions {
         engine: &Engine,
         command_name: &str,
         value_string: String,
-    ) -> Result<(), EngineError> {
+    ) -> Result<(), TimecatError> {
         self.get_option(command_name)
-            .ok_or(EngineError::UnknownCommand)?
+            .ok_or(TimecatError::UnknownCommand)?
             .set_option(engine, value_string)
     }
 }

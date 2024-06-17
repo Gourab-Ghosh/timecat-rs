@@ -91,11 +91,11 @@ impl Board {
     ///
     /// Returns:
     ///
-    /// The `set_fen` function returns a `Result<(), EngineError>`.
-    pub fn set_fen(&mut self, fen: &str) -> Result<(), EngineError> {
+    /// The `set_fen` function returns a `Result<(), TimecatError>`.
+    pub fn set_fen(&mut self, fen: &str) -> Result<(), TimecatError> {
         let fen = simplify_fen(fen);
         if !Self::is_good_fen(&fen) {
-            return Err(EngineError::BadFen { fen });
+            return Err(TimecatError::BadFen { fen });
         }
         if fen == self.get_fen() {
             self.starting_fen = self.get_fen();
@@ -120,9 +120,9 @@ impl Board {
     /// Returns:
     ///
     /// The `from_fen` function is returning a `Result` containing either a `ChessBoard` instance if the
-    /// FEN string was successfully parsed and set on the board, or an `EngineError` if there was an
+    /// FEN string was successfully parsed and set on the board, or an `TimecatError` if there was an
     /// error during the parsing or setting of the FEN string.
-    pub fn from_fen(fen: &str) -> Result<Self, EngineError> {
+    pub fn from_fen(fen: &str) -> Result<Self, TimecatError> {
         let mut board = Self::new();
         board.set_fen(fen)?;
         Ok(board)
@@ -513,8 +513,8 @@ impl Board {
     ///
     /// Returns:
     ///
-    /// The `push_san` function returns a `Result` containing an `Option` of `Move` or an `EngineError`.
-    pub fn push_san(&mut self, san: &str) -> Result<Option<Move>, EngineError> {
+    /// The `push_san` function returns a `Result` containing an `Option` of `Move` or an `TimecatError`.
+    pub fn push_san(&mut self, san: &str) -> Result<Option<Move>, TimecatError> {
         let move_ = self.parse_san(san)?;
         self.push(move_);
         Ok(move_)
@@ -533,9 +533,9 @@ impl Board {
     /// Returns:
     ///
     /// The `push_sans` function is returning a `Result` containing a `Vec` of `Option<Move>` or an
-    /// `EngineError`.
+    /// `TimecatError`.
     #[inline]
-    pub fn push_sans(&mut self, sans: &str) -> Result<Vec<Option<Move>>, EngineError> {
+    pub fn push_sans(&mut self, sans: &str) -> Result<Vec<Option<Move>>, TimecatError> {
         remove_double_spaces_and_trim(sans)
             .split(' ')
             .map(|san| self.push_san(san))
@@ -552,8 +552,8 @@ impl Board {
     ///
     /// Returns:
     ///
-    /// The function `push_uci` returns a `Result` containing an `Option` of `Move` or an `EngineError`.
-    pub fn push_uci(&mut self, uci: &str) -> Result<Option<Move>, EngineError> {
+    /// The function `push_uci` returns a `Result` containing an `Option` of `Move` or an `TimecatError`.
+    pub fn push_uci(&mut self, uci: &str) -> Result<Option<Move>, TimecatError> {
         let move_ = self.parse_uci(uci)?;
         self.push(move_);
         Ok(move_)
@@ -580,9 +580,9 @@ impl Board {
     /// Returns:
     ///
     /// The `push_uci_moves` function returns a `Result` containing a `Vec` of `Option<Move>` or an
-    /// `EngineError`.
+    /// `TimecatError`.
     #[inline]
-    pub fn push_uci_moves(&mut self, uci_moves: &str) -> Result<Vec<Option<Move>>, EngineError> {
+    pub fn push_uci_moves(&mut self, uci_moves: &str) -> Result<Vec<Option<Move>>, TimecatError> {
         remove_double_spaces_and_trim(uci_moves)
             .split(' ')
             .map(|san| self.push_uci(san))
@@ -833,7 +833,7 @@ impl Default for Board {
 }
 
 impl FromStr for Board {
-    type Err = EngineError;
+    type Err = TimecatError;
 
     fn from_str(fen: &str) -> Result<Self, Self::Err> {
         Self::from_fen(fen)

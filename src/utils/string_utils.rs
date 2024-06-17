@@ -13,10 +13,10 @@ pub fn simplify_fen(fen: &str) -> String {
     remove_double_spaces_and_trim(fen)
 }
 
-pub fn flip_board_fen(fen: &str) -> Result<String, EngineError> {
+pub fn flip_board_fen(fen: &str) -> Result<String, TimecatError> {
     // TODO: ep square not flipped.
     let fen = remove_double_spaces_and_trim(fen);
-    let (position_fen, rest_fen) = fen.split_once(' ').ok_or(EngineError::BadFen {
+    let (position_fen, rest_fen) = fen.split_once(' ').ok_or(TimecatError::BadFen {
         fen: fen.to_string(),
     })?;
     Ok(format!(

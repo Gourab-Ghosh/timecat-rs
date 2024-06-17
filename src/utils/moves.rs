@@ -18,7 +18,7 @@ impl Move {
         }
     }
 
-    pub fn from_san(sub_board: &SubBoard, san: &str) -> Result<Option<Move>, EngineError> {
+    pub fn from_san(sub_board: &SubBoard, san: &str) -> Result<Option<Move>, TimecatError> {
         // TODO: Make the logic better
         let san = san.trim().replace('0', "O");
         if san == "--" {
@@ -30,10 +30,10 @@ impl Move {
                 return Ok(Some(move_));
             }
         }
-        Err(EngineError::InvalidSanMoveString { s: san.to_string() })
+        Err(TimecatError::InvalidSanMoveString { s: san.to_string() })
     }
 
-    pub fn from_lan(sub_board: &SubBoard, lan: &str) -> Result<Option<Move>, EngineError> {
+    pub fn from_lan(sub_board: &SubBoard, lan: &str) -> Result<Option<Move>, TimecatError> {
         // TODO: Make the logic better
         let lan = lan.trim().replace('0', "O");
         if lan == "--" {
@@ -45,7 +45,7 @@ impl Move {
                 return Ok(Some(move_));
             }
         }
-        Err(EngineError::InvalidLanMoveString { s: lan.to_string() })
+        Err(TimecatError::InvalidLanMoveString { s: lan.to_string() })
     }
 
     #[inline]
@@ -192,10 +192,10 @@ impl fmt::Display for Move {
 }
 
 impl FromStr for Move {
-    type Err = EngineError;
+    type Err = TimecatError;
 
     fn from_str(mut s: &str) -> Result<Self, Self::Err> {
-        let error = EngineError::InvalidUciMoveString { s: s.to_string() };
+        let error = TimecatError::InvalidUciMoveString { s: s.to_string() };
         s = s.trim();
         if s.len() > 6 {
             return Err(error.clone());

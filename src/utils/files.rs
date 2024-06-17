@@ -80,7 +80,7 @@ impl File {
 }
 
 impl FromStr for File {
-    type Err = EngineError;
+    type Err = TimecatError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().trim() {
@@ -92,7 +92,7 @@ impl FromStr for File {
             "f" => Ok(Self::F),
             "g" => Ok(Self::G),
             "h" => Ok(Self::H),
-            _ => Err(EngineError::InvalidFileString { s: s.to_string() }),
+            _ => Err(TimecatError::InvalidFileString { s: s.to_string() }),
         }
     }
 }

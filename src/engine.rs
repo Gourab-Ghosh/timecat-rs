@@ -90,6 +90,7 @@ pub struct Engine {
     num_nodes_searched: Arc<AtomicUsize>,
     selective_depth: Arc<AtomicUsize>,
     stopper: Arc<AtomicBool>,
+    io_reader: Option<IoReader>,
 }
 
 impl Engine {
@@ -100,19 +101,38 @@ impl Engine {
             num_nodes_searched: Arc::new(AtomicUsize::new(0)),
             selective_depth: Arc::new(AtomicUsize::new(0)),
             stopper: Arc::new(AtomicBool::new(false)),
+            io_reader: None,
         }
     }
 
+    #[inline]
     pub fn get_board(&self) -> &Board {
         &self.board
     }
 
+    #[inline]
     pub fn get_board_mut(&mut self) -> &mut Board {
         &mut self.board
     }
 
+    #[inline]
     pub fn get_transposition_table(&self) -> &TranspositionTable {
         &self.transposition_table
+    }
+
+    #[inline]
+    pub fn get_io_reader(&self) -> Option<IoReader> {
+        self.io_reader.clone()
+    }
+
+    #[inline]
+    pub fn set_io_reader(&mut self, io_reader: IoReader) {
+        self.io_reader = Some(io_reader);
+    }
+
+    pub fn with_io_reader(mut self, io_reader: IoReader) -> Self {
+        self.set_io_reader(io_reader);
+        self
     }
 
     fn reset_variables(&self) {
@@ -126,27 +146,31 @@ impl Engine {
         }
     }
 
-    pub fn set_fen(&mut self, fen: &str) -> Result<(), EngineError> {
+    pub fn set_fen(&mut self, fen: &str) -> Result<(), TimecatError> {
         let result = self.board.set_fen(fen);
         self.reset_variables();
         result
     }
 
-    pub fn from_fen(fen: &str) -> Result<Self, EngineError> {
+    #[inline]
+    pub fn from_fen(fen: &str) -> Result<Self, TimecatError> {
         Ok(Engine::new(
             Board::from_fen(fen)?,
             TranspositionTable::default(),
         ))
     }
 
+    #[inline]
     pub fn get_num_nodes_searched(&self) -> usize {
         self.num_nodes_searched.load(MEMORY_ORDERING)
     }
 
+    #[inline]
     pub fn get_selective_depth(&self) -> Ply {
         self.selective_depth.load(MEMORY_ORDERING)
     }
 
+    #[inline]
     pub fn generate_searcher(&self, id: usize) -> Searcher {
         Searcher::new(
             id,
@@ -158,9 +182,9 @@ impl Engine {
         )
     }
 
-    fn update_stop_command_from_input(stopper: &AtomicBool) {
+    fn update_stop_command_from_input(stopper: &AtomicBool, io_reader: IoReader) {
         while !stopper.load(MEMORY_ORDERING) {
-            match IO_READER
+            match io_reader
                 .read_line_once()
                 .unwrap_or_default()
                 .to_lowercase()
@@ -187,10 +211,13 @@ impl Engine {
             });
             join_handles.push(join_handle);
         }
-        join_handles.push(thread::spawn({
-            let stopper = self.stopper.clone();
-            move || Self::update_stop_command_from_input(&stopper)
-        }));
+        if let Some(io_reader) = &self.io_reader {
+            let owned_io_reader = io_reader.to_owned();
+            join_handles.push(thread::spawn({
+                let stopper = self.stopper.clone();
+                move || Self::update_stop_command_from_input(&stopper, owned_io_reader)
+            }));
+        }
         let mut main_thread_searcher = self.generate_searcher(0);
         main_thread_searcher.go(command, verbose);
         self.stopper.store(true, MEMORY_ORDERING);
@@ -204,10 +231,12 @@ impl Engine {
         GoResponse::new(search_info)
     }
 
+    #[inline]
     pub fn go_quiet(&self, command: GoCommand) -> GoResponse {
         self.go(command, false)
     }
 
+    #[inline]
     pub fn go_verbose(&self, command: GoCommand) -> GoResponse {
         self.go(command, true)
     }

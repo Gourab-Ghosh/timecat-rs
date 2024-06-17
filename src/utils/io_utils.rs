@@ -72,9 +72,10 @@ impl<T: Debug> From<T> for CustomDebug<T> {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct IoReader {
     sender: Sender<String>,
-    receiver: Mutex<Receiver<String>>,
+    receiver: Arc<Mutex<Receiver<String>>>,
 }
 
 impl IoReader {
@@ -82,18 +83,22 @@ impl IoReader {
         let (sender, receiver) = channel();
         Self {
             sender,
-            receiver: Mutex::new(receiver),
+            receiver: Arc::new(Mutex::new(receiver)),
         }
     }
 
-    pub fn start_reader(&self) {
-        loop {
+    pub fn start_reader(&self) -> thread::JoinHandle<()> {
+        let sender = self.sender.clone();
+        thread::spawn(move || loop {
             let mut user_input = String::new();
             std::io::stdin()
                 .read_line(&mut user_input)
                 .expect("Failed to read line!");
-            self.sender.send(user_input).unwrap();
-        }
+            sender.send(user_input).unwrap();
+            if GLOBAL_UCI_STATE.terminate_engine() {
+                break;
+            }
+        })
     }
 
     pub fn read_line_once(&self) -> Option<String> {

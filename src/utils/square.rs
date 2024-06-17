@@ -289,23 +289,23 @@ impl Square {
 }
 
 impl FromStr for Square {
-    type Err = EngineError;
+    type Err = TimecatError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() < 2 {
-            return Err(EngineError::InvalidSquareString { s: s.to_string() });
+            return Err(TimecatError::InvalidSquareString { s: s.to_string() });
         }
         let ch = s.to_lowercase().chars().collect_vec();
         match ch[0] {
             'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' => {}
             _ => {
-                return Err(EngineError::InvalidSquareString { s: s.to_string() });
+                return Err(TimecatError::InvalidSquareString { s: s.to_string() });
             }
         }
         match ch[1] {
             '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' => {}
             _ => {
-                return Err(EngineError::InvalidSquareString { s: s.to_string() });
+                return Err(TimecatError::InvalidSquareString { s: s.to_string() });
             }
         }
         Ok(Square::from_rank_and_file(

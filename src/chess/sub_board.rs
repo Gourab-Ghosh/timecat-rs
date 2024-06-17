@@ -983,16 +983,16 @@ impl SubBoard {
         }
     }
 
-    pub fn parse_san(&self, san: &str) -> Result<Option<Move>, EngineError> {
+    pub fn parse_san(&self, san: &str) -> Result<Option<Move>, TimecatError> {
         Move::from_san(self, san)
     }
 
-    pub fn parse_lan(&self, lan: &str) -> Result<Option<Move>, EngineError> {
+    pub fn parse_lan(&self, lan: &str) -> Result<Option<Move>, TimecatError> {
         Move::from_lan(self, lan)
     }
 
     #[inline]
-    pub fn parse_uci(&self, uci: &str) -> Result<Option<Move>, EngineError> {
+    pub fn parse_uci(&self, uci: &str) -> Result<Option<Move>, TimecatError> {
         if uci == "0000" {
             return Ok(None);
         }
@@ -1000,11 +1000,11 @@ impl SubBoard {
     }
 
     #[inline]
-    pub fn parse_move(&self, move_text: &str) -> Result<Option<Move>, EngineError> {
+    pub fn parse_move(&self, move_text: &str) -> Result<Option<Move>, TimecatError> {
         self.parse_uci(move_text)
             .or(self.parse_san(move_text))
             .or(self.parse_lan(move_text))
-            .map_err(|_| EngineError::InvalidMoveString {
+            .map_err(|_| TimecatError::InvalidMoveString {
                 s: move_text.to_string(),
             })
     }
@@ -1093,7 +1093,7 @@ impl SubBoard {
 }
 
 impl TryFrom<&SubBoardBuilder> for SubBoard {
-    type Error = EngineError;
+    type Error = TimecatError;
 
     fn try_from(sub_board_builder: &SubBoardBuilder) -> Result<Self, Self::Error> {
         let mut board = SubBoard::new_empty();
@@ -1127,13 +1127,13 @@ impl TryFrom<&SubBoardBuilder> for SubBoard {
         if board.is_sane() {
             Ok(board)
         } else {
-            Err(EngineError::InvalidSubBoard { board })
+            Err(TimecatError::InvalidSubBoard { board })
         }
     }
 }
 
 impl TryFrom<SubBoardBuilder> for SubBoard {
-    type Error = EngineError;
+    type Error = TimecatError;
 
     fn try_from(sub_board_builder: SubBoardBuilder) -> Result<Self, Self::Error> {
         (&sub_board_builder).try_into()
@@ -1141,7 +1141,7 @@ impl TryFrom<SubBoardBuilder> for SubBoard {
 }
 
 impl TryFrom<&mut SubBoardBuilder> for SubBoard {
-    type Error = EngineError;
+    type Error = TimecatError;
 
     fn try_from(sub_board_builder: &mut SubBoardBuilder) -> Result<Self, Self::Error> {
         (sub_board_builder.to_owned()).try_into()
@@ -1149,7 +1149,7 @@ impl TryFrom<&mut SubBoardBuilder> for SubBoard {
 }
 
 impl FromStr for SubBoard {
-    type Err = EngineError;
+    type Err = TimecatError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         SubBoardBuilder::from_str(value)?.try_into()

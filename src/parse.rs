@@ -1,5 +1,5 @@
 use super::*;
-use EngineError::*;
+use TimecatError::*;
 // use Command::*;
 
 // enum Command<'a> {
@@ -61,7 +61,7 @@ impl Go {
         position_count
     }
 
-    fn extract_depth(depth_str: &str) -> Result<Depth, EngineError> {
+    fn extract_depth(depth_str: &str) -> Result<Depth, TimecatError> {
         let depth: Depth = depth_str.parse()?;
         if depth.is_negative() {
             return Err(InvalidDepth { depth });
@@ -69,7 +69,7 @@ impl Go {
         Ok(depth)
     }
 
-    pub fn extract_go_command(commands: &[&str]) -> Result<GoCommand, EngineError> {
+    pub fn extract_go_command(commands: &[&str]) -> Result<GoCommand, TimecatError> {
         // TODO: Improve Unknown Command Detection
         if ["perft", "depth", "movetime", "infinite"]
             .iter()
@@ -104,7 +104,7 @@ impl Go {
         }
     }
 
-    fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<(), EngineError> {
+    fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<(), TimecatError> {
         if GLOBAL_UCI_STATE.is_in_console_mode() {
             println!("{}\n", engine.get_board());
         }
@@ -162,7 +162,7 @@ impl Go {
         Ok(())
     }
 
-    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
+    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if second_command == "perft" {
             let depth = commands.get(2).ok_or(UnknownCommand)?.parse()?;
@@ -177,7 +177,7 @@ impl Go {
 pub struct SetOption;
 
 impl SetOption {
-    fn parse_sub_commands(engine: &Engine, commands: &[&str]) -> Result<(), EngineError> {
+    fn parse_sub_commands(engine: &Engine, commands: &[&str]) -> Result<(), TimecatError> {
         if commands.first().ok_or(UnknownCommand)?.to_lowercase() != "setoption" {
             return Err(UnknownCommand);
         }
@@ -202,7 +202,7 @@ impl SetOption {
 struct Set;
 
 impl Set {
-    fn board_fen(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
+    fn board_fen(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
         let mut fen = commands[3..].join(" ");
         if fen == "startpos" {
             fen = STARTING_POSITION_FEN.to_string();
@@ -218,7 +218,7 @@ impl Set {
     }
 
     #[cfg(feature = "colored_output")]
-    fn color(commands: &[&str]) -> Result<(), EngineError> {
+    fn color(commands: &[&str]) -> Result<(), TimecatError> {
         let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
         let b = third_command.parse()?;
         if GLOBAL_UCI_STATE.is_colored_output() == b {
@@ -228,7 +228,7 @@ impl Set {
         Ok(())
     }
 
-    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
+    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         match second_command.as_str() {
             "board" => {
@@ -252,7 +252,7 @@ impl Set {
 struct Push;
 
 impl Push {
-    fn moves(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
+    fn moves(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if !["san", "lan", "uci", "move", "moves"].contains(&second_command.as_str()) {
             return Err(UnknownCommand);
@@ -286,7 +286,7 @@ impl Push {
         Ok(())
     }
 
-    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
+    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
         Self::moves(engine, commands)
     }
 }
@@ -294,7 +294,7 @@ impl Push {
 struct Pop;
 
 impl Pop {
-    fn n_times(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
+    fn n_times(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
         let second_command = commands.get(1).unwrap_or(&"1");
         if commands.get(2).is_some() {
             return Err(UnknownCommand);
@@ -315,7 +315,7 @@ impl Pop {
         Ok(())
     }
 
-    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
+    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
         Self::n_times(engine, commands)
     }
 }
@@ -323,7 +323,7 @@ impl Pop {
 pub struct UCIParser;
 
 impl UCIParser {
-    fn parse_uci_position_input(input: &str) -> Result<String, EngineError> {
+    fn parse_uci_position_input(input: &str) -> Result<String, TimecatError> {
         let commands = input.split_whitespace().collect_vec();
         if commands.first() != Some(&"position") {
             return Err(UnknownCommand);
@@ -356,7 +356,7 @@ impl UCIParser {
         Ok(new_input)
     }
 
-    fn parse_uci_input(input: &str) -> Result<String, EngineError> {
+    fn parse_uci_input(input: &str) -> Result<String, TimecatError> {
         let modified_input = input.trim().to_lowercase();
         if modified_input.starts_with("position") {
             return Self::parse_uci_position_input(input);
@@ -364,7 +364,7 @@ impl UCIParser {
         Err(UnknownCommand)
     }
 
-    fn run_parsed_input(engine: &mut Engine, parsed_input: &str) -> Result<(), EngineError> {
+    fn run_parsed_input(engine: &mut Engine, parsed_input: &str) -> Result<(), TimecatError> {
         let user_inputs = parsed_input.split("&&").map(|s| s.trim()).collect_vec();
         for user_input in user_inputs {
             Parser::run_single_command(engine, user_input)?;
@@ -387,7 +387,7 @@ impl UCIParser {
         println!("{}", "uciok".colorize(SUCCESS_MESSAGE_STYLE));
     }
 
-    pub fn parse_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
+    pub fn parse_command(engine: &mut Engine, user_input: &str) -> Result<(), TimecatError> {
         let commands = user_input.split_whitespace().collect_vec();
         let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
         match first_command.as_str() {
@@ -414,7 +414,7 @@ impl UCIParser {
 struct SelfPlay;
 
 impl SelfPlay {
-    fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), EngineError> {
+    fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
         let mut commands = commands.to_vec();
         commands[0] = "go";
         let go_command = if commands.get(1).is_some() {
@@ -429,7 +429,7 @@ impl SelfPlay {
 struct DebugMode;
 
 impl DebugMode {
-    fn get_debug_mode(second_command: &str) -> Result<bool, EngineError> {
+    fn get_debug_mode(second_command: &str) -> Result<bool, TimecatError> {
         match second_command {
             "on" => Ok(true),
             "off" => Ok(false),
@@ -439,7 +439,7 @@ impl DebugMode {
         }
     }
 
-    fn parse_sub_commands(commands: &[&str]) -> Result<(), EngineError> {
+    fn parse_sub_commands(commands: &[&str]) -> Result<(), TimecatError> {
         if commands.get(2).is_some() {
             return Err(UnknownCommand);
         }
@@ -457,9 +457,9 @@ impl Parser {
         "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
     ];
 
-    fn get_input<T: fmt::Display>(q: T) -> String {
+    fn get_input<T: fmt::Display>(q: T, io_reader: &IoReader) -> String {
         print_line(q);
-        IO_READER.read_line()
+        io_reader.read_line()
     }
 
     fn sanitize_string(user_input: &str) -> String {
@@ -472,7 +472,7 @@ impl Parser {
         user_input
     }
 
-    fn run_single_command(engine: &mut Engine, user_input: &str) -> Result<(), EngineError> {
+    fn run_single_command(engine: &mut Engine, user_input: &str) -> Result<(), TimecatError> {
         let res = match user_input.to_lowercase().as_str() {
             "d" => Ok(println!("{}", engine.get_board())),
             "eval" => {
@@ -484,7 +484,7 @@ impl Parser {
             }
             "reset board" => engine
                 .set_fen(STARTING_POSITION_FEN)
-                .map_err(EngineError::from),
+                .map_err(TimecatError::from),
             "stop" => {
                 if GLOBAL_UCI_STATE.is_in_console_mode() {
                     Err(EngineNotRunning)
@@ -515,7 +515,7 @@ impl Parser {
         }
     }
 
-    pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Result<(), EngineError> {
+    pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Result<(), TimecatError> {
         let sanitized_input = Self::sanitize_string(raw_input);
         if GLOBAL_UCI_STATE.is_in_console_and_debug_mode() {
             println!();
@@ -563,7 +563,7 @@ impl Parser {
         Ok(())
     }
 
-    fn parse_error_and_print(error: EngineError, optional_raw_input: Option<&str>) {
+    fn parse_error_and_print(error: TimecatError, optional_raw_input: Option<&str>) {
         let mut error_message = error.stringify_with_optional_raw_input(optional_raw_input);
         if GLOBAL_UCI_STATE.is_in_uci_mode() {
             error_message = "info string ".to_string() + &error_message.to_lowercase();
@@ -571,7 +571,7 @@ impl Parser {
         println!("{}", error_message.colorize(ERROR_MESSAGE_STYLE));
     }
 
-    fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) {
+    pub fn run_raw_input_checked(engine: &mut Engine, raw_input: &str) {
         if raw_input.is_empty() {
             if GLOBAL_UCI_STATE.is_in_console_mode() {
                 println!("\n");
@@ -597,8 +597,7 @@ impl Parser {
         }
     }
 
-    pub fn main_loop(engine: &mut Engine) {
-        thread::spawn(|| IO_READER.start_reader());
+    pub fn main_loop(engine: &mut Engine, io_reader: &IoReader) {
         loop {
             if GLOBAL_UCI_STATE.terminate_engine() {
                 Self::print_exit_message();
@@ -606,65 +605,17 @@ impl Parser {
             }
             let raw_input = if GLOBAL_UCI_STATE.is_in_console_mode() {
                 println!();
-                Self::get_input("Enter Command: ".colorize(INPUT_MESSAGE_STYLE))
+                Self::get_input("Enter Command: ".colorize(INPUT_MESSAGE_STYLE), io_reader)
             } else {
-                Self::get_input("")
+                Self::get_input("", io_reader)
             };
             Self::run_raw_input_checked(engine, &raw_input);
         }
     }
 
-    pub fn uci_loop(engine: &mut Engine) {
+    pub fn uci_loop(engine: &mut Engine, io_reader: &IoReader) {
         GLOBAL_UCI_STATE.set_to_uci_mode();
-        Self::main_loop.run_and_print_time(engine);
-    }
-
-    pub fn parse_args_and_run_main_loop(args: &[&str]) {
-        if args.contains(&"--uci") {
-            GLOBAL_UCI_STATE.set_to_uci_mode();
-        }
-        #[cfg(feature = "colored_output")]
-        if args.contains(&"--no-color") {
-            GLOBAL_UCI_STATE.set_colored_output(false, false);
-        }
-        if args.contains(&"--threads") {
-            let num_threads = args
-                .iter()
-                .skip_while(|&arg| !arg.starts_with("--threads"))
-                .nth(1)
-                .unwrap_or(&"")
-                .parse()
-                .unwrap_or(GlobalUCIState::default().get_num_threads());
-            GLOBAL_UCI_STATE.set_num_threads(num_threads, false);
-        }
-        if args.contains(&"--help") {
-            println!("{}", Self::get_help_message());
-            return;
-        }
-        if args.contains(&"--version") {
-            print_engine_version(false);
-            return;
-        }
-        let mut engine = Engine::default();
-        #[cfg(feature = "debug")]
-        if args.contains(&"--test") {
-            test.run_and_print_time(&mut engine).unwrap();
-            return;
-        }
-        if args.contains(&"-c") || args.contains(&"--command") {
-            let command = args
-                .iter()
-                .skip_while(|&arg| !["-c", "--command"].contains(arg))
-                .skip(1)
-                .take_while(|&&arg| !arg.starts_with("--"))
-                .join(" ");
-            println!();
-            Self::run_raw_input_checked(&mut engine, &command);
-            return;
-        }
-        let mut engine = Engine::default();
-        print_engine_info(engine.get_transposition_table());
-        Self::main_loop.run_and_print_time(&mut engine);
+        Self::main_loop(engine, io_reader);
     }
 
     pub fn get_help_message() -> String {

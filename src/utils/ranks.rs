@@ -80,7 +80,7 @@ impl Rank {
 }
 
 impl FromStr for Rank {
-    type Err = EngineError;
+    type Err = TimecatError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.trim() {
@@ -92,7 +92,7 @@ impl FromStr for Rank {
             "6" => Ok(Self::Sixth),
             "7" => Ok(Self::Seventh),
             "8" => Ok(Self::Eighth),
-            _ => Err(EngineError::InvalidRankString { s: s.to_string() }),
+            _ => Err(TimecatError::InvalidRankString { s: s.to_string() }),
         }
     }
 }

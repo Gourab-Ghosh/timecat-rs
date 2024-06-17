@@ -192,7 +192,7 @@ impl Default for SubBoardBuilder {
 }
 
 impl FromStr for SubBoardBuilder {
-    type Err = EngineError;
+    type Err = TimecatError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let mut cur_rank = Rank::Eighth;
@@ -201,7 +201,7 @@ impl FromStr for SubBoardBuilder {
 
         let tokens: Vec<&str> = value.split(' ').collect();
         if tokens.len() < 4 {
-            return Err(EngineError::BadFen {
+            return Err(TimecatError::BadFen {
                 fen: value.to_string(),
             });
         }
@@ -284,7 +284,7 @@ impl FromStr for SubBoardBuilder {
                     cur_file = cur_file.wrapping_right();
                 }
                 _ => {
-                    return Err(EngineError::BadFen {
+                    return Err(TimecatError::BadFen {
                         fen: value.to_string(),
                     });
                 }
@@ -294,7 +294,7 @@ impl FromStr for SubBoardBuilder {
             "w" | "W" => _ = sub_board_builder.turn(White),
             "b" | "B" => _ = sub_board_builder.turn(Black),
             _ => {
-                return Err(EngineError::BadFen {
+                return Err(TimecatError::BadFen {
                     fen: value.to_string(),
                 })
             }
