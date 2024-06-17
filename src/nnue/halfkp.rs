@@ -14,7 +14,10 @@ const FINAL_NUM_OUTPUTS: usize = 1;
 
 #[derive(Clone)]
 struct HalfKPFeatureTransformer {
-    weights: Box<[MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS]>,
+    weights: Box<
+        [MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>;
+            HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS],
+    >,
     // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=75296
     bona_piece_zero_weights: Box<[[i16; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS]; NUM_SQUARES]>,
     biases: Box<MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>>,
