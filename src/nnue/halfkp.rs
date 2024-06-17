@@ -34,8 +34,8 @@ impl BinRead for HalfKPFeatureTransformer {
         reader: &mut R,
         options: &binread::ReadOptions,
         _: Self::Args,
-    ) -> binread::BinResult<Self> {
-        let biases: MathVec<i16, 256> = BinRead::read_options(reader, options, ())?;
+    ) -> BinResult<Self> {
+        let biases: MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS> = BinRead::read_options(reader, options, ())?;
         let mut weights: Vec<MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>> =
             Vec::with_capacity(HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS);
         let mut bona_piece_zero_weights: Vec<[i16; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS]> =
@@ -71,7 +71,7 @@ impl fmt::Debug for HalfKPFeatureTransformer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "HalfKPFeatureTransformer[{}->{}]",
+            "HalfKPFeatureTransformer[{}->{}x2]",
             HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS,
         )
     }
@@ -104,59 +104,20 @@ impl Debug for HalfKPNetwork {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
-struct Architecture {
-    architecture: u32,
-}
-
-impl Deref for Architecture {
-    type Target = u32;
-
-    fn deref(&self) -> &Self::Target {
-        &self.architecture
-    }
-}
-
-impl Debug for Architecture {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.architecture)
-    }
-}
-
-impl BinRead for Architecture {
-    type Args = (u32,);
-
-    fn read_options<R: Read + Seek>(
-        reader: &mut R,
-        options: &binread::ReadOptions,
-        (magic,): Self::Args,
-    ) -> BinResult<Self> {
-        let architecture = BinRead::read_options(reader, options, ())?;
-        if architecture == magic {
-            Ok(Self { architecture })
-        } else {
-            Err(binread::Error::BadMagic {
-                pos: reader.stream_position()?,
-                found: Box::new(architecture),
-            })
-        }
-    }
-}
-
 #[derive(Debug, Clone, BinRead)]
 pub struct HalfKPModelReader {
     #[br(args(VERSION))]
-    version: Architecture,
+    version: Magic<u32>,
     #[br(args(ARCHITECTURE))]
-    architecture: Architecture,
-    desc_len: u32,
-    #[br(count = desc_len, try_map = String::from_utf8)]
-    desc: String,
+    architecture: Magic<u32>,
+    description_len: u32,
+    #[br(count = description_len, try_map = String::from_utf8)]
+    description: String,
     #[br(args(TRANSFORMER_ARCHITECTURE))]
-    transformer_architecture: Architecture,
+    transformer_architecture: Magic<u32>,
     transformer: HalfKPFeatureTransformer,
     #[br(args(NETWORK_ARCHITECTURE))]
-    network_architecture: Architecture,
+    network_architecture: Magic<u32>,
     network: HalfKPNetwork,
 }
 

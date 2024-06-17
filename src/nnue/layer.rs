@@ -24,7 +24,7 @@ impl<
         reader: &mut R,
         options: &binread::ReadOptions,
         _: Self::Args,
-    ) -> binread::BinResult<Self> {
+    ) -> BinResult<Self> {
         let biases = BinRead::read_options(reader, options, ())?;
         let mut weights_transpose: Vec<MathVec<W, NUM_INPUTS>> = Vec::with_capacity(NUM_OUTPUTS);
         for _ in 0..NUM_OUTPUTS {

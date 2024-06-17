@@ -12,7 +12,7 @@ impl<T: BinRead<Args = ()>, const N: usize> BinRead for MathVec<T, N> {
         reader: &mut R,
         options: &binread::ReadOptions,
         _: Self::Args,
-    ) -> binread::BinResult<Self> {
+    ) -> BinResult<Self> {
         let slice: [T; N] = BinRead::read_options(reader, options, ())?;
         Ok(slice.into())
     }
