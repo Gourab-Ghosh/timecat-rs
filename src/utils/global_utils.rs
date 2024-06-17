@@ -29,10 +29,10 @@ pub struct GlobalUCIState {
     #[cfg(feature = "colored_output")]
     _colored_output: AtomicBool,
     _console_mode: AtomicBool,
-    _t_table_size: Mutex<CacheTableSize>,
+    _t_table_size: RwLock<CacheTableSize>,
     _long_algebraic_notation: AtomicBool,
     _num_threads: AtomicUsize,
-    _move_overhead: Mutex<Duration>,
+    _move_overhead: RwLock<Duration>,
     _use_own_book: AtomicBool,
     _debug_mode: AtomicBool,
     _chess960_mode: AtomicBool,
@@ -51,10 +51,10 @@ impl GlobalUCIState {
             #[cfg(feature = "colored_output")]
             _colored_output: AtomicBool::new(true),
             _console_mode: AtomicBool::new(true),
-            _t_table_size: Mutex::new(CacheTableSize::Exact(16)),
+            _t_table_size: RwLock::new(CacheTableSize::Exact(16)),
             _long_algebraic_notation: AtomicBool::new(false),
             _num_threads: AtomicUsize::new(1),
-            _move_overhead: Mutex::new(Duration::ZERO),
+            _move_overhead: RwLock::new(Duration::ZERO),
             _use_own_book: AtomicBool::new(false),
             _debug_mode: AtomicBool::new(true),
             _chess960_mode: AtomicBool::new(false),
@@ -126,12 +126,12 @@ impl GlobalUCIState {
 
     #[inline]
     pub fn get_t_table_size(&self) -> CacheTableSize {
-        self._t_table_size.lock().unwrap().to_owned()
+        self._t_table_size.read().unwrap().to_owned()
     }
 
     pub fn set_t_table_size(&self, transposition_table: &TranspositionTable, size: CacheTableSize) {
         //TODO: modify such that T Table and evaluation function takes same amount of space
-        *self._t_table_size.lock().unwrap() = size;
+        *self._t_table_size.write().unwrap() = size;
         transposition_table.reset_size();
         if GLOBAL_UCI_STATE.is_in_debug_mode() {
             transposition_table.print_info();
@@ -166,11 +166,11 @@ impl GlobalUCIState {
 
     #[inline]
     pub fn get_move_overhead(&self) -> Duration {
-        self._move_overhead.lock().unwrap().to_owned()
+        self._move_overhead.read().unwrap().to_owned()
     }
 
     pub fn set_move_overhead(&self, duration: Duration) {
-        *self._move_overhead.lock().unwrap() = duration;
+        *self._move_overhead.write().unwrap() = duration;
         print_info("Move Overhead is set to", duration.stringify());
     }
 

@@ -180,7 +180,7 @@ impl TranspositionTable {
     }
 
     pub fn clear_best_moves(&self) {
-        for e in self.table.get_table().lock().unwrap().iter_mut() {
+        for e in self.table.get_table().write().unwrap().iter_mut() {
             e.get_entry_mut().set_best_move(None);
         }
     }

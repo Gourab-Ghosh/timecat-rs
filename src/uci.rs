@@ -196,20 +196,20 @@ impl fmt::Display for UCIOption {
 }
 
 pub struct UCIOptions {
-    options: Mutex<Vec<UCIOption>>,
+    options: RwLock<Vec<UCIOption>>,
 }
 
 impl UCIOptions {
     fn new() -> Self {
         Self {
-            options: Mutex::new(get_uci_options()),
+            options: RwLock::new(get_uci_options()),
         }
     }
 
     pub fn get_option(&self, command_name: &str) -> Option<UCIOption> {
         let command_name = command_name.to_string();
         self.options
-            .lock()
+            .read()
             .unwrap()
             .iter()
             .find(
@@ -225,7 +225,7 @@ impl UCIOptions {
     }
 
     pub fn get_all_options(&self) -> Vec<UCIOption> {
-        self.options.lock().unwrap().to_owned()
+        self.options.read().unwrap().to_owned()
     }
 
     pub fn set_option(

@@ -1,6 +1,7 @@
 use super::*;
 use std::io::{self, Write};
 use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::Mutex;
 
 pub fn print_line<T: fmt::Display>(line: T) {
     let to_print = format!("{line}");

@@ -123,7 +123,7 @@ pub use std::ops::{
 };
 pub use std::str::{FromStr, ParseBoolError};
 pub use std::sync::atomic::{AtomicBool, AtomicUsize};
-pub use std::sync::{Arc, Mutex};
+pub use std::sync::{Arc, RwLock};
 pub use std::thread;
 pub use std::time::{Duration, Instant};
 #[cfg(feature = "engine")]

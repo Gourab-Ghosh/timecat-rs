@@ -127,8 +127,8 @@ macro_rules! update_overwrites_and_collisions {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct CacheTable<T: Copy + Clone + PartialEq> {
-    table: Mutex<Box<[CacheTableEntry<T>]>>,
-    size: Mutex<CacheTableSize>,
+    table: RwLock<Box<[CacheTableEntry<T>]>>,
+    size: RwLock<CacheTableSize>,
     default: T,
     mask: AtomicUsize,
     is_safe_to_do_bitwise_and: AtomicBool,
@@ -174,15 +174,15 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
 
     pub fn new(size: CacheTableSize, default: T) -> CacheTable<T> {
         let cache_table = CacheTable {
-            table: Mutex::new(Self::generate_table(size, default)),
-            size: Mutex::new(size),
+            table: RwLock::new(Self::generate_table(size, default)),
+            size: RwLock::new(size),
             default,
             mask: Default::default(),
             is_safe_to_do_bitwise_and: Default::default(),
             num_overwrites: AtomicUsize::new(0),
             num_collisions: AtomicUsize::new(0),
         };
-        cache_table.reset_mask(&cache_table.table.lock().unwrap());
+        cache_table.reset_mask(&cache_table.table.read().unwrap());
         cache_table
     }
 
@@ -197,7 +197,7 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
 
     #[inline]
     pub fn get(&self, hash: u64) -> Option<T> {
-        let entry = *get_item_unchecked!(self.table.lock().unwrap(), self.get_index(hash));
+        let entry = *get_item_unchecked!(self.table.read().unwrap(), self.get_index(hash));
         if entry.hash == hash {
             Some(entry.entry)
         } else {
@@ -207,7 +207,7 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
 
     #[inline]
     pub fn add(&self, hash: u64, entry: T) {
-        let mut table = self.table.lock().unwrap();
+        let mut table = self.table.write().unwrap();
         let e = get_item_unchecked_mut!(table, self.get_index(hash));
         let e_hash = e.get_hash();
         let e_entry = e.get_entry();
@@ -218,7 +218,7 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
 
     #[inline]
     pub fn replace_if<F: Fn(T) -> bool>(&self, hash: u64, entry: T, replace: F) {
-        let mut table = self.table.lock().unwrap();
+        let mut table = self.table.write().unwrap();
         let e = get_item_unchecked_mut!(table, self.get_index(hash));
         if replace(e.entry) {
             let e_hash = e.get_hash();
@@ -232,14 +232,14 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
     #[inline]
     pub fn clear(&self) {
         self.table
-            .lock()
+            .write()
             .unwrap()
             .iter_mut()
             .for_each(|e| e.hash = 0);
     }
 
     #[inline]
-    pub const fn get_table(&self) -> &Mutex<Box<[CacheTableEntry<T>]>> {
+    pub const fn get_table(&self) -> &RwLock<Box<[CacheTableEntry<T>]>> {
         &self.table
     }
 
@@ -270,33 +270,31 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
 
     #[inline]
     pub fn get_hash_full(&self) -> f64 {
-        let inner_table = self.table.lock().unwrap();
+        let inner_table = self.table.read().unwrap();
         (inner_table.iter().filter(|&&e| e.hash != 0).count() as f64 / inner_table.len() as f64)
             * 100.0
     }
 
     #[inline]
     pub fn len(&self) -> usize {
-        self.table.lock().unwrap().len()
+        self.table.read().unwrap().len()
     }
 
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.table.lock().unwrap().iter().all(|&e| e.hash == 0)
+        self.table.read().unwrap().iter().all(|&e| e.hash == 0)
     }
 
     #[inline]
     pub fn get_size(&self) -> CacheTableSize {
-        *self.size.lock().unwrap()
+        *self.size.read().unwrap()
     }
 
     pub fn set_size(&self, size: CacheTableSize) {
-        *self.size.lock().unwrap() = size;
-        let mut table = self.table.lock().unwrap();
-        let current_table_copy = table.clone();
-        *table = Self::generate_table(size, self.default);
-        self.reset_mask(&table);
-        drop(table);
+        *self.size.write().unwrap() = size;
+        let current_table_copy = self.table.read().unwrap().clone();
+        *self.table.write().unwrap() = Self::generate_table(size, self.default);
+        self.reset_mask(&current_table_copy);
         self.reset_variables();
         for &CacheTableEntry { hash, entry } in current_table_copy.iter() {
             if hash != 0 {
