@@ -95,9 +95,6 @@ impl IoReader {
                 .read_line(&mut user_input)
                 .expect("Failed to read line!");
             sender.send(user_input).unwrap();
-            if GLOBAL_UCI_STATE.terminate_engine() {
-                break;
-            }
         })
     }
 
