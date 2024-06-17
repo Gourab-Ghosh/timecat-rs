@@ -278,7 +278,7 @@ impl HalfKPModel {
             self.last_sub_board.occupied_co(Black),
         ];
         ALL_PIECE_TYPES[..5]
-            .into_iter()
+            .iter()
             .cartesian_product(ALL_COLORS)
             .flat_map(|(&piece_type, color)| {
                 let prev_occupied = last_sub_board_occupied_cos[color.to_index()]
@@ -291,7 +291,7 @@ impl HalfKPModel {
                         Change::Removed((Piece::new(piece_type, color), square))
                     }))
             })
-            .cartesian_product(colors_to_update.into_iter())
+            .cartesian_product(colors_to_update)
             .for_each(|(change, turn)| match change {
                 Change::Added((piece, square)) => self.activate_non_king_piece(turn, piece, square),
                 Change::Removed((piece, square)) => {
