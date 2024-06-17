@@ -1,44 +1,19 @@
 use super::*;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, BinRead)]
 pub struct Layer<
-    W: BinRead<Args = ()>,
+    W: BinRead<Args = ()> + Debug,
     B: BinRead<Args = ()>,
     const NUM_INPUTS: usize,
     const NUM_OUTPUTS: usize,
 > {
-    weights_transpose: Arc<Box<[MathVec<W, NUM_INPUTS>; NUM_OUTPUTS]>>,
-    biases: Arc<MathVec<B, NUM_OUTPUTS>>,
+    biases: Box<MathVec<B, NUM_OUTPUTS>>,
+    #[br(count = NUM_OUTPUTS, map = |v: Vec<MathVec<W, NUM_INPUTS>>| v.try_into().unwrap())]
+    weights_transpose: Box<[MathVec<W, NUM_INPUTS>; NUM_OUTPUTS]>,
 }
 
 impl<
-        W: BinRead<Args = ()> + fmt::Debug + Copy + Default,
-        B: BinRead<Args = ()>,
-        const NUM_INPUTS: usize,
-        const NUM_OUTPUTS: usize,
-    > BinRead for Layer<W, B, NUM_INPUTS, NUM_OUTPUTS>
-{
-    type Args = ();
-
-    fn read_options<R: std::io::Read + std::io::Seek>(
-        reader: &mut R,
-        options: &binread::ReadOptions,
-        _: Self::Args,
-    ) -> BinResult<Self> {
-        let biases = BinRead::read_options(reader, options, ())?;
-        let mut weights_transpose: Vec<MathVec<W, NUM_INPUTS>> = Vec::with_capacity(NUM_OUTPUTS);
-        for _ in 0..NUM_OUTPUTS {
-            weights_transpose.push(BinRead::read_options(reader, options, ())?);
-        }
-        Ok(Self {
-            weights_transpose: Arc::new(weights_transpose.try_into().unwrap()),
-            biases: Arc::new(biases),
-        })
-    }
-}
-
-impl<
-        W: BinRead<Args = ()> + fmt::Debug,
+        W: BinRead<Args = ()> + Debug,
         B: BinRead<Args = ()>,
         const NUM_INPUTS: usize,
         const NUM_OUTPUTS: usize,
@@ -56,7 +31,7 @@ impl<
 }
 
 impl<
-        W: BinRead<Args = ()> + Clone,
+        W: BinRead<Args = ()> + Clone + Debug,
         B: BinRead<Args = ()> + Clone + AddAssign + From<W> + Mul + Sum<<B as Mul>::Output>,
         const NUM_INPUTS: usize,
         const NUM_OUTPUTS: usize,

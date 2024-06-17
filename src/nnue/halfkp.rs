@@ -14,15 +14,10 @@ const FINAL_NUM_OUTPUTS: usize = 1;
 
 #[derive(Clone)]
 struct HalfKPFeatureTransformer {
-    weights: Arc<
-        Box<
-            [MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>;
-                HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS],
-        >,
-    >,
+    weights: Box<[MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS]>,
     // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=75296
-    bona_piece_zero_weights: Arc<Box<[[i16; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS]; NUM_SQUARES]>>,
-    biases: Arc<MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>>,
+    bona_piece_zero_weights: Box<[[i16; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS]; NUM_SQUARES]>,
+    biases: Box<MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>>,
 }
 
 impl BinRead for HalfKPFeatureTransformer {
@@ -33,7 +28,7 @@ impl BinRead for HalfKPFeatureTransformer {
         options: &binread::ReadOptions,
         _: Self::Args,
     ) -> BinResult<Self> {
-        let biases: MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS> = BinRead::read_options(reader, options, ())?;
+        let biases = BinRead::read_options(reader, options, ())?;
         let mut weights: Vec<MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>> =
             Vec::with_capacity(HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS);
         let mut bona_piece_zero_weights: Vec<[i16; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS]> =
@@ -45,9 +40,9 @@ impl BinRead for HalfKPFeatureTransformer {
             }
         }
         Ok(Self {
-            weights: Arc::new(weights.try_into().unwrap()),
-            bona_piece_zero_weights: Arc::new(bona_piece_zero_weights.try_into().unwrap()),
-            biases: Arc::new(biases),
+            weights: weights.try_into().unwrap(),
+            bona_piece_zero_weights: bona_piece_zero_weights.try_into().unwrap(),
+            biases,
         })
     }
 }
@@ -65,7 +60,7 @@ impl HalfKPFeatureTransformer {
     }
 }
 
-impl fmt::Debug for HalfKPFeatureTransformer {
+impl Debug for HalfKPFeatureTransformer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -113,10 +108,12 @@ pub struct HalfKPModelReader {
     description: String,
     #[br(args(TRANSFORMER_ARCHITECTURE))]
     transformer_architecture: Magic<u32>,
-    transformer: HalfKPFeatureTransformer,
+    #[br(map = Arc::new)]
+    transformer: Arc<HalfKPFeatureTransformer>,
     #[br(args(NETWORK_ARCHITECTURE))]
     network_architecture: Magic<u32>,
-    network: HalfKPNetwork,
+    #[br(map = Arc::new)]
+    network: Arc<HalfKPNetwork>,
 }
 
 impl HalfKPModelReader {
@@ -156,8 +153,8 @@ struct Accumulator {
 
 #[derive(Clone, Debug)]
 pub struct HalfKPModel {
-    transformer: HalfKPFeatureTransformer,
-    network: HalfKPNetwork,
+    transformer: Arc<HalfKPFeatureTransformer>,
+    network: Arc<HalfKPNetwork>,
     accumulator: Accumulator,
     last_sub_board: CustomDebug<SubBoard>,
 }
