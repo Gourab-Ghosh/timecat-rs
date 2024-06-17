@@ -38,7 +38,7 @@ impl<
     > Layer<W, B, NUM_INPUTS, NUM_OUTPUTS>
 {
     pub fn forward(&self, inputs: MathVec<W, NUM_INPUTS>) -> MathVec<B, NUM_OUTPUTS> {
-        let mut outputs = self.biases.as_ref().clone();
+        let mut outputs = self.get_biases().clone();
         for (o, w) in outputs.iter_mut().zip(self.weights_transpose.iter()) {
             *o += inputs.dot(w);
         }
