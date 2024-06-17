@@ -23,7 +23,7 @@ fn main() {
     if !std::io::stdout().is_terminal() {
         GLOBAL_UCI_STATE.set_colored_output(false, false);
     }
-    Parser::parse_args_and_run_main_loop(&args);
+    TimecatBuilder::default().build().run(&args);
 }
 
 #[cfg(not(feature = "binary"))]

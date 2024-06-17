@@ -17,6 +17,8 @@ mod nnue;
 mod parse;
 #[cfg(feature = "experimental")]
 mod polyglot;
+#[cfg(feature = "binary")]
+mod runner;
 #[cfg(feature = "engine")]
 mod search;
 #[cfg(feature = "engine")]
@@ -98,6 +100,8 @@ pub use nnue::*;
 #[cfg(feature = "engine")]
 pub use parse::*;
 pub use paste::paste;
+#[cfg(feature = "binary")]
+pub use runner::*;
 #[cfg(feature = "engine")]
 pub use search::*;
 #[cfg(feature = "engine")]
