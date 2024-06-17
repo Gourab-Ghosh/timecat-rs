@@ -12,8 +12,6 @@ const FIRST_HIDDEN_LAYER_NUM_OUTPUTS: usize = 32;
 const SECOND_HIDDEN_LAYER_NUM_OUTPUTS: usize = 32;
 const FINAL_NUM_OUTPUTS: usize = 1;
 
-const QUANTIZATION_SCALE_BY_POW_OF_TWO: i8 = 4;
-
 #[derive(Clone)]
 struct HalfKPFeatureTransformer {
     weights: Arc<
