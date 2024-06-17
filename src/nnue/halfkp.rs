@@ -277,22 +277,27 @@ impl HalfKPModel {
             self.last_sub_board.occupied_co(White),
             self.last_sub_board.occupied_co(Black),
         ];
-        ALL_PIECE_TYPES[..5]
-            .iter()
-            .cartesian_product(ALL_COLORS)
-            .flat_map(|(&piece_type, color)| {
-                let prev_occupied = last_sub_board_occupied_cos[color.to_index()]
-                    & last_sub_board_piece_masks[piece_type.to_index()];
-                let new_occupied =
-                    sub_board.occupied_co(color) & sub_board.get_piece_mask(piece_type);
-                (!prev_occupied & new_occupied)
-                    .map(move |square| Change::Added((Piece::new(piece_type, color), square)))
-                    .chain((prev_occupied & !new_occupied).map(move |square| {
-                        Change::Removed((Piece::new(piece_type, color), square))
-                    }))
-            })
-            .cartesian_product(colors_to_update)
-            .for_each(|(change, turn)| match change {
+        colors_to_update
+            .into_iter()
+            .cartesian_product(
+                ALL_PIECE_TYPES[..5]
+                    .iter()
+                    .cartesian_product(ALL_COLORS)
+                    .flat_map(|(&piece_type, color)| {
+                        let prev_occupied = last_sub_board_occupied_cos[color.to_index()]
+                            & last_sub_board_piece_masks[piece_type.to_index()];
+                        let new_occupied =
+                            sub_board.occupied_co(color) & sub_board.get_piece_mask(piece_type);
+                        (!prev_occupied & new_occupied)
+                            .map(move |square| {
+                                Change::Added((Piece::new(piece_type, color), square))
+                            })
+                            .chain((prev_occupied & !new_occupied).map(move |square| {
+                                Change::Removed((Piece::new(piece_type, color), square))
+                            }))
+                    }),
+            )
+            .for_each(|(turn, change)| match change {
                 Change::Added((piece, square)) => self.activate_non_king_piece(turn, piece, square),
                 Change::Removed((piece, square)) => {
                     self.deactivate_non_king_piece(turn, piece, square)
