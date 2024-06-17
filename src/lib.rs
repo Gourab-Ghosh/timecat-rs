@@ -35,18 +35,6 @@ mod uci;
 mod useful_macros;
 mod utils;
 
-#[cfg(feature = "engine")]
-mod engine_features {
-    use super::*;
-    pub use constants::engine::*;
-    pub use engine::{Engine, GoCommand};
-    pub use parse::*;
-    pub use search::*;
-    pub use selfplay::self_play;
-    pub use sort::*;
-    pub use uci::*;
-}
-
 pub mod prelude {
     use super::*;
     pub use super::{
@@ -88,6 +76,8 @@ pub use constants::bitboard_and_square::*;
 pub use constants::board::*;
 pub use constants::color::*;
 pub use constants::description::*;
+#[cfg(feature = "engine")]
+pub use constants::engine::*;
 pub use constants::evaluate::*;
 pub use constants::fen::*;
 pub use constants::files::*;
@@ -97,7 +87,7 @@ pub use constants::print_style::*;
 pub use constants::ranks::*;
 pub use constants::types::*;
 #[cfg(feature = "engine")]
-pub use engine_features::*;
+pub use engine::{Engine, GoCommand};
 pub use error::*;
 #[cfg(feature = "inbuilt_nnue")]
 pub use evaluate::*;
@@ -105,9 +95,17 @@ pub use itertools::*;
 pub use lazy_static::lazy_static;
 #[cfg(feature = "nnue_reader")]
 pub use nnue::*;
+#[cfg(feature = "engine")]
+pub use parse::*;
 pub use paste::paste;
+#[cfg(feature = "engine")]
+pub use search::*;
+#[cfg(feature = "engine")]
+pub use selfplay::self_play;
 #[cfg(feature = "serde")]
 pub use serde::{Deserialize, Serialize};
+#[cfg(feature = "engine")]
+pub use sort::*;
 pub use std::cmp::Ordering;
 pub use std::convert::From;
 pub use std::env;
@@ -133,6 +131,8 @@ pub use std::time::{Duration, Instant};
 pub use tests::test;
 pub use timer::Timer;
 pub use tt::*;
+#[cfg(feature = "engine")]
+pub use uci::*;
 pub use utils::*;
 
 // pub use std::hint;

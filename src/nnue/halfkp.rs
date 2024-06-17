@@ -302,7 +302,6 @@ impl HalfKPModel {
             self.update_king(sub_board, Black);
             black_king_updated = true;
         }
-
         let mut colors_to_update = Vec::with_capacity(2);
         if !white_king_updated {
             colors_to_update.push(White);
