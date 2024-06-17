@@ -12,7 +12,6 @@ const FIRST_HIDDEN_LAYER_NUM_OUTPUTS: usize = 32;
 const SECOND_HIDDEN_LAYER_NUM_OUTPUTS: usize = 32;
 const FINAL_NUM_OUTPUTS: usize = 1;
 
-#[derive(Clone)]
 struct HalfKPFeatureTransformer {
     weights: Box<
         [MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>;
@@ -73,7 +72,7 @@ impl Debug for HalfKPFeatureTransformer {
     }
 }
 
-#[derive(Clone, BinRead)]
+#[derive(BinRead)]
 struct HalfKPNetwork {
     pub hidden_layer_1: Layer<
         i8,
