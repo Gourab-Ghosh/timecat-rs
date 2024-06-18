@@ -15,7 +15,7 @@ pub fn self_play(
     go_command: GoCommand,
     print: bool,
     move_limit: impl Into<Option<NumMoves>> + Copy,
-) -> Result<(), TimecatError> {
+) -> Result<()> {
     let move_limit = move_limit.into().unwrap_or(NumMoves::MAX);
     if move_limit == 0 {
         return Ok(());

@@ -291,7 +291,7 @@ impl Square {
 impl FromStr for Square {
     type Err = TimecatError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         if s.len() < 2 {
             return Err(TimecatError::InvalidSquareString { s: s.to_string() });
         }

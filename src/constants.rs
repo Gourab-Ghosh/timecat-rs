@@ -7,6 +7,8 @@ pub mod description {
 }
 
 pub mod types {
+    use super::TimecatError;
+
     pub type Ply = usize;
     pub type Depth = i8;
     pub type Score = i16;
@@ -16,6 +18,8 @@ pub mod types {
 
     #[cfg(feature = "colored_output")]
     pub type ColoredStringFunction = fn(colored::ColoredString) -> colored::ColoredString;
+
+    pub type Result<T> = core::result::Result<T, TimecatError>;
 }
 
 pub mod bitboard_and_square {

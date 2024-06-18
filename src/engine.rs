@@ -146,14 +146,14 @@ impl Engine {
         }
     }
 
-    pub fn set_fen(&mut self, fen: &str) -> Result<(), TimecatError> {
+    pub fn set_fen(&mut self, fen: &str) -> Result<()> {
         let result = self.board.set_fen(fen);
         self.reset_variables();
         result
     }
 
     #[inline]
-    pub fn from_fen(fen: &str) -> Result<Self, TimecatError> {
+    pub fn from_fen(fen: &str) -> Result<Self> {
         Ok(Engine::new(
             Board::from_fen(fen)?,
             TranspositionTable::default(),

@@ -127,7 +127,7 @@ impl UCIOption {
         UCIOption::new(name, UCIOptionType::Button { function })
     }
 
-    fn set_option(&self, engine: &Engine, value_string: String) -> Result<(), TimecatError> {
+    fn set_option(&self, engine: &Engine, value_string: String) -> Result<()> {
         match self.option_type {
             UCIOptionType::Check { function, .. } => {
                 function(engine, value_string.parse()?);
@@ -233,7 +233,7 @@ impl UCIOptions {
         engine: &Engine,
         command_name: &str,
         value_string: String,
-    ) -> Result<(), TimecatError> {
+    ) -> Result<()> {
         self.get_option(command_name)
             .ok_or(TimecatError::UnknownCommand)?
             .set_option(engine, value_string)

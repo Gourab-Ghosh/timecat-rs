@@ -194,7 +194,7 @@ impl Default for SubBoardBuilder {
 impl FromStr for SubBoardBuilder {
     type Err = TimecatError;
 
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
+    fn from_str(value: &str) -> Result<Self> {
         let mut cur_rank = Rank::Eighth;
         let mut cur_file = File::A;
         let mut sub_board_builder = SubBoardBuilder::new();

@@ -13,7 +13,7 @@ pub fn simplify_fen(fen: &str) -> String {
     remove_double_spaces_and_trim(fen)
 }
 
-pub fn flip_board_fen(fen: &str) -> Result<String, TimecatError> {
+pub fn flip_board_fen(fen: &str) -> Result<String> {
     // TODO: ep square not flipped.
     let fen = remove_double_spaces_and_trim(fen);
     let (position_fen, rest_fen) = fen.split_once(' ').ok_or(TimecatError::BadFen {
@@ -125,17 +125,17 @@ impl Stringify for Score {
 
 pub trait StringifyMove {
     fn uci(self) -> String;
-    fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String, BoardError>;
-    fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError>;
+    fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String>;
+    fn stringify_move(self, sub_board: &SubBoard) -> Result<String>;
 
-    fn san(self, sub_board: &SubBoard) -> Result<String, BoardError>
+    fn san(self, sub_board: &SubBoard) -> Result<String>
     where
         Self: Sized,
     {
         self.algebraic(sub_board, false)
     }
 
-    fn lan(self, sub_board: &SubBoard) -> Result<String, BoardError>
+    fn lan(self, sub_board: &SubBoard) -> Result<String>
     where
         Self: Sized,
     {
@@ -148,11 +148,11 @@ impl StringifyMove for Move {
         self.to_string()
     }
 
-    fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String, BoardError> {
+    fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String> {
         Ok(self.algebraic_and_new_sub_board(sub_board, long)?.0)
     }
 
-    fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError> {
+    fn stringify_move(self, sub_board: &SubBoard) -> Result<String> {
         Some(self).stringify_move(sub_board)
     }
 }
@@ -165,14 +165,14 @@ impl StringifyMove for Option<Move> {
         }
     }
 
-    fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String, BoardError> {
+    fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String> {
         match self {
             Some(move_) => move_.algebraic(sub_board, long),
             None => Ok("--".to_string()),
         }
     }
 
-    fn stringify_move(self, sub_board: &SubBoard) -> Result<String, BoardError> {
+    fn stringify_move(self, sub_board: &SubBoard) -> Result<String> {
         match GLOBAL_UCI_STATE.is_in_console_mode() {
             true => self.algebraic(sub_board, GLOBAL_UCI_STATE.use_long_algebraic_notation()),
             false => Ok(self.uci()),
@@ -217,7 +217,7 @@ impl<T: Stringify> Stringify for Option<T> {
     }
 }
 
-impl<T: Stringify, E: Error> Stringify for Result<T, E> {
+impl<T: Stringify, E: Error> Stringify for core::result::Result<T, E> {
     fn stringify(&self) -> String {
         match self {
             Ok(t) => format!("Ok({})", t.stringify()),

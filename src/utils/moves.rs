@@ -18,7 +18,7 @@ impl Move {
         }
     }
 
-    pub fn from_san(sub_board: &SubBoard, san: &str) -> Result<Option<Move>, TimecatError> {
+    pub fn from_san(sub_board: &SubBoard, san: &str) -> Result<Option<Move>> {
         // TODO: Make the logic better
         let san = san.trim().replace('0', "O");
         if san == "--" {
@@ -33,7 +33,7 @@ impl Move {
         Err(TimecatError::InvalidSanMoveString { s: san.to_string() })
     }
 
-    pub fn from_lan(sub_board: &SubBoard, lan: &str) -> Result<Option<Move>, TimecatError> {
+    pub fn from_lan(sub_board: &SubBoard, lan: &str) -> Result<Option<Move>> {
         // TODO: Make the logic better
         let lan = lan.trim().replace('0', "O");
         if lan == "--" {
@@ -67,7 +67,7 @@ impl Move {
         self,
         sub_board: &SubBoard,
         long: bool,
-    ) -> Result<String, BoardError> {
+    ) -> Result<String> {
         // Castling.
         if sub_board.is_castling(self) {
             return if self.get_dest().get_file() < self.get_source().get_file() {
@@ -80,7 +80,7 @@ impl Move {
         let piece =
             sub_board
                 .piece_type_at(self.get_source())
-                .ok_or(BoardError::InvalidSanMove {
+                .ok_or(TimecatError::InvalidSanOrLanMove {
                     move_: self,
                     fen: sub_board.get_fen(),
                 })?;
@@ -163,7 +163,7 @@ impl Move {
         self,
         sub_board: &SubBoard,
         long: bool,
-    ) -> Result<(String, SubBoard), BoardError> {
+    ) -> Result<(String, SubBoard)> {
         let san = self.algebraic_without_suffix(sub_board, long)?;
 
         // Look ahead for check or checkmate.
@@ -194,7 +194,7 @@ impl fmt::Display for Move {
 impl FromStr for Move {
     type Err = TimecatError;
 
-    fn from_str(mut s: &str) -> Result<Self, Self::Err> {
+    fn from_str(mut s: &str) -> Result<Self> {
         let error = TimecatError::InvalidUciMoveString { s: s.to_string() };
         s = s.trim();
         if s.len() > 6 {

@@ -1,6 +1,6 @@
 use timecat::*;
 
-fn check_evaluation(board: &mut Board, depth: u8) -> Result<(), Vec<Option<Move>>> {
+fn check_evaluation(board: &mut Board, depth: u8) -> core::result::Result<(), Vec<Option<Move>>> {
     if depth == 0 {
         return Ok(());
     }

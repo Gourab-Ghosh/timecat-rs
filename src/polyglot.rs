@@ -236,7 +236,7 @@ pub fn polyglot_hash_from_board(board: &Board) -> u64 {
     hash
 }
 
-pub fn get_move_from_polyglot_move_int(move_int: usize) -> Result<Move, TimecatError> {
+pub fn get_move_from_polyglot_move_int(move_int: usize) -> Result<Move> {
     let dest_file = File::from_index(move_int & 0x7);
     let dest_rank = Rank::from_index(move_int >> 3 & 0x7);
     let source_file = File::from_index(move_int >> 6 & 0x7);
@@ -363,7 +363,7 @@ mod array_implementation {
             entries.windows(2).all(|w| w[0] <= w[1])
         }
 
-        fn get_entries_from_bytes(bytes: &[u8]) -> Result<Vec<PolyglotBookEntry>, TimecatError> {
+        fn get_entries_from_bytes(bytes: &[u8]) -> Result<Vec<PolyglotBookEntry>> {
             let mut entries = Vec::new();
             let mut offset = 0;
             while offset < bytes.len() {
@@ -387,7 +387,7 @@ mod array_implementation {
             Ok(entries)
         }
 
-        pub fn read_book_from_file(path: &str) -> Result<PolyglotBook, TimecatError> {
+        pub fn read_book_from_file(path: &str) -> Result<PolyglotBook> {
             let mut entries = Vec::new();
             let mut file = fs::File::open(path)?;
             let mut buffer = [0; 16];
@@ -409,7 +409,7 @@ mod array_implementation {
             Ok(PolyglotBook { entries })
         }
 
-        pub fn read_book_from_bytes(bytes: &[u8]) -> Result<PolyglotBook, TimecatError> {
+        pub fn read_book_from_bytes(bytes: &[u8]) -> Result<PolyglotBook> {
             Ok(PolyglotBook {
                 entries: Self::get_entries_from_bytes(bytes)?,
             })
@@ -513,7 +513,7 @@ mod map_implementation {
 
         fn get_entries_from_bytes(
             bytes: &[u8],
-        ) -> Result<HashMap<u64, Vec<PolyglotBookEntry>>, TimecatError> {
+        ) -> Result<HashMap<u64, Vec<PolyglotBookEntry>>> {
             let mut entries_map = HashMap::default();
             let mut offset = 0;
             while offset < bytes.len() {
@@ -539,7 +539,7 @@ mod map_implementation {
             Ok(entries_map)
         }
 
-        pub fn read_book_from_file(path: &str) -> Result<PolyglotBook, TimecatError> {
+        pub fn read_book_from_file(path: &str) -> Result<PolyglotBook> {
             let mut entries_map = HashMap::default();
             let mut file = fs::File::open(path)?;
             let mut buffer = [0; 16];
@@ -563,7 +563,7 @@ mod map_implementation {
             Ok(PolyglotBook { entries_map })
         }
 
-        pub fn read_book_from_bytes(bytes: &[u8]) -> Result<PolyglotBook, TimecatError> {
+        pub fn read_book_from_bytes(bytes: &[u8]) -> Result<PolyglotBook> {
             Ok(PolyglotBook {
                 entries_map: Self::get_entries_from_bytes(bytes)?,
             })
@@ -580,7 +580,7 @@ fn read_bytes_at_offset(file: &fs::File, buffer: &mut [u8], offset: u64) -> std:
 pub fn find_first_matching_index(
     file: &fs::File,
     target_hash: u64,
-) -> Result<Option<u64>, TimecatError> {
+) -> Result<Option<u64>> {
     let mut buffer = [0; 16];
     let mut start = 0;
     let mut end = file.metadata()?.len() / 16 - 1;
@@ -608,7 +608,7 @@ pub fn find_first_matching_index(
 pub fn search_all_moves_from_file(
     path: &str,
     board: &Board,
-) -> Result<Vec<WeightedMove>, TimecatError> {
+) -> Result<Vec<WeightedMove>> {
     let target_hash = polyglot_hash_from_board(board);
     let file = fs::File::open(path)?;
     let mut buffer = [0; 16];
@@ -641,13 +641,13 @@ pub fn search_all_moves_from_file(
 pub fn search_best_moves_from_file(
     path: &str,
     board: &Board,
-) -> Result<Option<Move>, TimecatError> {
+) -> Result<Option<Move>> {
     Ok(search_all_moves_from_file(path, board)?
         .first()
         .map(|wm| wm.move_))
 }
 
-pub fn test_polyglot(book_path: &str) -> Result<(), TimecatError> {
+pub fn test_polyglot(book_path: &str) -> Result<()> {
     let board = Board::from_fen(STARTING_POSITION_FEN)?;
     let book = array_implementation::PolyglotBookReader::read_book_from_file(book_path)?;
     let moves1 = book.get_all_weighed_moves(&board);

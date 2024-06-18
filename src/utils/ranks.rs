@@ -82,7 +82,7 @@ impl Rank {
 impl FromStr for Rank {
     type Err = TimecatError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         match s.trim() {
             "1" => Ok(Self::First),
             "2" => Ok(Self::Second),

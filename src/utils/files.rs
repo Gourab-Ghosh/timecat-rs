@@ -82,7 +82,7 @@ impl File {
 impl FromStr for File {
     type Err = TimecatError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         match s.to_lowercase().trim() {
             "a" => Ok(Self::A),
             "b" => Ok(Self::B),

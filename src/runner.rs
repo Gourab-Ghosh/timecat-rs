@@ -1,6 +1,6 @@
 use super::*;
 
-enum Action {
+enum TimecatBuilderAction {
     PrintHelpCommand,
     PrintEngineVersion,
     #[cfg(feature = "debug")]
@@ -10,7 +10,7 @@ enum Action {
 
 #[derive(Default)]
 pub struct TimecatBuilder {
-    actions: Vec<Action>,
+    actions: Vec<TimecatBuilderAction>,
     engine: Option<Engine>,
 }
 
@@ -46,16 +46,16 @@ impl TimecatBuilder {
             GLOBAL_UCI_STATE.set_num_threads(num_threads, false);
         }
         if args.contains(&"--help") {
-            self.actions.push(Action::PrintHelpCommand);
+            self.actions.push(TimecatBuilderAction::PrintHelpCommand);
             return self;
         }
         if args.contains(&"--version") {
-            self.actions.push(Action::PrintEngineVersion);
+            self.actions.push(TimecatBuilderAction::PrintEngineVersion);
             return self;
         }
         #[cfg(feature = "debug")]
         if args.contains(&"--test") {
-            self.actions.push(Action::RunTest);
+            self.actions.push(TimecatBuilderAction::RunTest);
             return self;
         }
         if args.contains(&"-c") || args.contains(&"--command") {
@@ -65,7 +65,7 @@ impl TimecatBuilder {
                 .skip(1)
                 .take_while(|&&arg| !arg.starts_with("--"))
                 .join(" ");
-            self.actions.push(Action::RunCommand(command));
+            self.actions.push(TimecatBuilderAction::RunCommand(command));
             return self;
         }
         self
@@ -73,31 +73,31 @@ impl TimecatBuilder {
 }
 
 pub struct Timecat {
-    actions: Vec<Action>,
+    actions: Vec<TimecatBuilderAction>,
     engine: Engine,
     io_reader: IoReader,
 }
 
 impl Timecat {
-    pub fn run(mut self) -> Result<(), TimecatError> {
+    pub fn run(mut self) -> Result<()> {
         self.io_reader.start_reader();
         #[allow(clippy::never_loop)]
         for action in self.actions.into_iter() {
             match action {
-                Action::PrintHelpCommand => {
+                TimecatBuilderAction::PrintHelpCommand => {
                     println!("{}", Parser::get_help_message());
                     return Ok(());
                 }
-                Action::PrintEngineVersion => {
+                TimecatBuilderAction::PrintEngineVersion => {
                     print_engine_version(false);
                     return Ok(());
                 }
                 #[cfg(feature = "debug")]
-                Action::RunTest => {
+                TimecatBuilderAction::RunTest => {
                     test.run_and_print_time(&mut self.engine)?;
                     return Ok(());
                 }
-                Action::RunCommand(command) => {
+                TimecatBuilderAction::RunCommand(command) => {
                     println!();
                     Parser::run_raw_input_checked(&mut self.engine, &command);
                     return Ok(());

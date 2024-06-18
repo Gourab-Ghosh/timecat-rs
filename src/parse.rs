@@ -61,7 +61,7 @@ impl Go {
         position_count
     }
 
-    fn extract_depth(depth_str: &str) -> Result<Depth, TimecatError> {
+    fn extract_depth(depth_str: &str) -> Result<Depth> {
         let depth: Depth = depth_str.parse()?;
         if depth.is_negative() {
             return Err(InvalidDepth { depth });
@@ -69,7 +69,7 @@ impl Go {
         Ok(depth)
     }
 
-    pub fn extract_go_command(commands: &[&str]) -> Result<GoCommand, TimecatError> {
+    pub fn extract_go_command(commands: &[&str]) -> Result<GoCommand> {
         // TODO: Improve Unknown Command Detection
         if ["perft", "depth", "movetime", "infinite"]
             .iter()
@@ -104,7 +104,7 @@ impl Go {
         }
     }
 
-    fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<(), TimecatError> {
+    fn go_command(engine: &mut Engine, go_command: GoCommand) -> Result<()> {
         if GLOBAL_UCI_STATE.is_in_console_mode() {
             println!("{}\n", engine.get_board());
         }
@@ -162,7 +162,7 @@ impl Go {
         Ok(())
     }
 
-    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
+    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<()> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if second_command == "perft" {
             let depth = commands.get(2).ok_or(UnknownCommand)?.parse()?;
@@ -177,7 +177,7 @@ impl Go {
 pub struct SetOption;
 
 impl SetOption {
-    fn parse_sub_commands(engine: &Engine, commands: &[&str]) -> Result<(), TimecatError> {
+    fn parse_sub_commands(engine: &Engine, commands: &[&str]) -> Result<()> {
         if commands.first().ok_or(UnknownCommand)?.to_lowercase() != "setoption" {
             return Err(UnknownCommand);
         }
@@ -202,7 +202,7 @@ impl SetOption {
 struct Set;
 
 impl Set {
-    fn board_fen(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
+    fn board_fen(engine: &mut Engine, commands: &[&str]) -> Result<()> {
         let mut fen = commands[3..].join(" ");
         if fen == "startpos" {
             fen = STARTING_POSITION_FEN.to_string();
@@ -218,7 +218,7 @@ impl Set {
     }
 
     #[cfg(feature = "colored_output")]
-    fn color(commands: &[&str]) -> Result<(), TimecatError> {
+    fn color(commands: &[&str]) -> Result<()> {
         let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
         let b = third_command.parse()?;
         if GLOBAL_UCI_STATE.is_colored_output() == b {
@@ -228,7 +228,7 @@ impl Set {
         Ok(())
     }
 
-    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
+    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<()> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         match second_command.as_str() {
             "board" => {
@@ -252,7 +252,7 @@ impl Set {
 struct Push;
 
 impl Push {
-    fn moves(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
+    fn moves(engine: &mut Engine, commands: &[&str]) -> Result<()> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if !["san", "lan", "uci", "move", "moves"].contains(&second_command.as_str()) {
             return Err(UnknownCommand);
@@ -286,7 +286,7 @@ impl Push {
         Ok(())
     }
 
-    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
+    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<()> {
         Self::moves(engine, commands)
     }
 }
@@ -294,7 +294,7 @@ impl Push {
 struct Pop;
 
 impl Pop {
-    fn n_times(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
+    fn n_times(engine: &mut Engine, commands: &[&str]) -> Result<()> {
         let second_command = commands.get(1).unwrap_or(&"1");
         if commands.get(2).is_some() {
             return Err(UnknownCommand);
@@ -315,7 +315,7 @@ impl Pop {
         Ok(())
     }
 
-    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
+    pub fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<()> {
         Self::n_times(engine, commands)
     }
 }
@@ -323,7 +323,7 @@ impl Pop {
 pub struct UCIParser;
 
 impl UCIParser {
-    fn parse_uci_position_input(input: &str) -> Result<String, TimecatError> {
+    fn parse_uci_position_input(input: &str) -> Result<String> {
         let commands = input.split_whitespace().collect_vec();
         if commands.first() != Some(&"position") {
             return Err(UnknownCommand);
@@ -356,7 +356,7 @@ impl UCIParser {
         Ok(new_input)
     }
 
-    fn parse_uci_input(input: &str) -> Result<String, TimecatError> {
+    fn parse_uci_input(input: &str) -> Result<String> {
         let modified_input = input.trim().to_lowercase();
         if modified_input.starts_with("position") {
             return Self::parse_uci_position_input(input);
@@ -364,7 +364,7 @@ impl UCIParser {
         Err(UnknownCommand)
     }
 
-    fn run_parsed_input(engine: &mut Engine, parsed_input: &str) -> Result<(), TimecatError> {
+    fn run_parsed_input(engine: &mut Engine, parsed_input: &str) -> Result<()> {
         let user_inputs = parsed_input.split("&&").map(|s| s.trim()).collect_vec();
         for user_input in user_inputs {
             Parser::run_single_command(engine, user_input)?;
@@ -387,7 +387,7 @@ impl UCIParser {
         println!("{}", "uciok".colorize(SUCCESS_MESSAGE_STYLE));
     }
 
-    pub fn parse_command(engine: &mut Engine, user_input: &str) -> Result<(), TimecatError> {
+    pub fn parse_command(engine: &mut Engine, user_input: &str) -> Result<()> {
         let commands = user_input.split_whitespace().collect_vec();
         let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
         match first_command.as_str() {
@@ -414,7 +414,7 @@ impl UCIParser {
 struct SelfPlay;
 
 impl SelfPlay {
-    fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<(), TimecatError> {
+    fn parse_sub_commands(engine: &mut Engine, commands: &[&str]) -> Result<()> {
         let mut commands = commands.to_vec();
         commands[0] = "go";
         let go_command = if commands.get(1).is_some() {
@@ -429,7 +429,7 @@ impl SelfPlay {
 struct DebugMode;
 
 impl DebugMode {
-    fn get_debug_mode(second_command: &str) -> Result<bool, TimecatError> {
+    fn get_debug_mode(second_command: &str) -> Result<bool> {
         match second_command {
             "on" => Ok(true),
             "off" => Ok(false),
@@ -439,7 +439,7 @@ impl DebugMode {
         }
     }
 
-    fn parse_sub_commands(commands: &[&str]) -> Result<(), TimecatError> {
+    fn parse_sub_commands(commands: &[&str]) -> Result<()> {
         if commands.get(2).is_some() {
             return Err(UnknownCommand);
         }
@@ -472,7 +472,7 @@ impl Parser {
         user_input
     }
 
-    fn run_single_command(engine: &mut Engine, user_input: &str) -> Result<(), TimecatError> {
+    fn run_single_command(engine: &mut Engine, user_input: &str) -> Result<()> {
         let res = match user_input.to_lowercase().as_str() {
             "d" => Ok(println!("{}", engine.get_board())),
             "eval" => {
@@ -515,7 +515,7 @@ impl Parser {
         }
     }
 
-    pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Result<(), TimecatError> {
+    pub fn parse_command(engine: &mut Engine, raw_input: &str) -> Result<()> {
         let sanitized_input = Self::sanitize_string(raw_input);
         if GLOBAL_UCI_STATE.is_in_console_and_debug_mode() {
             println!();

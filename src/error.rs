@@ -41,6 +41,7 @@ pub enum TimecatError {
         min: Spin,
         max: Spin,
     },
+    InvalidSanOrLanMove { move_: Move, fen: String },
     InvalidSanMoveString {
         s: String,
     },
@@ -93,6 +94,7 @@ impl fmt::Display for TimecatError {
             GameAlreadyOver => write!(f, "Game is already over! Please start a game from another position!"),
             UnknownDebugCommand { command } => write!(f, "Debug command {command} is unknown! The possible commands are on or off! Please try again!"),
             InvalidSpinValue {name, value, min, max} => write!(f, "Cannot set value of {name} to {value}, the value must be from {min} to {max}! Please try again!"),
+            InvalidSanOrLanMove { move_, fen } => write!(f, "san() and lan() expect move to be legal or null, but got {} in {}", move_, fen),
             InvalidSanMoveString { s } => write!(f, "Got invalid SAN move string {s}! Please try again!"),
             InvalidLanMoveString { s } => write!(f, "Got invalid LAN move string {s}! Please try again!"),
             InvalidMoveString { s } => write!(f, "Got invalid move string {s}! Please try again!"),

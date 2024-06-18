@@ -2,29 +2,6 @@
 
 use super::*;
 
-/// This code defines an enum `BoardError` that represents different types of errors that can occur in a board-related context. The enum has two variants.
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug)]
-pub enum BoardError {
-    InvalidSanMove { move_: Move, fen: String },
-    CustomError { err_msg: String },
-}
-
-impl fmt::Display for BoardError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidSanMove { move_, fen } => write!(
-                f,
-                "san() and lan() expect move to be legal or null, but got {} in {}",
-                move_, fen
-            ),
-            Self::CustomError { err_msg } => write!(f, "{err_msg}"),
-        }
-    }
-}
-
-impl Error for BoardError {}
-
 /// Ths code defines an enum `GameResult` that represents the result of a game. It has three
 /// variants: `Win(Color)`, `Draw`, and `InProgress`.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -91,8 +68,8 @@ impl Board {
     ///
     /// Returns:
     ///
-    /// The `set_fen` function returns a `Result<(), TimecatError>`.
-    pub fn set_fen(&mut self, fen: &str) -> Result<(), TimecatError> {
+    /// The `set_fen` function returns a `Result<()>`.
+    pub fn set_fen(&mut self, fen: &str) -> Result<()> {
         let fen = simplify_fen(fen);
         if !Self::is_good_fen(&fen) {
             return Err(TimecatError::BadFen { fen });
@@ -122,7 +99,7 @@ impl Board {
     /// The `from_fen` function is returning a `Result` containing either a `ChessBoard` instance if the
     /// FEN string was successfully parsed and set on the board, or an `TimecatError` if there was an
     /// error during the parsing or setting of the FEN string.
-    pub fn from_fen(fen: &str) -> Result<Self, TimecatError> {
+    pub fn from_fen(fen: &str) -> Result<Self> {
         let mut board = Self::new();
         board.set_fen(fen)?;
         Ok(board)
@@ -514,7 +491,7 @@ impl Board {
     /// Returns:
     ///
     /// The `push_san` function returns a `Result` containing an `Option` of `Move` or an `TimecatError`.
-    pub fn push_san(&mut self, san: &str) -> Result<Option<Move>, TimecatError> {
+    pub fn push_san(&mut self, san: &str) -> Result<Option<Move>> {
         let move_ = self.parse_san(san)?;
         self.push(move_);
         Ok(move_)
@@ -535,7 +512,7 @@ impl Board {
     /// The `push_sans` function is returning a `Result` containing a `Vec` of `Option<Move>` or an
     /// `TimecatError`.
     #[inline]
-    pub fn push_sans(&mut self, sans: &str) -> Result<Vec<Option<Move>>, TimecatError> {
+    pub fn push_sans(&mut self, sans: &str) -> Result<Vec<Option<Move>>> {
         remove_double_spaces_and_trim(sans)
             .split(' ')
             .map(|san| self.push_san(san))
@@ -553,7 +530,7 @@ impl Board {
     /// Returns:
     ///
     /// The function `push_uci` returns a `Result` containing an `Option` of `Move` or an `TimecatError`.
-    pub fn push_uci(&mut self, uci: &str) -> Result<Option<Move>, TimecatError> {
+    pub fn push_uci(&mut self, uci: &str) -> Result<Option<Move>> {
         let move_ = self.parse_uci(uci)?;
         self.push(move_);
         Ok(move_)
@@ -582,7 +559,7 @@ impl Board {
     /// The `push_uci_moves` function returns a `Result` containing a `Vec` of `Option<Move>` or an
     /// `TimecatError`.
     #[inline]
-    pub fn push_uci_moves(&mut self, uci_moves: &str) -> Result<Vec<Option<Move>>, TimecatError> {
+    pub fn push_uci_moves(&mut self, uci_moves: &str) -> Result<Vec<Option<Move>>> {
         remove_double_spaces_and_trim(uci_moves)
             .split(' ')
             .map(|san| self.push_uci(san))
@@ -604,7 +581,7 @@ impl Board {
     ///
     /// Returns:
     ///
-    /// The function `algebraic_and_push` returns a `Result<String, BoardError>`. The result can either
+    /// The function `algebraic_and_push` returns a `Result<String>`. The result can either
     /// be an `Ok` containing a `String` value representing the algebraic notation of a move with
     /// optional suffixes like "#" for checkmate or "+" for check, or an `Err` containing a `BoardError`
     /// if an error occurs during the execution of the function.
@@ -612,7 +589,7 @@ impl Board {
         &mut self,
         optional_move: impl Into<Option<Move>>,
         long: bool,
-    ) -> Result<String, BoardError> {
+    ) -> Result<String> {
         let optional_move = optional_move.into();
         if optional_move.is_none() {
             return Ok("--".to_string());
@@ -644,12 +621,12 @@ impl Board {
     ///
     /// Returns:
     ///
-    /// The `san_and_push` function is returning a `Result<String, BoardError>`.
+    /// The `san_and_push` function is returning a `Result<String>`.
     #[inline]
     pub fn san_and_push(
         &mut self,
         optional_move: impl Into<Option<Move>>,
-    ) -> Result<String, BoardError> {
+    ) -> Result<String> {
         self.algebraic_and_push(optional_move.into(), false)
     }
 
@@ -664,12 +641,12 @@ impl Board {
     ///
     /// Returns:
     ///
-    /// The `lan_and_push` function returns a `Result<String, BoardError>`.
+    /// The `lan_and_push` function returns a `Result<String>`.
     #[inline]
     pub fn lan_and_push(
         &mut self,
         optional_move: impl Into<Option<Move>>,
-    ) -> Result<String, BoardError> {
+    ) -> Result<String> {
         self.algebraic_and_push(optional_move.into(), true)
     }
 
@@ -835,7 +812,7 @@ impl Default for Board {
 impl FromStr for Board {
     type Err = TimecatError;
 
-    fn from_str(fen: &str) -> Result<Self, Self::Err> {
+    fn from_str(fen: &str) -> Result<Self> {
         Self::from_fen(fen)
     }
 }
