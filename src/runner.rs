@@ -81,6 +81,7 @@ pub struct Timecat {
 impl Timecat {
     pub fn run(mut self) -> Result<(), TimecatError> {
         self.io_reader.start_reader();
+        #[allow(clippy::never_loop)]
         for action in self.actions.into_iter() {
             match action {
                 Action::PrintHelpCommand => {
