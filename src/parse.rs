@@ -174,31 +174,6 @@ impl Go {
     }
 }
 
-pub struct SetOption;
-
-impl SetOption {
-    fn parse_sub_commands(engine: &Engine, commands: &[&str]) -> Result<()> {
-        if commands.first().ok_or(UnknownCommand)?.to_lowercase() != "setoption" {
-            return Err(UnknownCommand);
-        }
-        if commands.get(1).ok_or(UnknownCommand)?.to_lowercase() != "name" {
-            return Err(UnknownCommand);
-        }
-        let command_name = commands
-            .iter()
-            .skip(2)
-            .take_while(|&&c| c != "value")
-            .join(" ")
-            .to_lowercase();
-        let value_string = commands
-            .iter()
-            .skip_while(|&&s| s != "value")
-            .skip(1)
-            .join(" ");
-        UCI_OPTIONS.set_option(engine, &command_name, value_string)
-    }
-}
-
 struct Set;
 
 impl Set {
@@ -462,7 +437,7 @@ impl Parser {
         io_reader.read_line()
     }
 
-    fn sanitize_string(user_input: &str) -> String {
+    pub fn sanitize_string(user_input: &str) -> String {
         let user_input = user_input.trim();
         let mut user_input = user_input.to_string();
         for _char in [",", ":"] {
@@ -506,7 +481,7 @@ impl Parser {
         match first_command.as_str() {
             "go" => Go::parse_sub_commands(engine, &commands),
             "set" => Set::parse_sub_commands(engine, &commands),
-            "setoption" => SetOption::parse_sub_commands(engine, &commands),
+            "setoption" => UCI_OPTIONS.run_command(engine, &commands.join(" ")),
             "push" => Push::parse_sub_commands(engine, &commands),
             "pop" => Pop::parse_sub_commands(engine, &commands),
             "selfplay" => SelfPlay::parse_sub_commands(engine, &commands),

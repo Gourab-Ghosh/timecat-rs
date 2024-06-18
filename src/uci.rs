@@ -228,13 +228,28 @@ impl UCIOptions {
         self.options.read().unwrap().to_owned()
     }
 
-    pub fn set_option(
-        &self,
-        engine: &Engine,
-        command_name: &str,
-        value_string: String,
-    ) -> Result<()> {
-        self.get_option(command_name)
+    pub fn run_command(&self, engine: &Engine, user_input: &str) -> Result<()> {
+        let binding = Parser::sanitize_string(user_input);
+        let commands = binding.split_whitespace().collect_vec();
+        if commands.first().ok_or(TimecatError::UnknownCommand)?.to_lowercase() != "setoption" {
+            return Err(TimecatError::UnknownCommand);
+        }
+        if commands.get(1).ok_or(TimecatError::UnknownCommand)?.to_lowercase() != "name" {
+            return Err(TimecatError::UnknownCommand);
+        }
+        let command_name = commands
+            .iter()
+            .skip(2)
+            .take_while(|&&c| c != "value")
+            .join(" ")
+            .to_lowercase();
+        let value_string = commands
+            .iter()
+            .skip_while(|&&s| s != "value")
+            .skip(1)
+            .join(" ");
+        
+        self.get_option(&command_name)
             .ok_or(TimecatError::UnknownCommand)?
             .set_option(engine, value_string)
     }

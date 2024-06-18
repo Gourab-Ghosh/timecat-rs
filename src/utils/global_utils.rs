@@ -105,13 +105,16 @@ impl GlobalUCIState {
         self._console_mode.store(b, MEMORY_ORDERING);
         self._debug_mode.store(b, MEMORY_ORDERING);
         if print {
-            print_info("UCI mode is set to", b);
+            print_info("Console mode is set to", b);
         }
     }
 
-    #[inline]
-    pub fn set_uci_mode(&self, b: bool, print: bool) {
-        self.set_console_mode(!b, print);
+    pub fn set_uci_mode(&self, mut b: bool, print: bool) {
+        b = !b;
+        self.set_console_mode(b, false);
+        if print {
+            print_info("UCI mode is set to", b);
+        }
     }
 
     #[inline]
