@@ -623,10 +623,7 @@ impl Board {
     ///
     /// The `san_and_push` function is returning a `Result<String>`.
     #[inline]
-    pub fn san_and_push(
-        &mut self,
-        optional_move: impl Into<Option<Move>>,
-    ) -> Result<String> {
+    pub fn san_and_push(&mut self, optional_move: impl Into<Option<Move>>) -> Result<String> {
         self.algebraic_and_push(optional_move.into(), false)
     }
 
@@ -643,10 +640,7 @@ impl Board {
     ///
     /// The `lan_and_push` function returns a `Result<String>`.
     #[inline]
-    pub fn lan_and_push(
-        &mut self,
-        optional_move: impl Into<Option<Move>>,
-    ) -> Result<String> {
+    pub fn lan_and_push(&mut self, optional_move: impl Into<Option<Move>>) -> Result<String> {
         self.algebraic_and_push(optional_move.into(), true)
     }
 

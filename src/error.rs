@@ -41,7 +41,10 @@ pub enum TimecatError {
         min: Spin,
         max: Spin,
     },
-    InvalidSanOrLanMove { move_: Move, fen: String },
+    InvalidSanOrLanMove {
+        move_: Move,
+        fen: String,
+    },
     InvalidSanMoveString {
         s: String,
     },

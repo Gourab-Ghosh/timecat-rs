@@ -511,9 +511,7 @@ mod map_implementation {
             entries.windows(2).all(|w| w[0] <= w[1])
         }
 
-        fn get_entries_from_bytes(
-            bytes: &[u8],
-        ) -> Result<HashMap<u64, Vec<PolyglotBookEntry>>> {
+        fn get_entries_from_bytes(bytes: &[u8]) -> Result<HashMap<u64, Vec<PolyglotBookEntry>>> {
             let mut entries_map = HashMap::default();
             let mut offset = 0;
             while offset < bytes.len() {
@@ -577,10 +575,7 @@ fn read_bytes_at_offset(file: &fs::File, buffer: &mut [u8], offset: u64) -> std:
     reader.read_exact(buffer)
 }
 
-pub fn find_first_matching_index(
-    file: &fs::File,
-    target_hash: u64,
-) -> Result<Option<u64>> {
+pub fn find_first_matching_index(file: &fs::File, target_hash: u64) -> Result<Option<u64>> {
     let mut buffer = [0; 16];
     let mut start = 0;
     let mut end = file.metadata()?.len() / 16 - 1;
@@ -605,10 +600,7 @@ pub fn find_first_matching_index(
     Ok(first_match_idx)
 }
 
-pub fn search_all_moves_from_file(
-    path: &str,
-    board: &Board,
-) -> Result<Vec<WeightedMove>> {
+pub fn search_all_moves_from_file(path: &str, board: &Board) -> Result<Vec<WeightedMove>> {
     let target_hash = polyglot_hash_from_board(board);
     let file = fs::File::open(path)?;
     let mut buffer = [0; 16];
@@ -638,10 +630,7 @@ pub fn search_all_moves_from_file(
     Ok(moves)
 }
 
-pub fn search_best_moves_from_file(
-    path: &str,
-    board: &Board,
-) -> Result<Option<Move>> {
+pub fn search_best_moves_from_file(path: &str, board: &Board) -> Result<Option<Move>> {
     Ok(search_all_moves_from_file(path, board)?
         .first()
         .map(|wm| wm.move_))

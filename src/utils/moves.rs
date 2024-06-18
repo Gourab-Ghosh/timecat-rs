@@ -63,11 +63,7 @@ impl Move {
         self.promotion
     }
 
-    pub fn algebraic_without_suffix(
-        self,
-        sub_board: &SubBoard,
-        long: bool,
-    ) -> Result<String> {
+    pub fn algebraic_without_suffix(self, sub_board: &SubBoard, long: bool) -> Result<String> {
         // Castling.
         if sub_board.is_castling(self) {
             return if self.get_dest().get_file() < self.get_source().get_file() {
@@ -77,13 +73,12 @@ impl Move {
             };
         }
 
-        let piece =
-            sub_board
-                .piece_type_at(self.get_source())
-                .ok_or(TimecatError::InvalidSanOrLanMove {
-                    move_: self,
-                    fen: sub_board.get_fen(),
-                })?;
+        let piece = sub_board.piece_type_at(self.get_source()).ok_or(
+            TimecatError::InvalidSanOrLanMove {
+                move_: self,
+                fen: sub_board.get_fen(),
+            },
+        )?;
         let capture = sub_board.is_capture(self);
         let mut san = if piece == Pawn {
             String::new()

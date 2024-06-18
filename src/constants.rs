@@ -19,7 +19,7 @@ pub mod types {
     #[cfg(feature = "colored_output")]
     pub type ColoredStringFunction = fn(colored::ColoredString) -> colored::ColoredString;
 
-    pub type Result<T> = core::result::Result<T, TimecatError>;
+    pub type Result<T> = std::result::Result<T, TimecatError>;
 }
 
 pub mod bitboard_and_square {

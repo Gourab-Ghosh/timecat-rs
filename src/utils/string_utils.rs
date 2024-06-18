@@ -217,7 +217,7 @@ impl<T: Stringify> Stringify for Option<T> {
     }
 }
 
-impl<T: Stringify, E: Error> Stringify for core::result::Result<T, E> {
+impl<T: Stringify, E: Error> Stringify for std::result::Result<T, E> {
     fn stringify(&self) -> String {
         match self {
             Ok(t) => format!("Ok({})", t.stringify()),
