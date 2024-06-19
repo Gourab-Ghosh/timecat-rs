@@ -4,6 +4,9 @@ use TimecatError::*;
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum UserCommand {
     TerminateEngine,
+    EngineVersion,
+    #[cfg(feature = "debug")]
+    RunTest,
     ChangeToUCIMode {
         verbose: bool,
     },
@@ -67,8 +70,13 @@ impl UserCommand {
     pub fn run_command(&self, engine: &mut Engine, uci_options: &UCIStateManager) -> Result<()> {
         match self {
             Self::TerminateEngine => GLOBAL_UCI_STATE.set_engine_termination(true),
+            Self::EngineVersion => print_engine_version(),
+            #[cfg(feature = "debug")]
+            Self::RunTest => test.run_and_print_time(engine).unwrap(),
             &Self::ChangeToUCIMode { verbose } => GLOBAL_UCI_STATE.set_uci_mode(true, verbose),
-            &Self::ChangeToConsoleMode { verbose } => GLOBAL_UCI_STATE.set_console_mode(true, verbose),
+            &Self::ChangeToConsoleMode { verbose } => {
+                GLOBAL_UCI_STATE.set_console_mode(true, verbose)
+            }
             &Self::SetDebugMode(b) => GLOBAL_UCI_STATE.set_debug_mode(b),
             Self::PrintText(s) => println!("{s}"),
             Self::DisplayBoard => println!("{}", engine.get_board()),
@@ -543,7 +551,10 @@ impl Parser {
 
     pub fn parse_command(raw_input: &str) -> Result<Vec<UserCommand>> {
         if raw_input.is_empty() {
-            return Ok(vec![UserCommand::PrintText("".to_string()), UserCommand::TerminateEngine]);
+            return Ok(vec![
+                UserCommand::PrintText("".to_string()),
+                UserCommand::TerminateEngine,
+            ]);
         }
         if raw_input.trim().is_empty() {
             return Err(NoInput);

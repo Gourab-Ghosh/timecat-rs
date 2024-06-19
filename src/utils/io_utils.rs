@@ -12,7 +12,10 @@ pub fn print_line<T: fmt::Display>(line: T) {
     io::stdout().flush().unwrap();
 }
 
-use super::*;
+pub fn get_input<T: fmt::Display>(q: T, io_reader: &IoReader) -> String {
+    print_line(q);
+    io_reader.read_line()
+}
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CustomDebug<T> {
@@ -87,7 +90,7 @@ impl IoReader {
         }
     }
 
-    pub fn start_reader(&self) -> thread::JoinHandle<()> {
+    pub fn start_reader_in_parallel(&self) -> thread::JoinHandle<()> {
         let sender = self.sender.clone();
         thread::spawn(move || loop {
             let mut user_input = String::new();

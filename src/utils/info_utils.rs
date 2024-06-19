@@ -33,18 +33,13 @@ pub fn get_engine_version() -> String {
     format!("{ENGINE_NAME} v{ENGINE_VERSION}")
 }
 
-pub fn print_engine_version(color: bool) {
-    let version = get_engine_version();
-    if color {
-        println!("{}", version.colorize(SUCCESS_MESSAGE_STYLE));
-        return;
-    }
-    println!("{version}");
+pub fn print_engine_version() {
+    println!("{}", get_engine_version().colorize(SUCCESS_MESSAGE_STYLE));
 }
 
 #[cfg(feature = "engine")]
 pub fn print_engine_info(transposition_table: &TranspositionTable) {
-    print_engine_version(true);
+    print_engine_version();
     println!();
     transposition_table.print_info();
 }
