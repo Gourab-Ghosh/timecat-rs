@@ -93,7 +93,6 @@ pub use error::*;
 #[cfg(feature = "inbuilt_nnue")]
 pub use evaluate::*;
 pub use itertools::*;
-pub use lazy_static::lazy_static;
 #[cfg(feature = "nnue_reader")]
 pub use nnue::*;
 #[cfg(feature = "engine")]

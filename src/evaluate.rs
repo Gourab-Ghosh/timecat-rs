@@ -1,14 +1,12 @@
 use super::*;
 
-lazy_static! {
-    pub static ref HALFKP_MODEL_READER: HalfKPModelReader = {
-        let mut reader = std::io::Cursor::new(include_bytes!(concat!(
-            env!("OUT_DIR"),
-            "/nnue_dir/nn.nnue"
-        )));
-        HalfKPModelReader::read(&mut reader).expect("Bad NNUE file!")
-    };
-}
+static HALFKP_MODEL_READER: LazyStatic<HalfKPModelReader> = LazyStatic::new(|| {
+    let mut reader = std::io::Cursor::new(include_bytes!(concat!(
+        env!("OUT_DIR"),
+        "/nnue_dir/nn.nnue"
+    )));
+    HalfKPModelReader::read(&mut reader).expect("Bad NNUE file!")
+});
 
 #[derive(Clone, Debug)]
 pub struct Evaluator {
