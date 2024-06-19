@@ -21,6 +21,7 @@ impl<T> LazyStatic<T> {
             if state.is_none() {
                 *state = Some((self.initializer)());
             }
+            drop(state);
             self.is_initialized.store(true, MEMORY_ORDERING);
         }
     }
