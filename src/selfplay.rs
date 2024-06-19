@@ -13,7 +13,7 @@ fn calculate_prediction_accuracy(rms: f64) -> f64 {
 pub fn self_play(
     engine: &mut Engine,
     go_command: GoCommand,
-    print: bool,
+    verbose: bool,
     move_limit: impl Into<Option<NumMoves>> + Copy,
 ) -> Result<()> {
     let move_limit = move_limit.into().unwrap_or(NumMoves::MAX);
@@ -34,10 +34,10 @@ pub fn self_play(
             < (initial_num_moves as u64) + (move_limit as u64)
     {
         let clock = Instant::now();
-        if print {
+        if verbose {
             println!();
         }
-        let response = engine.go(go_command, print);
+        let response = engine.go(go_command, verbose);
         let Some(best_move) = response.get_best_move() else {
             return Err(TimecatError::BestMoveNotFound {
                 fen: engine.get_board().get_fen(),

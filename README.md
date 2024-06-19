@@ -103,7 +103,7 @@ use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Create the default engine initialized with the standard starting position.
-    let mut engine = Engine::default();
+    let mut runner = timecat::TimecatBuilder::default().build();
 
     // List of UCI commands to be executed on the chess engine.
     let uci_commands = [
@@ -121,7 +121,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Process each UCI command and handle potential errors.
     for command in uci_commands {
-        timecat::UCIParser::parse_command(&mut engine, command)?;
+        runner.run_uci_command(command)?;
     }
 
     Ok(())
@@ -131,14 +131,18 @@ fn main() -> Result<(), Box<dyn Error>> {
 Or just enjoy the engine play against itself:
 ```rust
 use timecat::prelude::*;
+use std::time::Duration;
 use std::error::Error;
 
 fn main() {
-    timecat::Parser::parse_command(
+    self_play(
         &mut Engine::default(),
-        // selfplay command has same format as go command
-        "selfplay movetime 10", // Adjust time according to your wish
-    ).unwrap();
+        GoCommand::MoveTime(Duration::from_millis(10)),
+        // set to verbose mode (true/false)
+        true,
+        // Limit to number of moves to play (u16/Some(u16)/None), None denoting no limit
+        100,
+    );
 }
 ```
 

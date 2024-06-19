@@ -1,8 +1,16 @@
 use super::*;
 
+static DUMMY_UCI_OPTIONS: UCIStateManager = UCIStateManager::dummy();
+
 pub fn parse_command(engine: &mut Engine, raw_input: &str) {
-    Parser::parse_command(engine, raw_input)
+    Parser::parse_command(raw_input)
         .unwrap_or_else(|err| panic!("{}", err.stringify_with_optional_raw_input(Some(raw_input))))
+        .into_iter()
+        .for_each(|user_command| {
+            user_command
+                .run_command(engine, &DUMMY_UCI_OPTIONS)
+                .unwrap()
+        });
 }
 
 #[allow(unused_variables)]

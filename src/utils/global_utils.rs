@@ -84,9 +84,9 @@ impl GlobalUCIState {
     }
 
     #[cfg(feature = "colored_output")]
-    pub fn set_colored_output(&self, b: bool, print: bool) {
+    pub fn set_colored_output(&self, b: bool, verbose: bool) {
         self._colored_output.store(b, MEMORY_ORDERING);
-        if print {
+        if verbose {
             print_info("Colored output is set to", b);
         }
     }
@@ -101,18 +101,18 @@ impl GlobalUCIState {
         !self.is_in_console_mode()
     }
 
-    pub fn set_console_mode(&self, b: bool, print: bool) {
+    pub fn set_console_mode(&self, b: bool, verbose: bool) {
         self._console_mode.store(b, MEMORY_ORDERING);
         self._debug_mode.store(b, MEMORY_ORDERING);
-        if print {
+        if verbose {
             print_info("Console mode is set to", b);
         }
     }
 
-    pub fn set_uci_mode(&self, mut b: bool, print: bool) {
+    pub fn set_uci_mode(&self, mut b: bool, verbose: bool) {
         b = !b;
         self.set_console_mode(b, false);
-        if print {
+        if verbose {
             print_info("UCI mode is set to", b);
         }
     }
@@ -160,9 +160,9 @@ impl GlobalUCIState {
         self._num_threads.load(MEMORY_ORDERING)
     }
 
-    pub fn set_num_threads(&self, num_threads: usize, print: bool) {
+    pub fn set_num_threads(&self, num_threads: usize, verbose: bool) {
         self._num_threads.store(num_threads, MEMORY_ORDERING);
-        if print {
+        if verbose {
             print_info("Number of threads is set to", num_threads);
         }
     }

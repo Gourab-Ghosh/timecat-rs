@@ -141,9 +141,4 @@ pub use utils::*;
 // pub use std::hint;
 // pub use std::num;
 
-#[cfg(feature = "engine")]
-lazy_static! {
-    pub static ref UCI_OPTIONS: UCIOptions = UCIOptions::default();
-}
-
 pub static GLOBAL_UCI_STATE: GlobalUCIState = GlobalUCIState::new();

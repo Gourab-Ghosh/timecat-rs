@@ -195,11 +195,17 @@ impl fmt::Display for UCIOption {
     }
 }
 
-pub struct UCIOptions {
+pub struct UCIStateManager {
     options: RwLock<Vec<UCIOption>>,
 }
 
-impl UCIOptions {
+impl UCIStateManager {
+    pub const fn dummy() -> Self {
+        Self {
+            options: RwLock::new(Vec::new()),
+        }
+    }
+
     fn new() -> Self {
         Self {
             options: RwLock::new(get_uci_options()),
@@ -231,10 +237,20 @@ impl UCIOptions {
     pub fn run_command(&self, engine: &Engine, user_input: &str) -> Result<()> {
         let binding = Parser::sanitize_string(user_input);
         let commands = binding.split_whitespace().collect_vec();
-        if commands.first().ok_or(TimecatError::UnknownCommand)?.to_lowercase() != "setoption" {
+        if commands
+            .first()
+            .ok_or(TimecatError::UnknownCommand)?
+            .to_lowercase()
+            != "setoption"
+        {
             return Err(TimecatError::UnknownCommand);
         }
-        if commands.get(1).ok_or(TimecatError::UnknownCommand)?.to_lowercase() != "name" {
+        if commands
+            .get(1)
+            .ok_or(TimecatError::UnknownCommand)?
+            .to_lowercase()
+            != "name"
+        {
             return Err(TimecatError::UnknownCommand);
         }
         let command_name = commands
@@ -248,14 +264,14 @@ impl UCIOptions {
             .skip_while(|&&s| s != "value")
             .skip(1)
             .join(" ");
-        
+
         self.get_option(&command_name)
             .ok_or(TimecatError::UnknownCommand)?
             .set_option(engine, value_string)
     }
 }
 
-impl Default for UCIOptions {
+impl Default for UCIStateManager {
     fn default() -> Self {
         Self::new()
     }

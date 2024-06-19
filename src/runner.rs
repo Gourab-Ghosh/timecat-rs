@@ -1,6 +1,6 @@
 use super::*;
-use TimecatError::*;
 
+#[derive(Clone, Debug)]
 enum TimecatBuilderAction {
     PrintHelpCommand,
     PrintEngineVersion,
@@ -25,7 +25,7 @@ impl TimecatBuilder {
                 .unwrap_or_default()
                 .with_io_reader(io_reader.clone()),
             io_reader,
-            uci_options: UCIOptions::default(),
+            uci_options: UCIStateManager::default(),
         }
     }
 
@@ -78,447 +78,91 @@ pub struct Timecat {
     actions: Vec<TimecatBuilderAction>,
     engine: Engine,
     io_reader: IoReader,
-    uci_options: UCIOptions,
+    uci_options: UCIStateManager,
 }
 
 impl Timecat {
-    pub fn run(mut self) -> Result<()> {
+    pub fn run(mut self) {
         self.io_reader.start_reader();
         #[allow(clippy::never_loop)]
-        for action in self.actions.into_iter() {
+        for action in self.actions.clone().into_iter() {
             match action {
                 TimecatBuilderAction::PrintHelpCommand => {
-                    println!("{}", Parser::get_help_message());
-                    return Ok(());
+                    println!("{}", UserCommand::generate_help_message());
+                    return;
                 }
                 TimecatBuilderAction::PrintEngineVersion => {
                     print_engine_version(false);
-                    return Ok(());
+                    return;
                 }
                 #[cfg(feature = "debug")]
                 TimecatBuilderAction::RunTest => {
-                    test.run_and_print_time(&mut self.engine)?;
-                    return Ok(());
+                    test.run_and_print_time(&mut self.engine).unwrap();
+                    return;
                 }
-                TimecatBuilderAction::RunCommand(command) => {
+                TimecatBuilderAction::RunCommand(user_input) => {
                     println!();
-                    Parser::run_raw_input_checked(&mut self.engine, &command);
-                    return Ok(());
+                    self.run_uci_command(&user_input).unwrap();
+                    return;
                 }
             }
         }
         print_engine_info(self.engine.get_transposition_table());
-        Parser::main_loop.run_and_print_time(&mut self.engine, &self.io_reader);
+        // self.main_loop.run_and_print_time()?;
+        self.main_loop();
+    }
+
+    fn print_exit_message() {
+        if GLOBAL_UCI_STATE.is_in_console_mode() {
+            println!(
+                "{}",
+                "Program ended successfully!".colorize(SUCCESS_MESSAGE_STYLE)
+            );
+        }
+    }
+
+    fn get_input<T: fmt::Display>(q: T, io_reader: &IoReader) -> String {
+        print_line(q);
+        io_reader.read_line()
+    }
+
+    pub fn run_uci_command(&mut self, raw_input: &str) -> Result<()> {
+        for user_command in Parser::parse_command(raw_input)? {
+            user_command.run_command(&mut self.engine, &self.uci_options)?;
+        }
         Ok(())
     }
-}
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-enum UserCommand {
-    TerminateEngine,
-    ChangeToUCIMode { print: bool },
-    ChangeToConsoleMode { print: bool },
-    SetDebugMode(bool),
-    PrintText(String),
-    DisplayBoard,
-    #[cfg(feature = "inbuilt_nnue")]
-    EvaluateBoard,
-    PrintUCIInfo,
-    UCI,
-    UCINewGame,
-    IsReady,
-    Stop,
-    Help,
-    Perft(Depth),
-    Go(GoCommand),
-    MakeMoves(String, Vec<String>),
-    UndoMoves(u16),
-    SetFen(String),
-    SetColor(bool),
-    SetUCIOption { user_input: String },
-    SelfPlay(GoCommand),
-    // SetHashSize(u64),
-    // SetThreads(u8),
-    // SetMultiPV(u8),
-    // SetUCIElo(u16),
-    // SetEngineMode(EngineMode),
-    // SetPrint,
-    // SetUciAnalyzeMode,
-    // SetUCIChess960,
-    // SetUCIOpponent,
-    // SetUCIShowCurrLine,
-    // SetUCIShowRefutations
-}
-
-impl UserCommand {
-    fn print_engine_uci_info(uci_options: &UCIOptions) {
-        println!(
-            "{}",
-            format!("id name {}", get_engine_version()).colorize(INFO_MESSAGE_STYLE)
-        );
-        println!(
-            "{}",
-            format!("id author {}", ENGINE_AUTHOR).colorize(INFO_MESSAGE_STYLE)
-        );
-        for option in uci_options.get_all_options() {
-            println!("{}", option.to_string().colorize(INFO_MESSAGE_STYLE));
-        }
-    }
-    
-    fn generate_help_message() -> String {
-        "Sadly, the help message is till now not implemented. But type uci to go into the uci mode and visit the link \"https://backscattering.de/chess/uci/\" to know the necessary commands required to use an uci chess engine.".colorize(ERROR_MESSAGE_STYLE)
-    }
-    
-    fn run_command(&self, engine: &mut Engine, uci_options: &UCIOptions) -> Result<()> {
-        match self {
-            Self::TerminateEngine => GLOBAL_UCI_STATE.set_engine_termination(true),
-            &Self::ChangeToUCIMode { print } => GLOBAL_UCI_STATE.set_uci_mode(true, print),
-            &Self::ChangeToConsoleMode { print } => GLOBAL_UCI_STATE.set_console_mode(true, print),
-            &Self::SetDebugMode(b) => GLOBAL_UCI_STATE.set_debug_mode(b),
-            Self::PrintText(s) => println!("{s}"),
-            Self::DisplayBoard => println!("{}", engine.get_board()),
-            #[cfg(feature = "inbuilt_nnue")]
-            Self::EvaluateBoard => force_println_info("Current Score", engine.get_board_mut().evaluate().stringify()),
-            Self::PrintUCIInfo => Self::print_engine_uci_info(uci_options),
-            Self::UCI => {
-                Self::PrintUCIInfo.run_command(engine, uci_options)?;
-                println!("{}", "uciok".colorize(SUCCESS_MESSAGE_STYLE));
-            },
-            Self::UCINewGame => {
-                Self::SetUCIOption { user_input: "setoption name Clear Hash".to_string() }.run_command(engine, uci_options)?;
-                Self::SetFen(STARTING_POSITION_FEN.to_string()).run_command(engine, uci_options)?;
-            },
-            Self::IsReady => println!("{}", "readyok".colorize(SUCCESS_MESSAGE_STYLE)),
-            Self::Stop => {
-                if GLOBAL_UCI_STATE.is_in_console_mode() {
-                    return Err(EngineNotRunning);
-                }
-            },
-            Self::Help => println!("{}", Self::generate_help_message()),
-            _ => return Err(UnknownCommand),
-        }
-        
-        Ok(())
-    }
-}
-
-macro_rules! extract_value {
-    ($commands:ident, $command:expr) => {
-        $commands
-            .iter()
-            .skip_while(|&&s| s != $command)
-            .skip(1)
-            .next()
-            .map(|s| s.parse())
-            .transpose()?
-    };
-}
-
-macro_rules! extract_time {
-    ($commands:ident, $command:expr) => {
-        extract_value!($commands, $command).map(|t| Duration::from_millis(t))
-    };
-}
-
-struct Go;
-
-impl Go {
-    fn extract_depth(depth_str: &str) -> Result<Depth> {
-        let depth: Depth = depth_str.parse()?;
-        if depth.is_negative() {
-            return Err(InvalidDepth { depth });
-        }
-        Ok(depth)
-    }
-
-    fn extract_go_command(commands: &[&str]) -> Result<GoCommand> {
-        // TODO: Improve Unknown Command Detection
-        if ["perft", "depth", "movetime", "infinite"]
-            .iter()
-            .filter(|&s| commands.contains(s))
-            .count()
-            > 1
-        {
-            return Err(UnknownCommand);
-        }
-        let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
-        for (string, index) in [("depth", 3), ("movetime", 3), ("infinite", 2)] {
-            if second_command == string && commands.get(index).is_some() {
-                return Err(UnknownCommand);
+    pub fn main_loop(&mut self) {
+        loop {
+            if GLOBAL_UCI_STATE.terminate_engine() {
+                Self::print_exit_message();
+                break;
             }
-        }
-        match second_command.as_str() {
-            "depth" => Ok(GoCommand::Depth(Self::extract_depth(
-                commands.get(2).ok_or(UnknownCommand)?,
-            )?)),
-            "movetime" => Ok(GoCommand::from_millis(
-                commands.get(2).ok_or(UnknownCommand)?.parse()?,
-            )),
-            "infinite" => Ok(GoCommand::Infinite),
-            "ponder" => Ok(GoCommand::Ponder),
-            _ => Ok(GoCommand::Timed {
-                wtime: extract_time!(commands, "wtime").ok_or(WTimeNotMentioned)?,
-                btime: extract_time!(commands, "btime").ok_or(BTimeNotMentioned)?,
-                winc: extract_time!(commands, "winc").unwrap_or(Duration::new(0, 0)),
-                binc: extract_time!(commands, "binc").unwrap_or(Duration::new(0, 0)),
-                moves_to_go: extract_value!(commands, "movestogo"),
-            }),
-        }
-    }
-
-    pub fn parse_sub_commands(commands: &[&str]) -> Result<Vec<UserCommand>> {
-        let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
-        if second_command == "perft" {
-            Ok(vec![UserCommand::Perft(
-                commands.get(2).ok_or(UnknownCommand)?.parse()?,
-            )])
-        } else {
-            Ok(vec![UserCommand::Go(Self::extract_go_command(commands)?)])
-        }
-    }
-}
-
-struct Set;
-
-impl Set {
-    fn extract_board_fen(commands: &[&str]) -> Result<Vec<UserCommand>> {
-        let fen = commands[3..].join(" ");
-        if fen == "startpos" {
-            return Ok(vec![UserCommand::SetFen(STARTING_POSITION_FEN.to_string())]);
-        }
-        if !Board::is_good_fen(&fen) {
-            return Err(BadFen { fen });
-        };
-        Ok(vec![UserCommand::SetFen(fen)])
-    }
-
-    #[cfg(feature = "colored_output")]
-    fn extract_color(commands: &[&str]) -> Result<Vec<UserCommand>> {
-        if commands.get(3).is_some() {
-            return Err(UnknownCommand);
-        }
-        let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
-        let b = third_command.parse()?;
-        Ok(vec![UserCommand::SetColor(b)])
-    }
-
-    pub fn parse_sub_commands(commands: &[&str]) -> Result<Vec<UserCommand>> {
-        let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
-        match second_command.as_str() {
-            "board" => {
-                let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
-                match third_command.as_str() {
-                    "startpos" | "fen" => Self::extract_board_fen(commands),
-                    _ => Err(UnknownCommand),
-                }
-            }
-            #[cfg(feature = "colored_output")]
-            "color" => Self::extract_color(commands),
-            #[cfg(not(feature = "colored_output"))]
-            "color" => Err(FeatureNotEnabled {
-                s: "colored_output".to_string(),
-            }),
-            _ => Err(UnknownCommand),
-        }
-    }
-}
-
-struct Push;
-
-impl Push {
-    fn moves(commands: &[&str]) -> Result<Vec<UserCommand>> {
-        let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
-        if !["san", "lan", "uci", "move", "moves"].contains(&second_command.as_str()) {
-            return Err(UnknownCommand);
-        }
-        Ok(vec![UserCommand::MakeMoves(
-            second_command,
-            commands
-                .iter()
-                .skip(2)
-                .map(|&move_text| move_text.to_string())
-                .collect_vec(),
-        )])
-    }
-
-    pub fn parse_sub_commands(commands: &[&str]) -> Result<Vec<UserCommand>> {
-        Self::moves(commands)
-    }
-}
-
-struct Pop;
-
-impl Pop {
-    pub fn parse_sub_commands(commands: &[&str]) -> Result<Vec<UserCommand>> {
-        let second_command = commands.get(1).unwrap_or(&"1");
-        if commands.get(2).is_some() {
-            return Err(UnknownCommand);
-        }
-        let num_pop = second_command.parse()?;
-        Ok(vec![UserCommand::UndoMoves(num_pop)])
-    }
-}
-
-struct SelfPlay;
-
-impl SelfPlay {
-    fn parse_sub_commands(commands: &[&str]) -> Result<Vec<UserCommand>> {
-        let mut commands = commands.to_vec();
-        commands[0] = "go";
-        let go_command = if commands.get(1).is_some() {
-            Go::extract_go_command(&commands)?
-        } else {
-            DEFAULT_SELFPLAY_COMMAND
-        };
-        Ok(vec![UserCommand::SelfPlay(go_command)])
-    }
-}
-
-struct DebugMode;
-
-impl DebugMode {
-    fn get_debug_mode(second_command: &str) -> Result<bool> {
-        match second_command {
-            "on" => Ok(true),
-            "off" => Ok(false),
-            _ => Err(UnknownDebugCommand {
-                command: second_command.to_string(),
-            }),
+            let raw_input = if GLOBAL_UCI_STATE.is_in_console_mode() {
+                println!();
+                let raw_input = Self::get_input(
+                    "Enter Command: ".colorize(INPUT_MESSAGE_STYLE),
+                    &self.io_reader,
+                );
+                println!();
+                raw_input
+            } else {
+                Self::get_input("", &self.io_reader)
+            };
+            self.run_uci_command(&raw_input).unwrap_or_else(|error| {
+                println!(
+                    "{}",
+                    error
+                        .stringify_with_optional_raw_input(Some(raw_input.as_str()))
+                        .colorize(ERROR_MESSAGE_STYLE)
+                )
+            });
         }
     }
 
-    fn parse_sub_commands(commands: &[&str]) -> Result<Vec<UserCommand>> {
-        if commands.get(2).is_some() {
-            return Err(UnknownCommand);
-        }
-        let second_command = &commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
-        let debug_mode = Self::get_debug_mode(&second_command)?;
-        Ok(vec![UserCommand::SetDebugMode(debug_mode)])
-    }
-}
-
-struct Position;
-
-impl Position {
-    fn parse_sub_commands(commands: &[&str]) -> Result<Vec<UserCommand>> {
-        if commands.first() != Some(&"position") {
-            return Err(UnknownCommand);
-        }
-        let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
-        let mut user_commands = Vec::with_capacity(2);
-        user_commands.push(match second_command.as_str() {
-            "startpos" => UserCommand::SetFen(STARTING_POSITION_FEN.to_string()),
-            "fen" => {
-                let fen = commands
-                    .iter()
-                    .skip(2)
-                    .take_while(|&&s| s != "moves")
-                    .join(" ");
-                UserCommand::SetFen(fen)
-            }
-            _ => return Err(UnknownCommand),
-        });
-        let move_texts = commands
-            .iter()
-            .skip_while(|&&s| s != "moves")
-            .skip(1)
-            .map(|&move_text| move_text.to_string())
-            .collect_vec();
-        if !move_texts.is_empty() {
-            user_commands.push(UserCommand::MakeMoves("moves".to_string(), move_texts));
-        }
-        Ok(user_commands)
-    }
-}
-
-pub struct Parser_;
-
-impl Parser_ {
-    pub const EXIT_CODES: [&'static str; 7] = [
-        "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
-    ];
-
-    pub fn sanitize_string(user_input: &str) -> String {
-        let user_input = user_input.trim();
-        let mut user_input = user_input.to_string();
-        for _char in [",", ":"] {
-            user_input = user_input.replace(_char, " ")
-        }
-        user_input = remove_double_spaces_and_trim(&user_input);
-        user_input
-    }
-
-    fn parse_single_command(single_input: &str) -> Result<Vec<UserCommand>> {
-        if Self::EXIT_CODES.contains(&single_input) {
-            return Ok(vec![UserCommand::TerminateEngine]);
-        }
-        let commands = single_input.split_whitespace().collect_vec();
-        let first_command = commands.get(0).ok_or(UnknownCommand)?.to_lowercase();
-        if ["uci", "ucinewgame"].contains(&first_command.as_str()) {
-            if single_input.split_whitespace().nth(1).is_some() {
-                return Err(UnknownCommand);
-            }
-            return Ok(vec![
-                UserCommand::ChangeToConsoleMode { print: false },
-                match first_command.as_str() {
-                    "uci" => UserCommand::UCI,
-                    "ucinewgame" => UserCommand::UCINewGame,
-                    _ => unreachable!(),
-                },
-            ]);
-        }
-        if first_command == "console" {
-            if single_input.split_whitespace().nth(1).is_some() {
-                return Err(UnknownCommand);
-            }
-            if GLOBAL_UCI_STATE.is_in_console_mode() {
-                return Err(ConsoleModeUnchanged);
-            }
-            return Ok(vec![UserCommand::ChangeToConsoleMode { print: false }]);
-        }
-        match single_input.to_lowercase().as_str() {
-            "isready" => Ok(vec![UserCommand::IsReady]),
-            "d" => Ok(vec![UserCommand::DisplayBoard]),
-            "eval" => Ok(vec![UserCommand::EvaluateBoard]),
-            "reset board" => Ok(vec![UserCommand::SetFen(STARTING_POSITION_FEN.to_owned())]),
-            "stop" => Ok(vec![UserCommand::Stop]),
-            "help" => Ok(vec![UserCommand::Help]),
-            _ => match first_command.as_str() {
-                "go" => Go::parse_sub_commands(&commands),
-                "set" => Set::parse_sub_commands(&commands),
-                "setoption" => Ok(vec![UserCommand::SetUCIOption { user_input: single_input.to_string() }]),
-                "push" => Push::parse_sub_commands(&commands),
-                "pop" => Pop::parse_sub_commands(&commands),
-                "position" => Position::parse_sub_commands(&commands),
-                "selfplay" => SelfPlay::parse_sub_commands(&commands),
-                "debug" => DebugMode::parse_sub_commands(&commands),
-                _ => Err(UnknownCommand),
-            },
-        }
-    }
-
-    fn parse_command(user_input: &str) -> Result<Vec<UserCommand>> {
-        if user_input.is_empty() {
-            if GLOBAL_UCI_STATE.is_in_console_mode() {
-                println!("\n");
-            }
-            GLOBAL_UCI_STATE.set_engine_termination(true);
-            return Ok(vec![UserCommand::TerminateEngine]);
-        }
-        if user_input.trim().is_empty() {
-            return Err(NoInput);
-        }
-        Self::sanitize_string(user_input)
-            .split("&&")
-            .map(|s| s.trim())
-            .map(|single_input| Self::parse_single_command(single_input.trim()))
-            .fold(Ok(Vec::new()), |acc, res| match (acc, res) {
-                (Ok(mut vec), Ok(contents)) => {
-                    vec.extend(contents);
-                    Ok(vec)
-                }
-                (_, Err(e)) => Err(e),
-                (Err(e), _) => Err(e),
-            })
+    pub fn uci_loop(&mut self) {
+        GLOBAL_UCI_STATE.set_to_uci_mode();
+        self.main_loop();
     }
 }
