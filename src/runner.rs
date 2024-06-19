@@ -101,8 +101,7 @@ impl Timecat {
             return;
         }
         print_engine_info(self.engine.get_transposition_table());
-        // self.main_loop.run_and_print_time()?;
-        self.main_loop();
+        Self::main_loop.run_and_print_time(&mut self);
     }
 
     pub fn run_uci_command(&mut self, raw_input: &str) -> Result<()> {

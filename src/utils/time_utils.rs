@@ -24,86 +24,20 @@ impl<T, Func: FnMut() -> T> MeasureTime0<T> for Func {
 }
 
 #[cfg(feature = "engine")]
-pub trait MeasureTime1<T> {
-    fn run_and_measure_time(&mut self, engine: &mut Engine) -> (T, Duration);
-    fn run_and_print_time(&mut self, engine: &mut Engine) -> T;
+pub trait MeasureTime1<T, U> {
+    fn run_and_measure_time(&mut self, item: &mut U) -> (T, Duration);
+    fn run_and_print_time(&mut self, item: &mut U) -> T;
 }
 
 #[cfg(feature = "engine")]
-impl<T, Func: FnMut(&mut Engine) -> T> MeasureTime1<T> for Func {
-    fn run_and_measure_time(&mut self, engine: &mut Engine) -> (T, Duration) {
+impl<T, Func: FnMut(&mut U) -> T, U> MeasureTime1<T, U> for Func {
+    fn run_and_measure_time(&mut self, item: &mut U) -> (T, Duration) {
         let clock = Instant::now();
-        (self(engine), clock.elapsed())
+        (self(item), clock.elapsed())
     }
 
-    fn run_and_print_time(&mut self, engine: &mut Engine) -> T {
-        let (res, time_taken) = self.run_and_measure_time(engine);
-        if GLOBAL_UCI_STATE.is_in_console_mode() {
-            println!();
-        }
-        println_info("Run Time", time_taken.stringify());
-        res
-    }
-}
-
-#[cfg(feature = "engine")]
-pub trait MeasureTime2<T> {
-    fn run_and_measure_time(&mut self, engine: &mut Engine, io_reader: &IoReader) -> (T, Duration);
-    fn run_and_print_time(&mut self, engine: &mut Engine, io_reader: &IoReader) -> T;
-}
-
-#[cfg(feature = "engine")]
-impl<T, Func: FnMut(&mut Engine, &IoReader) -> T> MeasureTime2<T> for Func {
-    fn run_and_measure_time(&mut self, engine: &mut Engine, io_reader: &IoReader) -> (T, Duration) {
-        let clock = Instant::now();
-        (self(engine, io_reader), clock.elapsed())
-    }
-
-    fn run_and_print_time(&mut self, engine: &mut Engine, io_reader: &IoReader) -> T {
-        let (res, time_taken) = self.run_and_measure_time(engine, io_reader);
-        if GLOBAL_UCI_STATE.is_in_console_mode() {
-            println!();
-        }
-        println_info("Run Time", time_taken.stringify());
-        res
-    }
-}
-
-#[cfg(feature = "engine")]
-pub trait MeasureTime3<T> {
-    fn run_and_measure_time(
-        &mut self,
-        engine: &mut Engine,
-        uci_options: &UCIStateManager,
-        io_reader: &IoReader,
-    ) -> (T, Duration);
-    fn run_and_print_time(
-        &mut self,
-        engine: &mut Engine,
-        uci_options: &UCIStateManager,
-        io_reader: &IoReader,
-    ) -> T;
-}
-
-#[cfg(feature = "engine")]
-impl<T, Func: FnMut(&mut Engine, &UCIStateManager, &IoReader) -> T> MeasureTime3<T> for Func {
-    fn run_and_measure_time(
-        &mut self,
-        engine: &mut Engine,
-        uci_options: &UCIStateManager,
-        io_reader: &IoReader,
-    ) -> (T, Duration) {
-        let clock = Instant::now();
-        (self(engine, uci_options, io_reader), clock.elapsed())
-    }
-
-    fn run_and_print_time(
-        &mut self,
-        engine: &mut Engine,
-        uci_options: &UCIStateManager,
-        io_reader: &IoReader,
-    ) -> T {
-        let (res, time_taken) = self.run_and_measure_time(engine, uci_options, io_reader);
+    fn run_and_print_time(&mut self, item: &mut U) -> T {
+        let (res, time_taken) = self.run_and_measure_time(item);
         if GLOBAL_UCI_STATE.is_in_console_mode() {
             println!();
         }

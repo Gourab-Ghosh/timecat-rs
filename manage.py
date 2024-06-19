@@ -56,8 +56,9 @@ def main():
 
     if "publish" in args:
         if not check_errors(FEATURE_SETS_CHECK):
-            backup_code()
-            publish_package()
+            if not test_package():
+                backup_code()
+                publish_package()
 
 if __name__ == "__main__":
     main()

@@ -72,7 +72,7 @@ impl UserCommand {
             Self::TerminateEngine => GLOBAL_UCI_STATE.set_engine_termination(true),
             Self::EngineVersion => print_engine_version(),
             #[cfg(feature = "debug")]
-            Self::RunTest => test.run_and_print_time(engine).unwrap(),
+            Self::RunTest => test.run_and_print_time(engine)?,
             &Self::ChangeToUCIMode { verbose } => GLOBAL_UCI_STATE.set_uci_mode(true, verbose),
             &Self::ChangeToConsoleMode { verbose } => {
                 GLOBAL_UCI_STATE.set_console_mode(true, verbose)
