@@ -81,7 +81,7 @@ impl SubBoardBuilder {
         self
     }
 
-    pub fn piece(&mut self, square: Square, piece: Piece) -> &mut Self {
+    pub fn add_piece(&mut self, square: Square, piece: Piece) -> &mut Self {
         self[square] = Some(piece);
         self
     }

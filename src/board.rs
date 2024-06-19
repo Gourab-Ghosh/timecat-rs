@@ -822,9 +822,9 @@ impl From<SubBoard> for Board {
         let mut board = Self {
             #[cfg(feature = "inbuilt_nnue")]
             evaluator: Evaluator::new(&sub_board),
+            starting_fen: sub_board.get_fen(),
             sub_board,
             stack: Vec::new(),
-            starting_fen: STARTING_POSITION_FEN.to_string(),
             repetition_table: RepetitionTable::new(),
         };
         board.repetition_table.insert(board.get_hash());

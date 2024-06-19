@@ -119,26 +119,43 @@ pub struct HalfKPModelReader {
 }
 
 impl HalfKPModelReader {
-    pub fn to_model(&self, sub_board: &SubBoard) -> HalfKPModel {
+    pub fn to_empty_model(
+        &self,
+        white_king_square: Square,
+        black_king_square: Square,
+    ) -> HalfKPModel {
         let accumulators = [
             self.transformer.get_biases().clone(),
             self.transformer.get_biases().clone(),
         ];
-        let mut halfkp_model = HalfKPModel {
+        let halfkp_model = HalfKPModel {
             accumulator: Accumulator {
-                king_squares_rotated: [
-                    sub_board.get_king_square(White),
-                    sub_board.get_king_square(Black).rotate(),
-                ],
+                king_squares_rotated: [white_king_square, black_king_square.rotate()],
                 accumulators: CustomDebug::new(accumulators, |_| {
                     format!("Accumulators[{}x2]", HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS)
                 }),
             },
             transformer: self.transformer.clone(),
             network: self.network.clone(),
-            last_sub_board: CustomDebug::new(sub_board.clone(), |sub_board| sub_board.get_fen()),
+            last_sub_board: CustomDebug::new(
+                SubBoardBuilder::new()
+                    .add_piece(white_king_square, Piece::new(King, White))
+                    .add_piece(black_king_square, Piece::new(King, Black))
+                    .try_into()
+                    .unwrap(),
+                |sub_board| sub_board.get_fen(),
+            ),
         };
+        halfkp_model
+    }
+
+    pub fn to_model(&self, sub_board: &SubBoard) -> HalfKPModel {
+        let mut halfkp_model = self.to_empty_model(
+            sub_board.get_king_square(White),
+            sub_board.get_king_square(Black),
+        );
         halfkp_model.update_empty_model(sub_board);
+        halfkp_model.update_last_sub_board(sub_board.clone());
         halfkp_model
     }
 
