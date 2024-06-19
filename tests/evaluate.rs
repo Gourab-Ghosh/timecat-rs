@@ -54,8 +54,16 @@ test_model_updated_correctly!(
     "2k3r1/pp4Bp/4R3/2Pr2b1/8/8/P1P2PPP/6K1 b - - 0 21",
     3
 );
-test_model_updated_correctly!(model_accumulator_update_test_5, "8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1", 4);
-test_model_updated_correctly!(model_accumulator_update_test_6, "8/8/1k6/8/2pP4/8/5BK1/8 b - d3 0 1", 4);
+test_model_updated_correctly!(
+    model_accumulator_update_test_5,
+    "8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1",
+    4
+);
+test_model_updated_correctly!(
+    model_accumulator_update_test_6,
+    "8/8/1k6/8/2pP4/8/5BK1/8 b - d3 0 1",
+    4
+);
 test_model_updated_correctly!(
     model_accumulator_update_test_7,
     "8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1",
@@ -66,16 +74,36 @@ test_model_updated_correctly!(
     "8/5k2/8/2Pp4/2B5/1K6/8/8 w - d6 0 1",
     4
 );
-test_model_updated_correctly!(model_accumulator_update_test_9, "5k2/8/8/8/8/8/8/4K2R w K - 0 1", 4);
-test_model_updated_correctly!(model_accumulator_update_test_10, "r3k3/8/8/8/8/8/8/3K4 b q - 0 1", 4);
-test_model_updated_correctly!(model_accumulator_update_test_11, "3K4/8/8/8/8/8/4p3/2k2R2 b - - 0 1", 4);
+test_model_updated_correctly!(
+    model_accumulator_update_test_9,
+    "5k2/8/8/8/8/8/8/4K2R w K - 0 1",
+    4
+);
+test_model_updated_correctly!(
+    model_accumulator_update_test_10,
+    "r3k3/8/8/8/8/8/8/3K4 b q - 0 1",
+    4
+);
+test_model_updated_correctly!(
+    model_accumulator_update_test_11,
+    "3K4/8/8/8/8/8/4p3/2k2R2 b - - 0 1",
+    4
+);
 test_model_updated_correctly!(
     model_accumulator_update_test_12,
     "5K2/8/1Q6/2N5/8/1p2k3/8/8 w - - 0 1",
     4
 );
-test_model_updated_correctly!(model_accumulator_update_test_13, "8/8/8/8/8/k7/p1K5/8 b - - 0 1", 4);
-test_model_updated_correctly!(model_accumulator_update_test_14, "8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1", 4);
+test_model_updated_correctly!(
+    model_accumulator_update_test_13,
+    "8/8/8/8/8/k7/p1K5/8 b - - 0 1",
+    4
+);
+test_model_updated_correctly!(
+    model_accumulator_update_test_14,
+    "8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1",
+    4
+);
 test_model_updated_correctly!(
     model_accumulator_update_test_kiwipete,
     "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
