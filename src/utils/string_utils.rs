@@ -278,7 +278,7 @@ impl Stringify for Duration {
         }
         let precision = 3;
         let total_secs = self.as_secs_f64();
-        for (threshold, unit) in [(86400.0, "days"), (3600.0, "hr"), (60.0, "min")] {
+        for (threshold, unit) in [(86400.0, "day"), (3600.0, "hr"), (60.0, "min")] {
             if total_secs >= threshold {
                 let time_unit = total_secs as u128 / threshold as u128;
                 let secs = total_secs % threshold;

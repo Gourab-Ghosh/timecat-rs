@@ -165,31 +165,57 @@ impl fmt::Display for UCIOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match &self.option_type {
             UCIOptionType::Check { default, .. } => {
-                format!("option name {} type check default {}", self.name, default)
+                format!(
+                    "{} {} {} {}",
+                    "option name".colorize(INFO_MESSAGE_STYLE),
+                    self.name,
+                    "type check default".colorize(INFO_MESSAGE_STYLE),
+                    default,
+                )
             }
             UCIOptionType::Spin {
                 default, min, max, ..
             } => {
                 format!(
-                    "option name {} type spin default {} min {} max {}",
-                    self.name, default, min, max
+                    "{} {} {} {} {} {} {} {}",
+                    "option name".colorize(INFO_MESSAGE_STYLE),
+                    self.name,
+                    "type spin default".colorize(INFO_MESSAGE_STYLE),
+                    default,
+                    "min".colorize(INFO_MESSAGE_STYLE),
+                    min,
+                    "max".colorize(INFO_MESSAGE_STYLE),
+                    max,
                 )
             }
             UCIOptionType::Combo {
                 default, options, ..
             } => {
                 format!(
-                    "option name {} type combo default {} {}",
+                    "{} {} {} {} {}",
+                    "option name".colorize(INFO_MESSAGE_STYLE),
                     self.name,
+                    "type combo default".colorize(INFO_MESSAGE_STYLE),
                     default,
-                    options.iter().map(|s| format!("var {s}")).join(" ")
+                    options.iter().map(|s| format!("var {s}")).join(" "),
                 )
             }
             UCIOptionType::Button { .. } => {
-                format!("option name {} type button", self.name)
+                format!(
+                    "{} {} {}",
+                    "option name".colorize(INFO_MESSAGE_STYLE),
+                    self.name,
+                    "type button".colorize(INFO_MESSAGE_STYLE),
+                )
             }
             UCIOptionType::String { default, .. } => {
-                format!("option name {} type string default {}", self.name, default)
+                format!(
+                    "{} {} {} {}",
+                    "option name".colorize(INFO_MESSAGE_STYLE),
+                    self.name,
+                    "type string default".colorize(INFO_MESSAGE_STYLE),
+                    default,
+                )
             }
         };
         write!(f, "{s}")

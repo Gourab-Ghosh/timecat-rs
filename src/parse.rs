@@ -59,7 +59,7 @@ impl UserCommand {
             format!("id author {}", ENGINE_AUTHOR).colorize(INFO_MESSAGE_STYLE)
         );
         for option in uci_options.get_all_options() {
-            println!("{}", option.to_string().colorize(INFO_MESSAGE_STYLE));
+            println!("{option}");
         }
     }
 

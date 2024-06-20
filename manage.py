@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys
+import sys, tomllib
 from manager import *
 
 def process_args():
@@ -18,6 +18,10 @@ def process_args():
     return args, binary_args
 
 def main():
+    with open("Cargo.toml", "rb") as rbf:
+        cargo_toml_file_data = tomllib.load(rbf)
+    assert set(cargo_toml_file_data["features"]["default"]) == {'binary', 'colored_output', 'speed'}
+
     FEATURE_SETS_CHECK = [
         [],
         ["default"],
@@ -30,7 +34,7 @@ def main():
         ["binary", "serde"],
         ["binary", "speed", "serde"],
     ]
-    
+
     if sys.platform == "linux":
         home_dir = os.path.expanduser("~")
         possible_cargo_path = os.path.join(home_dir, ".cargo", "bin")
