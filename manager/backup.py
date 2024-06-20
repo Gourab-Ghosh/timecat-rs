@@ -20,7 +20,7 @@ def backup_code(no_confirm = False):
     confirmed_continue = True if no_confirm else confirm("Do you want to continue?", default = True)
     if confirmed_continue:
         print()
-        commit_message = input("Enter commit message: ").strip()
+        commit_message = "" if no_confirm else input("Enter commit message: ").strip()
         if not commit_message:
             commit_message = ", ".join(line.strip() for line in subprocess.getoutput("git status -s").splitlines())
             print(f"\nGenerated commit message: {commit_message}\n")
