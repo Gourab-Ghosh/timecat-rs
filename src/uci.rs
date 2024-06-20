@@ -85,21 +85,22 @@ impl<T: Clone + Copy + IntoSpin> SpinValue<T> {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UCIOption {
     name: String,
-    alternate_names: Vec<String>,
+    sorted_alias: Vec<String>,
     option_type: UCIOptionType,
 }
 
 impl UCIOption {
     fn new(name: &str, option_type: UCIOptionType) -> Self {
         Self {
-            name: name.trim().to_lowercase(),
-            alternate_names: vec![],
+            name: name.trim().to_string(),
+            sorted_alias: vec![],
             option_type,
         }
     }
 
-    fn add_alternate_name(mut self, name: &str) -> Self {
-        self.alternate_names.push(name.trim().to_lowercase());
+    fn alias(mut self, name: &str) -> Self {
+        self.sorted_alias.push(name.trim().to_lowercase());
+        self.sorted_alias.sort_unstable();
         self
     }
 
@@ -220,11 +221,10 @@ impl UCIStateManager {
             .iter()
             .find(
                 |UCIOption {
-                     name,
-                     alternate_names,
-                     ..
+                     name, sorted_alias, ..
                  }| {
-                    name.to_lowercase() == command_name || alternate_names.contains(&command_name)
+                    name.eq_ignore_ascii_case(&command_name)
+                        || sorted_alias.binary_search(&command_name).is_ok()
                 },
             )
             .cloned()
@@ -278,9 +278,8 @@ impl Default for UCIStateManager {
 }
 
 fn get_uci_options() -> Vec<UCIOption> {
-    let default_uci_state = GlobalUCIState::default();
     let t_table_size_uci = SpinValue::new(
-        default_uci_state.get_t_table_size(),
+        DEFAULT_GLOBAL_UCI_STATE.get_t_table_size(),
         CacheTableSize::Exact(1),
         CacheTableSize::Exact({
             let transposition_table_entry_size =
@@ -296,7 +295,7 @@ fn get_uci_options() -> Vec<UCIOption> {
     );
 
     let move_overhead_uci = SpinValue::new(
-        default_uci_state.get_move_overhead(),
+        DEFAULT_GLOBAL_UCI_STATE.get_move_overhead(),
         Duration::from_secs(0),
         Duration::MAX,
     );
@@ -304,10 +303,10 @@ fn get_uci_options() -> Vec<UCIOption> {
     let options = vec![
         UCIOption::new_spin(
             "Threads",
-            SpinValue::new(default_uci_state.get_num_threads(), 1, 1024),
+            SpinValue::new(DEFAULT_GLOBAL_UCI_STATE.get_num_threads(), 1, 1024),
             |_, value| GLOBAL_UCI_STATE.set_num_threads(value as usize, true),
         )
-        .add_alternate_name("Thread"),
+        .alias("Thread"),
         UCIOption::new_spin("Hash", t_table_size_uci, {
             |engine, value| {
                 GLOBAL_UCI_STATE.set_t_table_size(

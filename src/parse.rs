@@ -346,17 +346,14 @@ struct Push;
 impl Push {
     fn push_moves(engine: &mut Engine, commands: &[&str]) -> Result<()> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
-        if !["san", "lan", "uci", "move", "moves"].contains(&second_command.as_str()) {
-            return Err(UnknownCommand);
-        }
         for move_text in commands.iter().skip(2) {
             let optional_move = match second_command.as_str() {
-                "san" => engine.get_board().parse_san(move_text)?,
-                "lan" => engine.get_board().parse_lan(move_text)?,
-                "uci" => engine.get_board().parse_uci(move_text)?,
-                "move" | "moves" => engine.get_board().parse_move(move_text)?,
-                _ => return Err(UnknownCommand),
-            };
+                "san" | "sans" => engine.get_board().parse_san(move_text),
+                "lan" | "lans" => engine.get_board().parse_lan(move_text),
+                "uci" | "ucis" => engine.get_board().parse_uci(move_text),
+                "move" | "moves" => engine.get_board().parse_move(move_text),
+                _ => Err(UnknownCommand),
+            }?;
             if let Some(move_) = optional_move {
                 if !engine.get_board().is_legal(move_) {
                     return Err(IllegalMove {
