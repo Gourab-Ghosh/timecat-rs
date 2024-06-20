@@ -235,7 +235,7 @@ impl UCIStateManager {
 
     fn new() -> Self {
         Self {
-            options: RwLock::new(get_uci_options()),
+            options: RwLock::new(get_uci_state_manager()),
         }
     }
 
@@ -303,7 +303,7 @@ impl Default for UCIStateManager {
     }
 }
 
-fn get_uci_options() -> Vec<UCIOption> {
+fn get_uci_state_manager() -> Vec<UCIOption> {
     let t_table_size_uci = SpinValue::new(
         DEFAULT_GLOBAL_UCI_STATE.get_t_table_size(),
         CacheTableSize::Exact(1),

@@ -16,7 +16,7 @@ impl TimecatBuilder {
                 .unwrap_or_default()
                 .with_io_reader(io_reader.clone()),
             io_reader,
-            uci_options: UCIStateManager::default(),
+            uci_state_manager: UCIStateManager::default(),
         }
     }
 
@@ -84,7 +84,7 @@ pub struct Timecat {
     user_commands: Vec<UserCommand>,
     engine: Engine,
     io_reader: IoReader,
-    uci_options: UCIStateManager,
+    uci_state_manager: UCIStateManager,
 }
 
 impl Timecat {
@@ -92,7 +92,7 @@ impl Timecat {
         self.io_reader.start_reader_in_parallel();
         for user_command in self.user_commands.iter() {
             user_command
-                .run_command(&mut self.engine, &self.uci_options)
+                .run_command(&mut self.engine, &self.uci_state_manager)
                 .unwrap_or_else(|error| {
                     println!("{}", error.stringify().colorize(ERROR_MESSAGE_STYLE))
                 });
@@ -106,7 +106,7 @@ impl Timecat {
 
     pub fn run_uci_command(&mut self, raw_input: &str) -> Result<()> {
         for user_command in Parser::parse_command(raw_input)? {
-            user_command.run_command(&mut self.engine, &self.uci_options)?;
+            user_command.run_command(&mut self.engine, &self.uci_state_manager)?;
         }
         Ok(())
     }

@@ -1,6 +1,6 @@
 use super::*;
 
-static DUMMY_UCI_OPTIONS: UCIStateManager = UCIStateManager::dummy();
+static DUMMY_UCI_STATE_MANAGER: UCIStateManager = UCIStateManager::dummy();
 
 pub fn parse_command(engine: &mut Engine, raw_input: &str) {
     Parser::parse_command(raw_input)
@@ -8,7 +8,7 @@ pub fn parse_command(engine: &mut Engine, raw_input: &str) {
         .into_iter()
         .for_each(|user_command| {
             user_command
-                .run_command(engine, &DUMMY_UCI_OPTIONS)
+                .run_command(engine, &DUMMY_UCI_STATE_MANAGER)
                 .unwrap()
         });
 }

@@ -49,7 +49,7 @@ pub enum UserCommand {
 }
 
 impl UserCommand {
-    fn print_engine_uci_info(uci_options: &UCIStateManager) {
+    fn print_engine_uci_info(uci_state_manager: &UCIStateManager) {
         println!(
             "{}",
             format!("id name {}", get_engine_version()).colorize(INFO_MESSAGE_STYLE)
@@ -58,7 +58,7 @@ impl UserCommand {
             "{}",
             format!("id author {}", ENGINE_AUTHOR).colorize(INFO_MESSAGE_STYLE)
         );
-        for option in uci_options.get_all_options() {
+        for option in uci_state_manager.get_all_options() {
             println!("{option}");
         }
     }
@@ -67,7 +67,7 @@ impl UserCommand {
         "Sadly, the help message is till now not implemented. But type uci to go into the uci mode and visit the link \"https://backscattering.de/chess/uci/\" to know the necessary commands required to use an uci chess engine.".colorize(ERROR_MESSAGE_STYLE)
     }
 
-    pub fn run_command(&self, engine: &mut Engine, uci_options: &UCIStateManager) -> Result<()> {
+    pub fn run_command(&self, engine: &mut Engine, uci_state_manager: &UCIStateManager) -> Result<()> {
         match self {
             Self::TerminateEngine => GLOBAL_UCI_STATE.set_engine_termination(true),
             Self::EngineVersion => print_engine_version(),
@@ -85,17 +85,17 @@ impl UserCommand {
                 "Current Score",
                 engine.get_board_mut().evaluate().stringify(),
             ),
-            Self::PrintUCIInfo => Self::print_engine_uci_info(uci_options),
+            Self::PrintUCIInfo => Self::print_engine_uci_info(uci_state_manager),
             Self::UCI => {
-                Self::PrintUCIInfo.run_command(engine, uci_options)?;
+                Self::PrintUCIInfo.run_command(engine, uci_state_manager)?;
                 println!("{}", "uciok".colorize(SUCCESS_MESSAGE_STYLE));
             }
             Self::UCINewGame => {
                 Self::SetUCIOption {
                     user_input: "setoption name Clear Hash".to_string(),
                 }
-                .run_command(engine, uci_options)?;
-                Self::SetFen(STARTING_POSITION_FEN.to_string()).run_command(engine, uci_options)?;
+                .run_command(engine, uci_state_manager)?;
+                Self::SetFen(STARTING_POSITION_FEN.to_string()).run_command(engine, uci_state_manager)?;
             }
             Self::IsReady => println!("{}", "readyok".colorize(SUCCESS_MESSAGE_STYLE)),
             Self::Stop => {
@@ -114,7 +114,7 @@ impl UserCommand {
             Self::SetFen(fen) => Set::set_board_fen(engine, fen)?,
             #[cfg(feature = "colored_output")]
             &Self::SetColor(b) => Set::set_color(b)?,
-            Self::SetUCIOption { user_input } => uci_options.run_command(engine, user_input)?,
+            Self::SetUCIOption { user_input } => uci_state_manager.run_command(engine, user_input)?,
             &Self::SelfPlay(go_command) => self_play(engine, go_command, true, None)?,
         }
 
