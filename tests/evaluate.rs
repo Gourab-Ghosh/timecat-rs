@@ -11,7 +11,7 @@ fn check_evaluation(board: &mut Board, depth: u8) -> std::result::Result<(), Vec
             .get_evaluator_mut()
             .get_model_mut()
             .update_model_and_evaluate(&sub_board)
-            != board.slow_evaluate()
+            != Evaluator::slow_evaluate_only_nnue(&sub_board)
         {
             return Err(board.get_all_moves());
         }

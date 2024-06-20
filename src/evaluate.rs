@@ -1,6 +1,6 @@
 use super::*;
 
-static HALFKP_MODEL_READER: LazyStatic<HalfKPModelReader> = LazyStatic::new(|| {
+pub static HALFKP_MODEL_READER: LazyStatic<HalfKPModelReader> = LazyStatic::new(|| {
     let mut reader = std::io::Cursor::new(include_bytes!(concat!(
         env!("OUT_DIR"),
         "/nnue_dir/nn.nnue"
@@ -30,16 +30,17 @@ impl Evaluator {
         }
     }
 
+    #[inline]
     pub fn get_model(&self) -> &HalfKPModel {
         &self.model
     }
 
+    #[inline]
     pub fn get_model_mut(&mut self) -> &mut HalfKPModel {
         &mut self.model
     }
 
     fn force_opponent_king_to_corner(
-        &self,
         sub_board: &SubBoard,
         winning_side: Color,
         is_bishop_knight_endgame: bool,
@@ -92,11 +93,11 @@ impl Evaluator {
             + losing_king_opponent_pieces_score
     }
 
-    fn force_passed_pawn_push(&self, sub_board: &SubBoard) -> Score {
+    fn force_passed_pawn_push(sub_board: &SubBoard) -> Score {
         todo!("force_passed_pawn_push {}", sub_board)
     }
 
-    fn king_corner_forcing_evaluation(&self, sub_board: &SubBoard, material_score: Score) -> Score {
+    fn king_corner_forcing_evaluation(sub_board: &SubBoard, material_score: Score) -> Score {
         let is_bishop_knight_endgame = sub_board.get_num_pieces() == 4
             && material_score.abs() == Knight.evaluate() + Bishop.evaluate();
         let winning_side = if material_score.is_positive() {
@@ -106,7 +107,7 @@ impl Evaluator {
         };
         let signum = material_score.signum();
         let king_forcing_score =
-            self.force_opponent_king_to_corner(sub_board, winning_side, is_bishop_knight_endgame);
+            Self::force_opponent_king_to_corner(sub_board, winning_side, is_bishop_knight_endgame);
         (50 * PAWN_VALUE + king_forcing_score / 2) * signum + 2 * material_score
     }
 
@@ -163,16 +164,16 @@ impl Evaluator {
         false
     }
 
-    fn evaluate_raw(&mut self, sub_board: &SubBoard) -> Score {
+    fn evaluate_raw(sub_board: &SubBoard, mut nnue_eval_func: impl FnMut() -> Score) -> Score {
         let knights_mask = sub_board.get_piece_mask(Knight);
         if sub_board.get_non_king_pieces_mask() == knights_mask && knights_mask.popcnt() < 3 {
             return 0;
         }
         let material_score = sub_board.get_material_score();
         if Self::is_easily_winning_position(sub_board, material_score) {
-            return self.king_corner_forcing_evaluation(sub_board, material_score);
+            return Self::king_corner_forcing_evaluation(sub_board, material_score);
         }
-        let mut nnue_eval = self.model.update_model_and_evaluate(sub_board);
+        let mut nnue_eval = nnue_eval_func();
         if nnue_eval.abs() > WINNING_SCORE_THRESHOLD {
             let multiplier = match_interpolate!(
                 0,
@@ -206,29 +207,41 @@ impl Evaluator {
         if let Some(score) = self.score_cache.get(hash) {
             return score;
         }
-        let score = self.evaluate_raw(sub_board);
+        let score = Self::evaluate_raw(sub_board, || {
+            self.model.update_model_and_evaluate(sub_board)
+        });
         self.score_cache.add(hash, score);
         score
     }
 
+    #[inline]
     pub(crate) fn evaluate(&mut self, sub_board: &SubBoard) -> Score {
         self.hashed_evaluate(sub_board)
     }
 
-    pub fn slow_evaluate(sub_board: &SubBoard) -> Score {
+    #[inline]
+    pub fn slow_evaluate_only_nnue(sub_board: &SubBoard) -> Score {
         HALFKP_MODEL_READER
             .to_model(sub_board)
             .evaluate_current_state(sub_board.turn())
     }
 
+    #[inline]
+    pub fn slow_evaluate(sub_board: &SubBoard) -> Score {
+        Self::evaluate_raw(sub_board, || Self::slow_evaluate_only_nnue(sub_board))
+    }
+
+    #[inline]
     pub fn reset_variables(&self) {
         self.score_cache.reset_variables();
     }
 
+    #[inline]
     pub fn clear(&self) {
         self.score_cache.clear();
     }
 
+    #[inline]
     pub fn set_size(&self, size: CacheTableSize) {
         self.score_cache.set_size(size);
     }
