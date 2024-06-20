@@ -66,13 +66,13 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // // engine.set_fen("8/8/8/8/8/8/6KP/3kr3 w - - 0 82")?; // endgame improvement 3
     // // engine.set_fen("4k3/R7/8/3KP3/8/6r1/8/8 b - - 0 1")?; // endgame improvement 3
     // // engine.set_fen("8/p7/2Q3pp/4Pk2/P7/2b5/Kp6/4r3 w - - 26 108")?; // perpetual check
-    // // self_play(&mut engine, 16, false, 100);
-    // self_play(&mut engine, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
-    // // self_play(&mut engine, GoCommand::Depth(11), true, None)?;
+    // // self_play(engine, 16, false, 100);
+    // self_play(engine, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
+    // // self_play(engine, GoCommand::Depth(11), true, None)?;
 
-    // self_play(&mut Engine::from_fen("8/8/8/8/2N5/B2K4/8/1k6 b - - 73 37")?, GoCommand::MoveTime(Duration::from_secs(1)), true, 2)?;
-    // self_play(&mut Engine::from_fen("7k/8/8/5Ppp/1pB1P3/1P2B3/5KP1/8 w - - 0 56")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
-    // self_play(&mut Engine::from_fen("8/8/5Q2/7p/1pBBP1k1/1P4p1/4K1P1/8 w - - 3 62")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
+    // self_play(Engine::from_fen("8/8/8/8/2N5/B2K4/8/1k6 b - - 73 37")?, GoCommand::MoveTime(Duration::from_secs(1)), true, 2)?;
+    // self_play(Engine::from_fen("7k/8/8/5Ppp/1pB1P3/1P2B3/5KP1/8 w - - 0 56")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
+    // self_play(Engine::from_fen("8/8/5Q2/7p/1pBBP1k1/1P4p1/4K1P1/8 w - - 3 62")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
 
     // let mut halfkp_model = HALFKP_MODEL_READER.to_default_model();
     // halfkp_model.deactivate_non_king_piece(White, WhitePawn, E2);
@@ -83,12 +83,11 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     
     // println!("{}", Board::from_fen("8/8/8/8/7R/7K/k7/8 b - - 1 1")?);
 
-    // parse_command(&mut Engine::default(), "go perft 7");
+    // parse_command(Engine::default(), "go perft 7");
 
     // let mut engine = Engine::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")?;
-    // parse_command(&mut engine, "go perft 6");
+    // parse_command(engine, "go perft 6");
 
-    let mut engine = Engine::default();
     // GLOBAL_UCI_STATE.set_num_threads(2, true);
     // engine.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88")?; // test if engine can find mate in 3
     // engine.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111")?; // test t_table -> nodes initially: 3203606
@@ -107,8 +106,8 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // engine.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24")?;
     // engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170")?; // check for saving mate score
     // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12")?; // weird results in 3 secs in my pc
-    // parse_command(&mut engine, "go time 3000");
-    parse_command(&mut engine, "go depth 13");
+    // parse_command(engine, "go time 3000");
+    parse_command(engine, "go depth 13");
     
     // println!("{}", BitBoard::new(123456));
 
@@ -128,7 +127,6 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     //     }
     // }
 
-    // let mut engine = Engine::default();
     // let mut sans =  "Nc3 Nf6 d4 d5 e3 Nc6 Nf3 Bg4 h3 Bh5 g4 Bg6 Bb5 a6 Bxc6+ bxc6 Ne5 Qd6 h4 Ne4 h5 Nxc3 bxc3 Be4 f3 f6 fxe4 fxe5 Qf3 dxe4 Qxe4 exd4 cxd4 O-O-O Ke2 Qd5 Kd3 Qxe4+ Kxe4 e6 c4 c5 Bb2 cxd4 Bxd4 Rg8 Raf1 g6 h6 Bb4 Rf7 Rd7 Rg7 Re8 Rf1 e5 Bb2 Rd2 Rff7 Bd6 c5 Rxb2 cxd6 cxd6 Rxh7 Kb8 Rhg7 Rd8 Rxg6 Rxa2 h7 d5+ Kxe5 Ra3 Rg8 Rxe3+ Kf4 Re4+ Kg5 Ree8 Rgg7 Re2 Kh4 Rh2+ Kg5 Re2 Kh4 Rh2+ Kg5 Re2".split(' ').collect_vec();
     // for san in &mut sans[0..76] {
     //     engine.board.push_san(san);
