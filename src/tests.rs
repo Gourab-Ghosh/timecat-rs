@@ -75,10 +75,10 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // self_play(&mut Engine::from_fen("8/8/5Q2/7p/1pBBP1k1/1P4p1/4K1P1/8 w - - 3 62")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
 
     // let mut halfkp_model = HALFKP_MODEL_READER.to_default_model();
-    // halfkp_model.deactivate_non_king_piece(White, Piece::new(Pawn, White), E2);
-    // halfkp_model.deactivate_non_king_piece(Black, Piece::new(Pawn, White), E2);
-    // halfkp_model.activate_non_king_piece(White, Piece::new(Pawn, White), E4);
-    // halfkp_model.activate_non_king_piece(Black, Piece::new(Pawn, White), E4);
+    // halfkp_model.deactivate_non_king_piece(White, WhitePawn, E2);
+    // halfkp_model.deactivate_non_king_piece(Black, WhitePawn, E2);
+    // halfkp_model.activate_non_king_piece(White, WhitePawn, E4);
+    // halfkp_model.activate_non_king_piece(Black, WhitePawn, E4);
     // println!("{:#?}", halfkp_model.evaluate(Black));
     
     // println!("{}", Board::from_fen("8/8/8/8/7R/7K/k7/8 b - - 1 1")?);

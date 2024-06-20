@@ -38,10 +38,11 @@ pub fn print_engine_version() {
 }
 
 #[cfg(feature = "engine")]
-pub fn print_engine_info(transposition_table: &TranspositionTable) {
+pub fn print_engine_info(transposition_table: &TranspositionTable, evaluator: &Evaluator) {
     print_engine_version();
     println!();
     transposition_table.print_info();
+    evaluator.print_info();
 }
 
 pub fn print_cache_table_info(

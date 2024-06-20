@@ -225,62 +225,62 @@ impl FromStr for SubBoardBuilder {
                 }
                 'r' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(Rook, Black));
+                        Some(BlackRook);
                     cur_file = cur_file.wrapping_right();
                 }
                 'R' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(Rook, White));
+                        Some(WhiteRook);
                     cur_file = cur_file.wrapping_right();
                 }
                 'n' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(Knight, Black));
+                        Some(BlackKnight);
                     cur_file = cur_file.wrapping_right();
                 }
                 'N' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(Knight, White));
+                        Some(WhiteKnight);
                     cur_file = cur_file.wrapping_right();
                 }
                 'b' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(Bishop, Black));
+                        Some(BlackBishop);
                     cur_file = cur_file.wrapping_right();
                 }
                 'B' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(Bishop, White));
+                        Some(WhiteBishop);
                     cur_file = cur_file.wrapping_right();
                 }
                 'p' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(Pawn, Black));
+                        Some(BlackPawn);
                     cur_file = cur_file.wrapping_right();
                 }
                 'P' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(Pawn, White));
+                        Some(WhitePawn);
                     cur_file = cur_file.wrapping_right();
                 }
                 'q' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(Queen, Black));
+                        Some(BlackQueen);
                     cur_file = cur_file.wrapping_right();
                 }
                 'Q' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(Queen, White));
+                        Some(WhiteQueen);
                     cur_file = cur_file.wrapping_right();
                 }
                 'k' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(King, Black));
+                        Some(BlackKing);
                     cur_file = cur_file.wrapping_right();
                 }
                 'K' => {
                     sub_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
-                        Some(Piece::new(King, White));
+                        Some(WhiteKing);
                     cur_file = cur_file.wrapping_right();
                 }
                 _ => {

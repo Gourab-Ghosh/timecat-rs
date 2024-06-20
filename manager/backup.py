@@ -9,7 +9,7 @@ def confirm(message, default = False):
             return default
     return response == "y"
 
-def backup_code():
+def backup_code(no_confirm = False):
     add_command = "git add ."
     status_command = "git status"
     os.system(add_command)
@@ -17,7 +17,8 @@ def backup_code():
     os.system(status_command)
     print()
 
-    if confirm("Do you want to continue?", default = True):
+    confirmed_continue = True if no_confirm else confirm("Do you want to continue?", default = True)
+    if confirmed_continue:
         print()
         commit_message = input("Enter commit message: ").strip()
         if not commit_message:

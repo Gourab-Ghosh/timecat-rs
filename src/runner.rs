@@ -100,7 +100,10 @@ impl Timecat {
         if GLOBAL_UCI_STATE.terminate_engine() {
             return;
         }
-        print_engine_info(self.engine.get_transposition_table());
+        print_engine_info(
+            self.engine.get_transposition_table(),
+            self.engine.get_board().get_evaluator(),
+        );
         Self::main_loop.run_and_print_time(&mut self);
     }
 

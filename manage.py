@@ -56,12 +56,12 @@ def main():
         run_package(os.path.dirname(__file__), args = args, binary_args = binary_args)
 
     if "backup" in args:
-        backup_code()
+        backup_code("--noconfirm" in args)
 
     if "publish" in args:
         if not check_errors(FEATURE_SETS_CHECK):
             if not test_package():
-                backup_code()
+                backup_code("--noconfirm" in args)
                 publish_package()
 
 if __name__ == "__main__":

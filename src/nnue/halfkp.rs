@@ -139,8 +139,8 @@ impl HalfKPModelReader {
             network: self.network.clone(),
             last_sub_board: CustomDebug::new(
                 SubBoardBuilder::new()
-                    .add_piece(white_king_square, Piece::new(King, White))
-                    .add_piece(black_king_square, Piece::new(King, Black))
+                    .add_piece(white_king_square, WhiteKing)
+                    .add_piece(black_king_square, BlackKing)
                     .try_into()
                     .unwrap(),
                 |sub_board| sub_board.get_fen(),

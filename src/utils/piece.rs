@@ -1,6 +1,26 @@
 use super::*;
 pub use PieceType::*;
 
+mod all_pieces {
+    #![allow(non_upper_case_globals)]
+    use super::*;
+
+    pub const WhitePawn: Piece = Piece::new(Pawn, White);
+    pub const WhiteKnight: Piece = Piece::new(Knight, White);
+    pub const WhiteBishop: Piece = Piece::new(Bishop, White);
+    pub const WhiteRook: Piece = Piece::new(Rook, White);
+    pub const WhiteQueen: Piece = Piece::new(Queen, White);
+    pub const WhiteKing: Piece = Piece::new(King, White);
+    pub const BlackPawn: Piece = Piece::new(Pawn, Black);
+    pub const BlackKnight: Piece = Piece::new(Knight, Black);
+    pub const BlackBishop: Piece = Piece::new(Bishop, Black);
+    pub const BlackRook: Piece = Piece::new(Rook, Black);
+    pub const BlackQueen: Piece = Piece::new(Queen, Black);
+    pub const BlackKing: Piece = Piece::new(King, Black);
+}
+
+pub use all_pieces::*;
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
 pub enum PieceType {
