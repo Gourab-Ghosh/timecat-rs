@@ -71,7 +71,7 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // // self_play(&mut engine, GoCommand::Depth(11), true, None)?;
 
     // self_play(&mut Engine::from_fen("8/8/8/8/2N5/B2K4/8/1k6 b - - 73 37")?, GoCommand::MoveTime(Duration::from_secs(1)), true, 2)?;
-    self_play(&mut Engine::from_fen("7k/8/8/5Ppp/1pB1P3/1P2B3/5KP1/8 w - - 0 56")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
+    // self_play(&mut Engine::from_fen("7k/8/8/5Ppp/1pB1P3/1P2B3/5KP1/8 w - - 0 56")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
     // self_play(&mut Engine::from_fen("8/8/5Q2/7p/1pBBP1k1/1P4p1/4K1P1/8 w - - 3 62")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
 
     // let mut halfkp_model = HALFKP_MODEL_READER.to_default_model();
@@ -88,27 +88,27 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // let mut engine = Engine::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")?;
     // parse_command(&mut engine, "go perft 6");
 
-    // let mut engine = Engine::default();
-    // // GLOBAL_UCI_STATE.set_num_threads(2, true);
-    // // engine.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88")?; // test if engine can find mate in 3
-    // // engine.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111")?; // test t_table -> nodes initially: 3203606
-    // // engine.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105")?; // gives incomplete pv line
-    // // engine.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1")?; // test endgame
-    // // engine.set_fen("4k2r/Q7/3b4/Q7/8/2N5/5PPP/5RK1 b - - 0 1")?; // test draw by repetition
-    // // engine.set_fen(time_consuming_fens[7])?;
-    // // engine.set_fen(could_have_probably_played_better_move[2])?;
-    // // engine.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54")?; // incomplete pv line in 3 secs in my pc
-    // // engine.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47")?; // weird results in 3 secs in my pc
-    // // engine.set_fen("8/3k2P1/1p2Q3/3P4/4p3/2P1P3/6K1/q7 b - - 1 56")?; // weird mating results in 3 secs in my pc
-    // // engine.set_fen("8/R1pk3p/8/4B2p/p1r5/8/6PK/8 w - - 0 41")?; // weird mating results in 3 secs in my pc
-    // // engine.set_fen(could_have_probably_played_better_move[6])?;
-    // // engine.board.push_sans("Qc6+ Kf2 Ra8 Rd1+ Ke8 Rc1 Qe4 Rxc7 Rxa7")?;
-    // // engine.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170")?;
-    // // engine.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24")?;
-    // // engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170")?; // check for saving mate score
-    // // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12")?; // weird results in 3 secs in my pc
-    // // parse_command(&mut engine, "go time 3000");
-    // parse_command(&mut engine, "go depth 13");
+    let mut engine = Engine::default();
+    // GLOBAL_UCI_STATE.set_num_threads(2, true);
+    // engine.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88")?; // test if engine can find mate in 3
+    // engine.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111")?; // test t_table -> nodes initially: 3203606
+    // engine.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105")?; // gives incomplete pv line
+    // engine.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1")?; // test endgame
+    // engine.set_fen("4k2r/Q7/3b4/Q7/8/2N5/5PPP/5RK1 b - - 0 1")?; // test draw by repetition
+    // engine.set_fen(time_consuming_fens[7])?;
+    // engine.set_fen(could_have_probably_played_better_move[2])?;
+    // engine.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54")?; // incomplete pv line in 3 secs in my pc
+    // engine.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47")?; // weird results in 3 secs in my pc
+    // engine.set_fen("8/3k2P1/1p2Q3/3P4/4p3/2P1P3/6K1/q7 b - - 1 56")?; // weird mating results in 3 secs in my pc
+    // engine.set_fen("8/R1pk3p/8/4B2p/p1r5/8/6PK/8 w - - 0 41")?; // weird mating results in 3 secs in my pc
+    // engine.set_fen(could_have_probably_played_better_move[6])?;
+    // engine.board.push_sans("Qc6+ Kf2 Ra8 Rd1+ Ke8 Rc1 Qe4 Rxc7 Rxa7")?;
+    // engine.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170")?;
+    // engine.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24")?;
+    // engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170")?; // check for saving mate score
+    // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12")?; // weird results in 3 secs in my pc
+    // parse_command(&mut engine, "go time 3000");
+    parse_command(&mut engine, "go depth 13");
     
     // println!("{}", BitBoard::new(123456));
 

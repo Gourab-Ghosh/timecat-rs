@@ -758,6 +758,7 @@ impl Searcher {
         let mut beta = INFINITY;
         self.current_depth = 1;
         while self.current_depth < Depth::MAX {
+            let last_score = self.score;
             self.score = self
                 .search(self.current_depth, alpha, beta, print_info)
                 .unwrap_or(self.score);
@@ -783,6 +784,7 @@ impl Searcher {
                 }
                 alpha = -INFINITY;
                 beta = INFINITY;
+                self.score = last_score;
                 continue;
             }
             let cutoff = if is_checkmate(self.score) {
