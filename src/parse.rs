@@ -67,7 +67,11 @@ impl UserCommand {
         "Sadly, the help message is till now not implemented. But type uci to go into the uci mode and visit the link \"https://backscattering.de/chess/uci/\" to know the necessary commands required to use an uci chess engine.".colorize(ERROR_MESSAGE_STYLE)
     }
 
-    pub fn run_command(&self, engine: &mut Engine, uci_state_manager: &UCIStateManager) -> Result<()> {
+    pub fn run_command(
+        &self,
+        engine: &mut Engine,
+        uci_state_manager: &UCIStateManager,
+    ) -> Result<()> {
         match self {
             Self::TerminateEngine => GLOBAL_UCI_STATE.set_engine_termination(true),
             Self::EngineVersion => print_engine_version(),
@@ -95,7 +99,8 @@ impl UserCommand {
                     user_input: "setoption name Clear Hash".to_string(),
                 }
                 .run_command(engine, uci_state_manager)?;
-                Self::SetFen(STARTING_POSITION_FEN.to_string()).run_command(engine, uci_state_manager)?;
+                Self::SetFen(STARTING_POSITION_FEN.to_string())
+                    .run_command(engine, uci_state_manager)?;
             }
             Self::IsReady => println!("{}", "readyok".colorize(SUCCESS_MESSAGE_STYLE)),
             Self::Stop => {
@@ -114,7 +119,9 @@ impl UserCommand {
             Self::SetFen(fen) => Set::set_board_fen(engine, fen)?,
             #[cfg(feature = "colored_output")]
             &Self::SetColor(b) => Set::set_color(b)?,
-            Self::SetUCIOption { user_input } => uci_state_manager.run_command(engine, user_input)?,
+            Self::SetUCIOption { user_input } => {
+                uci_state_manager.run_command(engine, user_input)?
+            }
             &Self::SelfPlay(go_command) => self_play(engine, go_command, true, None)?,
         }
 
