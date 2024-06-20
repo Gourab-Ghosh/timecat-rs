@@ -509,7 +509,7 @@ impl Parser {
                 return Err(UnknownCommand);
             }
             return Ok(vec![
-                UserCommand::ChangeToConsoleMode { verbose: false },
+                UserCommand::ChangeToUCIMode { verbose: false },
                 match first_command.as_str() {
                     "uci" => UserCommand::UCI,
                     "ucinewgame" => UserCommand::UCINewGame,

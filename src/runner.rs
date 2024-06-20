@@ -113,11 +113,13 @@ impl Timecat {
 
     pub fn main_loop(&mut self) {
         loop {
-            if GLOBAL_UCI_STATE.terminate_engine() && GLOBAL_UCI_STATE.is_in_console_mode() {
-                println!(
-                    "{}",
-                    "Program ended successfully!".colorize(SUCCESS_MESSAGE_STYLE)
-                );
+            if GLOBAL_UCI_STATE.terminate_engine() {
+                if GLOBAL_UCI_STATE.is_in_console_mode() {
+                    println!(
+                        "{}",
+                        "Program ended successfully!".colorize(SUCCESS_MESSAGE_STYLE)
+                    );
+                }
                 break;
             }
             let raw_input = if GLOBAL_UCI_STATE.is_in_console_mode() {
