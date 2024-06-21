@@ -1172,6 +1172,6 @@ impl fmt::Display for SubBoard {
 
 impl Hash for SubBoard {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.get_hash().hash(state);
+        state.write_u64(self.get_hash())
     }
 }

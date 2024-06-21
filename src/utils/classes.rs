@@ -66,9 +66,27 @@ impl RepetitionTable {
 
 #[cfg(not(feature = "speed"))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Debug, Hash)]
+struct IdentityHasher(u64);
+
+#[cfg(not(feature = "speed"))]
+impl std::hash::Hasher for IdentityHasher {
+    fn finish(&self) -> u64 {
+        self.0
+    }
+
+    fn write(&mut self, _: &[u8]) {}
+
+    fn write_u64(&mut self, i: u64) {
+        self.0 = i;
+    }
+}
+
+#[cfg(not(feature = "speed"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Default, Debug, Clone)]
 pub struct RepetitionTable {
-    count_map: std::collections::HashMap<u64, u8>,
+    count_map: std::collections::HashMap<u64, u8, std::hash::BuildHasherDefault<IdentityHasher>>,
 }
 
 #[cfg(not(feature = "speed"))]
