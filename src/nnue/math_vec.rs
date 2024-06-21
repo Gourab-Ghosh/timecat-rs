@@ -311,3 +311,24 @@ impl_clipped_relu!(u32);
 impl_clipped_relu!(u64);
 impl_clipped_relu!(u128);
 impl_clipped_relu!(usize);
+
+impl<T, const N: usize> TryFrom<Vec<T>> for MathVec<T, N> {
+    type Error = Vec<T>;
+
+    fn try_from(value: Vec<T>) -> std::result::Result<Self, Self::Error> {
+        let slice: [T; N] = value.try_into()?;
+        Ok(slice.into())
+    }
+}
+
+impl<T: Clone, U: From<T> + Debug, const N: usize> From<&MathVec<T, N>> for MathVec<U, N> {
+    fn from(value: &MathVec<T, N>) -> Self {
+        value
+            .iter()
+            .cloned()
+            .map_into()
+            .collect_vec()
+            .try_into()
+            .unwrap()
+    }
+}

@@ -12,17 +12,18 @@ const FIRST_HIDDEN_LAYER_NUM_OUTPUTS: usize = 32;
 const SECOND_HIDDEN_LAYER_NUM_OUTPUTS: usize = 32;
 const FINAL_NUM_OUTPUTS: usize = 1;
 
-struct HalfKPFeatureTransformer {
+type AccumulatorDataType = i16;
+
+struct HalfKPFeatureTransformer<T> {
     weights: Box<
-        [MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>;
-            HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS],
+        [MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS],
     >,
     // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=75296
-    bona_piece_zero_weights: Box<[[i16; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS]; NUM_SQUARES]>,
-    biases: Box<MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>>,
+    bona_piece_zero_weights: Box<[MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; NUM_SQUARES]>,
+    biases: Box<MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>>,
 }
 
-impl BinRead for HalfKPFeatureTransformer {
+impl<T: BinRead<Args = ()> + Debug> BinRead for HalfKPFeatureTransformer<T> {
     type Args = ();
 
     fn read_options<R: std::io::Read + std::io::Seek>(
@@ -31,9 +32,9 @@ impl BinRead for HalfKPFeatureTransformer {
         _: Self::Args,
     ) -> BinResult<Self> {
         let biases = BinRead::read_options(reader, options, ())?;
-        let mut weights: Vec<MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>> =
+        let mut weights: Vec<MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>> =
             Vec::with_capacity(HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS);
-        let mut bona_piece_zero_weights: Vec<[i16; HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS]> =
+        let mut bona_piece_zero_weights: Vec<MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>> =
             Vec::with_capacity(NUM_SQUARES);
         for _ in 0..NUM_SQUARES {
             bona_piece_zero_weights.push(BinRead::read_options(reader, options, ())?);
@@ -49,26 +50,50 @@ impl BinRead for HalfKPFeatureTransformer {
     }
 }
 
-impl HalfKPFeatureTransformer {
+impl<T> HalfKPFeatureTransformer<T> {
     pub fn get_weights(
         &self,
-    ) -> &[MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>;
-            HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS] {
+    ) -> &[MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS]
+    {
         &self.weights
     }
 
-    pub fn get_biases(&self) -> &MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS> {
+    pub fn get_biases(&self) -> &MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS> {
         &self.biases
     }
 }
 
-impl Debug for HalfKPFeatureTransformer {
+impl<T> Debug for HalfKPFeatureTransformer<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "HalfKPFeatureTransformer[{}->{}x2]",
             HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS,
         )
+    }
+}
+
+impl<T: Clone, U: From<T> + Debug> From<&HalfKPFeatureTransformer<T>>
+    for HalfKPFeatureTransformer<U>
+{
+    fn from(value: &HalfKPFeatureTransformer<T>) -> Self {
+        HalfKPFeatureTransformer {
+            weights: value
+                .weights
+                .iter()
+                .map_into()
+                .collect_vec()
+                .try_into()
+                .unwrap(),
+            bona_piece_zero_weights: value
+                .bona_piece_zero_weights
+                .iter()
+                .map_into()
+                .collect_vec()
+                .try_into()
+                .unwrap(),
+            biases: Box::new(value.get_biases().into()),
+        }
     }
 }
 
@@ -110,8 +135,8 @@ pub struct HalfKPModelReader {
     description: String,
     #[br(args(TRANSFORMER_ARCHITECTURE))]
     transformer_architecture: Magic<u32>,
-    #[br(map = Arc::new)]
-    transformer: Arc<HalfKPFeatureTransformer>,
+    #[br(map = |transformer: HalfKPFeatureTransformer<i16>| Arc::new((&transformer).into()))]
+    transformer: Arc<HalfKPFeatureTransformer<AccumulatorDataType>>,
     #[br(args(NETWORK_ARCHITECTURE))]
     network_architecture: Magic<u32>,
     #[br(map = Arc::new)]
@@ -125,8 +150,8 @@ impl HalfKPModelReader {
         black_king_square: Square,
     ) -> HalfKPModel {
         let accumulators = [
-            self.transformer.get_biases().clone(),
-            self.transformer.get_biases().clone(),
+            self.transformer.get_biases().into(),
+            self.transformer.get_biases().into(),
         ];
         let halfkp_model = HalfKPModel {
             accumulator: Accumulator {
@@ -167,12 +192,13 @@ impl HalfKPModelReader {
 #[derive(Clone, Debug)]
 struct Accumulator {
     king_squares_rotated: [Square; 2],
-    accumulators: CustomDebug<[MathVec<i16, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; 2]>,
+    accumulators:
+        CustomDebug<[MathVec<AccumulatorDataType, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; 2]>,
 }
 
 #[derive(Clone, Debug)]
 pub struct HalfKPModel {
-    transformer: Arc<HalfKPFeatureTransformer>,
+    transformer: Arc<HalfKPFeatureTransformer<AccumulatorDataType>>,
     network: Arc<HalfKPNetwork>,
     accumulator: Accumulator,
     last_sub_board: CustomDebug<SubBoard>,
