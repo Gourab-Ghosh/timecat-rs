@@ -11,19 +11,23 @@ pub struct Move {
 impl Move {
     pub const NULL_MOVE: Self = Self {
         source: A1,
-        dest: G8,
+        dest: A1,
         promotion: None,
     };
 
     #[inline]
     pub fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
-        #[cfg(feature = "debug")]
+        #[cfg(any(test, not(feature = "binary")))]
         assert_ne!(source, dest);
         Self {
             source,
             dest,
             promotion,
         }
+    }
+
+    pub fn is_null(&self) -> bool {
+        *self == Self::NULL_MOVE
     }
 
     pub fn from_san(sub_board: &SubBoard, san: &str) -> Result<Option<Self>> {

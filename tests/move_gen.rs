@@ -202,7 +202,6 @@ fn move_generator_issue_15() {
     let _ = MoveGenerator::new_legal(&board);
 }
 
-#[cfg(test)]
 fn move_of(m: &str) -> Move {
     let promo = if m.len() > 4 {
         Some(match m.as_bytes()[4] {
