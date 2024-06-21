@@ -246,8 +246,9 @@ impl Clone for Engine {
     fn clone(&self) -> Self {
         Self {
             board: self.board.clone(),
-            transposition_table: (*self.transposition_table).clone().into(),
-            num_nodes_searched: AtomicUsize::new(self.num_nodes_searched.load(MEMORY_ORDERING)).into(),
+            transposition_table: self.transposition_table.as_ref().clone().into(),
+            num_nodes_searched: AtomicUsize::new(self.num_nodes_searched.load(MEMORY_ORDERING))
+                .into(),
             selective_depth: AtomicUsize::new(self.selective_depth.load(MEMORY_ORDERING)).into(),
             stopper: AtomicBool::new(self.stopper.load(MEMORY_ORDERING)).into(),
             io_reader: self.io_reader.clone(),

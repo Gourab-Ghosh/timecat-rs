@@ -311,7 +311,9 @@ impl<T: Copy + Clone + PartialEq> Clone for CacheTable<T> {
             size: RwLock::new(self.get_size()),
             default: self.default,
             mask: AtomicUsize::new(self.mask.load(MEMORY_ORDERING)),
-            is_safe_to_do_bitwise_and: AtomicBool::new(self.is_safe_to_do_bitwise_and.load(MEMORY_ORDERING)),
+            is_safe_to_do_bitwise_and: AtomicBool::new(
+                self.is_safe_to_do_bitwise_and.load(MEMORY_ORDERING),
+            ),
             num_overwrites: AtomicUsize::new(self.num_overwrites.load(MEMORY_ORDERING)),
             num_collisions: AtomicUsize::new(self.num_collisions.load(MEMORY_ORDERING)),
         }
