@@ -9,8 +9,16 @@ pub struct Move {
 }
 
 impl Move {
+    pub const NULL_MOVE: Self = Self {
+        source: A1,
+        dest: G8,
+        promotion: None,
+    };
+
     #[inline]
-    pub const fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
+    pub fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
+        #[cfg(feature = "debug")]
+        assert_ne!(source, dest);
         Self {
             source,
             dest,
@@ -18,7 +26,7 @@ impl Move {
         }
     }
 
-    pub fn from_san(sub_board: &SubBoard, san: &str) -> Result<Option<Move>> {
+    pub fn from_san(sub_board: &SubBoard, san: &str) -> Result<Option<Self>> {
         // TODO: Make the logic better
         let san = san.trim().replace('0', "O");
         if san == "--" {
@@ -33,7 +41,7 @@ impl Move {
         Err(TimecatError::InvalidSanMoveString { s: san.to_string() })
     }
 
-    pub fn from_lan(sub_board: &SubBoard, lan: &str) -> Result<Option<Move>> {
+    pub fn from_lan(sub_board: &SubBoard, lan: &str) -> Result<Option<Self>> {
         // TODO: Make the logic better
         let lan = lan.trim().replace('0', "O");
         if lan == "--" {
@@ -177,6 +185,12 @@ impl Move {
     }
 }
 
+impl Default for Move {
+    fn default() -> Self {
+        Self::NULL_MOVE
+    }
+}
+
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.promotion {
@@ -232,7 +246,7 @@ pub struct MoveWithInfo {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq, Hash)]
 pub struct WeightedMove {
     pub weight: MoveWeight,
     pub move_: Move,
@@ -247,15 +261,6 @@ impl PartialOrd for WeightedMove {
 impl Ord for WeightedMove {
     fn cmp(&self, other: &Self) -> Ordering {
         self.weight.cmp(&other.weight)
-    }
-}
-
-impl Default for WeightedMove {
-    fn default() -> Self {
-        Self {
-            weight: 0,
-            move_: Move::new(Square::A1, Square::A1, None),
-        }
     }
 }
 

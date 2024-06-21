@@ -52,6 +52,9 @@ def main():
     if "test" in args:
         test_package("--release" in args)
 
+    if "build" in args:
+        os.system(f"{RUST_FLAGS_STRING} cargo build --release")
+
     if "run" in args:
         run_package(os.path.dirname(__file__), args = args, binary_args = binary_args)
 

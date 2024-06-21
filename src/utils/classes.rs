@@ -19,6 +19,8 @@ impl Default for RepetitionTable {
 impl RepetitionTable {
     pub fn new() -> Self {
         let size = REPETITION_TABLE_SIZE << 20;
+        #[cfg(feature = "debug")]
+        assert!(size.is_power_of_two());
         Self {
             count_map: vec![0; size].into_boxed_slice(),
             mask: size - 1,

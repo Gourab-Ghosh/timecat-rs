@@ -406,6 +406,8 @@ impl Board {
         let optional_move = optional_move.into();
         let sub_board_copy = self.sub_board.clone();
         self.sub_board = if let Some(move_) = optional_move {
+            #[cfg(feature = "debug")]
+            assert!(self.is_legal(move_));
             self.sub_board.make_move_new(move_)
         } else {
             self.sub_board

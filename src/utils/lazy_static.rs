@@ -1,4 +1,7 @@
 use super::*;
+use std::sync::atomic::Ordering;
+
+const LAZY_STATIC_MEMORY_ORDERING: Ordering = Ordering::SeqCst;
 
 pub struct LazyStatic<T> {
     state: RwLock<Option<T>>,
@@ -16,13 +19,13 @@ impl<T> LazyStatic<T> {
     }
 
     fn initialize_once(&self) {
-        if !self.is_initialized.load(MEMORY_ORDERING) {
+        if !self.is_initialized.load(LAZY_STATIC_MEMORY_ORDERING) {
             let mut state = self.state.write().unwrap();
             if state.is_none() {
                 *state = Some((self.initializer)());
             }
             drop(state);
-            self.is_initialized.store(true, MEMORY_ORDERING);
+            self.is_initialized.store(true, LAZY_STATIC_MEMORY_ORDERING);
         }
     }
 }

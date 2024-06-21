@@ -77,7 +77,7 @@ impl TranspositionTableEntry {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TranspositionTable {
     table: CacheTable<TranspositionTableEntry>,
 }
