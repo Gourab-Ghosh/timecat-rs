@@ -70,9 +70,9 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // self_play(engine, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
     // // self_play(engine, GoCommand::Depth(11), true, None)?;
 
-    // self_play(Engine::from_fen("8/8/8/8/2N5/B2K4/8/1k6 b - - 73 37")?, GoCommand::MoveTime(Duration::from_secs(1)), true, 2)?;
-    // self_play(Engine::from_fen("7k/8/8/5Ppp/1pB1P3/1P2B3/5KP1/8 w - - 0 56")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
-    // self_play(Engine::from_fen("8/8/5Q2/7p/1pBBP1k1/1P4p1/4K1P1/8 w - - 3 62")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
+    // self_play(&mut Engine::from_fen("8/8/8/8/2N5/B2K4/8/1k6 b - - 73 37")?, GoCommand::MoveTime(Duration::from_secs(1)), true, 2)?;
+    // self_play(&mut Engine::from_fen("7k/8/8/5Ppp/1pB1P3/1P2B3/5KP1/8 w - - 0 56")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
+    // self_play(&mut Engine::from_fen("8/8/5Q2/7p/1pBBP1k1/1P4p1/4K1P1/8 w - - 3 62")?, GoCommand::MoveTime(Duration::from_secs(3)), true, None)?;
 
     // let mut halfkp_model = HALFKP_MODEL_READER.to_default_model();
     // halfkp_model.deactivate_non_king_piece(White, WhitePawn, E2);
@@ -107,7 +107,7 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170")?; // check for saving mate score
     // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12")?; // weird results in 3 secs in my pc
     // parse_command(engine, "go time 3000");
-    parse_command(engine, "go depth 13");
+    parse_command(engine, "go depth 14");
     
     // println!("{}", BitBoard::new(123456));
 

@@ -3,8 +3,8 @@ mod nnue_features {
     pub use std::fs::File;
     pub use std::path::Path;
 
-    pub const NNUE_FILE_NAME: &str = "nn-62ef826d1a6d.nnue";
-    // pub const NNUE_FILE_NAME: &str = "nn-f7d87b7a1789.nnue";
+    // pub const NNUE_FILE_NAME: &str = "nn-62ef826d1a6d.nnue";
+    pub const NNUE_FILE_NAME: &str = "nn-f7d87b7a1789.nnue";
     // const NNUE_FILE_NAME: &str = "nn-c3ca321c51c9.nnue";
 
     pub struct NNUEGenerationError(String);
