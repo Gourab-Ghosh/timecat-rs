@@ -19,7 +19,7 @@ pub enum UserCommand {
     #[cfg(feature = "inbuilt_nnue")]
     EvaluateBoard,
     PrintUCIInfo,
-    UCI,
+    UCIMode,
     UCINewGame,
     IsReady,
     Stop,
@@ -90,7 +90,7 @@ impl UserCommand {
                 engine.get_board_mut().evaluate().stringify(),
             ),
             Self::PrintUCIInfo => Self::print_engine_uci_info(uci_state_manager),
-            Self::UCI => {
+            Self::UCIMode => {
                 Self::PrintUCIInfo.run_command(engine, uci_state_manager)?;
                 println!("{}", "uciok".colorize(SUCCESS_MESSAGE_STYLE));
             }
@@ -126,6 +126,12 @@ impl UserCommand {
         }
 
         Ok(())
+    }
+}
+
+impl From<UserCommand> for Result<Vec<UserCommand>> {
+    fn from(value: UserCommand) -> Self {
+        Ok(vec![value])
     }
 }
 
@@ -196,11 +202,9 @@ impl GoAndPerft {
     pub fn parse_sub_commands(commands: &[&str]) -> Result<Vec<UserCommand>> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if second_command == "perft" {
-            Ok(vec![UserCommand::Perft(
-                commands.get(2).ok_or(UnknownCommand)?.parse()?,
-            )])
+            UserCommand::Perft(commands.get(2).ok_or(UnknownCommand)?.parse()?).into()
         } else {
-            Ok(vec![UserCommand::Go(Self::extract_go_command(commands)?)])
+            UserCommand::Go(Self::extract_go_command(commands)?).into()
         }
     }
 
@@ -287,12 +291,12 @@ impl Set {
     fn extract_board_fen(commands: &[&str]) -> Result<Vec<UserCommand>> {
         let fen = commands[3..].join(" ");
         if fen == "startpos" {
-            return Ok(vec![UserCommand::SetFen(STARTING_POSITION_FEN.to_string())]);
+            return UserCommand::SetFen(STARTING_POSITION_FEN.to_string()).into();
         }
         if !Board::is_good_fen(&fen) {
             return Err(BadFen { fen });
         };
-        Ok(vec![UserCommand::SetFen(fen)])
+        UserCommand::SetFen(fen).into()
     }
 
     #[cfg(feature = "colored_output")]
@@ -302,7 +306,7 @@ impl Set {
         }
         let third_command = commands.get(2).ok_or(UnknownCommand)?.to_lowercase();
         let b = third_command.parse()?;
-        Ok(vec![UserCommand::SetColor(b)])
+        UserCommand::SetColor(b).into()
     }
 
     pub fn parse_sub_commands(commands: &[&str]) -> Result<Vec<UserCommand>> {
@@ -408,7 +412,7 @@ impl Pop {
             return Err(UnknownCommand);
         }
         let num_pop = second_command.parse()?;
-        Ok(vec![UserCommand::PopMoves(num_pop)])
+        UserCommand::PopMoves(num_pop).into()
     }
 }
 
@@ -423,7 +427,7 @@ impl SelfPlay {
         } else {
             DEFAULT_SELFPLAY_COMMAND
         };
-        Ok(vec![UserCommand::SelfPlay(go_command)])
+        UserCommand::SelfPlay(go_command).into()
     }
 }
 
@@ -446,7 +450,7 @@ impl DebugMode {
         }
         let second_command = &commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         let debug_mode = Self::get_debug_mode(&second_command)?;
-        Ok(vec![UserCommand::SetDebugMode(debug_mode)])
+        UserCommand::SetDebugMode(debug_mode).into()
     }
 }
 
@@ -488,10 +492,6 @@ impl Position {
 pub struct Parser;
 
 impl Parser {
-    pub const EXIT_CODES: [&'static str; 7] = [
-        "q", "quit", "quit()", "quit(0)", "exit", "exit()", "exit(0)",
-    ];
-
     pub fn sanitize_string(raw_input: &str) -> String {
         let user_input = raw_input.trim();
         let mut user_input = user_input.to_string();
@@ -503,53 +503,50 @@ impl Parser {
     }
 
     fn parse_single_command(single_input: &str) -> Result<Vec<UserCommand>> {
-        if Self::EXIT_CODES.contains(&single_input) {
-            return Ok(vec![UserCommand::TerminateEngine]);
-        }
-        let commands = single_input.split_whitespace().collect_vec();
-        let first_command = commands.get(0).ok_or(UnknownCommand)?.to_lowercase();
-        if ["uci", "ucinewgame"].contains(&first_command.as_str()) {
-            if single_input.split_whitespace().nth(1).is_some() {
-                return Err(UnknownCommand);
+        match single_input.to_lowercase().as_str() {
+            "q" | "quit" | "quit()" | "quit(0)" | "exit" | "exit()" | "exit(0)" => {
+                UserCommand::TerminateEngine.into()
             }
-            return Ok(vec![
+            "uci" | "ucinewgame" => Ok(vec![
                 UserCommand::ChangeToUCIMode { verbose: false },
-                match first_command.as_str() {
-                    "uci" => UserCommand::UCI,
+                match single_input {
+                    "uci" => UserCommand::UCIMode,
                     "ucinewgame" => UserCommand::UCINewGame,
                     _ => unreachable!(),
                 },
-            ]);
-        }
-        if first_command == "console" {
-            if single_input.split_whitespace().nth(1).is_some() {
-                return Err(UnknownCommand);
+            ]),
+            "ucimode" => UserCommand::UCIMode.into(),
+            "console" | "consolemode" => {
+                if GLOBAL_UCI_STATE.is_in_console_mode() {
+                    Err(ConsoleModeUnchanged)
+                } else {
+                    UserCommand::ChangeToConsoleMode { verbose: false }.into()
+                }
             }
-            if GLOBAL_UCI_STATE.is_in_console_mode() {
-                return Err(ConsoleModeUnchanged);
+            "isready" => UserCommand::IsReady.into(),
+            "d" => UserCommand::DisplayBoard.into(),
+            "eval" => UserCommand::EvaluateBoard.into(),
+            "reset board" => UserCommand::SetFen(STARTING_POSITION_FEN.to_owned()).into(),
+            "stop" => UserCommand::Stop.into(),
+            "help" => UserCommand::Help.into(),
+            _ => {
+                let commands = single_input.split_whitespace().collect_vec();
+                let first_command = commands.get(0).ok_or(UnknownCommand)?.to_lowercase();
+                match first_command.as_str() {
+                    "go" => GoAndPerft::parse_sub_commands(&commands),
+                    "set" => Set::parse_sub_commands(&commands),
+                    "setoption" => UserCommand::SetUCIOption {
+                        user_input: single_input.to_string(),
+                    }
+                    .into(),
+                    "push" => UserCommand::PushMoves(single_input.to_string()).into(),
+                    "pop" => Pop::parse_sub_commands(&commands),
+                    "position" => Position::parse_sub_commands(&commands),
+                    "selfplay" => SelfPlay::parse_sub_commands(&commands),
+                    "debug" => DebugMode::parse_sub_commands(&commands),
+                    _ => Err(UnknownCommand),
+                }
             }
-            return Ok(vec![UserCommand::ChangeToConsoleMode { verbose: false }]);
-        }
-        match single_input.to_lowercase().as_str() {
-            "isready" => Ok(vec![UserCommand::IsReady]),
-            "d" => Ok(vec![UserCommand::DisplayBoard]),
-            "eval" => Ok(vec![UserCommand::EvaluateBoard]),
-            "reset board" => Ok(vec![UserCommand::SetFen(STARTING_POSITION_FEN.to_owned())]),
-            "stop" => Ok(vec![UserCommand::Stop]),
-            "help" => Ok(vec![UserCommand::Help]),
-            _ => match first_command.as_str() {
-                "go" => GoAndPerft::parse_sub_commands(&commands),
-                "set" => Set::parse_sub_commands(&commands),
-                "setoption" => Ok(vec![UserCommand::SetUCIOption {
-                    user_input: single_input.to_string(),
-                }]),
-                "push" => Ok(vec![UserCommand::PushMoves(single_input.to_string())]),
-                "pop" => Pop::parse_sub_commands(&commands),
-                "position" => Position::parse_sub_commands(&commands),
-                "selfplay" => SelfPlay::parse_sub_commands(&commands),
-                "debug" => DebugMode::parse_sub_commands(&commands),
-                _ => Err(UnknownCommand),
-            },
         }
     }
 
@@ -565,7 +562,6 @@ impl Parser {
         }
         Self::sanitize_string(raw_input)
             .split("&&")
-            .map(|s| s.trim())
             .map(|single_input| Self::parse_single_command(single_input.trim()))
             .fold(Ok(Vec::new()), |acc, res| match (acc, res) {
                 (Ok(mut vec), Ok(contents)) => {
