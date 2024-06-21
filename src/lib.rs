@@ -1,7 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![allow(unused_imports)]
-// #![warn(missing_docs)]
 #![allow(dead_code)]
+#![allow(clippy::needless_doctest_main)]
+// #![warn(missing_docs)]
 
 mod board;
 mod chess;

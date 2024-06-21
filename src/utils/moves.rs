@@ -17,7 +17,7 @@ impl Move {
 
     #[inline]
     pub fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
-        #[cfg(any(test, not(feature = "binary")))]
+        #[cfg(any(not(feature = "binary"), test))]
         assert_ne!(source, dest);
         Self {
             source,

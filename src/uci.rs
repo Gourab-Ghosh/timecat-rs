@@ -305,7 +305,7 @@ impl Default for UCIStateManager {
 
 fn get_uci_state_manager() -> Vec<UCIOption> {
     let t_table_size_uci = SpinValue::new(
-        DEFAULT_GLOBAL_UCI_STATE.get_t_table_size(),
+        GlobalUCIState::default().get_t_table_size(),
         CacheTableSize::Exact(1),
         CacheTableSize::Exact({
             let transposition_table_entry_size =
@@ -321,7 +321,7 @@ fn get_uci_state_manager() -> Vec<UCIOption> {
     );
 
     let move_overhead_uci = SpinValue::new(
-        DEFAULT_GLOBAL_UCI_STATE.get_move_overhead(),
+        GlobalUCIState::default().get_move_overhead(),
         Duration::from_secs(0),
         Duration::MAX,
     );
@@ -329,7 +329,7 @@ fn get_uci_state_manager() -> Vec<UCIOption> {
     let options = vec![
         UCIOption::new_spin(
             "Threads",
-            SpinValue::new(DEFAULT_GLOBAL_UCI_STATE.get_num_threads(), 1, 1024),
+            SpinValue::new(GlobalUCIState::default().get_num_threads(), 1, 1024),
             |_, value| GLOBAL_UCI_STATE.set_num_threads(value as usize, true),
         )
         .alias("Thread"),

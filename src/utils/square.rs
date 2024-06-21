@@ -27,6 +27,7 @@ impl Square {
     }
 
     #[rustfmt::skip]
+    #[allow(clippy::zero_prefixed_literal)]
     #[inline]
     pub const fn from_int(int: u8) -> Self {
         match int {

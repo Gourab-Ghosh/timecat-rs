@@ -38,8 +38,6 @@ pub struct GlobalUCIState {
     _chess960_mode: AtomicBool,
 }
 
-pub const DEFAULT_GLOBAL_UCI_STATE: GlobalUCIState = GlobalUCIState::new();
-
 impl Default for GlobalUCIState {
     fn default() -> Self {
         Self::new()

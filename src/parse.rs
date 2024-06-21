@@ -448,7 +448,7 @@ impl DebugMode {
         if commands.get(2).is_some() {
             return Err(UnknownCommand);
         }
-        let second_command = &commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
+        let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         let debug_mode = Self::get_debug_mode(&second_command)?;
         UserCommand::SetDebugMode(debug_mode).into()
     }
@@ -531,7 +531,7 @@ impl Parser {
             "help" => UserCommand::Help.into(),
             _ => {
                 let commands = single_input.split_whitespace().collect_vec();
-                let first_command = commands.get(0).ok_or(UnknownCommand)?.to_lowercase();
+                let first_command = commands.first().ok_or(UnknownCommand)?.to_lowercase();
                 match first_command.as_str() {
                     "go" => GoAndPerft::parse_sub_commands(&commands),
                     "set" => Set::parse_sub_commands(&commands),
