@@ -72,6 +72,7 @@ pub enum TimecatError {
     FeatureNotEnabled {
         s: String,
     },
+    BadNNUEFile,
     CustomError {
         err_msg: String,
     },
@@ -107,6 +108,7 @@ impl fmt::Display for TimecatError {
             InvalidUciMoveString { s } => write!(f, "Invalid uci move string {s}! Please try again!"),
             InvalidSubBoard { board } => write!(f, "Invalid sub board generated:\n\n{board:#?}"),
             FeatureNotEnabled { s } => write!(f, "The feature {s:?} is not enabled. Please recompile the chess engine with this feature enabled!"),
+            BadNNUEFile => write!(f, "The NNUE file cannot be parsed properly! Try again with a different NNUE file!"),
             CustomError { err_msg } => write!(f, "{err_msg}"),
         }
     }

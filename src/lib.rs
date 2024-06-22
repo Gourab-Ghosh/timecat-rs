@@ -10,7 +10,7 @@ mod constants;
 #[cfg(feature = "engine")]
 mod engine;
 mod error;
-#[cfg(feature = "inbuilt_nnue")]
+#[cfg(feature = "nnue_reader")]
 mod evaluate;
 #[cfg(feature = "nnue_reader")]
 mod nnue;
@@ -91,7 +91,7 @@ pub use constants::types::*;
 #[cfg(feature = "engine")]
 pub use engine::{Engine, GoCommand};
 pub use error::*;
-#[cfg(feature = "inbuilt_nnue")]
+#[cfg(feature = "nnue_reader")]
 pub use evaluate::*;
 pub use itertools::*;
 #[cfg(feature = "nnue_reader")]
@@ -116,7 +116,7 @@ pub use std::error::Error;
 pub use std::fmt::{self, Debug};
 pub use std::fs;
 pub use std::hash::{Hash, Hasher};
-use std::io::{Read, Seek};
+use std::io::{BufReader, Read, Seek};
 pub use std::iter::Sum;
 pub use std::num::ParseIntError;
 pub use std::ops::{

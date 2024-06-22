@@ -1,11 +1,14 @@
 use super::*;
 
+#[cfg(feature = "inbuilt_nnue")]
 pub static HALFKP_MODEL_READER: LazyStatic<HalfKPModelReader> = LazyStatic::new(|| {
     let mut reader = std::io::Cursor::new(include_bytes!(concat!(
         env!("OUT_DIR"),
         "/nnue_dir/nn.nnue"
     )));
-    HalfKPModelReader::read(&mut reader).expect("Bad NNUE file!")
+    HalfKPModelReader::read(&mut reader)
+        .map_err(|_| TimecatError::BadNNUEFile)
+        .unwrap()
 });
 
 #[derive(Clone, Debug)]
@@ -23,11 +26,37 @@ impl Evaluator {
         );
     }
 
+    #[cfg(feature = "inbuilt_nnue")]
     pub fn new(sub_board: &SubBoard) -> Self {
         Self {
             model: HALFKP_MODEL_READER.to_model(sub_board),
             score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE, 0)),
         }
+    }
+
+    pub fn from_nnue_bytes(nnue_bytes: &[u8], sub_board: &SubBoard) -> Result<Self> {
+        let mut reader = std::io::Cursor::new(nnue_bytes);
+        let model = HalfKPModelReader::read(&mut reader)
+            .map_err(|_| TimecatError::BadNNUEFile)?
+            .to_model(sub_board);
+
+        Ok(Self {
+            model,
+            score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE, 0)),
+        })
+    }
+
+    pub fn from_nnue_path(path: &str, sub_board: &SubBoard) -> Result<Self> {
+        let file = std::fs::File::open(path)?;
+        let mut reader = BufReader::new(file);
+        let model = HalfKPModelReader::read(&mut reader)
+            .map_err(|_| TimecatError::BadNNUEFile)?
+            .to_model(sub_board);
+
+        Ok(Self {
+            model,
+            score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE, 0)),
+        })
     }
 
     #[inline]
@@ -219,6 +248,7 @@ impl Evaluator {
         self.hashed_evaluate(sub_board)
     }
 
+    #[cfg(feature = "inbuilt_nnue")]
     #[inline]
     pub fn slow_evaluate_only_nnue(sub_board: &SubBoard) -> Score {
         HALFKP_MODEL_READER
@@ -226,6 +256,7 @@ impl Evaluator {
             .evaluate_current_state(sub_board.turn())
     }
 
+    #[cfg(feature = "inbuilt_nnue")]
     #[inline]
     pub fn slow_evaluate(sub_board: &SubBoard) -> Score {
         Self::evaluate_raw(sub_board, || Self::slow_evaluate_only_nnue(sub_board))
@@ -247,6 +278,7 @@ impl Evaluator {
     }
 }
 
+#[cfg(feature = "inbuilt_nnue")]
 impl Default for Evaluator {
     fn default() -> Self {
         Self::new(&SubBoard::default())
