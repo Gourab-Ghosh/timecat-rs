@@ -135,7 +135,8 @@ pub struct HalfKPModelReader {
     description: String,
     #[br(args(TRANSFORMER_ARCHITECTURE))]
     transformer_architecture: Magic<u32>,
-    #[br(map = |transformer: HalfKPFeatureTransformer<i16>| Arc::new((&transformer).into()))]
+    #[br(map = Arc::new)]
+    // #[br(map = |transformer: HalfKPFeatureTransformer<i16>| Arc::new((&transformer).into()))]
     transformer: Arc<HalfKPFeatureTransformer<AccumulatorDataType>>,
     #[br(args(NETWORK_ARCHITECTURE))]
     network_architecture: Magic<u32>,
