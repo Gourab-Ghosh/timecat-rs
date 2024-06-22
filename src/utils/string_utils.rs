@@ -41,7 +41,7 @@ pub trait CustomColorize {
 impl<T: ToString> CustomColorize for T {
     fn colorize(&self, style_functions: &[ColoredStringFunction]) -> String {
         let self_string = self.to_string();
-        if style_functions.is_empty() || !GLOBAL_UCI_STATE.is_colored_output() {
+        if style_functions.is_empty() || !GLOBAL_TIMECAT_STATE.is_colored_output() {
             return self_string;
         }
         let mut colorized_string = self_string.as_str().into();
@@ -115,7 +115,7 @@ impl StringifyScore for Score {
 
 impl Stringify for Score {
     fn stringify(&self) -> String {
-        if GLOBAL_UCI_STATE.is_in_console_mode() {
+        if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             self.stringify_score()
         } else {
             self.stringify_score_uci()
@@ -173,8 +173,8 @@ impl StringifyMove for Option<Move> {
     }
 
     fn stringify_move(self, sub_board: &SubBoard) -> Result<String> {
-        match GLOBAL_UCI_STATE.is_in_console_mode() {
-            true => self.algebraic(sub_board, GLOBAL_UCI_STATE.use_long_algebraic_notation()),
+        match GLOBAL_TIMECAT_STATE.is_in_console_mode() {
+            true => self.algebraic(sub_board, GLOBAL_TIMECAT_STATE.use_long_algebraic_notation()),
             false => Ok(self.uci()),
         }
     }
@@ -270,7 +270,7 @@ impl Stringify for Color {
 
 impl Stringify for Duration {
     fn stringify(&self) -> String {
-        if GLOBAL_UCI_STATE.is_in_uci_mode() {
+        if GLOBAL_TIMECAT_STATE.is_in_uci_mode() {
             return self.as_millis().to_string();
         }
         if self < &Duration::from_secs(1) {

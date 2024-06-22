@@ -5,7 +5,7 @@ pub fn identity_function<T>(object: T) -> T {
 }
 
 fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
-    if !GLOBAL_UCI_STATE.is_in_debug_mode() {
+    if !GLOBAL_TIMECAT_STATE.is_in_debug_mode() {
         return;
     }
     let mut to_print = if let Some(info_message) = info.into() {
@@ -17,14 +17,14 @@ fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
     } else {
         message.colorize(SUCCESS_MESSAGE_STYLE)
     };
-    if GLOBAL_UCI_STATE.is_in_uci_mode() {
+    if GLOBAL_TIMECAT_STATE.is_in_uci_mode() {
         to_print = format!("{} {to_print}", "info string".colorize(INFO_MESSAGE_STYLE))
     }
     println!("{to_print}");
 }
 
 #[derive(Debug)]
-pub struct GlobalUCIState {
+pub struct GlobalTimecatState {
     _terminate_engine: AtomicBool,
     #[cfg(feature = "colored_output")]
     _colored_output: AtomicBool,
@@ -38,15 +38,15 @@ pub struct GlobalUCIState {
     _chess960_mode: AtomicBool,
 }
 
-impl Default for GlobalUCIState {
+impl Default for GlobalTimecatState {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl GlobalUCIState {
+impl GlobalTimecatState {
     pub const fn new() -> Self {
-        GlobalUCIState {
+        GlobalTimecatState {
             _terminate_engine: AtomicBool::new(false),
             #[cfg(feature = "colored_output")]
             _colored_output: AtomicBool::new(true),
@@ -136,7 +136,7 @@ impl GlobalUCIState {
         //TODO: modify such that T Table and evaluation function takes same amount of space
         *self._t_table_size.write().unwrap() = size;
         transposition_table.reset_size();
-        if GLOBAL_UCI_STATE.is_in_debug_mode() {
+        if GLOBAL_TIMECAT_STATE.is_in_debug_mode() {
             transposition_table.print_info();
         }
         print_info(

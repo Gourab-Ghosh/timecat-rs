@@ -305,7 +305,7 @@ impl Default for UCIStateManager {
 
 fn get_uci_state_manager() -> Vec<UCIOption> {
     let t_table_size_uci = SpinValue::new(
-        GlobalUCIState::default().get_t_table_size(),
+        GlobalTimecatState::default().get_t_table_size(),
         CacheTableSize::Exact(1),
         CacheTableSize::Exact({
             let transposition_table_entry_size =
@@ -321,7 +321,7 @@ fn get_uci_state_manager() -> Vec<UCIOption> {
     );
 
     let move_overhead_uci = SpinValue::new(
-        GlobalUCIState::default().get_move_overhead(),
+        GlobalTimecatState::default().get_move_overhead(),
         Duration::from_secs(0),
         Duration::MAX,
     );
@@ -329,13 +329,13 @@ fn get_uci_state_manager() -> Vec<UCIOption> {
     let options = vec![
         UCIOption::new_spin(
             "Threads",
-            SpinValue::new(GlobalUCIState::default().get_num_threads(), 1, 1024),
-            |_, value| GLOBAL_UCI_STATE.set_num_threads(value as usize, true),
+            SpinValue::new(GlobalTimecatState::default().get_num_threads(), 1, 1024),
+            |_, value| GLOBAL_TIMECAT_STATE.set_num_threads(value as usize, true),
         )
         .alias("Thread"),
         UCIOption::new_spin("Hash", t_table_size_uci, {
             |engine, value| {
-                GLOBAL_UCI_STATE.set_t_table_size(
+                GLOBAL_TIMECAT_STATE.set_t_table_size(
                     engine.get_transposition_table(),
                     CacheTableSize::Exact(value as usize),
                 )
@@ -345,12 +345,12 @@ fn get_uci_state_manager() -> Vec<UCIOption> {
             clear_all_cache_tables(engine.get_transposition_table())
         }),
         UCIOption::new_spin("Move Overhead", move_overhead_uci, |_, value| {
-            GLOBAL_UCI_STATE.set_move_overhead(Duration::from_millis(value as u64))
+            GLOBAL_TIMECAT_STATE.set_move_overhead(Duration::from_millis(value as u64))
         }),
         // UCIOption::new_check(
         //     "OwnBook",
         //     DEFAULT_USE_OWN_BOOK,
-        //     GLOBAL_UCI_STATE.set_using_own_book,
+        //     GLOBAL_TIMECAT_STATE.set_using_own_book,
         // ),
     ];
     options

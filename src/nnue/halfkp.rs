@@ -208,25 +208,16 @@ pub struct HalfKPModel {
 impl HalfKPModel {
     pub fn index(&self, turn: Color, piece: Piece, mut square: Square) -> usize {
         let mut piece_color = piece.get_color();
-        let mut size = HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS;
-        let mut index = 0;
-        macro_rules! index {
-            ($index:expr; $total:expr) => {
-                size /= $total;
-                index += size * $index;
-            };
-        }
-
         let king = get_item_unchecked!(self.accumulator.king_squares_rotated, turn.to_index());
         if turn == Black {
             square = square.rotate();
             piece_color = !piece_color;
         }
-        index!(king.to_index(); NUM_SQUARES);
-        index!(piece.get_piece_type().to_index(); NUM_PIECE_TYPES - 1);
-        index!(piece_color.to_index(); NUM_COLORS);
-        index!(square.to_index(); NUM_SQUARES);
-        index
+        NUM_SQUARES
+            * (NUM_COLORS
+                * ((NUM_PIECE_TYPES - 1) * king.to_index() + piece.get_piece_type().to_index())
+                + piece_color.to_index())
+            + square.to_index()
     }
 
     pub fn activate_non_king_piece(&mut self, turn: Color, piece: Piece, square: Square) {

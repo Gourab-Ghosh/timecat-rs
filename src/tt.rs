@@ -206,12 +206,12 @@ impl TranspositionTable {
     }
 
     pub fn reset_size(&self) {
-        self.set_size(GLOBAL_UCI_STATE.get_t_table_size());
+        self.set_size(GLOBAL_TIMECAT_STATE.get_t_table_size());
     }
 }
 
 impl Default for TranspositionTable {
     fn default() -> Self {
-        Self::new(GLOBAL_UCI_STATE.get_t_table_size())
+        Self::new(GLOBAL_TIMECAT_STATE.get_t_table_size())
     }
 }

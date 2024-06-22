@@ -88,7 +88,7 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // let mut engine = Engine::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")?;
     // parse_command(engine, "go perft 6");
 
-    // GLOBAL_UCI_STATE.set_num_threads(2, true);
+    // GLOBAL_TIMECAT_STATE.set_num_threads(2, true);
     // engine.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88")?; // test if engine can find mate in 3
     // engine.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111")?; // test t_table -> nodes initially: 3203606
     // engine.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105")?; // gives incomplete pv line

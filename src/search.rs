@@ -44,7 +44,7 @@ impl SearchInfo {
 
     pub fn get_score(&self) -> Score {
         let mut score = self.score;
-        if GLOBAL_UCI_STATE.is_in_console_mode() {
+        if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             score = self.sub_board.score_flipped(score);
         }
         score
@@ -65,7 +65,7 @@ impl SearchInfo {
     }
 
     pub fn print_info(&self) {
-        let hashfull_string = if GLOBAL_UCI_STATE.is_in_console_mode() {
+        let hashfull_string = if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             format!("{:.2}%", self.hash_full)
         } else {
             (self.hash_full.round() as u8).to_string()
@@ -88,7 +88,7 @@ impl SearchInfo {
     }
 
     pub fn print_warning_message(&self, mut alpha: Score, mut beta: Score) {
-        if GLOBAL_UCI_STATE.is_in_console_mode() {
+        if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             alpha = self.sub_board.score_flipped(alpha);
             beta = self.sub_board.score_flipped(beta);
         }
@@ -293,7 +293,7 @@ impl Searcher {
         let enable_timer = depth > 1 && self.is_main_threaded();
         if self
             .timer
-            .check_stop(GLOBAL_UCI_STATE.get_move_overhead(), enable_timer)
+            .check_stop(GLOBAL_TIMECAT_STATE.get_move_overhead(), enable_timer)
         {
             return None;
         }
@@ -342,7 +342,7 @@ impl Searcher {
         }
         if !self
             .timer
-            .check_stop(GLOBAL_UCI_STATE.get_move_overhead(), enable_timer)
+            .check_stop(GLOBAL_TIMECAT_STATE.get_move_overhead(), enable_timer)
         {
             self.transposition_table
                 .write(key, depth, self.ply, alpha, flag, self.get_best_move());
@@ -430,7 +430,7 @@ impl Searcher {
         // enable_timer &= depth > 3;
         if self
             .timer
-            .check_stop(GLOBAL_UCI_STATE.get_move_overhead(), enable_timer)
+            .check_stop(GLOBAL_TIMECAT_STATE.get_move_overhead(), enable_timer)
         {
             return None;
         }
@@ -575,7 +575,7 @@ impl Searcher {
         }
         if !self
             .timer
-            .check_stop(GLOBAL_UCI_STATE.get_move_overhead(), enable_timer)
+            .check_stop(GLOBAL_TIMECAT_STATE.get_move_overhead(), enable_timer)
         {
             self.transposition_table.write(
                 key,
@@ -774,7 +774,7 @@ impl Searcher {
             }
             if self
                 .timer
-                .check_stop(GLOBAL_UCI_STATE.get_move_overhead(), true)
+                .check_stop(GLOBAL_TIMECAT_STATE.get_move_overhead(), true)
             {
                 break;
             }

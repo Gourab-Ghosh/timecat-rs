@@ -36,7 +36,7 @@ impl TimecatBuilder {
                 .nth(1)
                 .unwrap_or(&"")
                 .parse()
-                .unwrap_or(GlobalUCIState::default().get_num_threads());
+                .unwrap_or(GlobalTimecatState::default().get_num_threads());
             self.user_commands.push(UserCommand::SetUCIOption {
                 user_input: format!("setoption name Thread value {}", num_threads),
             });
@@ -97,7 +97,7 @@ impl Timecat {
                     println!("{}", error.stringify().colorize(ERROR_MESSAGE_STYLE))
                 });
         }
-        if GLOBAL_UCI_STATE.terminate_engine() {
+        if GLOBAL_TIMECAT_STATE.terminate_engine() {
             return;
         }
         print_engine_info(
@@ -116,8 +116,8 @@ impl Timecat {
 
     pub fn main_loop(&mut self) {
         loop {
-            if GLOBAL_UCI_STATE.terminate_engine() {
-                if GLOBAL_UCI_STATE.is_in_console_mode() {
+            if GLOBAL_TIMECAT_STATE.terminate_engine() {
+                if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
                     println!(
                         "{}",
                         "Program ended successfully!".colorize(SUCCESS_MESSAGE_STYLE)
@@ -125,7 +125,7 @@ impl Timecat {
                 }
                 break;
             }
-            let raw_input = if GLOBAL_UCI_STATE.is_in_console_mode() {
+            let raw_input = if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
                 println!();
                 let raw_input = get_input(
                     "Enter Command: ".colorize(INPUT_MESSAGE_STYLE),
@@ -148,7 +148,7 @@ impl Timecat {
     }
 
     pub fn uci_loop(&mut self) {
-        GLOBAL_UCI_STATE.set_to_uci_mode();
+        GLOBAL_TIMECAT_STATE.set_to_uci_mode();
         self.main_loop();
     }
 }

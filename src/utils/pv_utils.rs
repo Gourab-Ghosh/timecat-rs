@@ -59,11 +59,11 @@ pub fn get_pv_as_lan(sub_board: &SubBoard, pv: &[Option<Move>]) -> String {
 
 #[inline]
 pub fn get_pv_string(sub_board: &SubBoard, pv: &[Option<Move>]) -> String {
-    if GLOBAL_UCI_STATE.is_in_console_mode() {
+    if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
         get_pv_as_algebraic(
             sub_board,
             pv,
-            GLOBAL_UCI_STATE.use_long_algebraic_notation(),
+            GLOBAL_TIMECAT_STATE.use_long_algebraic_notation(),
         )
     } else {
         get_pv_as_uci(pv)

@@ -73,15 +73,15 @@ impl UserCommand {
         uci_state_manager: &UCIStateManager,
     ) -> Result<()> {
         match self {
-            Self::TerminateEngine => GLOBAL_UCI_STATE.set_engine_termination(true),
+            Self::TerminateEngine => GLOBAL_TIMECAT_STATE.set_engine_termination(true),
             Self::EngineVersion => print_engine_version(),
             #[cfg(feature = "debug")]
             Self::RunTest => test.run_and_print_time(engine)?,
-            &Self::ChangeToUCIMode { verbose } => GLOBAL_UCI_STATE.set_uci_mode(true, verbose),
+            &Self::ChangeToUCIMode { verbose } => GLOBAL_TIMECAT_STATE.set_uci_mode(true, verbose),
             &Self::ChangeToConsoleMode { verbose } => {
-                GLOBAL_UCI_STATE.set_console_mode(true, verbose)
+                GLOBAL_TIMECAT_STATE.set_console_mode(true, verbose)
             }
-            &Self::SetDebugMode(b) => GLOBAL_UCI_STATE.set_debug_mode(b),
+            &Self::SetDebugMode(b) => GLOBAL_TIMECAT_STATE.set_debug_mode(b),
             Self::PrintText(s) => println!("{s}"),
             Self::DisplayBoard => println!("{}", engine.get_board()),
             #[cfg(feature = "inbuilt_nnue")]
@@ -104,7 +104,7 @@ impl UserCommand {
             }
             Self::IsReady => println!("{}", "readyok".colorize(SUCCESS_MESSAGE_STYLE)),
             Self::Stop => {
-                if GLOBAL_UCI_STATE.is_in_console_mode() {
+                if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
                     return Err(EngineNotRunning);
                 }
             }
@@ -209,7 +209,7 @@ impl GoAndPerft {
     }
 
     fn run_perft_command(engine: &mut Engine, depth: Depth) -> Result<()> {
-        if GLOBAL_UCI_STATE.is_in_console_mode() {
+        if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
@@ -227,7 +227,7 @@ impl GoAndPerft {
     }
 
     fn run_go_command(engine: &mut Engine, go_command: GoCommand) -> Result<()> {
-        if GLOBAL_UCI_STATE.is_in_console_mode() {
+        if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
@@ -244,7 +244,7 @@ impl GoAndPerft {
             (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
         );
         let pv_string = get_pv_string(engine.get_board().get_sub_board(), response.get_pv());
-        if GLOBAL_UCI_STATE.is_in_console_mode() {
+        if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println!();
         }
         println_info("Score", response.get_score().stringify());
@@ -252,7 +252,7 @@ impl GoAndPerft {
         println_info("Position Count", position_count);
         println_info("Time", elapsed_time.stringify());
         println_info("Speed", nps);
-        if GLOBAL_UCI_STATE.is_in_console_mode() {
+        if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_info(
                 "Best Move",
                 best_move
@@ -336,7 +336,7 @@ impl Set {
             });
         };
         engine.set_fen(fen)?;
-        if GLOBAL_UCI_STATE.is_in_console_mode() {
+        if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println!("{}", engine.get_board());
         }
         Ok(())
@@ -344,10 +344,10 @@ impl Set {
 
     #[cfg(feature = "colored_output")]
     fn set_color(b: bool) -> Result<()> {
-        if GLOBAL_UCI_STATE.is_colored_output() == b {
+        if GLOBAL_TIMECAT_STATE.is_colored_output() == b {
             return Err(ColoredOutputUnchanged { b });
         }
-        GLOBAL_UCI_STATE.set_colored_output(b, true);
+        GLOBAL_TIMECAT_STATE.set_colored_output(b, true);
         Ok(())
     }
 }
@@ -517,7 +517,7 @@ impl Parser {
             ]),
             "ucimode" => UserCommand::UCIMode.into(),
             "console" | "consolemode" => {
-                if GLOBAL_UCI_STATE.is_in_console_mode() {
+                if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
                     Err(ConsoleModeUnchanged)
                 } else {
                     UserCommand::ChangeToConsoleMode { verbose: false }.into()

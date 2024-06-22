@@ -119,6 +119,7 @@ pub use std::hash::{Hash, Hasher};
 use std::io::{BufReader, Read, Seek};
 pub use std::iter::Sum;
 pub use std::num::ParseIntError;
+pub use std::num::Wrapping;
 pub use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Deref,
     DerefMut, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Not, Range, Rem, RemAssign,
@@ -141,4 +142,4 @@ pub use utils::*;
 // pub use std::hint;
 // pub use std::num;
 
-pub static GLOBAL_UCI_STATE: GlobalUCIState = GlobalUCIState::new();
+pub static GLOBAL_TIMECAT_STATE: GlobalTimecatState = GlobalTimecatState::new();
