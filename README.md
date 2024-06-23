@@ -149,12 +149,12 @@ fn main() {
 The `selfplay` command works on the binary as well.
 
 ## Cargo Features
-- `binary`: Enables binary builds, including NNUE and engine functionalities.
+- `binary`: Enables binary builds, including NNUE and engine functionalities. Note that certain optimizations are made in this feature resulting to which, some functions which are unnecessary for the binary doesn't work at all. So it is recommended not to use the binary feature when `timecat` is used as a library.
 - `nnue_reader`: Adds support for NNUE evaluation by reading nnue files.
 - `inbuilt_nnue`: Integrate built-in NNUE evaluation support by including the nnue file directly into the binary, fetched using the reqwest library.
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
 - `colored_output`: Displays all information in a visually appealing colored format for enhanced readability.
-- `speed`: Optimize the code to improve speed at the cost of increased memory usage and in extremely rare cases cause unexpected behavior. Note that the gain in speed might be minimal compared to the additional memory required.
+- `speed`: Optimize the code to improve speed by using unsafe rust. Note that the gain in speed might not be significant.
 - `serde`: Enables serialization and deserialization support via `serde`.
 - `debug`: Intended solely for development use.
 - `experimental`: Codes under development for upcoming features.

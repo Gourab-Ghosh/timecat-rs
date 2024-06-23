@@ -174,7 +174,10 @@ impl StringifyMove for Option<Move> {
 
     fn stringify_move(self, sub_board: &SubBoard) -> Result<String> {
         match GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-            true => self.algebraic(sub_board, GLOBAL_TIMECAT_STATE.use_long_algebraic_notation()),
+            true => self.algebraic(
+                sub_board,
+                GLOBAL_TIMECAT_STATE.use_long_algebraic_notation(),
+            ),
             false => Ok(self.uci()),
         }
     }

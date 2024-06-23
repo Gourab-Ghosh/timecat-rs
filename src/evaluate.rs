@@ -1,7 +1,7 @@
 use super::*;
 
 #[cfg(feature = "inbuilt_nnue")]
-pub static HALFKP_MODEL_READER: LazyStatic<HalfKPModelReader> = LazyStatic::new(|| {
+static HALFKP_MODEL_READER: LazyStatic<HalfKPModelReader> = LazyStatic::new(|| {
     let mut reader = std::io::Cursor::new(include_bytes!(concat!(
         env!("OUT_DIR"),
         "/nnue_dir/nn.nnue"

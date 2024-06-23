@@ -193,6 +193,10 @@ impl TranspositionTable {
         self.table.get_num_collisions()
     }
 
+    pub fn get_zero_hit(&self) -> usize {
+        self.table.get_zero_hit()
+    }
+
     pub fn get_hash_full(&self) -> f64 {
         self.table.get_hash_full()
     }

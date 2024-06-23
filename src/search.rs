@@ -10,6 +10,7 @@ pub struct SearchInfo {
     nodes: usize,
     hash_full: f64,
     overwrites: usize,
+    zero_hit: usize,
     collisions: usize,
     clock: Instant,
     pv: Vec<Option<Move>>,
@@ -26,6 +27,7 @@ impl SearchInfo {
             hash_full: searcher.get_hash_full(),
             overwrites: searcher.get_num_overwrites(),
             collisions: searcher.get_num_collisions(),
+            zero_hit: searcher.get_zero_hit(),
             clock: searcher.timer.get_clock(),
             pv: searcher.get_pv(),
         }
@@ -79,8 +81,12 @@ impl SearchInfo {
             Self::format_info("nodes", self.nodes),
             Self::format_info("nps", nps),
             Self::format_info("hashfull", hashfull_string),
+            #[cfg(not(feature = "binary"))]
             Self::format_info("overwrites", self.overwrites),
+            #[cfg(not(feature = "binary"))]
             Self::format_info("collisions", self.collisions),
+            #[cfg(not(feature = "binary"))]
+            Self::format_info("zero hit", self.zero_hit),
             Self::format_info("time", self.get_time_elapsed().stringify()),
             Self::format_info("pv", get_pv_string(&self.sub_board, &self.pv)),
         ];
@@ -655,6 +661,10 @@ impl Searcher {
 
     pub fn get_num_collisions(&self) -> usize {
         self.transposition_table.get_num_collisions()
+    }
+
+    pub fn get_zero_hit(&self) -> usize {
+        self.transposition_table.get_zero_hit()
     }
 
     pub fn get_pv(&self) -> Vec<Option<Move>> {

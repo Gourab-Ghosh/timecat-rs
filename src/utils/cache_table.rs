@@ -110,9 +110,12 @@ impl fmt::Display for CacheTableSize {
     }
 }
 
+#[cfg(not(feature = "binary"))]
 macro_rules! update_overwrites_and_collisions {
     ($self: ident, $e_hash: ident, $e_entry: ident, $hash: ident, $entry: ident) => {
-        if $e_hash != 0 {
+        if $e_hash == 0 {
+            $self.num_cells_filled.fetch_add(1, MEMORY_ORDERING);
+        } else {
             if $e_hash == $hash {
                 if $e_entry != $entry {
                     $self.num_overwrites.fetch_add(1, MEMORY_ORDERING);
@@ -134,6 +137,8 @@ pub struct CacheTable<T: Copy + Clone + PartialEq> {
     is_safe_to_do_bitwise_and: AtomicBool,
     num_overwrites: AtomicUsize,
     num_collisions: AtomicUsize,
+    num_cells_filled: AtomicUsize,
+    zero_hit: AtomicUsize,
 }
 
 impl<T: Copy + Clone + PartialEq> CacheTable<T> {
@@ -181,6 +186,8 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
             is_safe_to_do_bitwise_and: Default::default(),
             num_overwrites: AtomicUsize::new(0),
             num_collisions: AtomicUsize::new(0),
+            num_cells_filled: AtomicUsize::new(0),
+            zero_hit: AtomicUsize::new(0),
         };
         cache_table.reset_mask(&cache_table.table.read().unwrap());
         cache_table
@@ -207,24 +214,34 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
 
     #[inline]
     pub fn add(&self, hash: u64, entry: T) {
+        #[cfg(test)]
+        assert_ne!(hash, 0);
         let mut table = self.table.write().unwrap();
         let e = get_item_unchecked_mut!(table, self.get_index(hash));
+        #[cfg(not(feature = "binary"))]
         let e_hash = e.get_hash();
+        #[cfg(not(feature = "binary"))]
         let e_entry = e.get_entry();
         *e = CacheTableEntry { hash, entry };
         drop(table);
+        #[cfg(not(feature = "binary"))]
         update_overwrites_and_collisions!(self, e_hash, e_entry, hash, entry);
     }
 
     #[inline]
     pub fn replace_if<F: Fn(T) -> bool>(&self, hash: u64, entry: T, replace: F) {
+        #[cfg(test)]
+        assert_ne!(hash, 0);
         let mut table = self.table.write().unwrap();
         let e = get_item_unchecked_mut!(table, self.get_index(hash));
         if replace(e.entry) {
+            #[cfg(not(feature = "binary"))]
             let e_hash = e.get_hash();
+            #[cfg(not(feature = "binary"))]
             let e_entry = e.get_entry();
             *e = CacheTableEntry { hash, entry };
             drop(table);
+            #[cfg(not(feature = "binary"))]
             update_overwrites_and_collisions!(self, e_hash, e_entry, hash, entry);
         }
     }
@@ -236,6 +253,8 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
             .unwrap()
             .iter_mut()
             .for_each(|e| e.hash = 0);
+        self.num_cells_filled.store(0, MEMORY_ORDERING);
+        self.reset_variables()
     }
 
     #[inline]
@@ -252,6 +271,15 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
     pub fn get_num_collisions(&self) -> usize {
         self.num_collisions.load(MEMORY_ORDERING)
     }
+    #[inline]
+    pub fn get_num_cells_filled(&self) -> usize {
+        self.num_cells_filled.load(MEMORY_ORDERING)
+    }
+
+    #[inline]
+    pub fn get_zero_hit(&self) -> usize {
+        self.zero_hit.load(MEMORY_ORDERING)
+    }
 
     #[inline]
     pub fn reset_num_overwrites(&self) {
@@ -263,16 +291,26 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
         self.num_collisions.store(0, MEMORY_ORDERING);
     }
 
+    #[inline]
+    pub fn reset_num_cells_filled(&self) {
+        self.num_cells_filled.store(0, MEMORY_ORDERING);
+    }
+
+    #[inline]
+    pub fn reset_zero_hit(&self) {
+        self.zero_hit.store(0, MEMORY_ORDERING);
+    }
+
+    /// Variable needed to be reset per search
     pub fn reset_variables(&self) {
         self.reset_num_overwrites();
         self.reset_num_collisions();
+        self.reset_zero_hit();
     }
 
     #[inline]
     pub fn get_hash_full(&self) -> f64 {
-        let inner_table = self.table.read().unwrap();
-        (inner_table.iter().filter(|&&e| e.hash != 0).count() as f64 / inner_table.len() as f64)
-            * 100.0
+        (self.num_cells_filled.load(MEMORY_ORDERING) as f64 / self.len() as f64) * 100.0
     }
 
     #[inline]
@@ -282,7 +320,7 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
 
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.table.read().unwrap().iter().all(|&e| e.hash == 0)
+        self.get_num_cells_filled() == 0
     }
 
     #[inline]
@@ -316,6 +354,8 @@ impl<T: Copy + Clone + PartialEq> Clone for CacheTable<T> {
             ),
             num_overwrites: AtomicUsize::new(self.num_overwrites.load(MEMORY_ORDERING)),
             num_collisions: AtomicUsize::new(self.num_collisions.load(MEMORY_ORDERING)),
+            num_cells_filled: AtomicUsize::new(self.num_cells_filled.load(MEMORY_ORDERING)),
+            zero_hit: AtomicUsize::new(self.zero_hit.load(MEMORY_ORDERING)),
         }
     }
 }
