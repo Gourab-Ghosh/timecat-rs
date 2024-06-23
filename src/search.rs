@@ -67,6 +67,7 @@ impl SearchInfo {
     }
 
     pub fn print_info(&self) {
+        #[cfg(not(feature = "binary"))]
         let hashfull_string = if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             format!("{:.2}%", self.hash_full)
         } else {
@@ -80,6 +81,7 @@ impl SearchInfo {
             Self::format_info("score", self.get_score().stringify()),
             Self::format_info("nodes", self.nodes),
             Self::format_info("nps", nps),
+            #[cfg(not(feature = "binary"))]
             Self::format_info("hashfull", hashfull_string),
             #[cfg(not(feature = "binary"))]
             Self::format_info("overwrites", self.overwrites),
