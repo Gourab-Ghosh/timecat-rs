@@ -110,7 +110,7 @@ impl fmt::Display for CacheTableSize {
     }
 }
 
-#[cfg(not(feature = "binary"))]
+#[cfg(any(feature = "debug", not(feature = "binary")))]
 macro_rules! update_overwrites_and_collisions {
     ($self: ident, $e_hash: ident, $e_entry: ident, $hash: ident, $entry: ident) => {
         if $e_hash == 0 {
@@ -213,35 +213,33 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
     }
 
     #[inline]
-    pub fn add(&self, hash: u64, entry: T) {
-        #[cfg(test)]
-        assert_ne!(hash, 0);
+    pub fn add(&self, mut hash: u64, entry: T) {
+        hash = hash.max(1);
         let mut table = self.table.write().unwrap();
         let e = get_item_unchecked_mut!(table, self.get_index(hash));
-        #[cfg(not(feature = "binary"))]
+        #[cfg(any(feature = "debug", not(feature = "binary")))]
         let e_hash = e.get_hash();
-        #[cfg(not(feature = "binary"))]
+        #[cfg(any(feature = "debug", not(feature = "binary")))]
         let e_entry = e.get_entry();
         *e = CacheTableEntry { hash, entry };
         drop(table);
-        #[cfg(not(feature = "binary"))]
+        #[cfg(any(feature = "debug", not(feature = "binary")))]
         update_overwrites_and_collisions!(self, e_hash, e_entry, hash, entry);
     }
 
     #[inline]
-    pub fn replace_if<F: Fn(T) -> bool>(&self, hash: u64, entry: T, replace: F) {
-        #[cfg(test)]
-        assert_ne!(hash, 0);
+    pub fn replace_if<F: Fn(T) -> bool>(&self, mut hash: u64, entry: T, replace: F) {
+        hash = hash.max(1);
         let mut table = self.table.write().unwrap();
         let e = get_item_unchecked_mut!(table, self.get_index(hash));
         if replace(e.entry) {
-            #[cfg(not(feature = "binary"))]
+            #[cfg(any(feature = "debug", not(feature = "binary")))]
             let e_hash = e.get_hash();
-            #[cfg(not(feature = "binary"))]
+            #[cfg(any(feature = "debug", not(feature = "binary")))]
             let e_entry = e.get_entry();
             *e = CacheTableEntry { hash, entry };
             drop(table);
-            #[cfg(not(feature = "binary"))]
+            #[cfg(any(feature = "debug", not(feature = "binary")))]
             update_overwrites_and_collisions!(self, e_hash, e_entry, hash, entry);
         }
     }

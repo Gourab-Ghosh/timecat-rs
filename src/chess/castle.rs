@@ -82,6 +82,7 @@ impl CastleRights {
     /// Convert `usize` to `CastleRights`.  Panic if invalid number.
     #[inline]
     pub const fn from_index(i: usize) -> Self {
+        // TODO: Write a proper panic message.
         match i {
             0 => Self::None,
             1 => Self::KingSide,
@@ -124,6 +125,7 @@ impl CastleRights {
     /// Note: It is invalid to pass in a non-rook square.  The code may panic.
     #[inline]
     pub fn rook_square_to_castle_rights(square: Square) -> Self {
+        // TODO: Write a proper panic message.
         match square.get_file() {
             File::A => Self::QueenSide,
             File::H => Self::KingSide,

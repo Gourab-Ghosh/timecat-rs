@@ -406,7 +406,7 @@ impl Board {
         let optional_move = optional_move.into();
         let sub_board_copy = self.sub_board.clone();
         self.sub_board = if let Some(move_) = optional_move {
-            #[cfg(test)]
+            #[cfg(any(test, all(feature = "strict", not(feature = "speed"))))]
             assert!(self.is_legal(move_));
             self.sub_board.make_move_new(move_)
         } else {
@@ -416,8 +416,6 @@ impl Board {
         };
         self.repetition_table.insert(self.get_hash());
         self.stack.push((sub_board_copy, optional_move));
-        // #[cfg(feature = "inbuilt_nnue")]
-        // self.store_and_update_evaluator()
     }
 
     pub fn pop(&mut self) -> Option<Move> {

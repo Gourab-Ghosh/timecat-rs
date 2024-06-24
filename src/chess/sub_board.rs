@@ -395,7 +395,7 @@ impl SubBoard {
 
     #[inline]
     pub fn get_hash(&self) -> u64 {
-        (self._transposition_key
+        self._transposition_key
             ^ if let Some(ep) = self.ep_square() {
                 Zobrist::en_passant(ep.get_file(), !self.turn())
             } else {
@@ -413,8 +413,7 @@ impl SubBoard {
                 Zobrist::color()
             } else {
                 0
-            })
-        .max(1) // 0 is used for empty space in transposition table
+            }
     }
 
     #[inline]

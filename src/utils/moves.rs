@@ -17,8 +17,11 @@ impl Move {
 
     #[inline]
     pub const fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
-        #[cfg(any(not(feature = "binary"), test))]
-        assert!(source.to_int() != dest.to_int(), "Source and Destination cannot be same!");
+        #[cfg(feature = "strict")]
+        assert!(
+            source.to_int() != dest.to_int(),
+            "Source and Destination cannot be same!"
+        );
         Self {
             source,
             dest,

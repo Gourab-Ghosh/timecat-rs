@@ -25,14 +25,15 @@ def main():
     FEATURE_SETS_CHECK = [
         [],
         ["default"],
+        ["strict", "speed"],
         ["nnue_reader"],
         ["nnue_reader", "speed"],
         ["inbuilt_nnue"],
         ["inbuilt_nnue", "speed"],
         ["binary"],
-        ["binary", "speed"],
+        ["binary", "strict"],
         ["binary", "serde"],
-        ["binary", "speed", "serde"],
+        ["binary", "strict", "serde"],
     ]
 
     if sys.platform == "linux":

@@ -67,7 +67,7 @@ impl SearchInfo {
     }
 
     pub fn print_info(&self) {
-        #[cfg(not(feature = "binary"))]
+        #[cfg(feature = "debug")]
         let hashfull_string = if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             format!("{:.2}%", self.hash_full)
         } else {
@@ -81,13 +81,13 @@ impl SearchInfo {
             Self::format_info("score", self.get_score().stringify()),
             Self::format_info("nodes", self.nodes),
             Self::format_info("nps", nps),
-            #[cfg(not(feature = "binary"))]
+            #[cfg(any(feature = "debug", not(feature = "binary")))]
             Self::format_info("hashfull", hashfull_string),
-            #[cfg(not(feature = "binary"))]
+            #[cfg(feature = "debug")]
             Self::format_info("overwrites", self.overwrites),
-            #[cfg(not(feature = "binary"))]
+            #[cfg(feature = "debug")]
             Self::format_info("collisions", self.collisions),
-            #[cfg(not(feature = "binary"))]
+            #[cfg(feature = "debug")]
             Self::format_info("zero hit", self.zero_hit),
             Self::format_info("time", self.get_time_elapsed().stringify()),
             Self::format_info("pv", get_pv_string(&self.sub_board, &self.pv)),
