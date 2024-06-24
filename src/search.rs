@@ -36,6 +36,7 @@ impl SearchInfo {
     pub fn get_depth(&self) -> Depth {
         self.depth
     }
+
     pub fn get_pv(&self) -> &[Option<Move>] {
         self.pv.as_slice()
     }
