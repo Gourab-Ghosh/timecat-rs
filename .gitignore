@@ -1,6 +1,7 @@
 /target
 /build
 /.vscode
+/.idea
 **/__pycache__/
 perf*
 src/*.bak
