@@ -185,6 +185,13 @@ pub mod evaluate {
     pub const WINNING_SCORE_THRESHOLD: Score = 15 * PAWN_VALUE;
 }
 
+pub mod cache_table {
+    use super::*;
+
+    // pub const DEFAULT_HASH: NonZeroU64 = NonZeroU64::new(1).unwrap();
+    pub const DEFAULT_HASH: NonZeroU64 = unsafe { NonZeroU64::new_unchecked(1) };
+}
+
 #[cfg(feature = "engine")]
 pub mod engine {
     use super::*;

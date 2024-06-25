@@ -30,7 +30,7 @@ impl Evaluator {
     pub fn new(sub_board: &SubBoard) -> Self {
         Self {
             model: HALFKP_MODEL_READER.to_model(sub_board),
-            score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE, 0)),
+            score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE)),
         }
     }
 
@@ -42,7 +42,7 @@ impl Evaluator {
 
         Ok(Self {
             model,
-            score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE, 0)),
+            score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE)),
         })
     }
 
@@ -55,7 +55,7 @@ impl Evaluator {
 
         Ok(Self {
             model,
-            score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE, 0)),
+            score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE)),
         })
     }
 

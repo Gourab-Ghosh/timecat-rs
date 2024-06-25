@@ -2,24 +2,24 @@ use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct CacheTableEntry<T: Copy + Clone + PartialEq> {
-    hash: u64,
+pub struct CacheTableEntry<T> {
+    hash: NonZeroU64, // To save space in cache table
     entry: T,
 }
 
-impl<T: Copy + Clone + PartialEq> CacheTableEntry<T> {
+impl<T> CacheTableEntry<T> {
     #[inline]
-    pub const fn new(hash: u64, entry: T) -> CacheTableEntry<T> {
+    pub const fn new(hash: NonZeroU64, entry: T) -> CacheTableEntry<T> {
         CacheTableEntry { hash, entry }
     }
 
     #[inline]
-    pub const fn get_hash(self) -> u64 {
+    pub fn get_hash(self) -> NonZeroU64 {
         self.hash
     }
 
     #[inline]
-    pub const fn get_entry(self) -> T {
+    pub fn get_entry(self) -> T {
         self.entry
     }
 
@@ -69,11 +69,11 @@ impl CacheTableSize {
     }
 
     #[inline]
-    pub const fn get_entry_size<T: Copy + Clone + PartialEq>() -> usize {
-        std::mem::size_of::<CacheTableEntry<T>>()
+    pub const fn get_entry_size<T>() -> usize {
+        std::mem::size_of::<Option<CacheTableEntry<T>>>()
     }
 
-    pub fn to_cache_table_and_entry_size<T: Copy + Clone + PartialEq>(self) -> (usize, usize) {
+    pub fn to_cache_table_and_entry_size<T>(self) -> (usize, usize) {
         let mut size = self.unwrap();
         let entry_size = Self::get_entry_size::<T>();
         size *= 2_usize.pow(20);
@@ -93,12 +93,12 @@ impl CacheTableSize {
     }
 
     #[inline]
-    pub fn to_cache_table_size<T: Copy + Clone + PartialEq>(self) -> usize {
+    pub fn to_cache_table_size<T>(self) -> usize {
         self.to_cache_table_and_entry_size::<T>().0
     }
 
     #[inline]
-    pub fn to_cache_table_memory_size<T: Copy + Clone + PartialEq>(self) -> usize {
+    pub fn to_cache_table_memory_size<T>(self) -> usize {
         let (size, entry_size) = self.to_cache_table_and_entry_size::<T>();
         size * entry_size / 2_usize.pow(20)
     }
@@ -111,28 +111,27 @@ impl fmt::Display for CacheTableSize {
 }
 
 #[cfg(any(feature = "debug", not(feature = "binary")))]
-macro_rules! update_overwrites_and_collisions {
-    ($self: ident, $e_hash: ident, $e_entry: ident, $hash: ident, $entry: ident) => {
-        if $e_hash == 0 {
-            $self.num_cells_filled.fetch_add(1, MEMORY_ORDERING);
-        } else {
-            if $e_hash == $hash {
-                if $e_entry != $entry {
+macro_rules! update_variables {
+    ($self: ident, $e_copy: ident, $hash: ident, $entry: ident) => {
+        if let Some(e) = $e_copy {
+            if e.get_hash() == $hash {
+                if e.get_entry() != $entry {
                     $self.num_overwrites.fetch_add(1, MEMORY_ORDERING);
                 }
             } else {
                 $self.num_collisions.fetch_add(1, MEMORY_ORDERING);
             }
+        } else {
+            $self.num_cells_filled.fetch_add(1, MEMORY_ORDERING);
         }
     };
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
-pub struct CacheTable<T: Copy + Clone + PartialEq> {
-    table: RwLock<Box<[CacheTableEntry<T>]>>,
+pub struct CacheTable<T> {
+    table: RwLock<Box<[Option<CacheTableEntry<T>>]>>,
     size: RwLock<CacheTableSize>,
-    default: T,
     mask: AtomicUsize,
     is_safe_to_do_bitwise_and: AtomicBool,
     num_overwrites: AtomicUsize,
@@ -141,17 +140,10 @@ pub struct CacheTable<T: Copy + Clone + PartialEq> {
     zero_hit: AtomicUsize,
 }
 
-impl<T: Copy + Clone + PartialEq> CacheTable<T> {
+impl<T: Copy + PartialEq> CacheTable<T> {
     #[inline]
-    fn generate_table(size: CacheTableSize, default: T) -> Box<[CacheTableEntry<T>]> {
-        vec![
-            CacheTableEntry {
-                hash: 0,
-                entry: default
-            };
-            size.to_cache_table_size::<T>()
-        ]
-        .into_boxed_slice()
+    fn generate_table(size: CacheTableSize) -> Box<[Option<CacheTableEntry<T>>]> {
+        vec![None; size.to_cache_table_size::<T>()].into_boxed_slice()
     }
 
     #[inline]
@@ -160,7 +152,7 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
     }
 
     #[inline]
-    const fn get_mask(table: &[CacheTableEntry<T>]) -> usize {
+    const fn get_mask(table: &[Option<CacheTableEntry<T>>]) -> usize {
         if Self::is_safe_to_do_bitwise_and(table.len()) {
             table.len() - 1
         } else {
@@ -169,7 +161,7 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
     }
 
     #[inline]
-    fn reset_mask(&self, table: &[CacheTableEntry<T>]) {
+    fn reset_mask(&self, table: &[Option<CacheTableEntry<T>>]) {
         self.mask.store(Self::get_mask(table), MEMORY_ORDERING);
         self.is_safe_to_do_bitwise_and.store(
             Self::is_safe_to_do_bitwise_and(table.len()),
@@ -177,11 +169,10 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
         );
     }
 
-    pub fn new(size: CacheTableSize, default: T) -> CacheTable<T> {
+    pub fn new(size: CacheTableSize) -> CacheTable<T> {
         let cache_table = CacheTable {
-            table: RwLock::new(Self::generate_table(size, default)),
+            table: RwLock::new(Self::generate_table(size)),
             size: RwLock::new(size),
-            default,
             mask: Default::default(),
             is_safe_to_do_bitwise_and: Default::default(),
             num_overwrites: AtomicUsize::new(0),
@@ -204,7 +195,8 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
 
     #[inline]
     pub fn get(&self, hash: u64) -> Option<T> {
-        let entry = *get_item_unchecked!(self.table.read().unwrap(), self.get_index(hash));
+        let hash = NonZeroU64::new(hash).unwrap_or(DEFAULT_HASH);
+        let entry = (*get_item_unchecked!(self.table.read().unwrap(), self.get_index(hash.get())))?;
         if entry.hash == hash {
             Some(entry.entry)
         } else {
@@ -213,34 +205,35 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
     }
 
     #[inline]
-    pub fn add(&self, mut hash: u64, entry: T) {
-        hash = hash.max(1);
+    pub fn add(&self, hash: u64, entry: T) {
+        let hash = NonZeroU64::new(hash).unwrap_or(DEFAULT_HASH);
         let mut table = self.table.write().unwrap();
-        let e = get_item_unchecked_mut!(table, self.get_index(hash));
+        let e = get_item_unchecked_mut!(table, self.get_index(hash.get()));
         #[cfg(any(feature = "debug", not(feature = "binary")))]
-        let e_hash = e.get_hash();
-        #[cfg(any(feature = "debug", not(feature = "binary")))]
-        let e_entry = e.get_entry();
-        *e = CacheTableEntry { hash, entry };
+        let e_copy = *e;
+        *e = Some(CacheTableEntry { hash, entry });
         drop(table);
         #[cfg(any(feature = "debug", not(feature = "binary")))]
-        update_overwrites_and_collisions!(self, e_hash, e_entry, hash, entry);
+        update_variables!(self, e_copy, hash, entry);
     }
 
     #[inline]
-    pub fn replace_if<F: Fn(T) -> bool>(&self, mut hash: u64, entry: T, replace: F) {
-        hash = hash.max(1);
+    pub fn replace_if<F: Fn(T) -> bool>(&self, hash: u64, entry: T, replace: F) {
+        let hash = NonZeroU64::new(hash).unwrap_or(DEFAULT_HASH);
         let mut table = self.table.write().unwrap();
-        let e = get_item_unchecked_mut!(table, self.get_index(hash));
-        if replace(e.entry) {
+        let e = get_item_unchecked_mut!(table, self.get_index(hash.get()));
+        let to_replace = if let Some(entry) = e {
+            replace(entry.entry)
+        } else {
+            true
+        };
+        if to_replace {
             #[cfg(any(feature = "debug", not(feature = "binary")))]
-            let e_hash = e.get_hash();
-            #[cfg(any(feature = "debug", not(feature = "binary")))]
-            let e_entry = e.get_entry();
-            *e = CacheTableEntry { hash, entry };
+            let e_copy = *e;
+            *e = Some(CacheTableEntry { hash, entry });
             drop(table);
             #[cfg(any(feature = "debug", not(feature = "binary")))]
-            update_overwrites_and_collisions!(self, e_hash, e_entry, hash, entry);
+            update_variables!(self, e_copy, hash, entry);
         }
     }
 
@@ -250,13 +243,13 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
             .write()
             .unwrap()
             .iter_mut()
-            .for_each(|e| e.hash = 0);
+            .for_each(|e| *e = None);
         self.num_cells_filled.store(0, MEMORY_ORDERING);
         self.reset_variables()
     }
 
     #[inline]
-    pub const fn get_table(&self) -> &RwLock<Box<[CacheTableEntry<T>]>> {
+    pub const fn get_table(&self) -> &RwLock<Box<[Option<CacheTableEntry<T>>]>> {
         &self.table
     }
 
@@ -329,23 +322,22 @@ impl<T: Copy + Clone + PartialEq> CacheTable<T> {
     pub fn set_size(&self, size: CacheTableSize) {
         *self.size.write().unwrap() = size;
         let current_table_copy = self.table.read().unwrap().clone();
-        *self.table.write().unwrap() = Self::generate_table(size, self.default);
+        *self.table.write().unwrap() = Self::generate_table(size);
         self.reset_mask(&current_table_copy);
         self.reset_variables();
-        for &CacheTableEntry { hash, entry } in current_table_copy.iter() {
-            if hash != 0 {
-                self.add(hash, entry);
+        for &entry in current_table_copy.iter() {
+            if let Some(CacheTableEntry { hash, entry }) = entry {
+                self.add(hash.get(), entry);
             }
         }
     }
 }
 
-impl<T: Copy + Clone + PartialEq> Clone for CacheTable<T> {
+impl<T: Copy + PartialEq> Clone for CacheTable<T> {
     fn clone(&self) -> Self {
         CacheTable {
             table: RwLock::new(self.table.read().unwrap().clone()),
             size: RwLock::new(self.get_size()),
-            default: self.default,
             mask: AtomicUsize::new(self.mask.load(MEMORY_ORDERING)),
             is_safe_to_do_bitwise_and: AtomicBool::new(
                 self.is_safe_to_do_bitwise_and.load(MEMORY_ORDERING),

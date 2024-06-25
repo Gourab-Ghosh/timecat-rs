@@ -74,6 +74,7 @@ pub use binread::{BinRead, BinResult};
 pub use board::*;
 pub use chess::*;
 pub use constants::atomic::*;
+pub use constants::cache_table::*;
 pub use constants::bitboard_and_square::*;
 pub use constants::board::*;
 pub use constants::color::*;
@@ -116,10 +117,9 @@ pub use std::error::Error;
 pub use std::fmt::{self, Debug};
 pub use std::fs;
 pub use std::hash::{Hash, Hasher};
-use std::io::{BufReader, Read, Seek};
+pub use std::io::{BufReader, Read, Seek};
 pub use std::iter::Sum;
-pub use std::num::ParseIntError;
-pub use std::num::Wrapping;
+pub use std::num::{ParseIntError, NonZeroU64, Wrapping};
 pub use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Deref,
     DerefMut, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Not, Range, Rem, RemAssign,

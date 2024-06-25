@@ -88,7 +88,7 @@ impl TranspositionTable {
     }
 
     fn generate_new_table(cache_table_size: CacheTableSize) -> CacheTable<TranspositionTableEntry> {
-        CacheTable::new(cache_table_size, TranspositionTableEntry::default())
+        CacheTable::new(cache_table_size)
     }
 
     pub fn new(cache_table_size: CacheTableSize) -> Self {
@@ -180,8 +180,10 @@ impl TranspositionTable {
     }
 
     pub fn clear_best_moves(&self) {
-        for e in self.table.get_table().write().unwrap().iter_mut() {
-            e.get_entry_mut().set_best_move(None);
+        for entry in self.table.get_table().write().unwrap().iter_mut() {
+            if let Some(e) = entry {
+                e.get_entry_mut().set_best_move(None);
+            }
         }
     }
 
