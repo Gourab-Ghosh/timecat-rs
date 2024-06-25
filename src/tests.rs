@@ -80,7 +80,7 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // halfkp_model.activate_non_king_piece(White, WhitePawn, E4);
     // halfkp_model.activate_non_king_piece(Black, WhitePawn, E4);
     // println!("{:#?}", halfkp_model.evaluate(Black));
-    
+
     // println!("{}", Board::from_fen("8/8/8/8/7R/7K/k7/8 b - - 1 1")?);
 
     // parse_command(Engine::default(), "go perft 7");
@@ -109,7 +109,7 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // engine.set_fen("6k1/p2b1ppp/3r4/6q1/1p2Pb2/1N1B3P/PP2QPP1/4R1K1 w - - 1 33")?; // Missed tactics in 3 sec move
     // parse_command(engine, "go movetime 3000");
     parse_command(engine, "go depth 13");
-    
+
     // println!("{}", BitBoard::new(123456));
 
     // let mut all_optional_pieces = vec![None];
@@ -141,7 +141,7 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     //     moves_to_go: None,
     // };
     // engine.go(go_command, true);
-    
+
     // let path = "";
     // test_polyglot(path)?;
 
