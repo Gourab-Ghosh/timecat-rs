@@ -17,7 +17,7 @@ pub enum UserCommand {
     PrintText(String),
     DisplayBoard,
     #[cfg(feature = "inbuilt_nnue")]
-    EvaluateBoard,
+    DisplayBoardEvaluation,
     PrintUCIInfo,
     UCIMode,
     UCINewGame,
@@ -85,7 +85,7 @@ impl UserCommand {
             Self::PrintText(s) => println!("{s}"),
             Self::DisplayBoard => println!("{}", engine.get_board()),
             #[cfg(feature = "inbuilt_nnue")]
-            Self::EvaluateBoard => force_println_info(
+            Self::DisplayBoardEvaluation => force_println_info(
                 "Current Score",
                 engine.get_board_mut().evaluate().stringify(),
             ),
@@ -515,7 +515,13 @@ impl Parser {
                     _ => unreachable!(),
                 },
             ]),
-            "ucimode" => UserCommand::UCIMode.into(),
+            "ucimode" => {
+                if GLOBAL_TIMECAT_STATE.is_in_uci_mode() {
+                    Err(UCIModeUnchanged)
+                } else {
+                    UserCommand::ChangeToUCIMode { verbose: false }.into()
+                }
+            }
             "console" | "consolemode" => {
                 if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
                     Err(ConsoleModeUnchanged)
@@ -525,7 +531,7 @@ impl Parser {
             }
             "isready" => UserCommand::IsReady.into(),
             "d" => UserCommand::DisplayBoard.into(),
-            "eval" => UserCommand::EvaluateBoard.into(),
+            "eval" => UserCommand::DisplayBoardEvaluation.into(),
             "reset board" => UserCommand::SetFen(STARTING_POSITION_FEN.to_owned()).into(),
             "stop" => UserCommand::Stop.into(),
             "help" => UserCommand::Help.into(),

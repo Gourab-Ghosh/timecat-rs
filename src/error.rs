@@ -21,6 +21,7 @@ pub enum TimecatError {
     ColoredOutputUnchanged {
         b: bool,
     },
+    UCIModeUnchanged,
     ConsoleModeUnchanged,
     EmptyStack,
     BestMoveNotFound {
@@ -89,6 +90,7 @@ impl fmt::Display for TimecatError {
             InvalidDepth { depth } => write!(f, "Invalid depth {depth}! Please try again!"),
             IllegalMove { move_text, board_fen } => write!(f, "Illegal move {move_text} in position {board_fen}! Please try again!"),
             ColoredOutputUnchanged { b } => write!(f, "Colored output already set to {b}! Please try again!"),
+            UCIModeUnchanged => write!(f, "Already in UCI Mode! Please try again!"),
             ConsoleModeUnchanged => write!(f, "Already in Console Mode! Please try again!"),
             EmptyStack => write!(f, "Move Stack is empty, pop not possible! Please try again!"),
             BestMoveNotFound { fen } => write!(f, "Best move not found in position {fen}! Please try again!"),
