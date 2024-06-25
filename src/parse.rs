@@ -519,14 +519,14 @@ impl Parser {
                 if GLOBAL_TIMECAT_STATE.is_in_uci_mode() {
                     Err(UCIModeUnchanged)
                 } else {
-                    UserCommand::ChangeToUCIMode { verbose: false }.into()
+                    UserCommand::ChangeToUCIMode { verbose: true }.into()
                 }
             }
             "console" | "consolemode" => {
                 if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
                     Err(ConsoleModeUnchanged)
                 } else {
-                    UserCommand::ChangeToConsoleMode { verbose: false }.into()
+                    UserCommand::ChangeToConsoleMode { verbose: true }.into()
                 }
             }
             "isready" => UserCommand::IsReady.into(),

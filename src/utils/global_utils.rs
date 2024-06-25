@@ -105,15 +105,14 @@ impl GlobalTimecatState {
         self._console_mode.store(b, MEMORY_ORDERING);
         self._debug_mode.store(b, MEMORY_ORDERING);
         if verbose {
-            print_info("Console mode is set to", b);
+            force_println_info("Console mode is set to", b);
         }
     }
 
-    pub fn set_uci_mode(&self, mut b: bool, verbose: bool) {
-        b = !b;
-        self.set_console_mode(b, false);
+    pub fn set_uci_mode(&self, b: bool, verbose: bool) {
+        self.set_console_mode(!b, false);
         if verbose {
-            print_info("UCI mode is set to", b);
+            force_println_info("UCI mode is set to", b);
         }
     }
 

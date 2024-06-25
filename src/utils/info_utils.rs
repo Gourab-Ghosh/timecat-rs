@@ -11,7 +11,7 @@ pub fn format_info<T: fmt::Display>(desc: &str, info: T, add_info_string: bool) 
     } else {
         let mut formatted_info = format!("{desc} {info}",);
         if add_info_string {
-            formatted_info = "info string".colorize(INFO_MESSAGE_STYLE) + &formatted_info
+            formatted_info = "info string ".colorize(INFO_MESSAGE_STYLE) + &formatted_info
         }
         formatted_info
     }
