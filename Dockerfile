@@ -24,4 +24,5 @@ FROM debian:bullseye-slim
 COPY --from=builder /usr/local/cargo/bin/timecat /usr/local/bin/timecat
 
 # Set up runtime command
-CMD ["timecat", "--no-color", "--uci"]
+CMD ["timecat"]
+# CMD ["timecat", "--no-color", "--uci"]

@@ -41,6 +41,15 @@ cd timecat-rs
 RUSTFLAGS="-C target-cpu=native" cargo run --release
 ```
 
+### Compilation with Docker
+Clone the repository and compile with native optimizations:
+```bash
+git clone https://github.com/Gourab-Ghosh/timecat-rs.git
+cd timecat-rs
+sudo docker build -t timecat .
+sudo docker run -it --rm timecat
+```
+
 ## Usage as a Library
 
 ### Minimal Dependency Integration
