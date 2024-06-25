@@ -214,7 +214,8 @@ impl GlobalTimecatState {
 }
 
 #[cfg(feature = "engine")]
-pub fn clear_all_cache_tables(transposition_table: &TranspositionTable) {
+pub fn clear_all_cache_tables(transposition_table: &TranspositionTable, evaluator: &Evaluator) {
     transposition_table.clear();
+    evaluator.clear();
     print_info::<&str>("All hash tables are cleared!", None);
 }

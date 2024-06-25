@@ -342,7 +342,10 @@ fn get_uci_state_manager() -> Vec<UCIOption> {
             }
         }),
         UCIOption::new_button("Clear Hash", |engine| {
-            clear_all_cache_tables(engine.get_transposition_table())
+            clear_all_cache_tables(
+                engine.get_transposition_table(),
+                engine.get_board().get_evaluator(),
+            )
         }),
         UCIOption::new_spin("Move Overhead", move_overhead_uci, |_, value| {
             GLOBAL_TIMECAT_STATE.set_move_overhead(Duration::from_millis(value as u64))
