@@ -708,88 +708,29 @@ impl Searcher {
         SearchInfo::new(self)
     }
 
-    fn calculate_divider(&self) -> NumMoves {
-        (20 as NumMoves)
-            .checked_sub(self.board.get_fullmove_number() / 2)
-            .unwrap_or_default()
-            .max(5)
-    }
-
-    fn parse_timed_command(&self, command: GoCommand) -> GoCommand {
-        if let GoCommand::Timed {
-            wtime,
-            btime,
-            winc,
-            binc,
-            moves_to_go,
-        } = command
-        {
-            if self.board.generate_legal_moves().len() == 1 {
-                return GoCommand::Depth(1);
-            }
-            let (self_time, self_inc, opponent_time, _) = match self.board.turn() {
-                White => (wtime, winc, btime, binc),
-                Black => (btime, binc, wtime, winc),
-            };
-            let divider = moves_to_go.unwrap_or(self.calculate_divider());
-            let new_inc = self_inc
-                .checked_sub(Duration::from_secs(1))
-                .unwrap_or_default();
-            let self_time_advantage_bonus = self_time
-                .checked_sub(opponent_time + Duration::from_secs(10))
-                .unwrap_or_default()
-                / 4;
-            let opponent_time_advantage = opponent_time
-                .checked_sub(self_time)
-                .unwrap_or_default()
-                .min(self_time / 2);
-            // min time to save after making the move
-            let min_time_saving = (self_time / 2).min(Duration::from_secs(3));
-            let mut search_time = self_time
-                .checked_sub(opponent_time_advantage.max(min_time_saving))
-                .unwrap_or_default()
-                / divider as u32
-                + new_inc
-                + self_time_advantage_bonus;
-            search_time = search_time
-                .min(min_time_saving)
-                .min(Duration::from_secs(self.board.get_fullmove_number() as u64) / 2)
-                .max(Duration::from_millis(100));
-            return GoCommand::MoveTime(search_time);
-        }
-        panic!("Expected Timed Command!");
-    }
-
     pub fn go(&mut self, mut command: GoCommand, print_info: bool) {
-        if command.is_timed() {
-            command = self.parse_timed_command(command);
-        }
-        if let GoCommand::MoveTime(duration) = command {
-            self.timer.set_max_time(duration);
+        if self.board.generate_legal_moves().len() == 1 {
+            command = GoCommand::Depth(1);
+        } else if command.is_timed() || command.is_move_time() {
+            self.timer.parse_time_based_command(&self.board, command);
         }
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
         self.current_depth = 1;
         while self.current_depth < Depth::MAX {
-            let last_score = self.score;
-            self.score = self
-                .search(self.current_depth, alpha, beta, print_info)
-                .unwrap_or(self.score);
-            if self.is_main_threaded()
-                && self.score >= WINNING_SCORE_THRESHOLD
-                && self.timer.time_elapsed() > Duration::from_secs(1)
-            {
-                self.timer.update_max_time(Duration::from_secs(10));
-            }
-            let search_info = self.get_search_info();
-            if print_info && self.is_main_threaded() {
-                search_info.print_info();
-            }
             if self
                 .timer
                 .check_stop(GLOBAL_TIMECAT_STATE.get_move_overhead(), true)
             {
                 break;
+            }
+            let last_score = self.score;
+            self.score = self
+                .search(self.current_depth, alpha, beta, print_info)
+                .unwrap_or(self.score);
+            let search_info = self.get_search_info();
+            if print_info && self.is_main_threaded() {
+                search_info.print_info();
             }
             if self.score <= alpha || self.score >= beta {
                 if print_info && self.is_main_threaded() {
@@ -799,9 +740,11 @@ impl Searcher {
                 beta = INFINITY;
                 self.score = last_score;
                 continue;
+            } else if self.is_main_threaded() {
+                self.timer.update_max_time(self.current_depth, self.score);
             }
             let cutoff = if is_checkmate(self.score) {
-                10
+                5
             } else {
                 ASPIRATION_WINDOW_CUTOFF
             };

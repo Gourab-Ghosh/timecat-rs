@@ -44,12 +44,6 @@ impl Timer {
         self.stop_search = false;
     }
 
-    pub fn update_max_time(&mut self, duration: Duration) {
-        if self.max_time != Duration::MAX {
-            self.set_max_time(self.max_time.min(duration));
-        }
-    }
-
     pub fn get_clock(&self) -> Instant {
         self.start_instant
     }
@@ -81,6 +75,63 @@ impl Timer {
             return true;
         }
         self.is_time_up(move_overhead)
+    }
+
+    pub fn update_max_time(&mut self, depth: Depth, score: Score) {
+        if self.max_time != Duration::MAX
+            && depth >= 10
+            && score >= WINNING_SCORE_THRESHOLD
+            && self.time_elapsed() > Duration::from_secs(10)
+        {
+            self.stop_search = true;
+        }
+    }
+
+    #[cfg(feature = "engine")]
+    pub fn parse_time_based_command(&mut self, board: &Board, command: GoCommand) {
+        match command {
+            GoCommand::MoveTime(duration) => self.set_max_time(duration),
+            GoCommand::Timed {
+                wtime,
+                btime,
+                winc,
+                binc,
+                moves_to_go,
+            } => {
+                let (self_time, self_inc, opponent_time, _) = match board.turn() {
+                    White => (wtime, winc, btime, binc),
+                    Black => (btime, binc, wtime, winc),
+                };
+                let divider = moves_to_go.unwrap_or(
+                    (20 as NumMoves)
+                        .checked_sub(board.get_fullmove_number() / 2)
+                        .unwrap_or_default()
+                        .max(5),
+                );
+                let new_inc = self_inc
+                    .checked_sub(Duration::from_secs(1))
+                    .unwrap_or_default();
+                let self_time_advantage_bonus =
+                    self_time.checked_sub(opponent_time).unwrap_or_default();
+                let opponent_time_advantage =
+                    opponent_time.checked_sub(self_time).unwrap_or_default();
+                let mut search_time = self_time
+                    .checked_sub(opponent_time_advantage)
+                    .unwrap_or_default()
+                    / divider as u32
+                    + new_inc
+                    + self_time_advantage_bonus
+                        .checked_sub(Duration::from_secs(10))
+                        .unwrap_or_default()
+                        / 4;
+                search_time = search_time
+                    .max((self_time / 2).min(Duration::from_secs(3)))
+                    .min(Duration::from_secs(board.get_fullmove_number() as u64) / 2)
+                    .max(Duration::from_millis(100));
+                self.set_max_time(search_time);
+            }
+            _ => panic!("Expected Timed Command!"),
+        }
     }
 }
 
