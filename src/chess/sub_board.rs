@@ -581,6 +581,12 @@ impl SubBoard {
     }
 
     pub fn make_move_new(&self, move_: Move) -> Self {
+        if move_.is_null() {
+            return self
+                .null_move()
+                .expect("Trying to push null move while in check!");
+        }
+
         let mut result = self.clone();
 
         if result.is_zeroing(move_) {
