@@ -556,9 +556,14 @@ impl SubBoard {
         }
     }
 
-    pub fn generate_masked_legal_moves(&self, to_bitboard: BitBoard) -> MoveGenerator {
+    pub fn generate_masked_legal_moves(
+        &self,
+        _: BitBoard,
+        to_bitboard: BitBoard,
+    ) -> MoveGenerator {
         let mut moves = MoveGenerator::new_legal(self);
-        moves.set_iterator_mask(to_bitboard);
+        // moves.set_from_bitboard_iterator_mask(from_bitboard);
+        moves.set_to_bitboard_iterator_mask(to_bitboard);
         moves
     }
 
@@ -572,7 +577,7 @@ impl SubBoard {
         if let Some(ep_square) = self.ep_square() {
             targets ^= ep_square.to_bitboard()
         }
-        self.generate_masked_legal_moves(targets)
+        self.generate_masked_legal_moves(BB_ALL, targets)
     }
 
     #[inline]
