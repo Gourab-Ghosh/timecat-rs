@@ -441,7 +441,7 @@
 //     square_and_bitboard_array: MoveList,
 //     promotion_index: usize,
 //     from_bitboard_iterator_mask: BitBoard,
-//     to_bitboard_iterator_mask: BitBoard,
+//     iterator_mask: BitBoard,
 //     index: usize,
 // }
 
@@ -479,7 +479,7 @@
 //             square_and_bitboard_array: MoveGenerator::enumerate_moves(board),
 //             promotion_index: 0,
 //             from_bitboard_iterator_mask: BB_ALL,
-//             to_bitboard_iterator_mask: BB_ALL,
+//             iterator_mask: BB_ALL,
 //             index: 0,
 //         }
 //     }
@@ -541,16 +541,16 @@
 //         }
 //     }
 
-//     pub fn get_to_bitboard_iterator_mask(&self) -> BitBoard {
-//         self.to_bitboard_iterator_mask
+//     pub fn get_iterator_mask(&self) -> BitBoard {
+//         self.iterator_mask
 //     }
 
-//     pub fn set_to_bitboard_iterator_mask(&mut self, mask: BitBoard) {
+//     pub fn set_iterator_mask(&mut self, mask: BitBoard) {
 //         self.index = 0;
-//         if self.to_bitboard_iterator_mask == mask {
+//         if self.iterator_mask == mask {
 //             return;
 //         }
-//         self.to_bitboard_iterator_mask = mask;
+//         self.iterator_mask = mask;
 
 //         // the iterator portion of this struct relies on the invariant that
 //         // the bitboards at the beginning of the square_and_bitboard_array[] array are the only
@@ -561,7 +561,7 @@
 //         let mut i = 0;
 //         while i < self.square_and_bitboard_array.len()
 //             && !(get_item_unchecked!(self.square_and_bitboard_array, i).bitboard
-//                 & self.to_bitboard_iterator_mask)
+//                 & self.iterator_mask)
 //                 .is_empty()
 //         {
 //             i += 1;
@@ -571,7 +571,7 @@
 //         // that in i.  Then, increment i to point to a new unused slot.
 //         for j in (i + 1)..self.square_and_bitboard_array.len() {
 //             if !(get_item_unchecked!(self.square_and_bitboard_array, j).bitboard
-//                 & self.to_bitboard_iterator_mask)
+//                 & self.iterator_mask)
 //                 .is_empty()
 //             {
 //                 // unsafe { self.square_and_bitboard_array.swap_unchecked(i, j) };
@@ -636,17 +636,17 @@
 //         let mut result: usize = 0;
 
 //         if depth == 1 {
-//             iterable.set_to_bitboard_iterator_mask(targets);
+//             iterable.set_iterator_mask(targets);
 //             result += iterable.len();
-//             iterable.set_to_bitboard_iterator_mask(!targets);
+//             iterable.set_iterator_mask(!targets);
 //             result += iterable.len();
 //             result
 //         } else {
-//             iterable.set_to_bitboard_iterator_mask(targets);
+//             iterable.set_iterator_mask(targets);
 //             for x in &mut iterable {
 //                 result += MoveGenerator::perft_test(&board.make_move_new(x), depth - 1);
 //             }
-//             iterable.set_to_bitboard_iterator_mask(BB_ALL);
+//             iterable.set_iterator_mask(BB_ALL);
 //             for x in &mut iterable {
 //                 result += MoveGenerator::perft_test(&board.make_move_new(x), depth - 1);
 //             }
@@ -660,7 +660,7 @@
 //     //         .take_while(|square_and_bitboard| {
 //     //             self.from_bitboard_iterator_mask
 //     //                 .contains(square_and_bitboard.square)
-//     //                 && !(square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty()
+//     //                 && !(square_and_bitboard.bitboard & self.iterator_mask).is_empty()
 //     //         })
 //     //         .flat_map(move |square_and_bitboard| {
 //     //             let promotion_pieces = if square_and_bitboard.promotion {
@@ -672,7 +672,7 @@
 //     //                 vec![None]
 //     //             };
 //     //             promotion_pieces.into_iter().flat_map(move |promotion| {
-//     //                 (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).map(
+//     //                 (square_and_bitboard.bitboard & self.iterator_mask).map(
 //     //                     move |dest| {
 //     //                         Move::new_unchecked(square_and_bitboard.square, dest, promotion)
 //     //                     },
@@ -687,20 +687,20 @@
 //         let mut result = 0;
 //         for i in 0..self.square_and_bitboard_array.len() {
 //             let square_and_bitboard = get_item_unchecked!(self.square_and_bitboard_array, i);
-//             let bitboard_and_to_bitboard_iterator_mask =
-//                 square_and_bitboard.bitboard & self.to_bitboard_iterator_mask;
+//             let bitboard_and_iterator_mask =
+//                 square_and_bitboard.bitboard & self.iterator_mask;
 //             if !self
 //                 .from_bitboard_iterator_mask
 //                 .contains(square_and_bitboard.square)
-//                 || bitboard_and_to_bitboard_iterator_mask.is_empty()
+//                 || bitboard_and_iterator_mask.is_empty()
 //             {
 //                 break;
 //             }
 //             if square_and_bitboard.promotion {
-//                 result += (bitboard_and_to_bitboard_iterator_mask.popcnt() as usize)
+//                 result += (bitboard_and_iterator_mask.popcnt() as usize)
 //                     * NUM_PROMOTION_PIECES;
 //             } else {
-//                 result += bitboard_and_to_bitboard_iterator_mask.popcnt() as usize;
+//                 result += bitboard_and_iterator_mask.popcnt() as usize;
 //             }
 //         }
 //         result
@@ -726,12 +726,12 @@
 //         if !self
 //             .from_bitboard_iterator_mask
 //             .contains(square_and_bitboard.square)
-//             || (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty()
+//             || (square_and_bitboard.bitboard & self.iterator_mask).is_empty()
 //         {
 //             // are we done?
 //             None
 //         } else if square_and_bitboard.promotion {
-//             let dest = (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).to_square();
+//             let dest = (square_and_bitboard.bitboard & self.iterator_mask).to_square();
 
 //             // deal with potential promotions for this pawn
 //             let result = Move::new_unchecked(
@@ -743,17 +743,17 @@
 //             if self.promotion_index >= NUM_PROMOTION_PIECES {
 //                 square_and_bitboard.bitboard ^= dest.to_bitboard();
 //                 self.promotion_index = 0;
-//                 if (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty() {
+//                 if (square_and_bitboard.bitboard & self.iterator_mask).is_empty() {
 //                     self.index += 1;
 //                 }
 //             }
 //             Some(result)
 //         } else {
 //             // not a promotion move, so its a 'normal' move as far as this function is concerned
-//             let dest = (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).to_square();
+//             let dest = (square_and_bitboard.bitboard & self.iterator_mask).to_square();
 
 //             square_and_bitboard.bitboard ^= dest.to_bitboard();
-//             if (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty() {
+//             if (square_and_bitboard.bitboard & self.iterator_mask).is_empty() {
 //                 self.index += 1;
 //             }
 //             Some(Move::new_unchecked(square_and_bitboard.square, dest, None))
@@ -1203,7 +1203,7 @@ type MoveList = ArrayVec<SquareAndBitBoard, 18>;
 pub struct MoveGenerator {
     square_and_bitboard_array: MoveList,
     promotion_index: usize,
-    to_bitboard_iterator_mask: BitBoard,
+    iterator_mask: BitBoard,
     index: usize,
 }
 
@@ -1240,7 +1240,7 @@ impl MoveGenerator {
         MoveGenerator {
             square_and_bitboard_array: MoveGenerator::enumerate_moves(board),
             promotion_index: 0,
-            to_bitboard_iterator_mask: BB_ALL,
+            iterator_mask: BB_ALL,
             index: 0,
         }
     }
@@ -1262,16 +1262,16 @@ impl MoveGenerator {
         false
     }
 
-    pub fn get_to_bitboard_iterator_mask(&self) -> BitBoard {
-        self.to_bitboard_iterator_mask
+    pub fn get_iterator_mask(&self) -> BitBoard {
+        self.iterator_mask
     }
 
-    pub fn set_to_bitboard_iterator_mask(&mut self, mask: BitBoard) {
+    pub fn set_iterator_mask(&mut self, mask: BitBoard) {
         self.index = 0;
-        if self.to_bitboard_iterator_mask == mask {
+        if self.iterator_mask == mask {
             return;
         }
-        self.to_bitboard_iterator_mask = mask;
+        self.iterator_mask = mask;
 
         // the iterator portion of this struct relies on the invariant that
         // the bitboards at the beginning of the square_and_bitboard_array[] array are the only
@@ -1282,7 +1282,7 @@ impl MoveGenerator {
         let mut i = 0;
         while i < self.square_and_bitboard_array.len()
             && !(get_item_unchecked!(self.square_and_bitboard_array, i).bitboard
-                & self.to_bitboard_iterator_mask)
+                & self.iterator_mask)
                 .is_empty()
         {
             i += 1;
@@ -1292,7 +1292,7 @@ impl MoveGenerator {
         // that in i.  Then, increment i to point to a new unused slot.
         for j in (i + 1)..self.square_and_bitboard_array.len() {
             if !(get_item_unchecked!(self.square_and_bitboard_array, j).bitboard
-                & self.to_bitboard_iterator_mask)
+                & self.iterator_mask)
                 .is_empty()
             {
                 // unsafe { self.square_and_bitboard_array.swap_unchecked(i, j) };
@@ -1357,22 +1357,53 @@ impl MoveGenerator {
         let mut result: usize = 0;
 
         if depth == 1 {
-            iterable.set_to_bitboard_iterator_mask(targets);
+            iterable.set_iterator_mask(targets);
             result += iterable.len();
-            iterable.set_to_bitboard_iterator_mask(!targets);
+            iterable.set_iterator_mask(!targets);
             result += iterable.len();
             result
         } else {
-            iterable.set_to_bitboard_iterator_mask(targets);
+            iterable.set_iterator_mask(targets);
             for x in &mut iterable {
                 result += MoveGenerator::perft_test(&board.make_move_new(x), depth - 1);
             }
-            iterable.set_to_bitboard_iterator_mask(BB_ALL);
+            iterable.set_iterator_mask(BB_ALL);
             for x in &mut iterable {
                 result += MoveGenerator::perft_test(&board.make_move_new(x), depth - 1);
             }
             result
         }
+    }
+
+    // pub fn iter(&self) -> impl Iterator<Item = Move> + '_ {
+    //     self.square_and_bitboard_array
+    //         .iter()
+    //         .take_while(|square_and_bitboard| !(square_and_bitboard.bitboard & self.iterator_mask).is_empty())
+    //         .flat_map(move |square_and_bitboard| {
+    //             let promotion_pieces = if square_and_bitboard.promotion {
+    //                 PROMOTION_PIECES
+    //                     .into_iter()
+    //                     .map(|piece_type| Some(piece_type))
+    //                     .collect_vec()
+    //             } else {
+    //                 vec![None]
+    //             };
+    //             promotion_pieces.into_iter().flat_map(move |promotion| {
+    //                 (square_and_bitboard.bitboard & self.iterator_mask).map(
+    //                     move |dest| {
+    //                         Move::new_unchecked(square_and_bitboard.square, dest, promotion)
+    //                     },
+    //                 )
+    //             })
+    //         })
+    // }
+
+    pub fn contains(&self, move_: &Move) -> bool {
+        self.square_and_bitboard_array
+            .iter()
+            .find(|square_and_bitboard| square_and_bitboard.square == move_.get_source())
+            .map(|square_and_bitboard| square_and_bitboard.bitboard.contains(move_.get_dest()))
+            .is_some()
     }
 }
 
@@ -1381,17 +1412,17 @@ impl ExactSizeIterator for MoveGenerator {
         let mut result = 0;
         for i in 0..self.square_and_bitboard_array.len() {
             let square_and_bitboard = get_item_unchecked!(self.square_and_bitboard_array, i);
-            let bitboard_and_to_bitboard_iterator_mask =
-                square_and_bitboard.bitboard & self.to_bitboard_iterator_mask;
-            if bitboard_and_to_bitboard_iterator_mask.is_empty()
+            let bitboard_and_iterator_mask =
+                square_and_bitboard.bitboard & self.iterator_mask;
+            if bitboard_and_iterator_mask.is_empty()
             {
                 break;
             }
             if square_and_bitboard.promotion {
-                result += (bitboard_and_to_bitboard_iterator_mask.popcnt() as usize)
+                result += (bitboard_and_iterator_mask.popcnt() as usize)
                     * NUM_PROMOTION_PIECES;
             } else {
-                result += bitboard_and_to_bitboard_iterator_mask.popcnt() as usize;
+                result += bitboard_and_iterator_mask.popcnt() as usize;
             }
         }
         result
@@ -1414,12 +1445,12 @@ impl Iterator for MoveGenerator {
         let square_and_bitboard =
             get_item_unchecked_mut!(self.square_and_bitboard_array, self.index);
 
-        if (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty()
+        if (square_and_bitboard.bitboard & self.iterator_mask).is_empty()
         {
             // are we done?
             None
         } else if square_and_bitboard.promotion {
-            let dest = (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).to_square();
+            let dest = (square_and_bitboard.bitboard & self.iterator_mask).to_square();
 
             // deal with potential promotions for this pawn
             let result = Move::new_unchecked(
@@ -1431,17 +1462,17 @@ impl Iterator for MoveGenerator {
             if self.promotion_index >= NUM_PROMOTION_PIECES {
                 square_and_bitboard.bitboard ^= dest.to_bitboard();
                 self.promotion_index = 0;
-                if (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty() {
+                if (square_and_bitboard.bitboard & self.iterator_mask).is_empty() {
                     self.index += 1;
                 }
             }
             Some(result)
         } else {
             // not a promotion move, so its a 'normal' move as far as this function is concerned
-            let dest = (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).to_square();
+            let dest = (square_and_bitboard.bitboard & self.iterator_mask).to_square();
 
             square_and_bitboard.bitboard ^= dest.to_bitboard();
-            if (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty() {
+            if (square_and_bitboard.bitboard & self.iterator_mask).is_empty() {
                 self.index += 1;
             }
             Some(Move::new_unchecked(square_and_bitboard.square, dest, None))

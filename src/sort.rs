@@ -142,7 +142,7 @@ impl MoveSorter {
 
     fn get_least_attackers_move(square: Square, board: &SubBoard) -> Option<Move> {
         let mut capture_moves = MoveGenerator::new_legal(board);
-        capture_moves.set_to_bitboard_iterator_mask(square.to_bitboard());
+        capture_moves.set_iterator_mask(square.to_bitboard());
         capture_moves.next() // No need to find least attacker as the moves are already sorted
     }
 
