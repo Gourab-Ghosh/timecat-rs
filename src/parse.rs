@@ -358,14 +358,14 @@ impl Push {
     fn push_moves(engine: &mut Engine, commands: &[&str]) -> Result<()> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         for move_text in commands.iter().skip(2) {
-            let optional_move = match second_command.as_str() {
+            let move_ = match second_command.as_str() {
                 "san" | "sans" => engine.get_board().parse_san(move_text),
                 "lan" | "lans" => engine.get_board().parse_lan(move_text),
                 "uci" | "ucis" => engine.get_board().parse_uci(move_text),
                 "move" | "moves" => engine.get_board().parse_move(move_text),
                 _ => Err(UnknownCommand),
             }?;
-            engine.get_board_mut().push(optional_move)?;
+            engine.get_board_mut().push(move_)?;
             println_info("Pushed move", move_text);
         }
         Ok(())

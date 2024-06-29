@@ -42,18 +42,21 @@ def main():
 
     if which("cargo") is None:
         print("Cargo not found. Please install Rust from https://www.rust-lang.org/tools/install")
-        sys.exit(1)
+        return
 
     args, binary_args = process_args()
 
     if "check" in args:
-        check_errors(FEATURE_SETS_CHECK)
+        if check_errors(FEATURE_SETS_CHECK):
+            return
 
     if "test" in args:
-        test_package("--release" in args)
+        if test_package("--release" in args):
+            return
 
     if "build" in args:
-        os.system(f"{RUST_FLAGS_STRING} cargo build --release")
+        if os.system(f"{RUST_FLAGS_STRING} cargo build --release"):
+            return
 
     if "run" in args:
         run_package(os.path.dirname(__file__), args = args, binary_args = binary_args)

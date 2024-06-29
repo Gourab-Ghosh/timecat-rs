@@ -137,7 +137,7 @@ impl TranspositionTable {
         ply: Ply,
         mut score: Score,
         flag: EntryFlag,
-        best_move: impl Into<Option<Move>>,
+        best_move: Option<Move>,
     ) {
         // TODO: Logic Wrong Here
         let save_score = !is_checkmate(score);
@@ -168,9 +168,7 @@ impl TranspositionTable {
             key,
             TranspositionTableEntry::new(
                 optional_data,
-                best_move
-                    .into()
-                    .or(old_optional_entry.and_then(|entry| entry.get_best_move())),
+                best_move.or(old_optional_entry.and_then(|entry| entry.get_best_move())),
             ),
         );
     }

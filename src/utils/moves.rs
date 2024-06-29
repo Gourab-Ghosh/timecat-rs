@@ -9,7 +9,8 @@ pub struct Move {
 }
 
 impl Move {
-    pub const NULL_MOVE: Self = Self {
+    #[allow(non_upper_case_globals)]
+    pub const NullMove: Self = Self {
         source: A1,
         dest: A1,
         promotion: None,
@@ -37,34 +38,34 @@ impl Move {
     }
 
     pub fn is_null(&self) -> bool {
-        *self == Self::NULL_MOVE
+        *self == Self::NullMove
     }
 
-    pub fn from_san(sub_board: &SubBoard, san: &str) -> Result<Option<Self>> {
+    pub fn from_san(sub_board: &SubBoard, san: &str) -> Result<Self> {
         // TODO: Make the logic better
         let san = san.trim().replace('0', "O");
         if san == "--" {
-            return Ok(None);
+            return Ok(Move::NullMove);
         }
         let san = san.replace('0', "O");
         for move_ in sub_board.generate_legal_moves() {
             if move_.san(sub_board).unwrap() == san {
-                return Ok(Some(move_));
+                return Ok(move_);
             }
         }
         Err(TimecatError::InvalidSanMoveString { s: san.to_string() })
     }
 
-    pub fn from_lan(sub_board: &SubBoard, lan: &str) -> Result<Option<Self>> {
+    pub fn from_lan(sub_board: &SubBoard, lan: &str) -> Result<Self> {
         // TODO: Make the logic better
         let lan = lan.trim().replace('0', "O");
         if lan == "--" {
-            return Ok(None);
+            return Ok(Move::NullMove);
         }
         let lan = lan.replace('0', "O");
         for move_ in sub_board.generate_legal_moves() {
             if move_.lan(sub_board).unwrap() == lan {
-                return Ok(Some(move_));
+                return Ok(move_);
             }
         }
         Err(TimecatError::InvalidLanMoveString { s: lan.to_string() })
@@ -201,7 +202,7 @@ impl Move {
 
 impl Default for Move {
     fn default() -> Self {
-        Self::NULL_MOVE
+        Self::NullMove
     }
 }
 

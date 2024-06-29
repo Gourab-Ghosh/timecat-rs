@@ -85,10 +85,12 @@ impl Evaluator {
             } else {
                 [Square::A1, Square::H8]
             };
-            probable_least_distant_corner = Some(*least_distant_corners
-                .iter()
-                .min_by_key(|&&corner_square| corner_square.distance(losing_side_king_square))
-                .unwrap());
+            probable_least_distant_corner = Some(
+                *least_distant_corners
+                    .iter()
+                    .min_by_key(|&&corner_square| corner_square.distance(losing_side_king_square))
+                    .unwrap(),
+            );
         } else {
             for (bb, &corner_square) in BOARD_QUARTER_MASKS
                 .iter()

@@ -1,11 +1,11 @@
 use timecat::*;
 
-fn check_evaluation(board: &mut Board, depth: u8) -> std::result::Result<(), Vec<Option<Move>>> {
+fn check_evaluation(board: &mut Board, depth: u8) -> std::result::Result<(), Vec<Move>> {
     if depth == 0 {
         return Ok(());
     }
     for move_ in board.generate_legal_moves() {
-        board.push(move_);
+        board.push_unchecked(move_);
         let sub_board = board.get_sub_board().to_owned();
         if board
             .get_evaluator_mut()

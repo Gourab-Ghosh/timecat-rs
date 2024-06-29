@@ -218,7 +218,8 @@ fn move_of(m: &str) -> Move {
         Square::from_str(&m[..2]).unwrap(),
         Square::from_str(&m[2..4]).unwrap(),
         promo,
-    ).unwrap()
+    )
+    .unwrap()
 }
 
 #[test]

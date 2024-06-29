@@ -54,30 +54,37 @@ pub struct GoResponse {
 }
 
 impl GoResponse {
+    #[inline]
     fn new(search_info: SearchInfo) -> Self {
         Self { search_info }
     }
 
+    #[inline]
     pub fn search_info(&self) -> &SearchInfo {
         &self.search_info
     }
 
-    pub fn get_pv(&self) -> &[Option<Move>] {
+    #[inline]
+    pub fn get_pv(&self) -> &[Move] {
         self.search_info.get_pv()
     }
 
+    #[inline]
     pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
-        self.search_info.get_pv().get(n).copied().flatten()
+        self.search_info.get_pv().get(n).copied()
     }
 
+    #[inline]
     pub fn get_best_move(&self) -> Option<Move> {
         self.get_nth_pv_move(0)
     }
 
+    #[inline]
     pub fn get_ponder_move(&self) -> Option<Move> {
         self.get_nth_pv_move(1)
     }
 
+    #[inline]
     pub fn get_score(&self) -> Score {
         self.search_info.get_score()
     }
@@ -226,7 +233,7 @@ impl Engine {
         }
         let mut search_info = main_thread_searcher.get_search_info();
         if search_info.get_pv().is_empty() && self.board.status() == BoardStatus::Ongoing {
-            search_info.set_pv(&[self.board.generate_legal_moves().next()]);
+            search_info.set_pv(&[self.board.generate_legal_moves().next().unwrap()]);
         }
         GoResponse::new(search_info)
     }

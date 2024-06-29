@@ -13,7 +13,7 @@ pub struct SearchInfo {
     zero_hit: usize,
     collisions: usize,
     clock: Instant,
-    pv: Vec<Option<Move>>,
+    pv: Vec<Move>,
 }
 
 impl SearchInfo {
@@ -37,11 +37,11 @@ impl SearchInfo {
         self.depth
     }
 
-    pub fn get_pv(&self) -> &[Option<Move>] {
+    pub fn get_pv(&self) -> &[Move] {
         self.pv.as_slice()
     }
 
-    pub fn set_pv(&mut self, pv: &[Option<Move>]) {
+    pub fn set_pv(&mut self, pv: &[Move]) {
         self.pv = pv.to_vec();
     }
 
@@ -116,19 +116,19 @@ impl SearchInfo {
 #[derive(Clone, Debug)]
 pub struct PVTable {
     length: [usize; MAX_PLY],
-    table: [[Option<Move>; MAX_PLY]; MAX_PLY],
+    table: [[Move; MAX_PLY]; MAX_PLY],
 }
 
 impl PVTable {
     pub fn new() -> Self {
         Self {
             length: [0; MAX_PLY],
-            table: [[None; MAX_PLY]; MAX_PLY],
+            table: [[Move::NullMove; MAX_PLY]; MAX_PLY],
         }
     }
 
     #[allow(unused_unsafe)]
-    pub fn get_pv(&self, ply: Ply) -> &[Option<Move>] {
+    pub fn get_pv(&self, ply: Ply) -> &[Move] {
         get_item_unchecked!(
             self.table,
             ply,
@@ -137,7 +137,7 @@ impl PVTable {
     }
 
     pub fn update_table(&mut self, ply: Ply, move_: Move) {
-        *get_item_unchecked_mut!(self.table, ply, ply) = Some(move_);
+        *get_item_unchecked_mut!(self.table, ply, ply) = move_;
         for next_ply in (ply + 1)..*get_item_unchecked!(self.length, ply + 1) {
             *get_item_unchecked_mut!(self.table, ply, next_ply) =
                 *get_item_unchecked!(self.table, ply + 1, next_ply);
@@ -209,12 +209,12 @@ impl Searcher {
         self.id == 0
     }
 
-    fn push_unchecked(&mut self, optional_move: impl Into<Option<Move>>) {
-        self.board.push_unchecked(optional_move);
+    fn push_unchecked(&mut self, move_: Move) {
+        self.board.push_unchecked(move_);
         self.ply += 1;
     }
 
-    fn pop(&mut self) -> Option<Move> {
+    fn pop(&mut self) -> Move {
         self.ply -= 1;
         self.board.pop()
     }
@@ -343,8 +343,14 @@ impl Searcher {
                 alpha = score;
                 self.pv_table.update_table(self.ply, move_);
                 if score >= beta {
-                    self.transposition_table
-                        .write(key, depth, self.ply, beta, HashBeta, move_);
+                    self.transposition_table.write(
+                        key,
+                        depth,
+                        self.ply,
+                        beta,
+                        HashBeta,
+                        Some(move_),
+                    );
                     return Some(beta);
                 }
             }
@@ -469,7 +475,7 @@ impl Searcher {
                 // let reduced_depth = depth - r - 1;
                 let r = 1920 + (depth as i32) * 2368;
                 let reduced_depth = (((depth as u32) * 4096 - (r as u32)) / 4096) as Depth;
-                self.push_unchecked(None);
+                self.push_unchecked(Move::NullMove);
                 let score = -self.alpha_beta(reduced_depth, -beta, -beta + 1, enable_timer)?;
                 self.pop();
                 if score >= beta {
@@ -573,8 +579,14 @@ impl Searcher {
                     self.move_sorter.add_history_move(move_, &self.board, depth);
                 }
                 if score >= beta {
-                    self.transposition_table
-                        .write(key, depth, self.ply, beta, HashBeta, move_);
+                    self.transposition_table.write(
+                        key,
+                        depth,
+                        self.ply,
+                        beta,
+                        HashBeta,
+                        Some(move_),
+                    );
                     if not_capture_move {
                         self.move_sorter.update_killer_moves(move_, self.ply);
                     }
@@ -624,7 +636,7 @@ impl Searcher {
             if weight.is_negative() {
                 break;
             }
-            self.push_unchecked(Some(move_));
+            self.push_unchecked(move_);
             let score = -self.quiescence(-beta, -alpha);
             self.pop();
             if score >= beta {
@@ -670,12 +682,12 @@ impl Searcher {
         self.transposition_table.get_zero_hit()
     }
 
-    pub fn get_pv(&self) -> Vec<Option<Move>> {
+    pub fn get_pv(&self) -> Vec<Move> {
         let pv = self.pv_table.get_pv(0).to_vec();
         pv
     }
 
-    pub fn get_pv_from_t_table(&self) -> Vec<Option<Move>> {
+    pub fn get_pv_from_t_table(&self) -> Vec<Move> {
         extract_pv_from_t_table(&self.initial_sub_board, &self.transposition_table)
             .into_iter()
             .map_into()
@@ -683,9 +695,7 @@ impl Searcher {
     }
 
     pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
-        let pv = self.pv_table.get_pv(0);
-        let nth_move = pv.get(n).copied().flatten();
-        nth_move
+        self.pv_table.get_pv(0).get(n).copied()
     }
 
     pub fn get_best_move(&self) -> Option<Move> {

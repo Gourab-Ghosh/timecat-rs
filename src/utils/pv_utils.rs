@@ -16,7 +16,7 @@ pub fn extract_pv_from_t_table(
     pv
 }
 
-pub fn get_pv_as_uci(pv: &[Option<Move>]) -> String {
+pub fn get_pv_as_uci(pv: &[Move]) -> String {
     let mut pv_string = String::new();
     for move_ in pv {
         pv_string += &(move_.uci() + " ");
@@ -24,41 +24,33 @@ pub fn get_pv_as_uci(pv: &[Option<Move>]) -> String {
     return pv_string.trim().to_string();
 }
 
-pub fn get_pv_as_algebraic(sub_board: &SubBoard, pv: &[Option<Move>], long: bool) -> String {
+pub fn get_pv_as_algebraic(sub_board: &SubBoard, pv: &[Move], long: bool) -> String {
     let mut sub_board = sub_board.clone();
     let mut pv_string = String::new();
-    for &optional_move in pv {
-        let is_legal_move = if let Some(optional_move) = optional_move {
-            sub_board.is_legal(optional_move)
-        } else {
-            false
-        };
-        pv_string += &(if is_legal_move {
-            let (san, new_sub_board) = optional_move
-                .unwrap()
-                .algebraic_and_new_sub_board(&sub_board, long)
-                .unwrap();
+    for &move_ in pv {
+        pv_string += &(if sub_board.is_legal(move_) {
+            let (san, new_sub_board) = move_.algebraic_and_new_sub_board(&sub_board, long).unwrap();
             sub_board = new_sub_board;
             san
         } else {
-            optional_move.uci().colorize(ERROR_MESSAGE_STYLE)
+            move_.uci().colorize(ERROR_MESSAGE_STYLE)
         } + " ");
     }
     return pv_string.trim().to_string();
 }
 
 #[inline]
-pub fn get_pv_as_san(sub_board: &SubBoard, pv: &[Option<Move>]) -> String {
+pub fn get_pv_as_san(sub_board: &SubBoard, pv: &[Move]) -> String {
     get_pv_as_algebraic(sub_board, pv, false)
 }
 
 #[inline]
-pub fn get_pv_as_lan(sub_board: &SubBoard, pv: &[Option<Move>]) -> String {
+pub fn get_pv_as_lan(sub_board: &SubBoard, pv: &[Move]) -> String {
     get_pv_as_algebraic(sub_board, pv, true)
 }
 
 #[inline]
-pub fn get_pv_string(sub_board: &SubBoard, pv: &[Option<Move>]) -> String {
+pub fn get_pv_string(sub_board: &SubBoard, pv: &[Move]) -> String {
     if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
         get_pv_as_algebraic(
             sub_board,

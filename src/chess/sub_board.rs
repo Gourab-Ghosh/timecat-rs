@@ -577,7 +577,7 @@ impl SubBoard {
 
     #[inline]
     pub fn is_legal(&self, move_: Move) -> bool {
-        self.generate_legal_moves().contains(&move_)
+        !move_.is_null() && self.generate_legal_moves().contains(&move_)
     }
 
     pub fn make_move_new(&self, move_: Move) -> Self {
@@ -837,7 +837,7 @@ impl SubBoard {
         EMPTY_SPACE_UNICODE_SYMBOL.to_string()
     }
 
-    pub fn to_board_string(&self, last_move: Option<Move>, use_unicode: bool) -> String {
+    pub fn to_board_string(&self, last_move: Move, use_unicode: bool) -> String {
         let mut skeleton = get_board_skeleton();
         let checkers = self.get_checkers();
         let king_square = self.get_king_square(self.turn());
@@ -857,12 +857,8 @@ impl SubBoard {
                     styles.extend_from_slice(CHECK_STYLE);
                 }
             }
-            if last_move.is_some()
-                && [
-                    last_move.unwrap().get_source(),
-                    last_move.unwrap().get_dest(),
-                ]
-                .contains(&square)
+            if !last_move.is_null()
+                && [last_move.get_source(), last_move.get_dest()].contains(&square)
             {
                 styles.extend_from_slice(LAST_MOVE_HIGHLIGHT_STYLE);
             }
@@ -892,7 +888,7 @@ impl SubBoard {
     }
 
     #[inline]
-    pub fn to_unicode_string(&self, last_move: Option<Move>) -> String {
+    pub fn to_unicode_string(&self, last_move: Move) -> String {
         self.to_board_string(last_move, true)
     }
 
@@ -988,24 +984,24 @@ impl SubBoard {
         }
     }
 
-    pub fn parse_san(&self, san: &str) -> Result<Option<Move>> {
+    pub fn parse_san(&self, san: &str) -> Result<Move> {
         Move::from_san(self, san)
     }
 
-    pub fn parse_lan(&self, lan: &str) -> Result<Option<Move>> {
+    pub fn parse_lan(&self, lan: &str) -> Result<Move> {
         Move::from_lan(self, lan)
     }
 
     #[inline]
-    pub fn parse_uci(&self, uci: &str) -> Result<Option<Move>> {
+    pub fn parse_uci(&self, uci: &str) -> Result<Move> {
         if uci == "0000" {
-            return Ok(None);
+            return Ok(Move::NullMove);
         }
-        Ok(Some(Move::from_str(uci)?))
+        Move::from_str(uci)
     }
 
     #[inline]
-    pub fn parse_move(&self, move_text: &str) -> Result<Option<Move>> {
+    pub fn parse_move(&self, move_text: &str) -> Result<Move> {
         self.parse_uci(move_text)
             .or(self.parse_san(move_text))
             .or(self.parse_lan(move_text))

@@ -81,7 +81,7 @@ impl FromIterator<WeightedMove> for WeightedMoveListSorter {
 
 #[derive(Debug, Clone)]
 pub struct MoveSorter {
-    killer_moves: [[Option<Move>; NUM_KILLER_MOVES]; MAX_PLY],
+    killer_moves: [[Move; NUM_KILLER_MOVES]; MAX_PLY],
     // TODO: change this into 64 x 12 array
     history_move_scores: [[[MoveWeight; 64]; 2]; 6],
     follow_pv: bool,
@@ -96,7 +96,7 @@ impl MoveSorter {
     pub fn reset_variables(&mut self) {
         for ply in 0..MAX_PLY {
             for idx in 0..NUM_KILLER_MOVES {
-                *get_item_unchecked_mut!(self.killer_moves, ply, idx) = None;
+                *get_item_unchecked_mut!(self.killer_moves, ply, idx) = Move::NullMove;
             }
         }
         self.history_move_scores = [[[0; 64]; 2]; 6];
@@ -107,11 +107,11 @@ impl MoveSorter {
     pub fn update_killer_moves(&mut self, killer_move: Move, ply: Ply) {
         let arr = get_item_unchecked_mut!(self.killer_moves, ply);
         arr.rotate_right(1);
-        *get_item_unchecked_mut!(arr, 0) = Some(killer_move);
+        *get_item_unchecked_mut!(arr, 0) = killer_move;
     }
 
     pub fn is_killer_move(&self, move_: Move, ply: Ply) -> bool {
-        get_item_unchecked!(self.killer_moves, ply).contains(&Some(move_))
+        get_item_unchecked!(self.killer_moves, ply).contains(&move_)
     }
 
     pub fn add_history_move(&mut self, history_move: Move, board: &Board, depth: Depth) {
@@ -236,11 +236,11 @@ impl MoveSorter {
         if board.is_capture(move_) {
             return 126000000 + Self::score_capture(move_, None, board);
         }
-        for (idx, &optional_move) in get_item_unchecked!(self.killer_moves, ply)
+        for (idx, &stored_move) in get_item_unchecked!(self.killer_moves, ply)
             .iter()
             .enumerate()
         {
-            if optional_move == Some(move_) {
+            if stored_move == move_ {
                 return 125000000 - idx as MoveWeight;
             }
         }
@@ -287,20 +287,18 @@ impl MoveSorter {
         board: &Board,
         transposition_table: &TranspositionTable,
         ply: Ply,
-        optional_best_move: impl Into<Option<Move>>,
-        optional_pv_move: impl Into<Option<Move>>,
+        mut best_move: Option<Move>,
+        pv_move: Option<Move>,
         is_easily_winning_position: bool,
     ) -> WeightedMoveListSorter {
-        let mut best_move = optional_best_move.into();
         if best_move.is_none() {
             best_move = transposition_table.read_best_move(board.get_hash());
         }
-        let optional_pv_move = optional_pv_move.into();
         let moves_vec = Vec::from_iter(board.generate_legal_moves());
         if self.follow_pv {
             self.follow_pv = false;
-            if let Some(pv_move) = optional_pv_move {
-                if moves_vec.contains(&pv_move) {
+            if let Some(move_) = pv_move {
+                if moves_vec.contains(&move_) {
                     self.follow_pv = true;
                     self.score_pv = true;
                 }
@@ -319,7 +317,7 @@ impl MoveSorter {
                     board,
                     ply,
                     best_move,
-                    optional_pv_move,
+                    pv_move,
                     is_easily_winning_position,
                 ) + MAX_MOVES_PER_POSITION as MoveWeight
                     - idx as MoveWeight,
@@ -348,7 +346,7 @@ impl MoveSorter {
     pub fn score_root_moves(
         board: &mut Board,
         move_: Move,
-        pv_move: impl Into<Option<Move>>,
+        pv_move: Option<Move>,
         best_moves: &[Move],
     ) -> MoveWeight {
         if !board.is_endgame() {
@@ -360,7 +358,7 @@ impl MoveSorter {
                 return 200_000 - index as MoveWeight;
             }
         }
-        if Some(move_) == pv_move.into() {
+        if pv_move.is_some() {
             return 100_000;
         }
         if board.gives_repetition(move_) {
@@ -407,7 +405,7 @@ impl MoveSorter {
 impl Default for MoveSorter {
     fn default() -> Self {
         Self {
-            killer_moves: [[None; NUM_KILLER_MOVES]; MAX_PLY],
+            killer_moves: [[Move::NullMove; NUM_KILLER_MOVES]; MAX_PLY],
             history_move_scores: [[[0; 64]; 2]; 6],
             follow_pv: false,
             score_pv: false,
