@@ -325,10 +325,8 @@ impl<T: Copy + PartialEq> CacheTable<T> {
         *self.table.write().unwrap() = Self::generate_table(size);
         self.reset_mask(&current_table_copy);
         self.reset_variables();
-        for &entry in current_table_copy.iter() {
-            if let Some(CacheTableEntry { hash, entry }) = entry {
-                self.add(hash.get(), entry);
-            }
+        for entry in current_table_copy.iter().flatten() {
+            self.add(entry.hash.get(), entry.entry);
         }
     }
 }

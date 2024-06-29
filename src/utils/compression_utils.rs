@@ -89,7 +89,7 @@ impl Decompress<Option<Move>> for u16 {
         let source = ((self >> 6) & 63).decompress();
         let dest = (self & 63).decompress();
         let promotion = (self >> 12).decompress();
-        Some(Move::new(source, dest, promotion))
+        Some(Move::new_unchecked(source, dest, promotion))
     }
 }
 

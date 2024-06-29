@@ -652,7 +652,7 @@ impl Iterator for MoveGenerator {
             let dest = (square_and_bitboard.bitboard & self.iterator_mask).to_square();
 
             // deal with potential promotions for this pawn
-            let result = Move::new(
+            let result = Move::new_unchecked(
                 square_and_bitboard.square,
                 dest,
                 Some(*get_item_unchecked!(PROMOTION_PIECES, self.promotion_index)),
@@ -674,7 +674,7 @@ impl Iterator for MoveGenerator {
             if (square_and_bitboard.bitboard & self.iterator_mask).is_empty() {
                 self.index += 1;
             }
-            Some(Move::new(square_and_bitboard.square, dest, None))
+            Some(Move::new_unchecked(square_and_bitboard.square, dest, None))
         }
     }
 }

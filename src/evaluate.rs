@@ -76,7 +76,7 @@ impl Evaluator {
     ) -> Score {
         let winning_side_king_square = sub_board.get_king_square(winning_side);
         let losing_side_king_square = sub_board.get_king_square(!winning_side);
-        let mut least_distant_corner = Square::D4;
+        let mut probable_least_distant_corner = None;
         if is_bishop_knight_endgame {
             let is_light_squared_bishop =
                 !(sub_board.get_piece_mask(Bishop) & BB_LIGHT_SQUARES).is_empty();
@@ -85,21 +85,22 @@ impl Evaluator {
             } else {
                 [Square::A1, Square::H8]
             };
-            least_distant_corner = *least_distant_corners
+            probable_least_distant_corner = Some(*least_distant_corners
                 .iter()
                 .min_by_key(|&&corner_square| corner_square.distance(losing_side_king_square))
-                .unwrap();
+                .unwrap());
         } else {
             for (bb, &corner_square) in BOARD_QUARTER_MASKS
                 .iter()
                 .zip([Square::A8, Square::H8, Square::A1, Square::H1].iter())
             {
                 if bb.contains(losing_side_king_square) {
-                    least_distant_corner = corner_square;
+                    probable_least_distant_corner = Some(corner_square);
                     break;
                 }
             }
         }
+        let least_distant_corner = unsafe { probable_least_distant_corner.unwrap_unchecked() };
         let king_distance_score =
             7 - winning_side_king_square.distance(losing_side_king_square) as Score;
         let losing_king_rank_distance_score = 15

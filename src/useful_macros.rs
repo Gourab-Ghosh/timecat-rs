@@ -1,4 +1,4 @@
-#[cfg(all(not(feature = "speed"), feature = "strict"))]
+#[cfg(not(feature = "speed"))]
 #[macro_export]
 macro_rules! get_item_unchecked {
     ($vec:expr, $index:expr) => {
@@ -12,7 +12,7 @@ macro_rules! get_item_unchecked {
     };
 }
 
-#[cfg(all(not(feature = "speed"), feature = "strict"))]
+#[cfg(not(feature = "speed"))]
 #[macro_export]
 macro_rules! get_item_unchecked_mut {
     ($vec:expr, $index:expr) => {
@@ -26,7 +26,7 @@ macro_rules! get_item_unchecked_mut {
     };
 }
 
-#[cfg(any(feature = "speed", not(feature = "strict")))]
+#[cfg(feature = "speed")]
 #[macro_export]
 macro_rules! get_item_unchecked {
     ($vec:expr, $index:expr) => {
@@ -44,7 +44,7 @@ macro_rules! get_item_unchecked {
     };
 }
 
-#[cfg(any(feature = "speed", not(feature = "strict")))]
+#[cfg(feature = "speed")]
 #[macro_export]
 macro_rules! get_item_unchecked_mut {
     ($vec:expr, $index:expr) => {

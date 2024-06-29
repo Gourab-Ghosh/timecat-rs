@@ -251,7 +251,7 @@ pub fn get_move_from_polyglot_move_int(move_int: usize) -> Result<Move> {
     };
     let source = Square::from_rank_and_file(source_rank, source_file);
     let dest = Square::from_rank_and_file(dest_rank, dest_file);
-    Ok(Move::new(source, dest, promotion))
+    Move::new(source, dest, promotion)
 }
 
 mod array_implementation {

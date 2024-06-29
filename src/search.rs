@@ -209,8 +209,8 @@ impl Searcher {
         self.id == 0
     }
 
-    fn push(&mut self, optional_move: impl Into<Option<Move>>) {
-        self.board.push(optional_move);
+    fn push_unchecked(&mut self, optional_move: impl Into<Option<Move>>) {
+        self.board.push_unchecked(optional_move);
         self.ply += 1;
     }
 
@@ -317,7 +317,7 @@ impl Searcher {
                 continue;
             }
             let clock = Instant::now();
-            self.push(move_);
+            self.push_unchecked(move_);
             if move_index == 0
                 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, enable_timer)? > alpha
             {
@@ -469,7 +469,7 @@ impl Searcher {
                 // let reduced_depth = depth - r - 1;
                 let r = 1920 + (depth as i32) * 2368;
                 let reduced_depth = (((depth as u32) * 4096 - (r as u32)) / 4096) as Depth;
-                self.push(None);
+                self.push_unchecked(None);
                 let score = -self.alpha_beta(reduced_depth, -beta, -beta + 1, enable_timer)?;
                 self.pop();
                 if score >= beta {
@@ -536,7 +536,7 @@ impl Searcher {
             //     depth += 1;
             //     num_extensions += 1;
             // }
-            self.push(move_);
+            self.push_unchecked(move_);
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
@@ -624,7 +624,7 @@ impl Searcher {
             if weight.is_negative() {
                 break;
             }
-            self.push(Some(move_));
+            self.push_unchecked(Some(move_));
             let score = -self.quiescence(-beta, -alpha);
             self.pop();
             if score >= beta {

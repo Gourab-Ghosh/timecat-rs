@@ -365,22 +365,7 @@ impl Push {
                 "move" | "moves" => engine.get_board().parse_move(move_text),
                 _ => Err(UnknownCommand),
             }?;
-            if let Some(move_) = optional_move {
-                if !engine.get_board().is_legal(move_) {
-                    return Err(IllegalMove {
-                        move_text: move_text.to_string(),
-                        board_fen: engine.get_board().get_fen(),
-                    });
-                }
-                engine.get_board_mut().push(move_);
-            } else {
-                if engine.get_board().is_check() {
-                    return Err(NullMoveInCheck {
-                        fen: engine.get_board().get_fen(),
-                    });
-                }
-                engine.get_board_mut().push(None);
-            }
+            engine.get_board_mut().push(optional_move)?;
             println_info("Pushed move", move_text);
         }
         Ok(())

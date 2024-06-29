@@ -163,8 +163,7 @@ The `selfplay` command works on the binary as well.
 - `inbuilt_nnue`: Integrate built-in NNUE evaluation support by including the nnue file directly into the binary, fetched using the reqwest library.
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
 - `colored_output`: Displays all information in a visually appealing colored format for enhanced readability.
-- `strict`: Enable assertions in the code to generate runtime errors, preventing users from unknowingly creating illegal structures. For instance, `Move::new(A1, A1, None)` will trigger an error, as it represents an invalid chess move.
-- `speed`: Optimize the code to improve speed by using unsafe rust and sometimes skipping the `strict` mode (only when the `strict` mode makes the code much slower). Note that the gain in speed might not be significant in some cases.
+- `speed`: Optimize the code to improve speed by using unsafe rust. Note that the gain in speed might not be significant in some cases.
 - `serde`: Enables serialization and deserialization support via `serde`.
 - `debug`: Intended solely for development use.
 - `experimental`: Codes under development for upcoming features.

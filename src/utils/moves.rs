@@ -16,17 +16,24 @@ impl Move {
     };
 
     #[inline]
-    pub const fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
-        #[cfg(feature = "strict")]
-        assert!(
-            source.to_int() != dest.to_int(),
-            "Source and Destination cannot be same!"
-        );
+    pub const fn new_unchecked(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
         Self {
             source,
             dest,
             promotion,
         }
+    }
+
+    #[inline]
+    pub const fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Result<Self> {
+        if source.to_int() == dest.to_int() {
+            return Err(TimecatError::InvalidMoveGeneration);
+        }
+        Ok(Self {
+            source,
+            dest,
+            promotion,
+        })
     }
 
     pub fn is_null(&self) -> bool {
@@ -230,7 +237,7 @@ impl FromStr for Move {
             });
         }
 
-        Ok(Self::new(source, dest, promotion))
+        Self::new(source, dest, promotion)
     }
 }
 

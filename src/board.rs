@@ -394,20 +394,10 @@ impl Board {
         self.is_other_draw() || self.status() != BoardStatus::Ongoing
     }
 
-    /// The `push` function takes an optional move, updates the sub-board accordingly, and adds
-    /// the previous sub-board state and move to a stack.
-    ///
-    /// Arguments:
-    ///
-    /// * `optional_move`: The `optional_move` parameter in the `push` function is of type `impl
-    /// Into<Option<Move>>`. This means it can accept any type that can be converted into an
-    /// `Option<Move>`. Inside the function, the `optional_move` is converted into an `Option<Move>`
-    pub fn push(&mut self, optional_move: impl Into<Option<Move>>) {
+    pub fn push_unchecked(&mut self, optional_move: impl Into<Option<Move>>) {
         let optional_move = optional_move.into();
         let sub_board_copy = self.sub_board.clone();
         self.sub_board = if let Some(move_) = optional_move {
-            #[cfg(any(test, all(feature = "strict", not(feature = "speed"))))]
-            assert!(self.is_legal(move_));
             self.sub_board.make_move_new(move_)
         } else {
             self.sub_board
@@ -416,6 +406,19 @@ impl Board {
         };
         self.repetition_table.insert(self.get_hash());
         self.stack.push((sub_board_copy, optional_move));
+    }
+
+    pub fn push(&mut self, optional_move: impl Into<Option<Move>>) -> Result<()> {
+        let optional_move = optional_move.into();
+        if let Some(move_) = optional_move {
+            if !self.is_legal(move_) {
+                return Err(TimecatError::IllegalMove { move_, board_fen: self.get_fen() });
+            }
+        } else if self.is_check() {
+            return Err(TimecatError::NullMoveInCheck { fen: self.get_fen() });
+        }
+        self.push_unchecked(optional_move);
+        Ok(())
     }
 
     pub fn pop(&mut self) -> Option<Move> {
@@ -493,7 +496,7 @@ impl Board {
     /// The `push_san` function returns a `Result` containing an `Option` of `Move` or an `TimecatError`.
     pub fn push_san(&mut self, san: &str) -> Result<Option<Move>> {
         let move_ = self.parse_san(san)?;
-        self.push(move_);
+        self.push_unchecked(move_);
         Ok(move_)
     }
 
@@ -532,7 +535,7 @@ impl Board {
     /// The function `push_uci` returns a `Result` containing an `Option` of `Move` or an `TimecatError`.
     pub fn push_uci(&mut self, uci: &str) -> Result<Option<Move>> {
         let move_ = self.parse_uci(uci)?;
-        self.push(move_);
+        self.push_unchecked(move_);
         Ok(move_)
     }
 
@@ -598,7 +601,7 @@ impl Board {
         let san = move_.algebraic_without_suffix(self.get_sub_board(), long)?;
 
         // Look ahead for check or checkmate.
-        self.push(move_);
+        self.push_unchecked(move_);
         let is_checkmate = self.is_checkmate();
 
         // Add check or checkmate suffix.
@@ -745,7 +748,7 @@ impl Board {
         }
         let mut count: usize = 0;
         for move_ in moves {
-            self.push(move_);
+            self.push_unchecked(move_);
             let c_count = self.perft_helper(depth - 1, false);
             self.pop();
             if print_move {
