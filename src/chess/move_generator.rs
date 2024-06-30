@@ -417,6 +417,7 @@ impl PieceMoves for KingMoves {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct SquareAndBitBoard {
     square: Square,

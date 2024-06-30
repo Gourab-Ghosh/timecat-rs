@@ -162,13 +162,13 @@ The `selfplay` command works on the binary as well.
 - `nnue_reader`: Adds support for NNUE evaluation by reading nnue files.
 - `inbuilt_nnue`: Integrate built-in NNUE evaluation support by including the nnue file directly into the binary, fetched using the reqwest library.
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
-- `colored_output`: Displays all information in a visually appealing colored format for enhanced readability.
+- `colored`: Displays all information in a visually appealing colored format for enhanced readability.
 - `speed`: Optimize the code to improve speed by using unsafe rust. Note that the gain in speed might not be significant in some cases.
 - `serde`: Enables serialization and deserialization support via `serde`.
 - `debug`: Intended solely for development use.
 - `experimental`: Codes under development for upcoming features.
 
-Default features include `binary`, `colored_output` and `speed`.
+Default features include `binary`, `colored` and `speed`.
 
 ## TODO
 - [ ] Implement other variants of chess.

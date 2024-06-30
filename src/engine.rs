@@ -97,7 +97,7 @@ pub struct Engine {
     num_nodes_searched: Arc<AtomicUsize>,
     selective_depth: Arc<AtomicUsize>,
     stopper: Arc<AtomicBool>,
-    io_reader: Option<IoReader>,
+    optional_io_reader: Option<IoReader>,
 }
 
 impl Engine {
@@ -108,7 +108,7 @@ impl Engine {
             num_nodes_searched: Arc::new(AtomicUsize::new(0)),
             selective_depth: Arc::new(AtomicUsize::new(0)),
             stopper: Arc::new(AtomicBool::new(false)),
-            io_reader: None,
+            optional_io_reader: None,
         }
     }
 
@@ -128,17 +128,17 @@ impl Engine {
     }
 
     #[inline]
-    pub fn get_io_reader(&self) -> Option<IoReader> {
-        self.io_reader.clone()
+    pub fn get_optional_io_reader(&self) -> Option<IoReader> {
+        self.optional_io_reader.clone()
     }
 
     #[inline]
-    pub fn set_io_reader(&mut self, io_reader: IoReader) {
-        self.io_reader = Some(io_reader);
+    pub fn set_optional_io_reader(&mut self, optional_io_reader: IoReader) {
+        self.optional_io_reader = Some(optional_io_reader);
     }
 
-    pub fn with_io_reader(mut self, io_reader: IoReader) -> Self {
-        self.set_io_reader(io_reader);
+    pub fn with_io_reader(mut self, optional_io_reader: IoReader) -> Self {
+        self.set_optional_io_reader(optional_io_reader);
         self
     }
 
@@ -189,9 +189,9 @@ impl Engine {
         )
     }
 
-    fn update_stop_command_from_input(stopper: &AtomicBool, io_reader: IoReader) {
+    fn update_stop_command_from_input(stopper: &AtomicBool, optional_io_reader: IoReader) {
         while !stopper.load(MEMORY_ORDERING) {
-            match io_reader
+            match optional_io_reader
                 .read_line_once()
                 .unwrap_or_default()
                 .to_lowercase()
@@ -218,7 +218,7 @@ impl Engine {
             });
             join_handles.push(join_handle);
         }
-        if let Some(io_reader) = &self.io_reader {
+        if let Some(io_reader) = &self.optional_io_reader {
             let owned_io_reader = io_reader.to_owned();
             join_handles.push(thread::spawn({
                 let stopper = self.stopper.clone();
@@ -258,7 +258,7 @@ impl Clone for Engine {
                 .into(),
             selective_depth: AtomicUsize::new(self.selective_depth.load(MEMORY_ORDERING)).into(),
             stopper: AtomicBool::new(self.stopper.load(MEMORY_ORDERING)).into(),
-            io_reader: self.io_reader.clone(),
+            optional_io_reader: self.optional_io_reader.clone(),
         }
     }
 }

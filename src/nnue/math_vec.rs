@@ -2,7 +2,7 @@ use super::*;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MathVec<T, const N: usize> {
-    slice: [T; N],
+    array: [T; N],
 }
 
 impl<T: BinRead<Args = ()>, const N: usize> BinRead for MathVec<T, N> {
@@ -13,18 +13,18 @@ impl<T: BinRead<Args = ()>, const N: usize> BinRead for MathVec<T, N> {
         options: &binread::ReadOptions,
         _: Self::Args,
     ) -> BinResult<Self> {
-        let slice: [T; N] = BinRead::read_options(reader, options, ())?;
-        Ok(slice.into())
+        let array: [T; N] = BinRead::read_options(reader, options, ())?;
+        Ok(array.into())
     }
 }
 
 impl<T, const N: usize> MathVec<T, N> {
-    pub const fn new(slice: [T; N]) -> Self {
-        Self { slice }
+    pub const fn new(array: [T; N]) -> Self {
+        Self { array }
     }
 
     pub fn into_inner(self) -> [T; N] {
-        self.slice
+        self.array
     }
 }
 
@@ -55,13 +55,13 @@ impl<T, const N: usize> Deref for MathVec<T, N> {
     type Target = [T; N];
 
     fn deref(&self) -> &Self::Target {
-        &self.slice
+        &self.array
     }
 }
 
 impl<T, const N: usize> DerefMut for MathVec<T, N> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.slice
+        &mut self.array
     }
 }
 
@@ -85,18 +85,18 @@ macro_rules! impl_operation {
             for MathVec<T, N>
         {
             fn $func_assign(&mut self, rhs: &Self) {
-                self.slice
+                self.array
                     .iter_mut()
-                    .zip(rhs.slice.iter().cloned())
+                    .zip(rhs.array.iter().cloned())
                     .for_each(|(i, j)| i.$func_assign(j));
             }
         }
 
         impl<T: $trait_assign, const N: usize> $trait_assign for MathVec<T, N> {
             fn $func_assign(&mut self, rhs: Self) {
-                self.slice
+                self.array
                     .iter_mut()
-                    .zip(rhs.slice)
+                    .zip(rhs.array)
                     .for_each(|(i, j)| i.$func_assign(j));
             }
         }
@@ -131,7 +131,7 @@ macro_rules! impl_operation {
             for MathVec<T, N>
         {
             fn $func_assign(&mut self, rhs: $int_type) {
-                self.slice.iter_mut().for_each(|i| i.$func_assign(rhs));
+                self.array.iter_mut().for_each(|i| i.$func_assign(rhs));
             }
         }
 
@@ -151,7 +151,7 @@ macro_rules! impl_operation {
             type Output = MathVec<T, N>;
 
             fn $func(self, mut rhs: MathVec<T, N>) -> MathVec<T, N> {
-                rhs.slice
+                rhs.array
                     .iter_mut()
                     .for_each(|i| *i = self.$func(i.clone()));
                 rhs
@@ -193,7 +193,7 @@ impl<T: Neg<Output = T> + Clone, const N: usize> Neg for MathVec<T, N> {
     type Output = Self;
 
     fn neg(mut self) -> Self::Output {
-        self.slice.iter_mut().for_each(|x| *x = x.clone().neg());
+        self.array.iter_mut().for_each(|x| *x = x.clone().neg());
         self
     }
 }
@@ -203,7 +203,7 @@ impl<T: fmt::Display, const N: usize> fmt::Display for MathVec<T, N> {
         write!(
             f,
             "[{}]",
-            self.slice.iter().map(|x| x.to_string()).join(", ")
+            self.array.iter().map(|x| x.to_string()).join(", ")
         )
     }
 }
@@ -211,7 +211,7 @@ impl<T: fmt::Display, const N: usize> fmt::Display for MathVec<T, N> {
 impl<T: Default + Copy, const N: usize> Default for MathVec<T, N> {
     fn default() -> Self {
         Self {
-            slice: [T::default(); N],
+            array: [T::default(); N],
         }
     }
 }
@@ -222,13 +222,13 @@ impl<T, const N: usize> Index<usize> for MathVec<T, N> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
-        self.slice.index(index)
+        self.array.index(index)
     }
 }
 
 impl<T, const N: usize> IndexMut<usize> for MathVec<T, N> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        self.slice.index_mut(index)
+        self.array.index_mut(index)
     }
 }
 
@@ -260,7 +260,7 @@ macro_rules! impl_clipped_relu {
             ) -> MathVec<$to, N> {
                 let mut v = Vec::with_capacity(N);
                 v.extend(
-                    self.slice
+                    self.array
                         .map(|x| (x >> scale_by_pow_of_two).clamp(min, max) as $to),
                 );
                 MathVec::new(v.try_into().unwrap())
@@ -273,7 +273,7 @@ macro_rules! impl_clipped_relu {
                 max: $from,
                 output: &mut [$to; N],
             ) {
-                self.slice
+                self.array
                     .iter()
                     .zip(output.iter_mut())
                     .for_each(|(&i, j)| *j = (i >> scale_by_pow_of_two).clamp(min, max) as $to);
@@ -316,8 +316,8 @@ impl<T, const N: usize> TryFrom<Vec<T>> for MathVec<T, N> {
     type Error = Vec<T>;
 
     fn try_from(value: Vec<T>) -> std::result::Result<Self, Self::Error> {
-        let slice: [T; N] = value.try_into()?;
-        Ok(slice.into())
+        let array: [T; N] = value.try_into()?;
+        Ok(array.into())
     }
 }
 

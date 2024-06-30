@@ -26,8 +26,8 @@ fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
 #[derive(Debug)]
 pub struct GlobalTimecatState {
     _terminate_engine: AtomicBool,
-    #[cfg(feature = "colored_output")]
-    _colored_output: AtomicBool,
+    #[cfg(feature = "colored")]
+    _colored: AtomicBool,
     _console_mode: AtomicBool,
     _t_table_size: RwLock<CacheTableSize>,
     _long_algebraic_notation: AtomicBool,
@@ -48,8 +48,8 @@ impl GlobalTimecatState {
     pub const fn new() -> Self {
         GlobalTimecatState {
             _terminate_engine: AtomicBool::new(false),
-            #[cfg(feature = "colored_output")]
-            _colored_output: AtomicBool::new(true),
+            #[cfg(feature = "colored")]
+            _colored: AtomicBool::new(true),
             _console_mode: AtomicBool::new(true),
             _t_table_size: RwLock::new(CacheTableSize::Exact(16)),
             _long_algebraic_notation: AtomicBool::new(false),
@@ -71,21 +71,21 @@ impl GlobalTimecatState {
         self._terminate_engine.store(b, MEMORY_ORDERING);
     }
 
-    #[cfg(feature = "colored_output")]
+    #[cfg(feature = "colored")]
     #[inline]
-    pub fn is_colored_output(&self) -> bool {
-        self._colored_output.load(MEMORY_ORDERING)
+    pub fn is_colored(&self) -> bool {
+        self._colored.load(MEMORY_ORDERING)
     }
 
-    #[cfg(not(feature = "colored_output"))]
+    #[cfg(not(feature = "colored"))]
     #[inline]
-    pub fn is_colored_output(&self) -> bool {
+    pub fn is_colored(&self) -> bool {
         false
     }
 
-    #[cfg(feature = "colored_output")]
-    pub fn set_colored_output(&self, b: bool, verbose: bool) {
-        self._colored_output.store(b, MEMORY_ORDERING);
+    #[cfg(feature = "colored")]
+    pub fn set_colored(&self, b: bool, verbose: bool) {
+        self._colored.store(b, MEMORY_ORDERING);
         if verbose {
             print_info("Colored output is set to", b);
         }

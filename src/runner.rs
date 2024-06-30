@@ -25,7 +25,7 @@ impl TimecatBuilder {
             self.user_commands
                 .push(UserCommand::ChangeToUCIMode { verbose: false });
         }
-        #[cfg(feature = "colored_output")]
+        #[cfg(feature = "colored")]
         if args.contains(&"--no-color") {
             self.user_commands.push(UserCommand::SetColor(false));
         }

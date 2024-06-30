@@ -20,10 +20,14 @@ def check_errors(feature_sets_check, verbose = True) -> bool:
         print("Updating Packages...")
     if os.system("cargo update --quiet"):
         sys.exit(1)
-    for feature_set in tqdm(feature_sets_check, desc = "Checking Feature Combinations", leave = False):
-        if os.system(generate_command(feature_set, True)):
-            if verbose:
-                print(f"Feature Set {feature_set} has errors!")
-                print(f"Command: {generate_command(feature_set, False)}")
-            return True
-    return False
+    try:
+        os.environ["NNUE_DOWNLOAD"] = "PAUSE"
+        for feature_set in tqdm(feature_sets_check, desc = "Checking Feature Combinations", leave = False):
+            if os.system(generate_command(feature_set, True)):
+                if verbose:
+                    print(f"Feature Set {feature_set} has errors!")
+                    print(f"Command: {generate_command(feature_set, False)}")
+                return True
+        return False
+    finally:
+        del os.environ["NNUE_DOWNLOAD"]

@@ -20,7 +20,7 @@ def process_args():
 def main():
     with open("Cargo.toml", "rb") as rbf:
         cargo_toml_file_data = tomllib.load(rbf)
-    assert set(cargo_toml_file_data["features"]["default"]) == {'binary', 'colored_output', 'speed'}
+    assert set(cargo_toml_file_data["features"]["default"]) == {'binary', 'colored', 'speed'}
 
     FEATURE_SETS_CHECK = [
         [],

@@ -72,6 +72,7 @@ fn main() {
         if std::env::var("DOCS_RS").is_ok()
             || std::env::var("NNUE_DOWNLOAD") == Ok("PAUSE".to_string())
         {
+            println!("cargo:rerun-if-changed=NULL");
             return;
         }
         match generate_nnue_file(&mut nnue_file) {

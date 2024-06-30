@@ -29,7 +29,7 @@ pub enum UserCommand {
     PushMoves(String),
     PopMoves(u16),
     SetFen(String),
-    #[cfg(feature = "colored_output")]
+    #[cfg(feature = "colored")]
     SetColor(bool),
     SetUCIOption {
         user_input: String,
@@ -117,7 +117,7 @@ impl UserCommand {
             }
             &Self::PopMoves(num_moves) => Pop::pop_moves(engine, num_moves)?,
             Self::SetFen(fen) => Set::set_board_fen(engine, fen)?,
-            #[cfg(feature = "colored_output")]
+            #[cfg(feature = "colored")]
             &Self::SetColor(b) => Set::set_color(b)?,
             Self::SetUCIOption { user_input } => {
                 uci_state_manager.run_command(engine, user_input)?
@@ -299,7 +299,7 @@ impl Set {
         UserCommand::SetFen(fen).into()
     }
 
-    #[cfg(feature = "colored_output")]
+    #[cfg(feature = "colored")]
     fn extract_color(commands: &[&str]) -> Result<Vec<UserCommand>> {
         if commands.get(3).is_some() {
             return Err(UnknownCommand);
@@ -319,11 +319,11 @@ impl Set {
                     _ => Err(UnknownCommand),
                 }
             }
-            #[cfg(feature = "colored_output")]
+            #[cfg(feature = "colored")]
             "color" => Self::extract_color(commands),
-            #[cfg(not(feature = "colored_output"))]
+            #[cfg(not(feature = "colored"))]
             "color" => Err(FeatureNotEnabled {
-                s: "colored_output".to_string(),
+                s: "colored".to_string(),
             }),
             _ => Err(UnknownCommand),
         }
@@ -342,12 +342,12 @@ impl Set {
         Ok(())
     }
 
-    #[cfg(feature = "colored_output")]
+    #[cfg(feature = "colored")]
     fn set_color(b: bool) -> Result<()> {
-        if GLOBAL_TIMECAT_STATE.is_colored_output() == b {
+        if GLOBAL_TIMECAT_STATE.is_colored() == b {
             return Err(ColoredOutputUnchanged { b });
         }
-        GLOBAL_TIMECAT_STATE.set_colored_output(b, true);
+        GLOBAL_TIMECAT_STATE.set_colored(b, true);
         Ok(())
     }
 }

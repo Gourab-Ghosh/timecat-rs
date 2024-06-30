@@ -19,9 +19,9 @@ fn main() {
     if !std::io::stdin().is_terminal() {
         GLOBAL_TIMECAT_STATE.set_to_uci_mode();
     }
-    #[cfg(feature = "colored_output")]
+    #[cfg(feature = "colored")]
     if !std::io::stdout().is_terminal() {
-        GLOBAL_TIMECAT_STATE.set_colored_output(false, false);
+        GLOBAL_TIMECAT_STATE.set_colored(false, false);
     }
     TimecatBuilder::default().parse_args(&args).build().run();
 }
