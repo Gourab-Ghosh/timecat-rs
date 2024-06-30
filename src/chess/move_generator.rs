@@ -553,7 +553,7 @@ impl MoveGenerator {
         self.from_bitboard_iterator_mask = mask;
         self.reorganize_square_and_bitboard_array();
     }
-    
+
     pub fn get_to_bitboard_iterator_mask(&self) -> BitBoard {
         self.to_bitboard_iterator_mask
     }
@@ -716,10 +716,9 @@ impl Iterator for MoveGenerator {
             return None;
         }
         if self.index != self.last_index {
-            while !self
-                .from_bitboard_iterator_mask
-                .contains(get_item_unchecked_mut!(self.square_and_bitboard_array, self.index).square)
-            {
+            while !self.from_bitboard_iterator_mask.contains(
+                get_item_unchecked_mut!(self.square_and_bitboard_array, self.index).square,
+            ) {
                 self.index += 1;
                 if self.index >= square_and_bitboard_array_len {
                     return None;
