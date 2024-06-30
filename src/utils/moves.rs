@@ -242,15 +242,19 @@ impl FromStr for Move {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum CastleMoveType {
     KingSide,
     QueenSide,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Default, Debug, Hash)]
 pub enum MoveType {
     Capture { is_en_passant: bool },
     Castle(CastleMoveType),
     DoublePawnPush,
+    Promotion(PieceType),
+    #[default]
     Other,
 }
 
