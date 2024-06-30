@@ -454,6 +454,7 @@ impl Searcher {
         }
         self.num_nodes_searched.fetch_add(1, MEMORY_ORDERING);
         let not_in_check = checkers.is_empty();
+        let mut futility_pruning = false;
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
             let static_evaluation = self.board.evaluate_flipped();
@@ -500,6 +501,17 @@ impl Searcher {
                     }
                 }
             }
+            // futility pruning condition
+            if depth < 4 && alpha < mate_score {
+                let futility_margin = match depth {
+                    0 => 0,
+                    1 => PAWN_VALUE,
+                    2 => Knight.evaluate(),
+                    3 => Rook.evaluate(),
+                    _ => unreachable!(),
+                };
+                futility_pruning = static_evaluation + futility_margin <= alpha;
+            }
         }
         let mut flag = HashAlpha;
         let weighted_moves = self.move_sorter.get_weighted_moves_sorted(
@@ -510,38 +522,27 @@ impl Searcher {
             self.get_nth_pv_move(self.ply),
             Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
         );
-        #[allow(clippy::single_match)]
-        match weighted_moves.len() {
-            0 => {
-                return if not_in_check {
-                    Some(0)
-                } else {
-                    Some(-mate_score)
-                }
-            }
-            // 1 => {
-            //     if Self::safe_to_apply_extensions(num_extensions, check_extension, max_extension) {
-            //         depth += 1;
-            //         num_extensions += 1;
-            //     }
-            // }
-            _ => (),
+        if weighted_moves.is_empty() {
+            return if not_in_check {
+                Some(0)
+            } else {
+                Some(-mate_score)
+            };
         }
         for (move_index, WeightedMove { move_, .. }) in weighted_moves.enumerate() {
-            // let (mut depth, mut num_extensions) = (depth, num_extensions);
             let not_capture_move = !self.board.is_capture(move_);
-            let mut safe_to_apply_lmr = move_index >= FULL_DEPTH_SEARCH_LMR
-                && depth >= REDUCTION_LIMIT_LMR
-                && !DISABLE_LMR
-                && not_capture_move
+            let not_an_interesting_position = not_capture_move
                 && not_in_check
                 && move_.get_promotion().is_none()
                 && !self.move_sorter.is_killer_move(move_, self.ply)
                 && !self.board.is_passed_pawn(move_.get_source());
-            // if Self::safe_to_apply_extensions(num_extensions, 1, max_extension) && move_.get_promotion().is_some() {
-            //     depth += 1;
-            //     num_extensions += 1;
-            // }
+            if move_index != 0 && futility_pruning && not_an_interesting_position {
+                continue;
+            }
+            let mut safe_to_apply_lmr = move_index >= FULL_DEPTH_SEARCH_LMR
+                && depth >= REDUCTION_LIMIT_LMR
+                && !DISABLE_LMR
+                && not_an_interesting_position;
             self.push_unchecked(move_);
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;

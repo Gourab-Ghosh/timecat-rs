@@ -241,13 +241,11 @@ impl Board {
                     fen: self.get_fen(),
                 });
             }
-        } else {
-            if !self.is_legal(move_) {
-                return Err(TimecatError::IllegalMove {
-                    move_,
-                    board_fen: self.get_fen(),
-                });
-            }
+        } else if !self.is_legal(move_) {
+            return Err(TimecatError::IllegalMove {
+                move_,
+                board_fen: self.get_fen(),
+            });
         }
         self.push_unchecked(move_);
         Ok(())
