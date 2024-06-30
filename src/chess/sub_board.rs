@@ -561,7 +561,7 @@ impl SubBoard {
         to_bitboard: BitBoard,
     ) -> MoveGenerator {
         let mut moves = MoveGenerator::new_legal(self);
-        moves.set_iterator_mask(to_bitboard);
+        moves.set_to_bitboard_iterator_mask(to_bitboard);
         moves
     }
 
