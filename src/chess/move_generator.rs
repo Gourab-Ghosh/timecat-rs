@@ -88,7 +88,8 @@ impl PawnMoves {
             ^ source.to_bitboard()
             ^ dest.to_bitboard();
 
-        let ksq = (sub_board.get_piece_mask(King) & sub_board.occupied_co(sub_board.turn())).to_square();
+        let ksq =
+            (sub_board.get_piece_mask(King) & sub_board.occupied_co(sub_board.turn())).to_square();
 
         let rooks = (sub_board.get_piece_mask(Rook) ^ sub_board.get_piece_mask(Queen))
             & sub_board.occupied_co(!sub_board.turn());
@@ -325,10 +326,13 @@ impl KingMoves {
         let knight_rays = get_knight_moves(dest);
 
         // Using ^ because knight square_and_bitboard_array bitboard do not collide with rook and bishop square_and_bitboard_array bitboard
-        attackers ^= knight_rays & sub_board.get_piece_mask(Knight) & sub_board.occupied_co(!sub_board.turn());
+        attackers ^= knight_rays
+            & sub_board.get_piece_mask(Knight)
+            & sub_board.occupied_co(!sub_board.turn());
 
         let king_rays = get_king_moves(dest);
-        attackers |= king_rays & sub_board.get_piece_mask(King) & sub_board.occupied_co(!sub_board.turn());
+        attackers |=
+            king_rays & sub_board.get_piece_mask(King) & sub_board.occupied_co(!sub_board.turn());
 
         attackers |= get_pawn_attacks(
             dest,
@@ -444,7 +448,6 @@ pub struct MoveGenerator {
     from_bitboard_iterator_mask: BitBoard,
     to_bitboard_iterator_mask: BitBoard,
     index: usize,
-    last_index: usize,
 }
 
 impl MoveGenerator {
@@ -483,7 +486,6 @@ impl MoveGenerator {
             from_bitboard_iterator_mask: BB_ALL,
             to_bitboard_iterator_mask: BB_ALL,
             index: 0,
-            last_index: 0,
         }
     }
 
@@ -506,8 +508,8 @@ impl MoveGenerator {
         // that in i.  Then, increment i to point to a new unused slot.
         for j in (i + 1)..self.square_and_bitboard_array.len() {
             if !(get_item_unchecked!(self.square_and_bitboard_array, j).bitboard
-                    & self.to_bitboard_iterator_mask)
-                    .is_empty()
+                & self.to_bitboard_iterator_mask)
+                .is_empty()
             {
                 // unsafe { self.square_and_bitboard_array.swap_unchecked(i, j) };
                 self.square_and_bitboard_array.swap(i, j);
@@ -560,9 +562,7 @@ impl MoveGenerator {
     pub fn set_iterator_masks(&mut self, from_bitboard: BitBoard, to_bitboard: BitBoard) {
         self.index = 0;
         self.from_bitboard_iterator_mask = from_bitboard;
-        if self.from_bitboard_iterator_mask == from_bitboard
-            && self.to_bitboard_iterator_mask == to_bitboard
-        {
+        if self.to_bitboard_iterator_mask == to_bitboard {
             return;
         }
         self.to_bitboard_iterator_mask = to_bitboard;
@@ -682,7 +682,11 @@ impl ExactSizeIterator for MoveGenerator {
         for square_and_bitboard in &self.square_and_bitboard_array {
             let bitboard_and_to_bitboard_iterator_mask =
                 square_and_bitboard.bitboard & self.to_bitboard_iterator_mask;
-            if !self.from_bitboard_iterator_mask.contains(square_and_bitboard.square) || bitboard_and_to_bitboard_iterator_mask.is_empty() {
+            if !self
+                .from_bitboard_iterator_mask
+                .contains(square_and_bitboard.square)
+                || bitboard_and_to_bitboard_iterator_mask.is_empty()
+            {
                 break;
             }
             if square_and_bitboard.promotion {
@@ -709,20 +713,23 @@ impl Iterator for MoveGenerator {
         if self.index >= square_and_bitboard_array_len {
             return None;
         }
-        // if self.index != self.last_index {
-            self.last_index = self.index;
-            while !self.from_bitboard_iterator_mask.contains(get_item_unchecked_mut!(self.square_and_bitboard_array, self.index).square) {
-                self.index += 1;
-                self.last_index = self.index;
-                if self.index >= square_and_bitboard_array_len {
-                    return None;
-                }
+        while !self
+            .from_bitboard_iterator_mask
+            .contains(get_item_unchecked_mut!(self.square_and_bitboard_array, self.index).square)
+        {
+            self.index += 1;
+            if self.index >= square_and_bitboard_array_len {
+                return None;
             }
-        // }
+        }
         let square_and_bitboard =
             get_item_unchecked_mut!(self.square_and_bitboard_array, self.index);
 
-        if !self.from_bitboard_iterator_mask.contains(square_and_bitboard.square) || (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty() {
+        if !self
+            .from_bitboard_iterator_mask
+            .contains(square_and_bitboard.square)
+            || (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty()
+        {
             // are we done?
             None
         } else if square_and_bitboard.promotion {
