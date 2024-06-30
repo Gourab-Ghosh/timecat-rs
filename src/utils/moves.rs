@@ -120,12 +120,9 @@ impl Move {
                 & sub_board.occupied_co(sub_board.turn())
                 & !self.get_source().to_bitboard();
             let to_mask = self.get_dest().to_bitboard();
-            for candidate in sub_board
-                .generate_masked_legal_moves(to_mask)
-            {
+            for candidate in sub_board.generate_masked_legal_moves(from_mask, to_mask) {
                 others |= candidate.get_source().to_bitboard();
             }
-            others &= from_mask;
 
             // Disambiguate.
             if !others.is_empty() {
@@ -250,7 +247,9 @@ pub enum CastleMoveType {
 
 #[derive(Clone, Copy, PartialEq, Eq, Default, Debug, Hash)]
 pub enum MoveType {
-    Capture { is_en_passant: bool },
+    Capture {
+        is_en_passant: bool,
+    },
     Castle(CastleMoveType),
     DoublePawnPush,
     Promotion(PieceType),

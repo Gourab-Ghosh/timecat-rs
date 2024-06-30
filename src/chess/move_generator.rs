@@ -4,18 +4,18 @@ trait PieceMoves {
     fn is(piece: PieceType) -> bool;
     fn into_piece() -> PieceType;
     fn pseudo_legals(src: Square, color: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard;
-    fn legals<T>(move_list: &mut MoveList, board: &SubBoard, mask: BitBoard)
+    fn legals<T>(move_list: &mut MoveList, sub_board: &SubBoard, mask: BitBoard)
     where
         T: CheckMoves,
     {
-        let occupied = board.occupied();
-        let color = board.turn();
-        let my_pieces = board.occupied_co(color);
-        let ksq = board.get_king_square(color);
+        let occupied = sub_board.occupied();
+        let color = sub_board.turn();
+        let my_pieces = sub_board.occupied_co(color);
+        let ksq = sub_board.get_king_square(color);
 
-        let pieces = board.get_piece_mask(Self::into_piece()) & my_pieces;
-        let pinned = board.pinned();
-        let checkers = board.get_checkers();
+        let pieces = sub_board.get_piece_mask(Self::into_piece()) & my_pieces;
+        let pinned = sub_board.pinned();
+        let checkers = sub_board.get_checkers();
 
         let check_mask = if T::IN_CHECK {
             between(checkers.to_square(), ksq) ^ checkers
@@ -78,20 +78,20 @@ impl CheckMoves for NotInCheckMoves {
 }
 
 impl PawnMoves {
-    fn legal_ep_move(board: &SubBoard, source: Square, dest: Square) -> bool {
-        let occupied = board.occupied()
-            ^ board
+    fn legal_ep_move(sub_board: &SubBoard, source: Square, dest: Square) -> bool {
+        let occupied = sub_board.occupied()
+            ^ sub_board
                 .ep_square()
                 .unwrap()
-                .wrapping_backward(board.turn())
+                .wrapping_backward(sub_board.turn())
                 .to_bitboard()
             ^ source.to_bitboard()
             ^ dest.to_bitboard();
 
-        let ksq = (board.get_piece_mask(King) & board.occupied_co(board.turn())).to_square();
+        let ksq = (sub_board.get_piece_mask(King) & sub_board.occupied_co(sub_board.turn())).to_square();
 
-        let rooks = (board.get_piece_mask(Rook) ^ board.get_piece_mask(Queen))
-            & board.occupied_co(!board.turn());
+        let rooks = (sub_board.get_piece_mask(Rook) ^ sub_board.get_piece_mask(Queen))
+            & sub_board.occupied_co(!sub_board.turn());
 
         if !(get_rook_rays(ksq) & rooks).is_empty()
             && !(get_rook_moves(ksq, occupied) & rooks).is_empty()
@@ -99,8 +99,8 @@ impl PawnMoves {
             return false;
         }
 
-        let bishops = (board.get_piece_mask(Bishop) ^ board.get_piece_mask(Queen))
-            & board.occupied_co(!board.turn());
+        let bishops = (sub_board.get_piece_mask(Bishop) ^ sub_board.get_piece_mask(Queen))
+            & sub_board.occupied_co(!sub_board.turn());
 
         if !(get_bishop_rays(ksq) & bishops).is_empty()
             && !(get_bishop_moves(ksq, occupied) & bishops).is_empty()
@@ -127,18 +127,18 @@ impl PieceMoves for PawnMoves {
     }
 
     #[inline]
-    fn legals<T>(move_list: &mut MoveList, board: &SubBoard, mask: BitBoard)
+    fn legals<T>(move_list: &mut MoveList, sub_board: &SubBoard, mask: BitBoard)
     where
         T: CheckMoves,
     {
-        let occupied = board.occupied();
-        let color = board.turn();
-        let my_pieces = board.occupied_co(color);
-        let ksq = board.get_king_square(color);
+        let occupied = sub_board.occupied();
+        let color = sub_board.turn();
+        let my_pieces = sub_board.occupied_co(color);
+        let ksq = sub_board.get_king_square(color);
 
-        let pieces = board.get_piece_mask(Self::into_piece()) & my_pieces;
-        let pinned = board.pinned();
-        let checkers = board.get_checkers();
+        let pieces = sub_board.get_piece_mask(Self::into_piece()) & my_pieces;
+        let pinned = sub_board.pinned();
+        let checkers = sub_board.get_checkers();
 
         let check_mask = if T::IN_CHECK {
             between(checkers.to_square(), ksq) ^ checkers
@@ -176,7 +176,7 @@ impl PieceMoves for PawnMoves {
             }
         }
 
-        if let Some(dest) = board.ep_square() {
+        if let Some(dest) = sub_board.ep_square() {
             let dest_rank = dest.get_rank();
             let rank_bb = get_rank_bb(if dest_rank.to_int() > 3 {
                 dest_rank.wrapping_down()
@@ -185,7 +185,7 @@ impl PieceMoves for PawnMoves {
             });
             let files_bb = get_adjacent_files(dest.get_file());
             for src in rank_bb & files_bb & pieces {
-                if PawnMoves::legal_ep_move(board, src, dest) {
+                if PawnMoves::legal_ep_move(sub_board, src, dest) {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(
                             src,
@@ -229,18 +229,18 @@ impl PieceMoves for KnightMoves {
     }
 
     #[inline]
-    fn legals<T>(move_list: &mut MoveList, board: &SubBoard, mask: BitBoard)
+    fn legals<T>(move_list: &mut MoveList, sub_board: &SubBoard, mask: BitBoard)
     where
         T: CheckMoves,
     {
-        let occupied = board.occupied();
-        let color = board.turn();
-        let my_pieces = board.occupied_co(color);
-        let ksq = board.get_king_square(color);
+        let occupied = sub_board.occupied();
+        let color = sub_board.turn();
+        let my_pieces = sub_board.occupied_co(color);
+        let ksq = sub_board.get_king_square(color);
 
-        let pieces = board.get_piece_mask(Self::into_piece()) & my_pieces;
-        let pinned = board.pinned();
-        let checkers = board.get_checkers();
+        let pieces = sub_board.get_piece_mask(Self::into_piece()) & my_pieces;
+        let pinned = sub_board.pinned();
+        let checkers = sub_board.get_checkers();
 
         if T::IN_CHECK {
             let check_mask = between(checkers.to_square(), ksq) ^ checkers;
@@ -307,33 +307,33 @@ impl PieceMoves for QueenMoves {
 
 impl KingMoves {
     #[inline]
-    fn legal_king_move(board: &SubBoard, dest: Square) -> bool {
-        let occupied = board.occupied()
-            ^ (board.get_piece_mask(King) & board.occupied_co(board.turn()))
+    fn legal_king_move(sub_board: &SubBoard, dest: Square) -> bool {
+        let occupied = sub_board.occupied()
+            ^ (sub_board.get_piece_mask(King) & sub_board.occupied_co(sub_board.turn()))
             | dest.to_bitboard();
 
-        let rooks = (board.get_piece_mask(Rook) ^ board.get_piece_mask(Queen))
-            & board.occupied_co(!board.turn());
+        let rooks = (sub_board.get_piece_mask(Rook) ^ sub_board.get_piece_mask(Queen))
+            & sub_board.occupied_co(!sub_board.turn());
 
         let mut attackers = get_rook_moves(dest, occupied) & rooks;
 
-        let bishops = (board.get_piece_mask(Bishop) ^ board.get_piece_mask(Queen))
-            & board.occupied_co(!board.turn());
+        let bishops = (sub_board.get_piece_mask(Bishop) ^ sub_board.get_piece_mask(Queen))
+            & sub_board.occupied_co(!sub_board.turn());
 
         attackers |= get_bishop_moves(dest, occupied) & bishops;
 
         let knight_rays = get_knight_moves(dest);
 
         // Using ^ because knight square_and_bitboard_array bitboard do not collide with rook and bishop square_and_bitboard_array bitboard
-        attackers ^= knight_rays & board.get_piece_mask(Knight) & board.occupied_co(!board.turn());
+        attackers ^= knight_rays & sub_board.get_piece_mask(Knight) & sub_board.occupied_co(!sub_board.turn());
 
         let king_rays = get_king_moves(dest);
-        attackers |= king_rays & board.get_piece_mask(King) & board.occupied_co(!board.turn());
+        attackers |= king_rays & sub_board.get_piece_mask(King) & sub_board.occupied_co(!sub_board.turn());
 
         attackers |= get_pawn_attacks(
             dest,
-            board.turn(),
-            board.get_piece_mask(Pawn) & board.occupied_co(!board.turn()),
+            sub_board.turn(),
+            sub_board.get_piece_mask(Pawn) & sub_board.occupied_co(!sub_board.turn()),
         );
 
         attackers.is_empty()
@@ -355,19 +355,19 @@ impl PieceMoves for KingMoves {
     }
 
     #[inline]
-    fn legals<T>(move_list: &mut MoveList, board: &SubBoard, mask: BitBoard)
+    fn legals<T>(move_list: &mut MoveList, sub_board: &SubBoard, mask: BitBoard)
     where
         T: CheckMoves,
     {
-        let occupied = board.occupied();
-        let color = board.turn();
-        let ksq = board.get_king_square(color);
+        let occupied = sub_board.occupied();
+        let color = sub_board.turn();
+        let ksq = sub_board.get_king_square(color);
 
         let mut square_and_bitboard_array = Self::pseudo_legals(ksq, color, occupied, mask);
 
         let copy = square_and_bitboard_array;
         for dest in copy {
-            if !KingMoves::legal_king_move(board, dest) {
+            if !KingMoves::legal_king_move(sub_board, dest) {
                 square_and_bitboard_array ^= dest.to_bitboard();
             }
         }
@@ -381,25 +381,25 @@ impl PieceMoves for KingMoves {
         //  ** This is determined by going to the left or right, and calling
         //     'legal_king_move' for that square.
         if !T::IN_CHECK {
-            if board.my_castle_rights().has_kingside()
-                && (occupied & board.my_castle_rights().kingside_squares(color)).is_empty()
+            if sub_board.my_castle_rights().has_kingside()
+                && (occupied & sub_board.my_castle_rights().kingside_squares(color)).is_empty()
             {
                 let middle = ksq.wrapping_right();
                 let right = middle.wrapping_right();
-                if KingMoves::legal_king_move(board, middle)
-                    && KingMoves::legal_king_move(board, right)
+                if KingMoves::legal_king_move(sub_board, middle)
+                    && KingMoves::legal_king_move(sub_board, right)
                 {
                     square_and_bitboard_array ^= right.to_bitboard();
                 }
             }
 
-            if board.my_castle_rights().has_queenside()
-                && (occupied & board.my_castle_rights().queenside_squares(color)).is_empty()
+            if sub_board.my_castle_rights().has_queenside()
+                && (occupied & sub_board.my_castle_rights().queenside_squares(color)).is_empty()
             {
                 let middle = ksq.wrapping_left();
                 let left = middle.wrapping_left();
-                if KingMoves::legal_king_move(board, middle)
-                    && KingMoves::legal_king_move(board, left)
+                if KingMoves::legal_king_move(sub_board, middle)
+                    && KingMoves::legal_king_move(sub_board, left)
                 {
                     square_and_bitboard_array ^= left.to_bitboard();
                 }
@@ -443,69 +443,48 @@ pub struct MoveGenerator {
     promotion_index: usize,
     from_bitboard_iterator_mask: BitBoard,
     to_bitboard_iterator_mask: BitBoard,
-    sorted_by_pieces: bool,
     index: usize,
+    last_index: usize,
 }
 
 impl MoveGenerator {
     #[inline]
-    fn enumerate_moves(board: &SubBoard) -> MoveList {
-        let checkers = board.get_checkers();
-        let mask = !board.occupied_co(board.turn());
+    fn enumerate_moves(sub_board: &SubBoard) -> MoveList {
+        let checkers = sub_board.get_checkers();
+        let mask = !sub_board.occupied_co(sub_board.turn());
         let mut move_list = ArrayVec::new();
 
         if checkers.is_empty() {
-            PawnMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
-            KnightMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
-            BishopMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
-            RookMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
-            QueenMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
-            KingMoves::legals::<NotInCheckMoves>(&mut move_list, board, mask);
+            PawnMoves::legals::<NotInCheckMoves>(&mut move_list, sub_board, mask);
+            KnightMoves::legals::<NotInCheckMoves>(&mut move_list, sub_board, mask);
+            BishopMoves::legals::<NotInCheckMoves>(&mut move_list, sub_board, mask);
+            RookMoves::legals::<NotInCheckMoves>(&mut move_list, sub_board, mask);
+            QueenMoves::legals::<NotInCheckMoves>(&mut move_list, sub_board, mask);
+            KingMoves::legals::<NotInCheckMoves>(&mut move_list, sub_board, mask);
         } else if checkers.popcnt() == 1 {
-            PawnMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
-            KnightMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
-            BishopMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
-            RookMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
-            QueenMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
-            KingMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
+            PawnMoves::legals::<InCheckMoves>(&mut move_list, sub_board, mask);
+            KnightMoves::legals::<InCheckMoves>(&mut move_list, sub_board, mask);
+            BishopMoves::legals::<InCheckMoves>(&mut move_list, sub_board, mask);
+            RookMoves::legals::<InCheckMoves>(&mut move_list, sub_board, mask);
+            QueenMoves::legals::<InCheckMoves>(&mut move_list, sub_board, mask);
+            KingMoves::legals::<InCheckMoves>(&mut move_list, sub_board, mask);
         } else {
-            KingMoves::legals::<InCheckMoves>(&mut move_list, board, mask);
+            KingMoves::legals::<InCheckMoves>(&mut move_list, sub_board, mask);
         }
 
         move_list
     }
 
     #[inline]
-    pub fn new_legal(board: &SubBoard) -> MoveGenerator {
+    pub fn new_legal(sub_board: &SubBoard) -> MoveGenerator {
         MoveGenerator {
-            square_and_bitboard_array: MoveGenerator::enumerate_moves(board),
+            square_and_bitboard_array: MoveGenerator::enumerate_moves(sub_board),
             promotion_index: 0,
             from_bitboard_iterator_mask: BB_ALL,
             to_bitboard_iterator_mask: BB_ALL,
-            sorted_by_pieces: true,
             index: 0,
+            last_index: 0,
         }
-    }
-
-    pub fn remove_mask(&mut self, mask: BitBoard) {
-        self.square_and_bitboard_array.iter_mut().for_each(|square_and_bitboard| square_and_bitboard.bitboard &= !mask);
-        self.reorganize_square_and_bitboard_array();
-    }
-
-    pub fn remove_move(&mut self, move_: Move) -> bool {
-        for square_and_bitboard in self.square_and_bitboard_array.iter_mut() {
-            if square_and_bitboard.square == move_.get_source() {
-                square_and_bitboard.bitboard &= !move_.get_dest().to_bitboard();
-                self.reorganize_square_and_bitboard_array();
-                return true;
-            }
-        }
-        self.reorganize_square_and_bitboard_array();
-        false
-    }
-
-    pub fn get_to_bitboard_iterator_mask(&self) -> BitBoard {
-        self.to_bitboard_iterator_mask
     }
 
     /// The iterator portion of this struct relies on the invariant that
@@ -527,15 +506,37 @@ impl MoveGenerator {
         // that in i.  Then, increment i to point to a new unused slot.
         for j in (i + 1)..self.square_and_bitboard_array.len() {
             if !(get_item_unchecked!(self.square_and_bitboard_array, j).bitboard
-                & self.to_bitboard_iterator_mask)
-                .is_empty()
+                    & self.to_bitboard_iterator_mask)
+                    .is_empty()
             {
                 // unsafe { self.square_and_bitboard_array.swap_unchecked(i, j) };
                 self.square_and_bitboard_array.swap(i, j);
-                self.sorted_by_pieces = false;
                 i += 1;
             }
         }
+    }
+
+    pub fn remove_mask(&mut self, mask: BitBoard) {
+        self.square_and_bitboard_array
+            .iter_mut()
+            .for_each(|square_and_bitboard| square_and_bitboard.bitboard &= !mask);
+        self.reorganize_square_and_bitboard_array();
+    }
+
+    pub fn remove_move(&mut self, move_: Move) -> bool {
+        for square_and_bitboard in self.square_and_bitboard_array.iter_mut() {
+            if square_and_bitboard.square == move_.get_source() {
+                square_and_bitboard.bitboard &= !move_.get_dest().to_bitboard();
+                self.reorganize_square_and_bitboard_array();
+                return true;
+            }
+        }
+        self.reorganize_square_and_bitboard_array();
+        false
+    }
+
+    pub fn get_to_bitboard_iterator_mask(&self) -> BitBoard {
+        self.to_bitboard_iterator_mask
     }
 
     pub fn set_to_bitboard_iterator_mask(&mut self, mask: BitBoard) {
@@ -547,8 +548,29 @@ impl MoveGenerator {
         self.reorganize_square_and_bitboard_array();
     }
 
-    pub fn is_legal_quick(board: &SubBoard, move_: Move) -> bool {
-        let piece = board.piece_type_at(move_.get_source()).unwrap();
+    pub fn get_from_bitboard_iterator_mask(&self) -> BitBoard {
+        self.from_bitboard_iterator_mask
+    }
+
+    pub fn set_from_bitboard_iterator_mask(&mut self, mask: BitBoard) {
+        self.index = 0;
+        self.from_bitboard_iterator_mask = mask;
+    }
+
+    pub fn set_iterator_masks(&mut self, from_bitboard: BitBoard, to_bitboard: BitBoard) {
+        self.index = 0;
+        self.from_bitboard_iterator_mask = from_bitboard;
+        if self.from_bitboard_iterator_mask == from_bitboard
+            && self.to_bitboard_iterator_mask == to_bitboard
+        {
+            return;
+        }
+        self.to_bitboard_iterator_mask = to_bitboard;
+        self.reorganize_square_and_bitboard_array();
+    }
+
+    pub fn is_legal_quick(sub_board: &SubBoard, move_: Move) -> bool {
+        let piece = sub_board.piece_type_at(move_.get_source()).unwrap();
         match piece {
             Rook => true,
             Bishop => true,
@@ -556,10 +578,10 @@ impl MoveGenerator {
             Queen => true,
             Pawn => {
                 if move_.get_source().get_file() != move_.get_dest().get_file()
-                    && board.piece_type_at(move_.get_dest()).is_none()
+                    && sub_board.piece_type_at(move_.get_dest()).is_none()
                 {
                     // en-passant
-                    PawnMoves::legal_ep_move(board, move_.get_source(), move_.get_dest())
+                    PawnMoves::legal_ep_move(sub_board, move_.get_source(), move_.get_dest())
                 } else {
                     true
                 }
@@ -568,56 +590,58 @@ impl MoveGenerator {
                 let bb = between(move_.get_source(), move_.get_dest());
                 if bb.popcnt() == 1 {
                     // castles
-                    if !KingMoves::legal_king_move(board, bb.to_square()) {
+                    if !KingMoves::legal_king_move(sub_board, bb.to_square()) {
                         false
                     } else {
-                        KingMoves::legal_king_move(board, move_.get_dest())
+                        KingMoves::legal_king_move(sub_board, move_.get_dest())
                     }
                 } else {
-                    KingMoves::legal_king_move(board, move_.get_dest())
+                    KingMoves::legal_king_move(sub_board, move_.get_dest())
                 }
             }
         }
     }
 
-    pub fn perft_test(board: &SubBoard, depth: usize) -> usize {
-        let iterable = MoveGenerator::new_legal(board);
+    pub fn perft_test(sub_board: &SubBoard, depth: usize) -> usize {
+        let iterable = MoveGenerator::new_legal(sub_board);
 
         let mut result: usize = 0;
         if depth == 1 {
             iterable.len()
         } else {
             for m in iterable {
-                let board_result = board.make_move_new(m);
+                let board_result = sub_board.make_move_new(m);
                 result += MoveGenerator::perft_test(&board_result, depth - 1);
             }
             result
         }
     }
 
-    pub fn perft_test_piecewise(board: &SubBoard, depth: usize) -> usize {
-        let mut iterable = MoveGenerator::new_legal(board);
+    pub fn perft_test_piecewise(sub_board: &SubBoard, depth: usize) -> usize {
+        let mut iterable = MoveGenerator::new_legal(sub_board);
 
-        let targets = board.occupied_co(!board.turn());
+        let targets = sub_board.occupied_co(!sub_board.turn());
         let mut result: usize = 0;
 
-        if depth == 1 {
-            iterable.set_to_bitboard_iterator_mask(targets);
-            result += iterable.len();
-            iterable.set_to_bitboard_iterator_mask(!targets);
-            result += iterable.len();
-            result
-        } else {
-            iterable.set_to_bitboard_iterator_mask(targets);
-            for x in &mut iterable {
-                result += MoveGenerator::perft_test(&board.make_move_new(x), depth - 1);
+        for &piece_mask in sub_board.get_piece_masks() {
+            iterable.set_from_bitboard_iterator_mask(piece_mask);
+            if depth == 1 {
+                iterable.set_to_bitboard_iterator_mask(targets);
+                result += iterable.len();
+                iterable.set_to_bitboard_iterator_mask(!targets);
+                result += iterable.len();
+            } else {
+                iterable.set_to_bitboard_iterator_mask(targets);
+                for x in &mut iterable {
+                    result += MoveGenerator::perft_test(&sub_board.make_move_new(x), depth - 1);
+                }
+                iterable.set_to_bitboard_iterator_mask(!targets);
+                for x in &mut iterable {
+                    result += MoveGenerator::perft_test(&sub_board.make_move_new(x), depth - 1);
+                }
             }
-            iterable.set_to_bitboard_iterator_mask(BB_ALL);
-            for x in &mut iterable {
-                result += MoveGenerator::perft_test(&board.make_move_new(x), depth - 1);
-            }
-            result
         }
+        result
     }
 
     // pub fn iter(&self) -> impl Iterator<Item = Move> + '_ {
@@ -655,12 +679,10 @@ impl MoveGenerator {
 impl ExactSizeIterator for MoveGenerator {
     fn len(&self) -> usize {
         let mut result = 0;
-        for i in 0..self.square_and_bitboard_array.len() {
-            let square_and_bitboard = get_item_unchecked!(self.square_and_bitboard_array, i);
+        for square_and_bitboard in &self.square_and_bitboard_array {
             let bitboard_and_to_bitboard_iterator_mask =
                 square_and_bitboard.bitboard & self.to_bitboard_iterator_mask;
-            if bitboard_and_to_bitboard_iterator_mask.is_empty()
-            {
+            if !self.from_bitboard_iterator_mask.contains(square_and_bitboard.square) || bitboard_and_to_bitboard_iterator_mask.is_empty() {
                 break;
             }
             if square_and_bitboard.promotion {
@@ -687,11 +709,20 @@ impl Iterator for MoveGenerator {
         if self.index >= square_and_bitboard_array_len {
             return None;
         }
+        // if self.index != self.last_index {
+            self.last_index = self.index;
+            while !self.from_bitboard_iterator_mask.contains(get_item_unchecked_mut!(self.square_and_bitboard_array, self.index).square) {
+                self.index += 1;
+                self.last_index = self.index;
+                if self.index >= square_and_bitboard_array_len {
+                    return None;
+                }
+            }
+        // }
         let square_and_bitboard =
             get_item_unchecked_mut!(self.square_and_bitboard_array, self.index);
 
-        if (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty()
-        {
+        if !self.from_bitboard_iterator_mask.contains(square_and_bitboard.square) || (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty() {
             // are we done?
             None
         } else if square_and_bitboard.promotion {

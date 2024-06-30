@@ -229,12 +229,11 @@ fn test_masked_move_generator() {
             .unwrap();
 
     let mut capture_moves = MoveGenerator::new_legal(&board);
+    let attackers = board.get_piece_mask(Knight);
     let targets = board.occupied_co(!board.turn());
-    capture_moves.set_to_bitboard_iterator_mask(targets);
+    capture_moves.set_iterator_masks(attackers, targets);
 
     let expected = vec![
-        move_of("f4e5"),
-        move_of("b3d5"),
         move_of("g5e4"),
         move_of("g5f7"),
         move_of("g5h7"),
