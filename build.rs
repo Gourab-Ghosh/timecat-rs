@@ -69,10 +69,11 @@ fn main() {
     if !nnue_downloaded_correctly(&nnue_path) {
         remove_nnue_file(&nnue_path).unwrap();
         let mut nnue_file = File::create(nnue_path.clone()).expect("failed to create file");
+        println!("cargo:rerun-if-env-changed=DOCS_RS");
+        println!("cargo:rerun-if-env-changed=NNUE_DOWNLOAD");
         if std::env::var("DOCS_RS").is_ok()
             || std::env::var("NNUE_DOWNLOAD") == Ok("PAUSE".to_string())
         {
-            println!("cargo:rerun-if-changed=NULL");
             return;
         }
         match generate_nnue_file(&mut nnue_file) {
