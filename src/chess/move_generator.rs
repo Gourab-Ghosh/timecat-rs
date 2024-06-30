@@ -448,6 +448,7 @@ pub struct MoveGenerator {
     from_bitboard_iterator_mask: BitBoard,
     to_bitboard_iterator_mask: BitBoard,
     index: usize,
+    last_index: usize,
 }
 
 impl MoveGenerator {
@@ -486,6 +487,7 @@ impl MoveGenerator {
             from_bitboard_iterator_mask: BB_ALL,
             to_bitboard_iterator_mask: BB_ALL,
             index: 0,
+            last_index: usize::MAX,
         }
     }
 
@@ -537,17 +539,9 @@ impl MoveGenerator {
         false
     }
 
-    pub fn get_to_bitboard_iterator_mask(&self) -> BitBoard {
-        self.to_bitboard_iterator_mask
-    }
-
-    pub fn set_to_bitboard_iterator_mask(&mut self, mask: BitBoard) {
+    pub fn reset_indices(&mut self) {
         self.index = 0;
-        if self.to_bitboard_iterator_mask == mask {
-            return;
-        }
-        self.to_bitboard_iterator_mask = mask;
-        self.reorganize_square_and_bitboard_array();
+        self.last_index = usize::MAX;
     }
 
     pub fn get_from_bitboard_iterator_mask(&self) -> BitBoard {
@@ -555,16 +549,24 @@ impl MoveGenerator {
     }
 
     pub fn set_from_bitboard_iterator_mask(&mut self, mask: BitBoard) {
-        self.index = 0;
+        self.reset_indices();
         self.from_bitboard_iterator_mask = mask;
+        self.reorganize_square_and_bitboard_array();
+    }
+    
+    pub fn get_to_bitboard_iterator_mask(&self) -> BitBoard {
+        self.to_bitboard_iterator_mask
+    }
+
+    pub fn set_to_bitboard_iterator_mask(&mut self, mask: BitBoard) {
+        self.reset_indices();
+        self.to_bitboard_iterator_mask = mask;
+        self.reorganize_square_and_bitboard_array();
     }
 
     pub fn set_iterator_masks(&mut self, from_bitboard: BitBoard, to_bitboard: BitBoard) {
-        self.index = 0;
+        self.reset_indices();
         self.from_bitboard_iterator_mask = from_bitboard;
-        if self.to_bitboard_iterator_mask == to_bitboard {
-            return;
-        }
         self.to_bitboard_iterator_mask = to_bitboard;
         self.reorganize_square_and_bitboard_array();
     }
@@ -713,14 +715,17 @@ impl Iterator for MoveGenerator {
         if self.index >= square_and_bitboard_array_len {
             return None;
         }
-        while !self
-            .from_bitboard_iterator_mask
-            .contains(get_item_unchecked_mut!(self.square_and_bitboard_array, self.index).square)
-        {
-            self.index += 1;
-            if self.index >= square_and_bitboard_array_len {
-                return None;
+        if self.index != self.last_index {
+            while !self
+                .from_bitboard_iterator_mask
+                .contains(get_item_unchecked_mut!(self.square_and_bitboard_array, self.index).square)
+            {
+                self.index += 1;
+                if self.index >= square_and_bitboard_array_len {
+                    return None;
+                }
             }
+            self.last_index = self.index;
         }
         let square_and_bitboard =
             get_item_unchecked_mut!(self.square_and_bitboard_array, self.index);
