@@ -71,8 +71,8 @@ impl TranspositionTableEntry {
         self.best_move
     }
 
-    fn set_best_move(&mut self, move_: Option<Move>) {
-        self.best_move = move_;
+    fn set_best_move(&mut self, valid_or_null_move: Option<Move>) {
+        self.best_move = valid_or_null_move;
     }
 }
 

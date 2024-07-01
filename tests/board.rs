@@ -66,7 +66,7 @@ macro_rules! test_repetition_and_checkmate {
                     let mut board = Board::from_fen(fen).expect(&format!("Failed to set board FEN {fen}"));
                     board.push_sans(moves).expect(&format!("Failed to push sans {moves:?} in position {board}"));
                     assert_eq!(
-                        board.$func(board.parse_san(move_).expect(&format!("Failed to parse san {move_} in position {board}"))),
+                        board.$func(Move::from_san(&board, move_).expect(&format!("Failed to parse san {move_} in position {board}")).into()),
                         returned_value,
                         "Returned {returned_value} in position {fen} with moves {moves} and move {move_}"
                     );
@@ -235,13 +235,13 @@ fn move_is_en_passant() {
         ("e4 g5 e5 g4 h4", Move::from_str("g4h3").unwrap(), true),
         ("e4 f5", Move::from_str("e4f5").unwrap(), false),
     ];
-    for (moves_str, move_, expected_return) in moves {
+    for (moves_str, valid_or_null_move, expected_return) in moves {
         board.set_fen(STARTING_POSITION_FEN).unwrap();
         board.push_sans(moves_str).unwrap();
-        let returned_value = board.is_en_passant(move_);
+        let returned_value = board.is_en_passant(valid_or_null_move);
         assert_eq!(
             returned_value, expected_return,
-            "Returned {returned_value} with moves {moves_str} for move {move_}"
+            "Returned {returned_value} with moves {moves_str} for move {valid_or_null_move}"
         );
     }
 }

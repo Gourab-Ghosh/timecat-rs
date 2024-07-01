@@ -29,7 +29,7 @@ impl SearchInfo {
             collisions: searcher.get_num_collisions(),
             zero_hit: searcher.get_zero_hit(),
             clock: searcher.timer.get_clock(),
-            pv: searcher.get_pv(),
+            pv: searcher.get_pv().into_iter().copied().collect_vec(),
         }
     }
 
@@ -116,28 +116,31 @@ impl SearchInfo {
 #[derive(Clone, Debug)]
 pub struct PVTable {
     length: [usize; MAX_PLY],
-    table: [[Move; MAX_PLY]; MAX_PLY],
+    table: [[Option<Move>; MAX_PLY]; MAX_PLY],
 }
 
 impl PVTable {
     pub fn new() -> Self {
         Self {
             length: [0; MAX_PLY],
-            table: [[Move::NullMove; MAX_PLY]; MAX_PLY],
+            table: [[None; MAX_PLY]; MAX_PLY],
         }
     }
 
     #[allow(unused_unsafe)]
-    pub fn get_pv(&self, ply: Ply) -> &[Move] {
+    pub fn get_pv(&self, ply: Ply) -> Vec<&Move> {
         get_item_unchecked!(
             self.table,
             ply,
             0..unsafe { *self.length.get_unchecked(ply) }
         )
+        .iter()
+        .filter_map(|opt_move| opt_move.as_ref())
+        .collect_vec()
     }
 
     pub fn update_table(&mut self, ply: Ply, move_: Move) {
-        *get_item_unchecked_mut!(self.table, ply, ply) = move_;
+        *get_item_unchecked_mut!(self.table, ply, ply) = Some(move_);
         for next_ply in (ply + 1)..*get_item_unchecked!(self.length, ply + 1) {
             *get_item_unchecked_mut!(self.table, ply, next_ply) =
                 *get_item_unchecked!(self.table, ply + 1, next_ply);
@@ -209,12 +212,7 @@ impl Searcher {
         self.id == 0
     }
 
-    fn push_unchecked(&mut self, move_: Move) {
-        self.board.push_unchecked(move_);
-        self.ply += 1;
-    }
-
-    fn pop(&mut self) -> Move {
+    fn pop(&mut self) -> ValidOrNullMove {
         self.ply -= 1;
         self.board.pop()
     }
@@ -243,14 +241,14 @@ impl Searcher {
         );
     }
 
-    fn is_draw_move(&self, move_: Move) -> bool {
-        self.board.gives_threefold_repetition(move_)
-            || self.board.gives_claimable_threefold_repetition(move_)
+    fn is_draw_move(&self, valid_or_null_move: ValidOrNullMove) -> bool {
+        self.board.gives_threefold_repetition(valid_or_null_move)
+            || self.board.gives_claimable_threefold_repetition(valid_or_null_move)
     }
 
     fn update_best_moves(&mut self) {
         if let Some(best_move) = self.get_best_move() {
-            self.best_moves.retain(|&move_| move_ != best_move);
+            self.best_moves.retain(|&valid_or_null_move| valid_or_null_move != best_move);
             self.best_moves.insert(0, best_move);
         }
     }
@@ -271,7 +269,12 @@ impl Searcher {
                 let pv_move = self.get_best_move();
                 (
                     move_,
-                    MoveSorter::score_root_moves(&mut self.board, move_, pv_move, &self.best_moves),
+                    MoveSorter::score_root_moves(
+                        &mut self.board,
+                        move_,
+                        pv_move,
+                        &self.best_moves,
+                    ),
                 )
             })
             .collect_vec();
@@ -313,7 +316,7 @@ impl Searcher {
         let is_endgame = self.board.is_endgame();
         let moves = self.get_sorted_root_node_moves();
         for (move_index, &(move_, _)) in moves.iter().enumerate() {
-            if !is_endgame && self.is_draw_move(move_) && max_score > -DRAW_SCORE {
+            if !is_endgame && self.is_draw_move(move_.into()) && max_score > -DRAW_SCORE {
                 continue;
             }
             let clock = Instant::now();
@@ -476,7 +479,7 @@ impl Searcher {
                 // let reduced_depth = depth - r - 1;
                 let r = 1920 + (depth as i32) * 2368;
                 let reduced_depth = (((depth as u32) * 4096 - (r as u32)) / 4096) as Depth;
-                self.push_unchecked(Move::NullMove);
+                self.push_unchecked(ValidOrNullMove::NullMove);
                 let score = -self.alpha_beta(reduced_depth, -beta, -beta + 1, enable_timer)?;
                 self.pop();
                 if score >= beta {
@@ -577,7 +580,8 @@ impl Searcher {
                 self.pv_table.update_table(self.ply, move_);
                 alpha = score;
                 if not_capture_move {
-                    self.move_sorter.add_history_move(move_, &self.board, depth);
+                    self.move_sorter
+                        .add_history_move(move_, &self.board, depth);
                 }
                 if score >= beta {
                     self.transposition_table.write(
@@ -683,9 +687,8 @@ impl Searcher {
         self.transposition_table.get_zero_hit()
     }
 
-    pub fn get_pv(&self) -> Vec<Move> {
-        let pv = self.pv_table.get_pv(0).to_vec();
-        pv
+    pub fn get_pv(&self) -> Vec<&Move> {
+        self.pv_table.get_pv(0)
     }
 
     pub fn get_pv_from_t_table(&self) -> Vec<Move> {
@@ -696,7 +699,7 @@ impl Searcher {
     }
 
     pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
-        self.pv_table.get_pv(0).get(n).copied()
+        self.pv_table.get_pv(0).get(n).copied().copied()
     }
 
     pub fn get_best_move(&self) -> Option<Move> {
@@ -766,5 +769,19 @@ impl Searcher {
             }
             self.current_depth += 1;
         }
+    }
+}
+
+impl SearcherMethodOverload<Move> for Searcher {
+    fn push_unchecked(&mut self, move_: Move) {
+        self.board.push_unchecked(move_);
+        self.ply += 1;
+    }
+}
+
+impl SearcherMethodOverload<ValidOrNullMove> for Searcher {
+    fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
+        self.board.push_unchecked(valid_or_null_move);
+        self.ply += 1;
     }
 }

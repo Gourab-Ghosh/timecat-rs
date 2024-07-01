@@ -583,7 +583,11 @@ impl MoveGenerator {
                     && sub_board.piece_type_at(move_.get_dest()).is_none()
                 {
                     // en-passant
-                    PawnMoves::legal_ep_move(sub_board, move_.get_source(), move_.get_dest())
+                    PawnMoves::legal_ep_move(
+                        sub_board,
+                        move_.get_source(),
+                        move_.get_dest(),
+                    )
                 } else {
                     true
                 }
@@ -635,11 +639,13 @@ impl MoveGenerator {
             } else {
                 iterable.set_to_bitboard_iterator_mask(targets);
                 for x in &mut iterable {
-                    result += MoveGenerator::perft_test(&sub_board.make_move_new(x), depth - 1);
+                    result +=
+                        MoveGenerator::perft_test(&sub_board.make_move_new(x), depth - 1);
                 }
                 iterable.set_to_bitboard_iterator_mask(!targets);
                 for x in &mut iterable {
-                    result += MoveGenerator::perft_test(&sub_board.make_move_new(x), depth - 1);
+                    result +=
+                        MoveGenerator::perft_test(&sub_board.make_move_new(x), depth - 1);
                 }
             }
         }
@@ -762,7 +768,11 @@ impl Iterator for MoveGenerator {
             if (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty() {
                 self.index += 1;
             }
-            Some(Move::new_unchecked(square_and_bitboard.square, dest, None))
+            Some(Move::new_unchecked(
+                square_and_bitboard.square,
+                dest,
+                None,
+            ))
         }
     }
 }

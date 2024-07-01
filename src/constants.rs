@@ -292,3 +292,27 @@ pub mod files {
         File::H,
     ];
 }
+
+pub mod function_overloads {
+    use super::*;
+
+    pub trait SubBoardMethodOverload<T> {
+        fn parse_san(&self, _: &str) -> Result<T>;
+        fn parse_lan(&self, _: &str) -> Result<T>;
+        fn parse_uci(&self, _: &str) -> Result<T>;
+        fn make_move_new(&self, _: T) -> Self;
+        #[inline]
+        fn make_move(&mut self, valid_or_null_move: T) where Self: Sized {
+            *self = self.make_move_new(valid_or_null_move);
+        }
+    }
+
+    pub trait BoardMethodOverload<T> {
+        fn push_unchecked(&mut self, _: T);
+        fn push(&mut self, _: T) -> Result<()>;
+    }
+
+    pub trait SearcherMethodOverload<T> {
+        fn push_unchecked(&mut self, _: T);
+    }
+}

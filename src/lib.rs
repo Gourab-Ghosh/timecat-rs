@@ -46,7 +46,7 @@ pub mod prelude {
         get_pawn_quiets, get_pv_as_san, get_pv_as_uci, get_pv_string, get_queen_moves, get_rank_bb,
         get_rook_moves, get_rook_rays, is_checkmate, line, simplify_fen, Bishop, BitBoard, Black,
         Board, BoardStatus, CacheTable, CastleMoveType, CastleRights, Color, File, GameResult,
-        King, Knight, Move, MoveGenerator, Pawn, Piece, PieceType, Queen, Rank, RepetitionTable,
+        King, Knight, ValidOrNullMove, MoveGenerator, Pawn, Piece, PieceType, Queen, Rank, RepetitionTable,
         Rook, Square, SubBoard, SubBoardBuilder, TimecatError, TranspositionTable, White, Zobrist,
         A1, A2, A3, A4, A5, A6, A7, A8, ALL_FILES, ALL_PIECE_TYPES, ALL_RANKS, ALL_SQUARES, B1, B2,
         B3, B4, B5, B6, B7, B8, BB_A1, BB_A2, BB_A3, BB_A4, BB_A5, BB_A6, BB_A7, BB_A8, BB_ALL,
@@ -63,6 +63,8 @@ pub mod prelude {
         ENGINE_VERSION, F1, F2, F3, F4, F5, F6, F7, F8, G1, G2, G3, G4, G5, G6, G7, G8, H1, H2, H3,
         H4, H5, H6, H7, H8, PROMOTION_PIECES, STARTING_POSITION_FEN, UPPER_BOARD_MASK,
     };
+
+    pub use constants::function_overloads::*;
 
     #[cfg(feature = "engine")]
     pub use super::{self_play, Engine, GoCommand};
@@ -84,6 +86,7 @@ pub use constants::engine::*;
 pub use constants::evaluate::*;
 pub use constants::fen::*;
 pub use constants::files::*;
+pub use constants::function_overloads::*;
 pub use constants::io::*;
 pub use constants::piece::*;
 pub use constants::print_style::*;

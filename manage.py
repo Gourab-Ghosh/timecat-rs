@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, tomllib
+import sys
 from manager import *
 
 def process_args():
@@ -18,10 +18,6 @@ def process_args():
     return args, binary_args
 
 def main():
-    with open("Cargo.toml", "rb") as rbf:
-        cargo_toml_file_data = tomllib.load(rbf)
-    assert set(cargo_toml_file_data["features"]["default"]) == {'binary', 'colored', 'speed'}
-
     FEATURE_SETS_CHECK = [
         [],
         ["default"],
@@ -65,6 +61,7 @@ def main():
         backup_code("--noconfirm" in args)
 
     if "publish" in args:
+        assert_publish_condition()
         if not check_errors(FEATURE_SETS_CHECK):
             if not test_package():
                 backup_code("--noconfirm" in args)

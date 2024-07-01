@@ -60,6 +60,14 @@ impl Compress for Option<Move> {
     }
 }
 
+impl Compress for ValidOrNullMove {
+    type CompressedItem = u16;
+
+    fn compress(self) -> Self::CompressedItem {
+        (*self).compress()
+    }
+}
+
 impl Decompress<Option<PieceType>> for u8 {
     fn decompress(self) -> Option<PieceType> {
         if self == 0 {
@@ -90,6 +98,12 @@ impl Decompress<Option<Move>> for u16 {
         let dest = (self & 63).decompress();
         let promotion = (self >> 12).decompress();
         Some(Move::new_unchecked(source, dest, promotion))
+    }
+}
+
+impl Decompress<ValidOrNullMove> for u16 {
+    fn decompress(self) -> ValidOrNullMove {
+        <Self as Decompress<Option<Move>>>::decompress(self).into()
     }
 }
 

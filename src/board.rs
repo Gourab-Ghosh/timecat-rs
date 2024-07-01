@@ -34,7 +34,7 @@ impl GameResult {
 #[derive(Clone, Debug)]
 pub struct Board {
     sub_board: SubBoard,
-    stack: Vec<(SubBoard, Move)>,
+    stack: Vec<(SubBoard, ValidOrNullMove)>,
     starting_fen: String,
     repetition_table: RepetitionTable,
     #[cfg(feature = "inbuilt_nnue")]
@@ -168,30 +168,30 @@ impl Board {
     }
 
     #[inline]
-    pub fn gives_repetition(&self, move_: Move) -> bool {
+    pub fn gives_repetition(&self, valid_or_null_move: ValidOrNullMove) -> bool {
         self.repetition_table
-            .get_repetition(self.sub_board.make_move_new(move_).get_hash())
+            .get_repetition(self.sub_board.make_move_new(valid_or_null_move).get_hash())
             != 0
     }
 
     #[inline]
-    pub fn gives_threefold_repetition(&self, move_: Move) -> bool {
+    pub fn gives_threefold_repetition(&self, valid_or_null_move: ValidOrNullMove) -> bool {
         self.repetition_table
-            .get_repetition(self.sub_board.make_move_new(move_).get_hash())
+            .get_repetition(self.sub_board.make_move_new(valid_or_null_move).get_hash())
             == 2
     }
 
-    pub fn gives_claimable_threefold_repetition(&self, move_: Move) -> bool {
+    pub fn gives_claimable_threefold_repetition(&self, valid_or_null_move: ValidOrNullMove) -> bool {
         //TODO: check if this is correct
-        let new_board = self.sub_board.make_move_new(move_);
+        let new_board = self.sub_board.make_move_new(valid_or_null_move);
         MoveGenerator::new_legal(&new_board).any(|m| {
             let hash = new_board.make_move_new(m).get_hash();
             self.repetition_table.get_repetition(hash) == 2
         })
     }
 
-    // pub fn gives_claimable_threefold_repetition(&mut self, move_: Move) -> bool {
-    //     self.push(Some(move_));
+    // pub fn gives_claimable_threefold_repetition(&mut self, valid_or_null_move: ValidOrNullMove) -> bool {
+    //     self.push(Some(valid_or_null_move));
     //     if self.is_threefold_repetition() {
     //         self.pop();
     //         return true;
@@ -227,44 +227,20 @@ impl Board {
         self.is_other_draw() || self.status() != BoardStatus::Ongoing
     }
 
-    pub fn push_unchecked(&mut self, move_: Move) {
-        let sub_board_copy = self.sub_board.clone();
-        self.sub_board.make_move(move_);
-        self.repetition_table.insert(self.get_hash());
-        self.stack.push((sub_board_copy, move_));
-    }
-
-    pub fn push(&mut self, move_: Move) -> Result<()> {
-        if move_.is_null() {
-            if self.is_check() {
-                return Err(TimecatError::NullMoveInCheck {
-                    fen: self.get_fen(),
-                });
-            }
-        } else if !self.is_legal(move_) {
-            return Err(TimecatError::IllegalMove {
-                move_,
-                board_fen: self.get_fen(),
-            });
-        }
-        self.push_unchecked(move_);
-        Ok(())
-    }
-
-    pub fn pop(&mut self) -> Move {
-        let (sub_board, move_) = self.stack.pop().unwrap();
+    pub fn pop(&mut self) -> ValidOrNullMove {
+        let (sub_board, valid_or_null_move) = self.stack.pop().unwrap();
         self.repetition_table.remove(self.get_hash());
         self.sub_board = sub_board;
-        move_
+        valid_or_null_move
     }
 
     #[inline]
-    pub fn get_all_moves(&self) -> Vec<Move> {
+    pub fn get_all_moves(&self) -> Vec<ValidOrNullMove> {
         self.stack.iter().map(|(_, m)| *m).collect_vec()
     }
 
     #[inline]
-    pub fn get_last_move(&self) -> Option<Move> {
+    pub fn get_last_move(&self) -> Option<ValidOrNullMove> {
         self.stack.last().map(|(_, m)| *m)
     }
 
@@ -283,24 +259,24 @@ impl Board {
         self.stack.is_empty()
     }
 
-    pub fn push_san(&mut self, san: &str) -> Result<Move> {
-        let move_ = self.parse_san(san)?;
-        self.push_unchecked(move_);
-        Ok(move_)
+    pub fn push_san(&mut self, san: &str) -> Result<ValidOrNullMove> {
+        let valid_or_null_move = self.parse_san(san)?;
+        self.push_unchecked(valid_or_null_move);
+        Ok(valid_or_null_move)
     }
 
     #[inline]
-    pub fn push_sans(&mut self, sans: &str) -> Result<Vec<Move>> {
+    pub fn push_sans(&mut self, sans: &str) -> Result<Vec<ValidOrNullMove>> {
         remove_double_spaces_and_trim(sans)
             .split(' ')
             .map(|san| self.push_san(san))
             .collect()
     }
 
-    pub fn push_uci(&mut self, uci: &str) -> Result<Move> {
-        let move_ = self.parse_uci(uci)?;
-        self.push(move_)?;
-        Ok(move_)
+    pub fn push_uci(&mut self, uci: &str) -> Result<ValidOrNullMove> {
+        let valid_or_null_move = self.parse_uci(uci)?;
+        self.push(valid_or_null_move)?;
+        Ok(valid_or_null_move)
     }
 
     #[inline]
@@ -309,21 +285,21 @@ impl Board {
     }
 
     #[inline]
-    pub fn push_uci_moves(&mut self, uci_moves: &str) -> Result<Vec<Move>> {
+    pub fn push_uci_moves(&mut self, uci_moves: &str) -> Result<Vec<ValidOrNullMove>> {
         remove_double_spaces_and_trim(uci_moves)
             .split(' ')
             .map(|san| self.push_uci(san))
             .collect()
     }
 
-    pub fn algebraic_and_push(&mut self, move_: Move, long: bool) -> Result<String> {
-        if move_.is_null() {
+    pub fn algebraic_and_push(&mut self, valid_or_null_move: ValidOrNullMove, long: bool) -> Result<String> {
+        if valid_or_null_move.is_null() {
             return Ok("--".to_string());
         }
-        let san = move_.algebraic_without_suffix(self.get_sub_board(), long)?;
+        let san = valid_or_null_move.algebraic_without_suffix(self.get_sub_board(), long)?;
 
         // Look ahead for check or checkmate.
-        self.push(move_)?;
+        self.push(valid_or_null_move)?;
         let is_checkmate = self.is_checkmate();
 
         // Add check or checkmate suffix.
@@ -337,35 +313,35 @@ impl Board {
     }
 
     #[inline]
-    pub fn san_and_push(&mut self, move_: Move) -> Result<String> {
-        self.algebraic_and_push(move_, false)
+    pub fn san_and_push(&mut self, valid_or_null_move: ValidOrNullMove) -> Result<String> {
+        self.algebraic_and_push(valid_or_null_move, false)
     }
 
     #[inline]
-    pub fn lan_and_push(&mut self, move_: Move) -> Result<String> {
-        self.algebraic_and_push(move_, true)
+    pub fn lan_and_push(&mut self, valid_or_null_move: ValidOrNullMove) -> Result<String> {
+        self.algebraic_and_push(valid_or_null_move, true)
     }
 
-    pub fn variation_san(board: &Board, variation: Vec<Move>) -> String {
+    pub fn variation_san(board: &Board, variation: Vec<ValidOrNullMove>) -> String {
         let mut board = board.clone();
         let mut san = Vec::new();
-        for move_ in variation {
+        for valid_or_null_move in variation {
             if board.turn() == White {
-                let san_str = board.san_and_push(move_);
+                let san_str = board.san_and_push(valid_or_null_move);
                 san.push(format!(
                     "{}. {}",
                     board.get_fullmove_number(),
                     san_str.unwrap()
                 ));
             } else if san.is_empty() {
-                let san_str = board.san_and_push(move_);
+                let san_str = board.san_and_push(valid_or_null_move);
                 san.push(format!(
                     "{}...{}",
                     board.get_fullmove_number(),
                     san_str.unwrap()
                 ));
             } else {
-                san.push(board.san_and_push(move_).unwrap().to_string());
+                san.push(board.san_and_push(valid_or_null_move).unwrap().to_string());
             }
         }
         let mut san_string = String::new();
@@ -429,6 +405,49 @@ impl Board {
     pub fn evaluate_flipped(&mut self) -> Score {
         let score = self.evaluate();
         self.score_flipped(score)
+    }
+}
+
+impl BoardMethodOverload<Move> for Board {
+    fn push_unchecked(&mut self, move_: Move) {
+        let sub_board_copy = self.sub_board.clone();
+        self.sub_board.make_move(move_);
+        self.repetition_table.insert(self.get_hash());
+        self.stack.push((sub_board_copy, move_.into()));
+    }
+
+    fn push(&mut self, move_: Move) -> Result<()> {
+        if !self.is_legal(move_) {
+            return Err(TimecatError::IllegalMove {
+                valid_or_null_move: move_.into(),
+                board_fen: self.get_fen(),
+            });
+        }
+        self.push_unchecked(move_);
+        Ok(())
+    }
+}
+
+impl BoardMethodOverload<ValidOrNullMove> for Board {
+    fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
+        let sub_board_copy = self.sub_board.clone();
+        self.sub_board.make_move(valid_or_null_move);
+        self.repetition_table.insert(self.get_hash());
+        self.stack.push((sub_board_copy, valid_or_null_move));
+    }
+
+    fn push(&mut self, valid_or_null_move: ValidOrNullMove) -> Result<()> {
+        if let Some(move_) = *valid_or_null_move {
+            self.push(move_)
+        } else {
+            if self.is_check() {
+                return Err(TimecatError::NullMoveInCheck {
+                    fen: self.get_fen(),
+                });
+            }
+            self.push_unchecked(valid_or_null_move);
+            Ok(())
+        }
     }
 }
 

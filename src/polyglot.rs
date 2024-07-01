@@ -618,8 +618,8 @@ pub fn search_all_moves_from_file(path: &str, board: &Board) -> Result<Vec<Weigh
             let move_int = u16::from_be_bytes(buffer[8..10].try_into()?);
             let weight = u16::from_be_bytes(buffer[10..12].try_into()?);
             if hash == target_hash {
-                let move_ = get_move_from_polyglot_move_int(move_int as usize)?;
-                moves.push(WeightedMove::new(move_, weight as MoveWeight));
+                let valid_or_null_move = get_move_from_polyglot_move_int(move_int as usize)?;
+                moves.push(WeightedMove::new(valid_or_null_move, weight as MoveWeight));
                 idx += 1;
             } else {
                 break;

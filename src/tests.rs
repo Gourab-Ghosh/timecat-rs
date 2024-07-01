@@ -117,12 +117,12 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // for source in ALL_SQUARES {
     //     for dest in ALL_SQUARES {
     //         for &promotion in &all_optional_pieces {
-    //             let move_ = Move::new(source, dest, promotion);
-    //             let compressed_then_decompressed_move: Option<Move> = move_.compress().decompress();
+    //             let valid_or_null_move = ValidOrNullMove::new(source, dest, promotion);
+    //             let compressed_then_decompressed_move: Option<ValidOrNullMove> = valid_or_null_move.compress().decompress();
     //             let compressed_then_decompressed_move = compressed_then_decompressed_move.unwrap();
-    //             if move_ != compressed_then_decompressed_move {
-    //                 // println!("{move_}: {move_:?} ----- {compressed_then_decompressed_move:?}");
-    //                 println!("{move_} ----- {} ----- {compressed_then_decompressed_move}", move_.compress());
+    //             if valid_or_null_move != compressed_then_decompressed_move {
+    //                 // println!("{valid_or_null_move}: {valid_or_null_move:?} ----- {compressed_then_decompressed_move:?}");
+    //                 println!("{valid_or_null_move} ----- {} ----- {compressed_then_decompressed_move}", valid_or_null_move.compress());
     //             }
     //         }
     //     }
@@ -148,10 +148,10 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // let mut board = Board::new();
     // println!("\n{board}");
     // for san in ["e4", "Nf6", "Be2", "Nxe4"] {
-    //     let move_ = board.parse_stringify_move(san)?;
-    //     let move_str = board.stringify_move(move_);
+    //     let valid_or_null_move = board.parse_stringify_move(san)?;
+    //     let move_str = board.stringify_move(valid_or_null_move);
     //     println!("\nPushing move {move_str}");
-    //     board.push(move_);
+    //     board.push(valid_or_null_move);
     //     println!("\n{board}");
     // }
 
@@ -159,9 +159,9 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // board.set_fen("8/8/8/p1ppkPp1/P1p3P1/2P1K3/2P5/8 b - - 0 36").unwrap();
     // let moves = "d4+ cxd4+ cxd4+ Kd2 Kf6 c3 d3 Ke3 Ke5 Kd2 Kd5 Ke3 Ke5 Kd2 Kf6".split(' ');
     // for move_san in moves {
-    //     let move_ = board.parse_san(move_san).unwrap();
-    //     let gives_repetition = board.gives_repetition(move_.unwrap());
-    //     board.push(move_);
+    //     let valid_or_null_move = board.parse_san(move_san).unwrap();
+    //     let gives_repetition = board.gives_repetition(valid_or_null_move.unwrap());
+    //     board.push(valid_or_null_move);
     //     println!("{move_san}: {gives_repetition} {} {}", board.get_num_repetitions(), board.get_hash().stringify());
     // }
 

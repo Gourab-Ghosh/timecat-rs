@@ -167,7 +167,7 @@ impl StringifyMove for Option<Move> {
 
     fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String> {
         match self {
-            Some(move_) => move_.algebraic(sub_board, long),
+            Some(valid_or_null_move) => valid_or_null_move.algebraic(sub_board, long),
             None => Ok("--".to_string()),
         }
     }

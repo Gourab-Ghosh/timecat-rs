@@ -29,7 +29,9 @@ pub fn get_pv_as_algebraic(sub_board: &SubBoard, pv: &[Move], long: bool) -> Str
     let mut pv_string = String::new();
     for &move_ in pv {
         pv_string += &(if sub_board.is_legal(move_) {
-            let (san, new_sub_board) = move_.algebraic_and_new_sub_board(&sub_board, long).unwrap();
+            let (san, new_sub_board) = move_
+                .algebraic_and_new_sub_board(&sub_board, long)
+                .unwrap();
             sub_board = new_sub_board;
             san
         } else {
