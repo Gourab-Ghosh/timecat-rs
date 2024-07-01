@@ -94,11 +94,7 @@ impl MoveSorter {
     }
 
     pub fn reset_variables(&mut self) {
-        for ply in 0..MAX_PLY {
-            for idx in 0..NUM_KILLER_MOVES {
-                *get_item_unchecked_mut!(self.killer_moves, ply, idx) = None;
-            }
-        }
+        self.killer_moves.fill([None; NUM_KILLER_MOVES]);
         self.history_move_scores = [[[0; 64]; 2]; 6];
         self.follow_pv = false;
         self.score_pv = false;
@@ -153,9 +149,8 @@ impl MoveSorter {
             None => return 0,
         };
         let capture_piece = board.piece_type_at(square).unwrap_or(Pawn);
-        (capture_piece.evaluate()
-            - Self::see(square, &board.make_move_new(least_attackers_move)))
-        .max(0)
+        (capture_piece.evaluate() - Self::see(square, &board.make_move_new(least_attackers_move)))
+            .max(0)
     }
 
     fn see_capture(square: Square, board: &SubBoard) -> Score {
@@ -164,8 +159,7 @@ impl MoveSorter {
             None => return 0,
         };
         let capture_piece = board.piece_type_at(square).unwrap_or(Pawn);
-        capture_piece.evaluate()
-            - Self::see(square, &board.make_move_new(least_attackers_move))
+        capture_piece.evaluate() - Self::see(square, &board.make_move_new(least_attackers_move))
     }
 
     fn mvv_lva(move_: Move, board: &SubBoard) -> MoveWeight {
@@ -309,7 +303,9 @@ impl MoveSorter {
         }
         if moves_vec.len() < 2 {
             return WeightedMoveListSorter::from_iter(
-                moves_vec.iter().map(|&valid_or_null_move| WeightedMove::new(valid_or_null_move, 0)),
+                moves_vec
+                    .iter()
+                    .map(|&valid_or_null_move| WeightedMove::new(valid_or_null_move, 0)),
             );
         }
         WeightedMoveListSorter::from_iter(moves_vec.into_iter().enumerate().map(|(idx, m)| {

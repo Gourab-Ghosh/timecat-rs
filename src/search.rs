@@ -243,12 +243,15 @@ impl Searcher {
 
     fn is_draw_move(&self, valid_or_null_move: ValidOrNullMove) -> bool {
         self.board.gives_threefold_repetition(valid_or_null_move)
-            || self.board.gives_claimable_threefold_repetition(valid_or_null_move)
+            || self
+                .board
+                .gives_claimable_threefold_repetition(valid_or_null_move)
     }
 
     fn update_best_moves(&mut self) {
         if let Some(best_move) = self.get_best_move() {
-            self.best_moves.retain(|&valid_or_null_move| valid_or_null_move != best_move);
+            self.best_moves
+                .retain(|&valid_or_null_move| valid_or_null_move != best_move);
             self.best_moves.insert(0, best_move);
         }
     }
@@ -269,12 +272,7 @@ impl Searcher {
                 let pv_move = self.get_best_move();
                 (
                     move_,
-                    MoveSorter::score_root_moves(
-                        &mut self.board,
-                        move_,
-                        pv_move,
-                        &self.best_moves,
-                    ),
+                    MoveSorter::score_root_moves(&mut self.board, move_, pv_move, &self.best_moves),
                 )
             })
             .collect_vec();
@@ -580,8 +578,7 @@ impl Searcher {
                 self.pv_table.update_table(self.ply, move_);
                 alpha = score;
                 if not_capture_move {
-                    self.move_sorter
-                        .add_history_move(move_, &self.board, depth);
+                    self.move_sorter.add_history_move(move_, &self.board, depth);
                 }
                 if score >= beta {
                     self.transposition_table.write(

@@ -239,11 +239,7 @@ impl<T: Copy + PartialEq> CacheTable<T> {
 
     #[inline]
     pub fn clear(&self) {
-        self.table
-            .write()
-            .unwrap()
-            .iter_mut()
-            .for_each(|e| *e = None);
+        self.table.write().unwrap().fill(None);
         self.num_cells_filled.store(0, MEMORY_ORDERING);
         self.reset_variables()
     }

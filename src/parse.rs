@@ -273,10 +273,7 @@ impl GoAndPerft {
                     "ponder",
                     ponder_move
                         .stringify_move(
-                            &engine
-                                .get_board()
-                                .get_sub_board()
-                                .make_move_new(best_move),
+                            &engine.get_board().get_sub_board().make_move_new(best_move),
                         )
                         .unwrap(),
                     false,

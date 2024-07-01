@@ -302,7 +302,10 @@ pub mod function_overloads {
         fn parse_uci(&self, _: &str) -> Result<T>;
         fn make_move_new(&self, _: T) -> Self;
         #[inline]
-        fn make_move(&mut self, valid_or_null_move: T) where Self: Sized {
+        fn make_move(&mut self, valid_or_null_move: T)
+        where
+            Self: Sized,
+        {
             *self = self.make_move_new(valid_or_null_move);
         }
     }

@@ -831,9 +831,7 @@ impl SubBoard {
 
     #[inline]
     pub fn is_irreversible(&self, move_: Move) -> bool {
-        self.has_legal_en_passant()
-            || self.is_zeroing(move_)
-            || self.reduces_castling_rights(move_)
+        self.has_legal_en_passant() || self.is_zeroing(move_) || self.reduces_castling_rights(move_)
     }
 
     #[inline]
