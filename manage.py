@@ -51,7 +51,7 @@ def main():
             return
 
     if "build" in args:
-        if os.system(f"{RUST_FLAGS_STRING} cargo build --release"):
+        if build_binary(True):
             return
 
     if "run" in args:

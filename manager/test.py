@@ -1,8 +1,8 @@
 import os
-from .constants import RUST_FLAGS_STRING
+from .build import run_command_with_target_cpu_native
 
 def test_package(release_mode = False):
     if release_mode:
-        return bool(os.system(f"{RUST_FLAGS_STRING} cargo test --all-features --release"))
+        return bool(run_command_with_target_cpu_native(f"cargo test --all-features --release"))
     else:
         return bool(os.system("cargo test --all-features"))
