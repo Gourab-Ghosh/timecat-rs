@@ -216,6 +216,7 @@ impl fmt::Display for Move {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
+#[repr(transparent)]
 pub struct ValidOrNullMove(Option<Move>);
 
 impl ValidOrNullMove {

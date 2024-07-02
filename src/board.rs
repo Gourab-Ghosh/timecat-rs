@@ -167,32 +167,6 @@ impl Board {
         self.get_num_repetitions() as usize >= n_times
     }
 
-    #[inline]
-    pub fn gives_repetition(&self, valid_or_null_move: ValidOrNullMove) -> bool {
-        self.repetition_table
-            .get_repetition(self.sub_board.make_move_new(valid_or_null_move).get_hash())
-            != 0
-    }
-
-    #[inline]
-    pub fn gives_threefold_repetition(&self, valid_or_null_move: ValidOrNullMove) -> bool {
-        self.repetition_table
-            .get_repetition(self.sub_board.make_move_new(valid_or_null_move).get_hash())
-            == 2
-    }
-
-    pub fn gives_claimable_threefold_repetition(
-        &self,
-        valid_or_null_move: ValidOrNullMove,
-    ) -> bool {
-        //TODO: check if this is correct
-        let new_board = self.sub_board.make_move_new(valid_or_null_move);
-        MoveGenerator::new_legal(&new_board).any(|m| {
-            let hash = new_board.make_move_new(m).get_hash();
-            self.repetition_table.get_repetition(hash) == 2
-        })
-    }
-
     // pub fn gives_claimable_threefold_repetition(&mut self, valid_or_null_move: ValidOrNullMove) -> bool {
     //     self.push(Some(valid_or_null_move));
     //     if self.is_threefold_repetition() {
@@ -301,6 +275,7 @@ impl Board {
         long: bool,
     ) -> Result<String> {
         if valid_or_null_move.is_null() {
+            self.push(valid_or_null_move)?;
             return Ok("--".to_string());
         }
         let san = valid_or_null_move.algebraic_without_suffix(self.get_sub_board(), long)?;
@@ -433,6 +408,29 @@ impl BoardMethodOverload<Move> for Board {
         self.push_unchecked(move_);
         Ok(())
     }
+
+    #[inline]
+    fn gives_repetition(&self, move_: Move) -> bool {
+        self.repetition_table
+            .get_repetition(self.sub_board.make_move_new(move_).get_hash())
+            != 0
+    }
+
+    #[inline]
+    fn gives_threefold_repetition(&self, move_: Move) -> bool {
+        self.repetition_table
+            .get_repetition(self.sub_board.make_move_new(move_).get_hash())
+            == 2
+    }
+
+    fn gives_claimable_threefold_repetition(&self, move_: Move) -> bool {
+        //TODO: check if this is correct
+        let new_board = self.sub_board.make_move_new(move_);
+        MoveGenerator::new_legal(&new_board).any(|m| {
+            let hash = new_board.make_move_new(m).get_hash();
+            self.repetition_table.get_repetition(hash) == 2
+        })
+    }
 }
 
 impl BoardMethodOverload<ValidOrNullMove> for Board {
@@ -455,6 +453,29 @@ impl BoardMethodOverload<ValidOrNullMove> for Board {
             self.push_unchecked(valid_or_null_move);
             Ok(())
         }
+    }
+
+    #[inline]
+    fn gives_repetition(&self, valid_or_null_move: ValidOrNullMove) -> bool {
+        self.repetition_table
+            .get_repetition(self.sub_board.make_move_new(valid_or_null_move).get_hash())
+            != 0
+    }
+
+    #[inline]
+    fn gives_threefold_repetition(&self, valid_or_null_move: ValidOrNullMove) -> bool {
+        self.repetition_table
+            .get_repetition(self.sub_board.make_move_new(valid_or_null_move).get_hash())
+            == 2
+    }
+
+    fn gives_claimable_threefold_repetition(&self, valid_or_null_move: ValidOrNullMove) -> bool {
+        //TODO: check if this is correct
+        let new_board = self.sub_board.make_move_new(valid_or_null_move);
+        MoveGenerator::new_legal(&new_board).any(|m| {
+            let hash = new_board.make_move_new(m).get_hash();
+            self.repetition_table.get_repetition(hash) == 2
+        })
     }
 }
 

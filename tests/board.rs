@@ -66,7 +66,7 @@ macro_rules! test_repetition_and_checkmate {
                     let mut board = Board::from_fen(fen).expect(&format!("Failed to set board FEN {fen}"));
                     board.push_sans(moves).expect(&format!("Failed to push sans {moves:?} in position {board}"));
                     assert_eq!(
-                        board.$func(Move::from_san(&board, move_).expect(&format!("Failed to parse san {move_} in position {board}")).into()),
+                        board.$func(Move::from_san(&board, move_).expect(&format!("Failed to parse san {move_} in position {board}"))),
                         returned_value,
                         "Returned {returned_value} in position {fen} with moves {moves} and move {move_}"
                     );

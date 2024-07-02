@@ -696,7 +696,7 @@ impl Searcher {
     }
 
     pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
-        self.pv_table.get_pv(0).get(n).copied().copied()
+        Some(**self.pv_table.get_pv(0).get(n)?)
     }
 
     pub fn get_best_move(&self) -> Option<Move> {

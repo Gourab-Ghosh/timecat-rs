@@ -280,8 +280,8 @@ impl SubBoard {
     }
 
     #[inline]
-    pub fn gives_checkmate(&self, valid_or_null_move: ValidOrNullMove) -> bool {
-        self.make_move_new(valid_or_null_move).status() == BoardStatus::Checkmate
+    pub fn gives_checkmate(&self, move_: Move) -> bool {
+        self.make_move_new(move_).status() == BoardStatus::Checkmate
     }
 
     #[inline]

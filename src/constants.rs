@@ -311,8 +311,12 @@ pub mod function_overloads {
     }
 
     pub trait BoardMethodOverload<T> {
+        // TODO: Avoid Code Repetition
         fn push_unchecked(&mut self, _: T);
         fn push(&mut self, _: T) -> Result<()>;
+        fn gives_repetition(&self, _: T) -> bool;
+        fn gives_threefold_repetition(&self, _: T) -> bool;
+        fn gives_claimable_threefold_repetition(&self, _: T) -> bool;
     }
 
     pub trait SearcherMethodOverload<T> {

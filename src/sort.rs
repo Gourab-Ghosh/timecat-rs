@@ -360,11 +360,11 @@ impl MoveSorter {
         if pv_move.is_some() {
             return 100_000;
         }
-        if board.gives_repetition(move_.into()) {
+        if board.gives_repetition(move_) {
             return -50;
         }
         let is_endgame = board.is_endgame();
-        if !is_endgame && board.gives_claimable_threefold_repetition(move_.into()) {
+        if !is_endgame && board.gives_claimable_threefold_repetition(move_) {
             return -40;
         }
         let mut score = 0;
