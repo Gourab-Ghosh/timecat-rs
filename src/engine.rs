@@ -48,7 +48,7 @@ impl GoCommand {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct GoResponse {
     search_info: SearchInfo,
 }
