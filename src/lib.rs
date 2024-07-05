@@ -132,7 +132,10 @@ pub use std::str::{FromStr, ParseBoolError};
 pub use std::sync::atomic::{AtomicBool, AtomicUsize};
 pub use std::sync::{Arc, RwLock};
 pub use std::thread;
+#[cfg(not(feature = "wasm"))]
 pub use std::time::{Duration, Instant};
+#[cfg(feature = "wasm")]
+pub use web_time::{Duration, Instant};
 #[cfg(feature = "engine")]
 #[cfg(feature = "debug")]
 pub use tests::test;

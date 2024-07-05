@@ -1,6 +1,7 @@
 use super::*;
 use EntryFlag::*;
 
+// #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct SearchInfo {
     sub_board: SubBoard,
