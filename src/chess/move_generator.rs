@@ -652,6 +652,10 @@ impl MoveGenerator {
         const NO_PROMOTION_PIECES: &[Option<PieceType>] = &[None];
         self.square_and_bitboard_array
             .iter()
+            .filter(|square_and_bitboard| {
+                self.from_bitboard_iterator_mask
+                    .contains(square_and_bitboard.square)
+            })
             .take_while(|square_and_bitboard| {
                 !(square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty()
             })
