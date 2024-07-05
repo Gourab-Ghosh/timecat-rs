@@ -422,7 +422,7 @@ impl PieceMoves for KingMoves {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 struct SquareAndBitBoard {
     square: Square,
     bitboard: BitBoard,
@@ -646,28 +646,30 @@ impl MoveGenerator {
         result
     }
 
-    // pub fn iter(&self) -> impl Iterator<Item = Move> + '_ {
-    //     self.square_and_bitboard_array
-    //         .iter()
-    //         .take_while(|square_and_bitboard| !(square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty())
-    //         .flat_map(move |square_and_bitboard| {
-    //             let promotion_pieces = if square_and_bitboard.promotion {
-    //                 PROMOTION_PIECES
-    //                     .into_iter()
-    //                     .map(|piece_type| Some(piece_type))
-    //                     .collect_vec()
-    //             } else {
-    //                 vec![None]
-    //             };
-    //             promotion_pieces.into_iter().flat_map(move |promotion| {
-    //                 (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).map(
-    //                     move |dest| {
-    //                         Move::new_unchecked(square_and_bitboard.square, dest, promotion)
-    //                     },
-    //                 )
-    //             })
-    //         })
-    // }
+    pub fn iter(&self) -> impl Iterator<Item = Move> + '_ {
+        const OPTIONAL_PROMOTION_PIECES: &[Option<PieceType>] =
+            &[Some(Queen), Some(Knight), Some(Rook), Some(Bishop)];
+        const NO_PROMOTION_PIECES: &[Option<PieceType>] = &[None];
+        self.square_and_bitboard_array
+            .iter()
+            .take_while(|square_and_bitboard| {
+                !(square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty()
+            })
+            .flat_map(move |square_and_bitboard| {
+                let promotion_pieces = if square_and_bitboard.promotion {
+                    OPTIONAL_PROMOTION_PIECES
+                } else {
+                    NO_PROMOTION_PIECES
+                };
+                promotion_pieces.into_iter().flat_map(move |&promotion| {
+                    (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).map(
+                        move |dest| {
+                            Move::new_unchecked(square_and_bitboard.square, dest, promotion)
+                        },
+                    )
+                })
+            })
+    }
 
     pub fn contains(&self, move_: &Move) -> bool {
         self.square_and_bitboard_array
