@@ -20,6 +20,7 @@ pub struct SubBoard {
     _pinned: BitBoard,
     _checkers: BitBoard,
     _transposition_key: u64,
+    _pawn_transposition_key: u64,
     _halfmove_clock: u8,
     _fullmove_number: NumMoves,
     _white_material_score: Score,
@@ -65,6 +66,7 @@ impl SubBoard {
             _pinned: BB_EMPTY,
             _checkers: BB_EMPTY,
             _transposition_key: 0,
+            _pawn_transposition_key: 0,
             _ep_square: None,
             _halfmove_clock: 0,
             _fullmove_number: 1,
@@ -248,7 +250,11 @@ impl SubBoard {
         let colored_piece_mask_before = *colored_piece_mask;
         *colored_piece_mask ^= bb;
         self._occupied ^= bb;
-        self._transposition_key ^= Zobrist::piece(piece_type, bb.to_square(), color);
+        let zobrist_hash = Zobrist::piece(piece_type, bb.to_square(), color);
+        self._transposition_key ^= zobrist_hash;
+        if piece_type == Pawn {
+            self._pawn_transposition_key ^= zobrist_hash;
+        }
         if piece_type != King {
             let score_change =
                 if colored_piece_mask.get_mask() > colored_piece_mask_before.get_mask() {
@@ -421,7 +427,7 @@ impl SubBoard {
 
     #[inline]
     pub fn get_pawn_hash(&self) -> u64 {
-        todo!()
+        self._pawn_transposition_key
     }
 
     #[inline]
@@ -608,7 +614,7 @@ impl SubBoard {
     }
 
     pub fn flip_vertical(&mut self) {
-        // TODO: Change Transposition Key
+        // TODO: Change Transposition Keys
         self._piece_masks
             .iter_mut()
             .chain(self._occupied_co.iter_mut())
@@ -617,11 +623,12 @@ impl SubBoard {
         self._castle_rights = [CastleRights::None; NUM_COLORS];
         self.update_pin_and_checkers_info();
         // self._transposition_key = self._transposition_key;
+        // self._pawn_transposition_key = self._pawn_transposition_key;
         self._ep_square = self._ep_square.map(|square| square.horizontal_mirror());
     }
 
     pub fn flip_horizontal(&mut self) {
-        // TODO: Change Transposition Key
+        // TODO: Change Transposition Keys
         self._piece_masks
             .iter_mut()
             .chain(self._occupied_co.iter_mut())
@@ -630,6 +637,7 @@ impl SubBoard {
         self._castle_rights = [CastleRights::None; NUM_COLORS];
         self.update_pin_and_checkers_info();
         // self._transposition_key = self._transposition_key;
+        // self._pawn_transposition_key = self._pawn_transposition_key;
         self._ep_square = self._ep_square.map(|square| square.vertical_mirror());
     }
 
