@@ -426,7 +426,7 @@ impl BoardMethodOverload<Move> for Board {
     fn gives_claimable_threefold_repetition(&self, move_: Move) -> bool {
         //TODO: check if this is correct
         let new_board = self.sub_board.make_move_new(move_);
-        MoveGenerator::new_legal(&new_board).any(|m| {
+        new_board.generate_legal_moves().any(|m| {
             let hash = new_board.make_move_new(m).get_hash();
             self.repetition_table.get_repetition(hash) == 2
         })
@@ -472,7 +472,7 @@ impl BoardMethodOverload<ValidOrNullMove> for Board {
     fn gives_claimable_threefold_repetition(&self, valid_or_null_move: ValidOrNullMove) -> bool {
         //TODO: check if this is correct
         let new_board = self.sub_board.make_move_new(valid_or_null_move);
-        MoveGenerator::new_legal(&new_board).any(|m| {
+        new_board.generate_legal_moves().any(|m| {
             let hash = new_board.make_move_new(m).get_hash();
             self.repetition_table.get_repetition(hash) == 2
         })

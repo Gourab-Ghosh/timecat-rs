@@ -2,13 +2,13 @@ use std::collections::HashSet;
 use timecat::*;
 
 fn move_generator_perft_test(fen: &str, depth: usize, expected_result: usize) {
-    let board = SubBoard::from_str(fen).unwrap();
-    let result = MoveGenerator::perft_test(&board, depth);
+    let sub_board = SubBoard::from_str(fen).unwrap();
+    let result = MoveGenerator::perft_test(&sub_board, depth);
     assert_eq!(
         result, expected_result,
         "Expected result {expected_result} but got {result} in position {fen}"
     );
-    let result = MoveGenerator::perft_test_piecewise(&board, depth);
+    let result = MoveGenerator::perft_test_piecewise(&sub_board, depth);
     assert_eq!(
         result, expected_result,
         "Expected result {expected_result} but got {result} in position {fen}"
@@ -193,13 +193,13 @@ generate_move_generator_functions!(
 
 #[test]
 fn move_generator_issue_15() {
-    let board = SubBoardBuilder::from_str(
+    let sub_board = SubBoardBuilder::from_str(
         "rnbqkbnr/ppp2pp1/4p3/3N4/3PpPp1/8/PPP3PP/R1B1KBNR b KQkq f3 0 1",
     )
     .unwrap()
     .try_into()
     .unwrap();
-    let _ = MoveGenerator::new_legal(&board);
+    let _ = MoveGenerator::new_legal(&sub_board);
 }
 
 fn move_of(m: &str) -> Move {
@@ -224,14 +224,13 @@ fn move_of(m: &str) -> Move {
 
 #[test]
 fn test_masked_move_generator() {
-    let board =
+    let sub_board =
         SubBoard::from_str("r1bqkb1r/pp3ppp/5n2/2ppn1N1/4pP2/1BN1P3/PPPP2PP/R1BQ1RK1 w kq - 0 9")
             .unwrap();
 
-    let mut capture_moves = MoveGenerator::new_legal(&board);
-    let attackers = board.get_piece_mask(Knight);
-    let targets = board.occupied_co(!board.turn());
-    capture_moves.set_iterator_masks(attackers, targets);
+    let attackers = sub_board.get_piece_mask(Knight);
+    let targets = sub_board.occupied_co(!sub_board.turn());
+    let masked_moves = sub_board.generate_masked_legal_moves(attackers, targets);
 
     let expected = vec![
         move_of("g5e4"),
@@ -242,7 +241,7 @@ fn test_masked_move_generator() {
     ];
 
     assert_eq!(
-        capture_moves.collect::<HashSet<_>>(),
+        masked_moves.collect::<HashSet<_>>(),
         expected.into_iter().collect()
     );
 }

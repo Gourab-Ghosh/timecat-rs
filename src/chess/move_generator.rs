@@ -605,7 +605,7 @@ impl MoveGenerator {
     }
 
     pub fn perft_test(sub_board: &SubBoard, depth: usize) -> usize {
-        let iterable = MoveGenerator::new_legal(sub_board);
+        let iterable = sub_board.generate_legal_moves();
 
         let mut result: usize = 0;
         if depth == 1 {
@@ -620,7 +620,7 @@ impl MoveGenerator {
     }
 
     pub fn perft_test_piecewise(sub_board: &SubBoard, depth: usize) -> usize {
-        let mut iterable = MoveGenerator::new_legal(sub_board);
+        let mut iterable = sub_board.generate_legal_moves();
 
         let targets = sub_board.occupied_co(!sub_board.turn());
         let mut result: usize = 0;

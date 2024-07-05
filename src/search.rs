@@ -535,8 +535,7 @@ impl Searcher {
             let not_an_interesting_position = not_capture_move
                 && not_in_check
                 && move_.get_promotion().is_none()
-                && !self.move_sorter.is_killer_move(move_, self.ply)
-                && !self.board.is_passed_pawn(move_.get_source());
+                && !self.move_sorter.is_killer_move(move_, self.ply);
             if move_index != 0 && futility_pruning && not_an_interesting_position {
                 continue;
             }

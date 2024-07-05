@@ -108,7 +108,7 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12")?; // weird results in 3 secs in my pc
     // engine.set_fen("6k1/p2b1ppp/3r4/6q1/1p2Pb2/1N1B3P/PP2QPP1/4R1K1 w - - 1 33")?; // Missed tactics in 3 sec move
     // parse_command(engine, "go movetime 3000");
-    parse_command(engine, "go depth 13");
+    parse_command(engine, "go depth 15");
 
     // println!("{}", BitBoard::new(123456));
 

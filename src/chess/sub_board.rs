@@ -77,7 +77,7 @@ impl SubBoard {
 
     #[inline]
     pub fn status(&self) -> BoardStatus {
-        let moves = MoveGenerator::new_legal(self).len();
+        let moves = self.generate_legal_moves().len();
         match moves {
             0 => {
                 if self.get_checkers().is_empty() {
@@ -565,19 +565,19 @@ impl SubBoard {
         }
     }
 
+    #[inline]
+    pub fn generate_legal_moves(&self) -> MoveGenerator {
+        MoveGenerator::new_legal(self)
+    }
+
     pub fn generate_masked_legal_moves(
         &self,
         from_bitboard: BitBoard,
         to_bitboard: BitBoard,
     ) -> MoveGenerator {
-        let mut moves = MoveGenerator::new_legal(self);
+        let mut moves = self.generate_legal_moves();
         moves.set_iterator_masks(from_bitboard, to_bitboard);
         moves
-    }
-
-    #[inline]
-    pub fn generate_legal_moves(&self) -> MoveGenerator {
-        MoveGenerator::new_legal(self)
     }
 
     pub fn generate_legal_captures(&self) -> MoveGenerator {
@@ -585,7 +585,9 @@ impl SubBoard {
         if let Some(ep_square) = self.ep_square() {
             targets ^= ep_square.to_bitboard()
         }
-        self.generate_masked_legal_moves(BB_ALL, targets)
+        let mut moves = self.generate_legal_moves();
+        moves.set_to_bitboard_iterator_mask(targets);
+        moves
     }
 
     #[inline]

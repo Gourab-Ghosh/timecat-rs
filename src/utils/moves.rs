@@ -21,7 +21,7 @@ impl Move {
     #[inline]
     pub const fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Result<Self> {
         if source.to_int() == dest.to_int() {
-            return Err(TimecatError::InvalidMoveGeneration);
+            return Err(TimecatError::InvalidMoveStructGeneration);
         }
         Ok(Self::new_unchecked(source, dest, promotion))
     }
@@ -295,6 +295,9 @@ impl ValidOrNullMove {
             .unwrap_or(Ok(("--".to_string(), sub_board.null_move()?)))
     }
 }
+
+#[allow(non_upper_case_globals)]
+pub const NullMove: ValidOrNullMove = ValidOrNullMove::NullMove;
 
 impl Default for ValidOrNullMove {
     fn default() -> Self {

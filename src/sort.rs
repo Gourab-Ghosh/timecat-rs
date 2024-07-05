@@ -138,7 +138,7 @@ impl MoveSorter {
     }
 
     fn get_least_attackers_move(square: Square, board: &SubBoard) -> Option<Move> {
-        let mut capture_moves = MoveGenerator::new_legal(board);
+        let mut capture_moves = board.generate_legal_moves();
         capture_moves.set_to_bitboard_iterator_mask(square.to_bitboard());
         capture_moves.next() // No need to find least attacker as the moves are already sorted
     }
@@ -241,24 +241,18 @@ impl MoveSorter {
                 return 125000000 - idx as MoveWeight;
             }
         }
+        // history
+        let history_score = self.get_history_score(move_, board);
+        if history_score != 0 {
+            return 124000000 + history_score;
+        }
         // move pieces towards the king
         let source = move_.get_source();
         let dest = move_.get_dest();
         if is_easily_winning_position {
             if let Some(score) = Self::score_easily_winning_position_moves(board, source, dest) {
-                return 124000000 + score;
+                return 123000000 + score;
             }
-        }
-        if move_.get_promotion().is_some() {
-            return 123000000;
-        }
-        if board.is_passed_pawn(source) {
-            let promotion_distance = board
-                .turn()
-                .to_their_backrank()
-                .to_index()
-                .abs_diff(source.get_rank().to_index());
-            return 122000000 - promotion_distance as MoveWeight;
         }
         let move_made_sub_board = board.make_move_new(move_);
         // check
@@ -267,16 +261,8 @@ impl MoveSorter {
         if !checkers.is_empty() {
             return -127000000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
-        if board.is_irreversible(move_) {
-            return 121000000;
-        }
-        // history
-        let history_score = self.get_history_score(move_, board);
-        if history_score != 0 {
-            return 120000000 + history_score;
-        }
         MAX_MOVES_PER_POSITION as MoveWeight
-            - MoveGenerator::new_legal(&move_made_sub_board).len() as MoveWeight
+            - move_made_sub_board.generate_legal_moves().len() as MoveWeight
     }
 
     pub fn get_weighted_moves_sorted(
