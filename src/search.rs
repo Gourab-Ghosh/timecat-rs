@@ -794,6 +794,7 @@ impl Searcher {
             }
             self.current_depth += 1;
         }
+        self.current_depth -= 1;
     }
 }
 
