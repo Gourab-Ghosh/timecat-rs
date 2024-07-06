@@ -1,9 +1,6 @@
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-
 #[cfg(feature = "inbuilt_nnue")]
 mod nnue_features {
-    use super::*;
-
+    pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
     pub use std::fs::File;
     pub use std::path::{Path, PathBuf};
 
