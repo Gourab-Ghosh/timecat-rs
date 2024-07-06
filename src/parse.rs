@@ -50,16 +50,16 @@ pub enum UserCommand {
 
 impl UserCommand {
     fn print_engine_uci_info(uci_state_manager: &UCIStateManager) {
-        println!(
+        print_or_log!(
             "{}",
             format!("id name {}", get_engine_version()).colorize(INFO_MESSAGE_STYLE)
         );
-        println!(
+        print_or_log!(
             "{}",
             format!("id author {}", ENGINE_AUTHOR).colorize(INFO_MESSAGE_STYLE)
         );
         for option in uci_state_manager.get_all_options() {
-            println!("{option}");
+            print_or_log!("{option}");
         }
     }
 
@@ -82,8 +82,8 @@ impl UserCommand {
                 GLOBAL_TIMECAT_STATE.set_console_mode(true, verbose)
             }
             &Self::SetDebugMode(b) => GLOBAL_TIMECAT_STATE.set_debug_mode(b),
-            Self::PrintText(s) => println!("{s}"),
-            Self::DisplayBoard => println!("{}", engine.get_board()),
+            Self::PrintText(s) => print_or_log!("{s}"),
+            Self::DisplayBoard => print_or_log!("{}", engine.get_board()),
             #[cfg(feature = "inbuilt_nnue")]
             Self::DisplayBoardEvaluation => force_println_info(
                 "Current Score",
@@ -92,7 +92,7 @@ impl UserCommand {
             Self::PrintUCIInfo => Self::print_engine_uci_info(uci_state_manager),
             Self::UCIMode => {
                 Self::PrintUCIInfo.run_command(engine, uci_state_manager)?;
-                println!("{}", "uciok".colorize(SUCCESS_MESSAGE_STYLE));
+                print_or_log!("{}", "uciok".colorize(SUCCESS_MESSAGE_STYLE));
             }
             Self::UCINewGame => {
                 Self::SetUCIOption {
@@ -102,13 +102,13 @@ impl UserCommand {
                 Self::SetFen(STARTING_POSITION_FEN.to_string())
                     .run_command(engine, uci_state_manager)?;
             }
-            Self::IsReady => println!("{}", "readyok".colorize(SUCCESS_MESSAGE_STYLE)),
+            Self::IsReady => print_or_log!("{}", "readyok".colorize(SUCCESS_MESSAGE_STYLE)),
             Self::Stop => {
                 if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
                     return Err(EngineNotRunning);
                 }
             }
-            Self::Help => println!("{}", Self::generate_help_message()),
+            Self::Help => print_or_log!("{}", Self::generate_help_message()),
             &Self::Perft(depth) => GoAndPerft::run_perft_command(engine, depth)?,
             &Self::Go(go_command) => GoAndPerft::run_go_command(engine, go_command)?,
             Self::PushMoves(user_input) => {
@@ -210,7 +210,7 @@ impl GoAndPerft {
 
     fn run_perft_command(engine: &mut Engine, depth: Depth) -> Result<()> {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-            println!("{}\n", engine.get_board());
+            print_or_log!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
         let position_count = engine.get_board_mut().perft(depth);
@@ -219,7 +219,7 @@ impl GoAndPerft {
             "{} nodes/sec",
             (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
         );
-        println!();
+        print_or_log!();
         force_println_info("Position Count", position_count);
         force_println_info("Time", elapsed_time.stringify());
         force_println_info("Speed", nps);
@@ -228,7 +228,7 @@ impl GoAndPerft {
 
     fn run_go_command(engine: &mut Engine, go_command: GoCommand) -> Result<()> {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-            println!("{}\n", engine.get_board());
+            print_or_log!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
         let response = engine.go(go_command, true);
@@ -245,7 +245,7 @@ impl GoAndPerft {
         );
         let pv_string = get_pv_string(engine.get_board().get_sub_board(), response.get_pv());
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-            println!();
+            print_or_log!();
         }
         println_info("Score", response.get_score().stringify());
         println_info("PV Line", pv_string);
@@ -279,7 +279,7 @@ impl GoAndPerft {
                     false,
                 );
             }
-            println!("{}", move_text);
+            print_or_log!("{}", move_text);
         }
         Ok(())
     }
@@ -337,7 +337,7 @@ impl Set {
         };
         engine.set_fen(fen)?;
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-            println!("{}", engine.get_board());
+            print_or_log!("{}", engine.get_board());
         }
         Ok(())
     }

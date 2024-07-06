@@ -79,9 +79,9 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // halfkp_model.deactivate_non_king_piece(Black, WhitePawn, E2);
     // halfkp_model.activate_non_king_piece(White, WhitePawn, E4);
     // halfkp_model.activate_non_king_piece(Black, WhitePawn, E4);
-    // println!("{:#?}", halfkp_model.evaluate(Black));
+    // print_or_log!("{:#?}", halfkp_model.evaluate(Black));
 
-    // println!("{}", Board::from_fen("8/8/8/8/7R/7K/k7/8 b - - 1 1")?);
+    // print_or_log!("{}", Board::from_fen("8/8/8/8/7R/7K/k7/8 b - - 1 1")?);
 
     // parse_command(Engine::default(), "go perft 7");
 
@@ -110,7 +110,7 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // parse_command(engine, "go movetime 3000");
     parse_command(engine, "go depth 15");
 
-    // println!("{}", BitBoard::new(123456));
+    // print_or_log!("{}", BitBoard::new(123456));
 
     // let mut all_optional_pieces = vec![None];
     // all_optional_pieces.extend_from_slice(&ALL_PIECE_TYPES.map(|piece| Some(piece)));
@@ -121,8 +121,8 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     //             let compressed_then_decompressed_move: Option<ValidOrNullMove> = valid_or_null_move.compress().decompress();
     //             let compressed_then_decompressed_move = compressed_then_decompressed_move.unwrap();
     //             if valid_or_null_move != compressed_then_decompressed_move {
-    //                 // println!("{valid_or_null_move}: {valid_or_null_move:?} ----- {compressed_then_decompressed_move:?}");
-    //                 println!("{valid_or_null_move} ----- {} ----- {compressed_then_decompressed_move}", valid_or_null_move.compress());
+    //                 // print_or_log!("{valid_or_null_move}: {valid_or_null_move:?} ----- {compressed_then_decompressed_move:?}");
+    //                 print_or_log!("{valid_or_null_move} ----- {} ----- {compressed_then_decompressed_move}", valid_or_null_move.compress());
     //             }
     //         }
     //     }
@@ -132,7 +132,7 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // for san in &mut sans[0..76] {
     //     engine.board.push_san(san);
     // }
-    // println!("{}", engine.board);
+    // print_or_log!("{}", engine.board);
     // let go_command = GoCommand::Timed {
     //     wtime: Duration::from_millis(267809),
     //     btime: Duration::from_millis(532920),
@@ -146,13 +146,13 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     // test_polyglot(path)?;
 
     // let mut board = Board::new();
-    // println!("\n{board}");
+    // print_or_log!("\n{board}");
     // for san in ["e4", "Nf6", "Be2", "Nxe4"] {
     //     let valid_or_null_move = board.parse_stringify_move(san)?;
     //     let move_str = board.stringify_move(valid_or_null_move);
-    //     println!("\nPushing move {move_str}");
+    //     print_or_log!("\nPushing move {move_str}");
     //     board.push(valid_or_null_move);
-    //     println!("\n{board}");
+    //     print_or_log!("\n{board}");
     // }
 
     // let mut board = Board::default();
@@ -162,7 +162,7 @@ pub fn test(engine: &mut Engine) -> Result<()> {
     //     let valid_or_null_move = board.parse_san(move_san).unwrap();
     //     let gives_repetition = board.gives_repetition(valid_or_null_move.unwrap());
     //     board.push(valid_or_null_move);
-    //     println!("{move_san}: {gives_repetition} {} {}", board.get_num_repetitions(), board.get_hash().stringify());
+    //     print_or_log!("{move_san}: {gives_repetition} {} {}", board.get_num_repetitions(), board.get_hash().stringify());
     // }
 
     Ok(())

@@ -24,7 +24,7 @@ pub fn self_play(
     let mut time_taken_vec: Vec<f64> = Vec::new();
     let mut max_time_taken_fen = String::new();
     let mut prediction_score_vec = Vec::new();
-    println!("{}", engine.get_board());
+    print_or_log!("{}", engine.get_board());
     if engine.get_board().is_game_over() {
         return Err(TimecatError::GameAlreadyOver);
     }
@@ -35,7 +35,7 @@ pub fn self_play(
     {
         let clock = Instant::now();
         if verbose {
-            println!();
+            print_or_log!();
         }
         let response = engine.go(go_command, verbose);
         let Some(best_move) = response.get_best_move() else {
@@ -62,7 +62,7 @@ pub fn self_play(
         prediction_score_vec.push(score);
         let nps =
             (engine.get_num_nodes_searched() as u128 * 10u128.pow(9)) / time_elapsed.as_nanos();
-        println!("\n{}\n", engine.get_board());
+        print_or_log!("\n{}\n", engine.get_board());
         println_info("Best Move", best_move_san);
         println_info("Score", score.stringify());
         println_info("Num Nodes Searched", engine.get_num_nodes_searched());
@@ -97,12 +97,12 @@ pub fn self_play(
         .sqrt();
     #[cfg(feature = "debug")]
     let prediction_accuracy = calculate_prediction_accuracy(prediction_score_rms);
-    println!(
+    print_or_log!(
         "\n{}:\n\n{}",
         "Game PGN".colorize(INFO_MESSAGE_STYLE),
         engine.get_board().get_pgn(),
     );
-    println!(
+    print_or_log!(
         "\n{}:\n\n[{}]",
         "Time taken for all moves".colorize(INFO_MESSAGE_STYLE),
         time_taken_vec
@@ -110,7 +110,7 @@ pub fn self_play(
             .map(|x| (x * 1000.0).round() / 1000.0)
             .join(", "),
     );
-    println!(
+    print_or_log!(
         "\n{}:\n\n[{}]\n",
         "Prediction Scores".colorize(INFO_MESSAGE_STYLE),
         prediction_score_vec

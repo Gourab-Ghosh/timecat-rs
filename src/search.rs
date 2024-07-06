@@ -1,7 +1,33 @@
 use super::*;
 use EntryFlag::*;
 
-// #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(Serialize, Deserialize))]
+// #[cfg(feature = "serde")]
+// fn serialize_time_instant<S>(instant: &Instant, serializer: S) -> std::result::Result<S::Ok, S::Error>
+// where
+//     S: serde::Serializer,
+// {
+//     serializer.serialize_str(&format!("{:?}", instant))
+// }
+
+// fn deserialize_date<'de, D>(deserializer: D) -> Result<String, D::Error>
+// where
+//     D: Deserializer<'de>,
+// {
+//     use serde::{Serializer, Deserializer, Deserialize, Serialize};
+//     use serde::de::{self, Visitor};
+//     use std::fmt;
+//     let s = String::deserialize(deserializer)?;
+//     // Convert the date from "DD-MM-YYYY" back to "YYYY-MM-DD"
+//     let date_parts: Vec<&str> = s.split('-').collect();
+//     if date_parts.len() == 3 {
+//         let formatted_date = format!("{}-{}-{}", date_parts[2], date_parts[1], date_parts[0]);
+//         Ok(formatted_date)
+//     } else {
+//         Err(D::Error::custom("Invalid date format"))
+//     }
+// }
+
+// #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct SearchInfo {
     sub_board: SubBoard,
@@ -13,6 +39,8 @@ pub struct SearchInfo {
     overwrites: usize,
     zero_hit: usize,
     collisions: usize,
+    // #[serde(serialize_with = "serialize_time_instant", deserialize_with = "deserialize_time_instant")]
+    // #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_time_instant"))]
     clock: Instant,
     pv: Vec<Move>,
 }
@@ -69,7 +97,7 @@ impl SearchInfo {
     }
 
     pub fn print_info(&self) {
-        #[cfg(feature = "debug")]
+        #[cfg(any(feature = "debug", not(feature = "binary")))]
         let hashfull_string = if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             format!("{:.2}%", self.hash_full)
         } else {
@@ -94,7 +122,7 @@ impl SearchInfo {
             Self::format_info("time", self.get_time_elapsed().stringify()),
             Self::format_info("pv", get_pv_string(&self.sub_board, &self.pv)),
         ];
-        println!("{}", outputs.join(" "));
+        print_or_log!("{}", outputs.join(" "));
     }
 
     pub fn print_warning_message(&self, mut alpha: Score, mut beta: Score) {
@@ -110,7 +138,7 @@ impl SearchInfo {
             self.get_score().stringify(),
             self.get_time_elapsed().stringify(),
         );
-        println!("{}", warning_message.colorize(WARNING_MESSAGE_STYLE));
+        print_or_log!("{}", warning_message.colorize(WARNING_MESSAGE_STYLE));
     }
 }
 
@@ -226,7 +254,7 @@ impl Searcher {
         num_nodes_searched: usize,
         time_elapsed: Duration,
     ) {
-        println!(
+        print_or_log!(
             "{} {} {} {} {} {} {} {} {} {} {}",
             "info".colorize(INFO_MESSAGE_STYLE),
             "curr move".colorize(INFO_MESSAGE_STYLE),

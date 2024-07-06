@@ -165,7 +165,7 @@ The `selfplay` command works on the binary as well.
 - `colored`: Displays all information in a visually appealing colored format for enhanced readability.
 - `speed`: Optimize the code to improve speed by using unsafe rust. Note that the gain in speed might not be significant in some cases.
 - `serde`: Enables serialization and deserialization support via `serde`.
-- `wasm`: Webassembly support (Still experimental).
+- `wasm`: Webassembly support (Still in testing phase).
 - `debug`: Intended solely for development use.
 - `experimental`: Codes under development for upcoming features.
 

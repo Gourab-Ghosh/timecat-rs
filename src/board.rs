@@ -360,7 +360,7 @@ impl Board {
             let c_count = self.perft_helper(depth - 1, false);
             self.pop();
             if print_move {
-                println!(
+                print_or_log!(
                     "{}: {}",
                     move_.colorize(PERFT_MOVE_STYLE),
                     c_count.colorize(PERFT_COUNT_STYLE),

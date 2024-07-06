@@ -16,7 +16,7 @@ impl<T, Func: FnMut() -> T> MeasureTime0<T> for Func {
     fn run_and_print_time(&mut self) -> T {
         let (res, time_taken) = self.run_and_measure_time();
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-            println!();
+            print_or_log!();
         }
         println_info("Run Time", time_taken.stringify());
         res
@@ -39,7 +39,7 @@ impl<T, Func: FnMut(&mut U) -> T, U> MeasureTime1<T, U> for Func {
     fn run_and_print_time(&mut self, item: &mut U) -> T {
         let (res, time_taken) = self.run_and_measure_time(item);
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-            println!();
+            print_or_log!();
         }
         println_info("Run Time", time_taken.stringify());
         res

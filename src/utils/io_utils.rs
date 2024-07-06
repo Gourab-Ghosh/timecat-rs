@@ -8,6 +8,9 @@ pub fn print_line<T: fmt::Display>(line: T) {
     if to_print.is_empty() {
         return;
     }
+    #[cfg(feature = "wasm")]
+    gloo::console::log!("{to_print}");
+    #[cfg(not(feature = "wasm"))]
     print!("{to_print}");
     io::stdout().flush().unwrap();
 }
