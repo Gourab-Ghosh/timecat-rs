@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
-import sys
+import os, sys
 from manager import *
+
+os.environ["RUST_BACKTRACE"] = "1"
 
 def process_args():
     binary_args_started = False
