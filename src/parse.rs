@@ -73,7 +73,7 @@ impl UserCommand {
         uci_state_manager: &UCIStateManager,
     ) -> Result<()> {
         match self {
-            Self::TerminateEngine => GLOBAL_TIMECAT_STATE.set_engine_termination(true),
+            Self::TerminateEngine => engine.set_termination(true),
             Self::EngineVersion => print_engine_version(),
             #[cfg(feature = "debug")]
             Self::RunTest => test.run_and_print_time(engine)?,

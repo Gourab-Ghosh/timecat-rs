@@ -101,6 +101,7 @@ pub struct Engine {
     selective_depth: Arc<AtomicUsize>,
     stopper: Arc<AtomicBool>,
     optional_io_reader: Option<IoReader>,
+    terminate: AtomicBool,
 }
 
 impl Engine {
@@ -108,12 +109,13 @@ impl Engine {
         Self {
             board,
             transposition_table: Arc::new(transposition_table),
-            num_threads: const { unsafe { NonZeroUsize::new_unchecked(1) } },
-            move_overhead: Duration::ZERO,
+            num_threads: TIMECAT_DEFAULTS.num_threads,
+            move_overhead: TIMECAT_DEFAULTS.move_overhead,
             num_nodes_searched: Arc::new(AtomicUsize::new(0)),
             selective_depth: Arc::new(AtomicUsize::new(0)),
             stopper: Arc::new(AtomicBool::new(false)),
             optional_io_reader: None,
+            terminate: AtomicBool::new(false),
         }
     }
 
@@ -215,18 +217,30 @@ impl Engine {
         )
     }
 
-    fn update_stop_command_from_input(stopper: &AtomicBool, optional_io_reader: IoReader) {
-        while !stopper.load(MEMORY_ORDERING) {
-            match optional_io_reader
+    #[inline]
+    pub fn terminate(&self) -> bool {
+        self.terminate.load(MEMORY_ORDERING)
+    }
+
+    #[inline]
+    pub fn set_termination(&self, b: bool) {
+        self.terminate.store(b, MEMORY_ORDERING);
+    }
+
+    fn update_stop_command(&self) {
+        while !self.stopper.load(MEMORY_ORDERING) {
+            match self.optional_io_reader
+                .as_ref()
+                .unwrap()
                 .read_line_once()
                 .unwrap_or_default()
                 .to_lowercase()
                 .trim()
             {
-                "stop" => stopper.store(true, MEMORY_ORDERING),
+                "stop" => self.stopper.store(true, MEMORY_ORDERING),
                 "quit" | "exit" => {
-                    stopper.store(true, MEMORY_ORDERING);
-                    GLOBAL_TIMECAT_STATE.set_engine_termination(true);
+                    self.stopper.store(true, MEMORY_ORDERING);
+                    self.set_termination(true);
                 }
                 _ => {}
             }
@@ -243,12 +257,10 @@ impl Engine {
             });
             join_handles.push(join_handle);
         }
-        if let Some(io_reader) = &self.optional_io_reader {
-            let owned_io_reader = io_reader.to_owned();
-            join_handles.push(thread::spawn({
-                let stopper = self.stopper.clone();
-                move || Self::update_stop_command_from_input(&stopper, owned_io_reader)
-            }));
+        if self.optional_io_reader.is_some() {
+            thread::scope(|s| {
+                s.spawn(|| self.update_stop_command());
+            });
         }
         let mut main_thread_searcher = self.generate_searcher(0);
         main_thread_searcher.go(command, verbose);
@@ -284,6 +296,7 @@ impl Clone for Engine {
             selective_depth: AtomicUsize::new(self.selective_depth.load(MEMORY_ORDERING)).into(),
             stopper: AtomicBool::new(self.stopper.load(MEMORY_ORDERING)).into(),
             optional_io_reader: self.optional_io_reader.clone(),
+            terminate: AtomicBool::new(self.terminate.load(MEMORY_ORDERING)).into(),
             ..*self
         }
     }

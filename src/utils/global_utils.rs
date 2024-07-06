@@ -51,7 +51,6 @@ pub const TIMECAT_DEFAULTS: TimecatDefaults = TimecatDefaults {
 
 #[derive(Debug)]
 pub struct GlobalTimecatState {
-    _terminate_engine: AtomicBool,
     #[cfg(feature = "colored")]
     _colored: AtomicBool,
     _console_mode: AtomicBool,
@@ -71,7 +70,6 @@ impl Default for GlobalTimecatState {
 impl GlobalTimecatState {
     pub const fn new() -> Self {
         GlobalTimecatState {
-            _terminate_engine: AtomicBool::new(false),
             #[cfg(feature = "colored")]
             _colored: AtomicBool::new(TIMECAT_DEFAULTS.colored),
             _console_mode: AtomicBool::new(TIMECAT_DEFAULTS.console_mode),
@@ -81,16 +79,6 @@ impl GlobalTimecatState {
             _debug_mode: AtomicBool::new(TIMECAT_DEFAULTS.debug_mode),
             _chess960_mode: AtomicBool::new(TIMECAT_DEFAULTS.chess960_mode),
         }
-    }
-
-    #[inline]
-    pub fn terminate_engine(&self) -> bool {
-        self._terminate_engine.load(MEMORY_ORDERING)
-    }
-
-    #[inline]
-    pub fn set_engine_termination(&self, b: bool) {
-        self._terminate_engine.store(b, MEMORY_ORDERING);
     }
 
     #[cfg(feature = "colored")]

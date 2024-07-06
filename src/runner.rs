@@ -97,7 +97,7 @@ impl Timecat {
                     println_wasm!("{}", error.stringify().colorize(ERROR_MESSAGE_STYLE))
                 });
         }
-        if GLOBAL_TIMECAT_STATE.terminate_engine() {
+        if self.engine.terminate() {
             return;
         }
         print_engine_info(
@@ -116,7 +116,7 @@ impl Timecat {
 
     pub fn main_loop(&mut self) {
         loop {
-            if GLOBAL_TIMECAT_STATE.terminate_engine() {
+            if self.engine.terminate() {
                 if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
                     println_wasm!(
                         "{}",
