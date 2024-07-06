@@ -101,21 +101,21 @@ pub struct Engine {
     selective_depth: Arc<AtomicUsize>,
     stopper: Arc<AtomicBool>,
     optional_io_reader: Option<IoReader>,
-    terminate: AtomicBool,
+    terminate: Arc<AtomicBool>,
 }
 
 impl Engine {
     pub fn new(board: Board, transposition_table: TranspositionTable) -> Self {
         Self {
             board,
-            transposition_table: Arc::new(transposition_table),
+            transposition_table: transposition_table.into(),
             num_threads: TIMECAT_DEFAULTS.num_threads,
             move_overhead: TIMECAT_DEFAULTS.move_overhead,
-            num_nodes_searched: Arc::new(AtomicUsize::new(0)),
-            selective_depth: Arc::new(AtomicUsize::new(0)),
-            stopper: Arc::new(AtomicBool::new(false)),
+            num_nodes_searched: AtomicUsize::new(0).into(),
+            selective_depth: AtomicUsize::new(0).into(),
+            stopper: AtomicBool::new(false).into(),
             optional_io_reader: None,
-            terminate: AtomicBool::new(false),
+            terminate: AtomicBool::new(false).into(),
         }
     }
 
@@ -227,20 +227,22 @@ impl Engine {
         self.terminate.store(b, MEMORY_ORDERING);
     }
 
-    fn update_stop_command(&self) {
-        while !self.stopper.load(MEMORY_ORDERING) {
-            match self.optional_io_reader
-                .as_ref()
-                .unwrap()
+    fn update_stop_command(
+        stopper: Arc<AtomicBool>,
+        io_reader: IoReader,
+        terminate: Arc<AtomicBool>,
+    ) {
+        while !stopper.load(MEMORY_ORDERING) {
+            match io_reader
                 .read_line_once()
                 .unwrap_or_default()
                 .to_lowercase()
                 .trim()
             {
-                "stop" => self.stopper.store(true, MEMORY_ORDERING),
+                "stop" => stopper.store(true, MEMORY_ORDERING),
                 "quit" | "exit" => {
-                    self.stopper.store(true, MEMORY_ORDERING);
-                    self.set_termination(true);
+                    stopper.store(true, MEMORY_ORDERING);
+                    terminate.store(true, MEMORY_ORDERING);
                 }
                 _ => {}
             }
@@ -257,10 +259,13 @@ impl Engine {
             });
             join_handles.push(join_handle);
         }
-        if self.optional_io_reader.is_some() {
-            thread::scope(|s| {
-                s.spawn(|| self.update_stop_command());
-            });
+        if let Some(io_reader) = self.optional_io_reader.as_ref() {
+            let stopper = self.stopper.clone();
+            let reader = io_reader.clone();
+            let terminate = self.terminate.clone();
+            join_handles.push(thread::spawn(move || {
+                Self::update_stop_command(stopper, reader, terminate)
+            }));
         }
         let mut main_thread_searcher = self.generate_searcher(0);
         main_thread_searcher.go(command, verbose);

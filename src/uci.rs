@@ -339,10 +339,16 @@ fn get_uci_state_manager() -> Vec<UCIOption> {
         .alias("Thread"),
         UCIOption::new_spin("Hash", t_table_size_uci, {
             |engine, value| {
-                GLOBAL_TIMECAT_STATE.set_t_table_size(
-                    engine.get_transposition_table(),
-                    CacheTableSize::Exact(value as usize),
-                )
+                let size = CacheTableSize::Exact(value as usize);
+                let transposition_table = engine.get_transposition_table();
+                transposition_table.set_size(size);
+                if GLOBAL_TIMECAT_STATE.is_in_debug_mode() {
+                    transposition_table.print_info();
+                }
+                print_uci_info(
+                    "Transposition table is set to size to",
+                    size.to_cache_table_memory_size::<TranspositionTableEntry>(),
+                );
             }
         }),
         UCIOption::new_button("Clear Hash", |engine| {
@@ -357,8 +363,19 @@ fn get_uci_state_manager() -> Vec<UCIOption> {
         }),
         // UCIOption::new_check(
         //     "OwnBook",
-        //     DEFAULT_USE_OWN_BOOK,
-        //     GLOBAL_TIMECAT_STATE.set_using_own_book,
+        //     TIMECAT_DEFAULTS.use_own_book,
+        //     |engine, b| {
+        //         use_own_book.store(b, MEMORY_ORDERING);
+        //         print_uci_info("Own Book Usage is set to", b);
+        //     },
+        // ),
+        // UCIOption::new_check(
+        //     "UCI_Chess960",
+        //     TIMECAT_DEFAULTS.chess960_mode,
+        //     |engine, b| {
+        //         chess960_mode.store(b, MEMORY_ORDERING);
+        //         print_uci_info("Chess 960 mode is set to", b);
+        //     },
         // ),
     ];
     options

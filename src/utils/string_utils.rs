@@ -297,7 +297,7 @@ impl Stringify for Duration {
             }
         }
         let total_secs_rounded = total_secs.round();
-        let mut string = if (total_secs - total_secs_rounded).abs() < 1.0_f64.powi(-5) {
+        let mut string = if (total_secs - total_secs_rounded).abs() < 1e-5 {
             format!("{} sec", total_secs_rounded)
         } else {
             format!("{:.1$} sec", total_secs, precision)

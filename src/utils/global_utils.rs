@@ -54,11 +54,8 @@ pub struct GlobalTimecatState {
     #[cfg(feature = "colored")]
     _colored: AtomicBool,
     _console_mode: AtomicBool,
-    _t_table_size: RwLock<CacheTableSize>,
     _long_algebraic_notation: AtomicBool,
-    _use_own_book: AtomicBool,
     _debug_mode: AtomicBool,
-    _chess960_mode: AtomicBool,
 }
 
 impl Default for GlobalTimecatState {
@@ -73,11 +70,8 @@ impl GlobalTimecatState {
             #[cfg(feature = "colored")]
             _colored: AtomicBool::new(TIMECAT_DEFAULTS.colored),
             _console_mode: AtomicBool::new(TIMECAT_DEFAULTS.console_mode),
-            _t_table_size: RwLock::new(TIMECAT_DEFAULTS.t_table_size),
             _long_algebraic_notation: AtomicBool::new(TIMECAT_DEFAULTS.long_algebraic_notation),
-            _use_own_book: AtomicBool::new(TIMECAT_DEFAULTS.use_own_book),
             _debug_mode: AtomicBool::new(TIMECAT_DEFAULTS.debug_mode),
-            _chess960_mode: AtomicBool::new(TIMECAT_DEFAULTS.chess960_mode),
         }
     }
 
@@ -137,24 +131,6 @@ impl GlobalTimecatState {
     }
 
     #[inline]
-    pub fn get_t_table_size(&self) -> CacheTableSize {
-        self._t_table_size.read().unwrap().to_owned()
-    }
-
-    pub fn set_t_table_size(&self, transposition_table: &TranspositionTable, size: CacheTableSize) {
-        //TODO: modify such that T Table and evaluation function takes same amount of space
-        *self._t_table_size.write().unwrap() = size;
-        transposition_table.reset_size();
-        if GLOBAL_TIMECAT_STATE.is_in_debug_mode() {
-            transposition_table.print_info();
-        }
-        print_uci_info(
-            "Transposition table is set to size to",
-            size.to_cache_table_memory_size::<TranspositionTableEntry>(),
-        );
-    }
-
-    #[inline]
     pub fn use_long_algebraic_notation(&self) -> bool {
         self._long_algebraic_notation.load(MEMORY_ORDERING)
     }
@@ -165,16 +141,6 @@ impl GlobalTimecatState {
     }
 
     #[inline]
-    pub fn use_own_book(&self) -> bool {
-        self._use_own_book.load(MEMORY_ORDERING)
-    }
-
-    pub fn set_using_own_book(&self, b: bool) {
-        self._use_own_book.store(b, MEMORY_ORDERING);
-        print_uci_info("Own Book Usage is set to", b);
-    }
-
-    #[inline]
     pub fn is_in_debug_mode(&self) -> bool {
         self._debug_mode.load(MEMORY_ORDERING)
     }
@@ -182,20 +148,5 @@ impl GlobalTimecatState {
     pub fn set_debug_mode(&self, b: bool) {
         self._debug_mode.store(b, MEMORY_ORDERING);
         print_uci_info("Debug Mode is set to", b);
-    }
-
-    #[inline]
-    pub fn is_in_console_and_debug_mode(&self) -> bool {
-        self.is_in_console_mode() && self.is_in_debug_mode()
-    }
-
-    #[inline]
-    pub fn is_in_chess960_mode(&self) -> bool {
-        self._chess960_mode.load(MEMORY_ORDERING)
-    }
-
-    pub fn set_chess960_mode(&self, b: bool) {
-        self._chess960_mode.store(b, MEMORY_ORDERING);
-        print_uci_info("Chess 960 mode is set to", b);
     }
 }

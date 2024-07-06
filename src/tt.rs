@@ -77,6 +77,7 @@ impl TranspositionTableEntry {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(transparent)]
 #[derive(Debug, Clone)]
 pub struct TranspositionTable {
     table: CacheTable<TranspositionTableEntry>,
@@ -173,10 +174,6 @@ impl TranspositionTable {
         );
     }
 
-    pub fn clear(&self) {
-        self.table.clear();
-    }
-
     pub fn clear_best_moves(&self) {
         self.table
             .get_table()
@@ -186,38 +183,18 @@ impl TranspositionTable {
             .flatten()
             .for_each(|entry| entry.get_entry_mut().set_best_move(None));
     }
-
-    pub fn get_num_overwrites(&self) -> usize {
-        self.table.get_num_overwrites()
-    }
-
-    pub fn get_num_collisions(&self) -> usize {
-        self.table.get_num_collisions()
-    }
-
-    pub fn get_zero_hit(&self) -> usize {
-        self.table.get_zero_hit()
-    }
-
-    pub fn get_hash_full(&self) -> f64 {
-        self.table.get_hash_full()
-    }
-
-    pub fn reset_variables(&self) {
-        self.table.reset_variables();
-    }
-
-    pub fn set_size(&self, size: CacheTableSize) {
-        self.table.set_size(size);
-    }
-
-    pub fn reset_size(&self) {
-        self.set_size(GLOBAL_TIMECAT_STATE.get_t_table_size());
-    }
 }
 
 impl Default for TranspositionTable {
     fn default() -> Self {
-        Self::new(GLOBAL_TIMECAT_STATE.get_t_table_size())
+        Self::new(TIMECAT_DEFAULTS.t_table_size)
+    }
+}
+
+impl Deref for TranspositionTable {
+    type Target = CacheTable<TranspositionTableEntry>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.table
     }
 }
