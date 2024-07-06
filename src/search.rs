@@ -214,6 +214,7 @@ impl Searcher {
         num_nodes_searched: Arc<AtomicUsize>,
         selective_depth: Arc<AtomicUsize>,
         stopper: Arc<AtomicBool>,
+        move_overhead: Duration,
     ) -> Self {
         Self {
             id,
@@ -227,7 +228,8 @@ impl Searcher {
                 Timer::new(stopper)
             } else {
                 Timer::new_dummy(stopper)
-            },
+            }
+            .with_move_overhead(move_overhead),
             num_nodes_searched,
             selective_depth,
             ply: 0,
@@ -330,10 +332,7 @@ impl Searcher {
             };
         }
         let enable_timer = depth > 1 && self.is_main_threaded();
-        if self
-            .timer
-            .check_stop(GLOBAL_TIMECAT_STATE.get_move_overhead(), enable_timer)
-        {
+        if self.timer.check_stop(enable_timer) {
             return None;
         }
         let key = self.board.get_hash();
@@ -385,10 +384,7 @@ impl Searcher {
                 }
             }
         }
-        if !self
-            .timer
-            .check_stop(GLOBAL_TIMECAT_STATE.get_move_overhead(), enable_timer)
-        {
+        if !self.timer.check_stop(enable_timer) {
             self.transposition_table
                 .write(key, depth, self.ply, alpha, flag, self.get_best_move());
         }
@@ -473,10 +469,7 @@ impl Searcher {
             return Some(self.board.evaluate_flipped());
         }
         // enable_timer &= depth > 3;
-        if self
-            .timer
-            .check_stop(GLOBAL_TIMECAT_STATE.get_move_overhead(), enable_timer)
-        {
+        if self.timer.check_stop(enable_timer) {
             return None;
         }
         if depth == 0 {
@@ -624,10 +617,7 @@ impl Searcher {
                 }
             }
         }
-        if !self
-            .timer
-            .check_stop(GLOBAL_TIMECAT_STATE.get_move_overhead(), enable_timer)
-        {
+        if !self.timer.check_stop(enable_timer) {
             self.transposition_table.write(
                 key,
                 depth,
@@ -757,10 +747,7 @@ impl Searcher {
         let mut beta = INFINITY;
         self.current_depth = 1;
         while self.current_depth < Depth::MAX {
-            if self
-                .timer
-                .check_stop(GLOBAL_TIMECAT_STATE.get_move_overhead(), true)
-            {
+            if self.timer.check_stop(true) {
                 break;
             }
             let last_score = self.score;

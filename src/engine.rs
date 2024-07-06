@@ -95,6 +95,8 @@ impl GoResponse {
 pub struct Engine {
     board: Board,
     transposition_table: Arc<TranspositionTable>,
+    num_threads: NonZeroUsize,
+    move_overhead: Duration,
     num_nodes_searched: Arc<AtomicUsize>,
     selective_depth: Arc<AtomicUsize>,
     stopper: Arc<AtomicBool>,
@@ -106,6 +108,8 @@ impl Engine {
         Self {
             board,
             transposition_table: Arc::new(transposition_table),
+            num_threads: const { unsafe { NonZeroUsize::new_unchecked(1) } },
+            move_overhead: Duration::ZERO,
             num_nodes_searched: Arc::new(AtomicUsize::new(0)),
             selective_depth: Arc::new(AtomicUsize::new(0)),
             stopper: Arc::new(AtomicBool::new(false)),
@@ -169,6 +173,26 @@ impl Engine {
     }
 
     #[inline]
+    pub fn get_num_threads(&self) -> usize {
+        self.num_threads.get()
+    }
+
+    #[inline]
+    pub fn set_num_threads(&mut self, num_threads: NonZeroUsize) {
+        self.num_threads = num_threads;
+    }
+
+    #[inline]
+    pub fn get_move_overhead(&self) -> Duration {
+        self.move_overhead
+    }
+
+    #[inline]
+    pub fn set_move_overhead(&mut self, move_overhead: Duration) {
+        self.move_overhead = move_overhead;
+    }
+
+    #[inline]
     pub fn get_num_nodes_searched(&self) -> usize {
         self.num_nodes_searched.load(MEMORY_ORDERING)
     }
@@ -187,6 +211,7 @@ impl Engine {
             self.num_nodes_searched.clone(),
             self.selective_depth.clone(),
             self.stopper.clone(),
+            self.move_overhead,
         )
     }
 
@@ -210,9 +235,8 @@ impl Engine {
 
     pub fn go(&self, command: GoCommand, verbose: bool) -> GoResponse {
         self.reset_variables();
-        let num_threads = GLOBAL_TIMECAT_STATE.get_num_threads().max(1);
         let mut join_handles = vec![];
-        for id in 1..num_threads {
+        for id in 1..self.num_threads.get() {
             let join_handle = thread::spawn({
                 let mut threaded_searcher = self.generate_searcher(id);
                 move || threaded_searcher.go(GoCommand::Infinite, false)
@@ -260,6 +284,7 @@ impl Clone for Engine {
             selective_depth: AtomicUsize::new(self.selective_depth.load(MEMORY_ORDERING)).into(),
             stopper: AtomicBool::new(self.stopper.load(MEMORY_ORDERING)).into(),
             optional_io_reader: self.optional_io_reader.clone(),
+            ..*self
         }
     }
 }

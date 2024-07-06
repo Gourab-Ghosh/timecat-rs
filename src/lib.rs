@@ -122,7 +122,7 @@ pub use std::fs;
 pub use std::hash::{Hash, Hasher};
 pub use std::io::{BufReader, Read, Seek};
 pub use std::iter::Sum;
-pub use std::num::{NonZeroU64, ParseIntError, Wrapping};
+pub use std::num::{NonZeroU64, NonZeroUsize, ParseIntError, Wrapping};
 pub use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Deref,
     DerefMut, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Not, Range, Rem, RemAssign,
@@ -134,8 +134,6 @@ pub use std::sync::{Arc, RwLock};
 pub use std::thread;
 #[cfg(not(feature = "wasm"))]
 pub use std::time::{Duration, Instant};
-#[cfg(feature = "wasm")]
-pub use web_time::{Duration, Instant};
 #[cfg(feature = "engine")]
 #[cfg(feature = "debug")]
 pub use tests::test;
@@ -144,6 +142,8 @@ pub use tt::*;
 #[cfg(feature = "engine")]
 pub use uci::*;
 pub use utils::*;
+#[cfg(feature = "wasm")]
+pub use web_time::{Duration, Instant};
 
 // pub use std::hint;
 // pub use std::num;

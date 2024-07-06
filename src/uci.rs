@@ -29,26 +29,26 @@ impl_into_spin!(Duration, as_millis);
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum UCIOptionType {
     Button {
-        function: fn(&Engine),
+        function: fn(&mut Engine),
     },
     Check {
         default: bool,
-        function: fn(&Engine, bool),
+        function: fn(&mut Engine, bool),
     },
     String {
         default: String,
-        function: fn(&Engine, &str),
+        function: fn(&mut Engine, &str),
     },
     Spin {
         default: Spin,
         min: Spin,
         max: Spin,
-        function: fn(&Engine, Spin),
+        function: fn(&mut Engine, Spin),
     },
     Combo {
         default: String,
         options: Vec<String>,
-        function: fn(&Engine, &str),
+        function: fn(&mut Engine, &str),
     },
 }
 
@@ -107,7 +107,7 @@ impl UCIOption {
     fn new_spin<T: Clone + Copy + IntoSpin>(
         name: &str,
         values: SpinValue<T>,
-        function: fn(&Engine, Spin),
+        function: fn(&mut Engine, Spin),
     ) -> Self {
         UCIOption::new(
             name,
@@ -120,15 +120,15 @@ impl UCIOption {
         )
     }
 
-    fn new_check(name: &str, default: bool, function: fn(&Engine, bool)) -> Self {
+    fn new_check(name: &str, default: bool, function: fn(&mut Engine, bool)) -> Self {
         UCIOption::new(name, UCIOptionType::Check { default, function })
     }
 
-    fn new_button(name: &str, function: fn(&Engine)) -> Self {
+    fn new_button(name: &str, function: fn(&mut Engine)) -> Self {
         UCIOption::new(name, UCIOptionType::Button { function })
     }
 
-    fn set_option(&self, engine: &Engine, value_string: String) -> Result<()> {
+    fn set_option(&self, engine: &mut Engine, value_string: String) -> Result<()> {
         match self.option_type {
             UCIOptionType::Check { function, .. } => {
                 function(engine, value_string.parse()?);
@@ -260,7 +260,7 @@ impl UCIStateManager {
         self.options.read().unwrap().to_owned()
     }
 
-    pub fn run_command(&self, engine: &Engine, user_input: &str) -> Result<()> {
+    pub fn run_command(&self, engine: &mut Engine, user_input: &str) -> Result<()> {
         let binding = Parser::sanitize_string(user_input);
         let commands = binding.split_whitespace().collect_vec();
         if commands
@@ -305,7 +305,7 @@ impl Default for UCIStateManager {
 
 fn get_uci_state_manager() -> Vec<UCIOption> {
     let t_table_size_uci = SpinValue::new(
-        GlobalTimecatState::default().get_t_table_size(),
+        TIMECAT_DEFAULTS.t_table_size,
         CacheTableSize::Exact(1),
         CacheTableSize::Exact({
             let transposition_table_entry_size =
@@ -321,7 +321,7 @@ fn get_uci_state_manager() -> Vec<UCIOption> {
     );
 
     let move_overhead_uci = SpinValue::new(
-        GlobalTimecatState::default().get_move_overhead(),
+        TIMECAT_DEFAULTS.move_overhead,
         Duration::from_secs(0),
         Duration::MAX,
     );
@@ -329,8 +329,12 @@ fn get_uci_state_manager() -> Vec<UCIOption> {
     let options = vec![
         UCIOption::new_spin(
             "Threads",
-            SpinValue::new(GlobalTimecatState::default().get_num_threads(), 1, 1024),
-            |_, value| GLOBAL_TIMECAT_STATE.set_num_threads(value as usize, true),
+            SpinValue::new(TIMECAT_DEFAULTS.num_threads.get(), 1, 1024),
+            |engine, value| {
+                let num_threads = unsafe { NonZeroUsize::new_unchecked(value as usize) };
+                engine.set_num_threads(num_threads);
+                print_uci_info("Number of threads is set to", num_threads);
+            },
         )
         .alias("Thread"),
         UCIOption::new_spin("Hash", t_table_size_uci, {
@@ -342,13 +346,14 @@ fn get_uci_state_manager() -> Vec<UCIOption> {
             }
         }),
         UCIOption::new_button("Clear Hash", |engine| {
-            clear_all_cache_tables(
-                engine.get_transposition_table(),
-                engine.get_board().get_evaluator(),
-            )
+            engine.get_transposition_table().clear();
+            engine.get_board().get_evaluator().clear();
+            print_uci_info::<&str>("All hash tables are cleared!", None);
         }),
-        UCIOption::new_spin("Move Overhead", move_overhead_uci, |_, value| {
-            GLOBAL_TIMECAT_STATE.set_move_overhead(Duration::from_millis(value as u64))
+        UCIOption::new_spin("Move Overhead", move_overhead_uci, |engine, value| {
+            let duration = Duration::from_millis(value as u64);
+            engine.set_move_overhead(duration);
+            print_uci_info("Move Overhead is set to", duration.stringify());
         }),
         // UCIOption::new_check(
         //     "OwnBook",

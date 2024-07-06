@@ -4,7 +4,7 @@ pub fn identity_function<T>(object: T) -> T {
     object
 }
 
-fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
+pub fn print_uci_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
     if !GLOBAL_TIMECAT_STATE.is_in_debug_mode() {
         return;
     }
@@ -23,6 +23,34 @@ fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
     println_wasm!("{to_print}");
 }
 
+pub struct TimecatDefaults {
+    pub terminate_engine: bool,
+    #[cfg(feature = "colored")]
+    pub colored: bool,
+    pub console_mode: bool,
+    pub t_table_size: CacheTableSize,
+    pub long_algebraic_notation: bool,
+    pub num_threads: NonZeroUsize,
+    pub move_overhead: Duration,
+    pub use_own_book: bool,
+    pub debug_mode: bool,
+    pub chess960_mode: bool,
+}
+
+pub const TIMECAT_DEFAULTS: TimecatDefaults = TimecatDefaults {
+    terminate_engine: false,
+    #[cfg(feature = "colored")]
+    colored: true,
+    console_mode: true,
+    t_table_size: CacheTableSize::Exact(16),
+    long_algebraic_notation: false,
+    num_threads: const { unsafe { NonZeroUsize::new_unchecked(1) } },
+    move_overhead: Duration::from_millis(200),
+    use_own_book: false,
+    debug_mode: true,
+    chess960_mode: false,
+};
+
 #[derive(Debug)]
 pub struct GlobalTimecatState {
     _terminate_engine: AtomicBool,
@@ -31,8 +59,6 @@ pub struct GlobalTimecatState {
     _console_mode: AtomicBool,
     _t_table_size: RwLock<CacheTableSize>,
     _long_algebraic_notation: AtomicBool,
-    _num_threads: AtomicUsize,
-    _move_overhead: RwLock<Duration>,
     _use_own_book: AtomicBool,
     _debug_mode: AtomicBool,
     _chess960_mode: AtomicBool,
@@ -47,17 +73,15 @@ impl Default for GlobalTimecatState {
 impl GlobalTimecatState {
     pub const fn new() -> Self {
         GlobalTimecatState {
-            _terminate_engine: AtomicBool::new(false),
+            _terminate_engine: AtomicBool::new(TIMECAT_DEFAULTS.terminate_engine),
             #[cfg(feature = "colored")]
-            _colored: AtomicBool::new(true),
-            _console_mode: AtomicBool::new(true),
-            _t_table_size: RwLock::new(CacheTableSize::Exact(16)),
-            _long_algebraic_notation: AtomicBool::new(false),
-            _num_threads: AtomicUsize::new(1),
-            _move_overhead: RwLock::new(Duration::ZERO),
-            _use_own_book: AtomicBool::new(false),
-            _debug_mode: AtomicBool::new(true),
-            _chess960_mode: AtomicBool::new(false),
+            _colored: AtomicBool::new(TIMECAT_DEFAULTS.colored),
+            _console_mode: AtomicBool::new(TIMECAT_DEFAULTS.console_mode),
+            _t_table_size: RwLock::new(TIMECAT_DEFAULTS.t_table_size),
+            _long_algebraic_notation: AtomicBool::new(TIMECAT_DEFAULTS.long_algebraic_notation),
+            _use_own_book: AtomicBool::new(TIMECAT_DEFAULTS.use_own_book),
+            _debug_mode: AtomicBool::new(TIMECAT_DEFAULTS.debug_mode),
+            _chess960_mode: AtomicBool::new(TIMECAT_DEFAULTS.chess960_mode),
         }
     }
 
@@ -87,7 +111,7 @@ impl GlobalTimecatState {
     pub fn set_colored(&self, b: bool, verbose: bool) {
         self._colored.store(b, MEMORY_ORDERING);
         if verbose {
-            print_info("Colored output is set to", b);
+            print_uci_info("Colored output is set to", b);
         }
     }
 
@@ -138,7 +162,7 @@ impl GlobalTimecatState {
         if GLOBAL_TIMECAT_STATE.is_in_debug_mode() {
             transposition_table.print_info();
         }
-        print_info(
+        print_uci_info(
             "Transposition table is set to size to",
             size.to_cache_table_memory_size::<TranspositionTableEntry>(),
         );
@@ -151,29 +175,7 @@ impl GlobalTimecatState {
 
     pub fn set_long_algebraic_notation(&self, b: bool) {
         self._long_algebraic_notation.store(b, MEMORY_ORDERING);
-        print_info("Long algebraic notation is set to", b);
-    }
-
-    #[inline]
-    pub fn get_num_threads(&self) -> usize {
-        self._num_threads.load(MEMORY_ORDERING)
-    }
-
-    pub fn set_num_threads(&self, num_threads: usize, verbose: bool) {
-        self._num_threads.store(num_threads, MEMORY_ORDERING);
-        if verbose {
-            print_info("Number of threads is set to", num_threads);
-        }
-    }
-
-    #[inline]
-    pub fn get_move_overhead(&self) -> Duration {
-        self._move_overhead.read().unwrap().to_owned()
-    }
-
-    pub fn set_move_overhead(&self, duration: Duration) {
-        *self._move_overhead.write().unwrap() = duration;
-        print_info("Move Overhead is set to", duration.stringify());
+        print_uci_info("Long algebraic notation is set to", b);
     }
 
     #[inline]
@@ -183,7 +185,7 @@ impl GlobalTimecatState {
 
     pub fn set_using_own_book(&self, b: bool) {
         self._use_own_book.store(b, MEMORY_ORDERING);
-        print_info("Own Book Usage is set to", b);
+        print_uci_info("Own Book Usage is set to", b);
     }
 
     #[inline]
@@ -193,7 +195,7 @@ impl GlobalTimecatState {
 
     pub fn set_debug_mode(&self, b: bool) {
         self._debug_mode.store(b, MEMORY_ORDERING);
-        print_info("Debug Mode is set to", b);
+        print_uci_info("Debug Mode is set to", b);
     }
 
     #[inline]
@@ -208,13 +210,6 @@ impl GlobalTimecatState {
 
     pub fn set_chess960_mode(&self, b: bool) {
         self._chess960_mode.store(b, MEMORY_ORDERING);
-        print_info("Chess 960 mode is set to", b);
+        print_uci_info("Chess 960 mode is set to", b);
     }
-}
-
-#[cfg(feature = "engine")]
-pub fn clear_all_cache_tables(transposition_table: &TranspositionTable, evaluator: &Evaluator) {
-    transposition_table.clear();
-    evaluator.clear();
-    print_info::<&str>("All hash tables are cleared!", None);
 }

@@ -36,7 +36,7 @@ impl TimecatBuilder {
                 .nth(1)
                 .unwrap_or(&"")
                 .parse()
-                .unwrap_or(GlobalTimecatState::default().get_num_threads());
+                .unwrap_or(TIMECAT_DEFAULTS.num_threads);
             self.user_commands.push(UserCommand::SetUCIOption {
                 user_input: format!("setoption name Thread value {}", num_threads),
             });

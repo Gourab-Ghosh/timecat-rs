@@ -3,6 +3,7 @@ use super::*;
 #[derive(Clone, Debug)]
 pub struct Timer {
     start_instant: Instant,
+    move_overhead: Duration,
     max_time: Duration,
     stop_search: bool,
     stopper: Arc<AtomicBool>,
@@ -13,6 +14,7 @@ impl Timer {
     pub fn new(stopper: Arc<AtomicBool>) -> Self {
         Self {
             start_instant: Instant::now(),
+            move_overhead: Duration::ZERO,
             max_time: Duration::MAX,
             stop_search: false,
             stopper,
@@ -52,19 +54,35 @@ impl Timer {
         self.start_instant.elapsed()
     }
 
+    #[inline]
+    pub fn get_move_overhead(&self) -> Duration {
+        self.move_overhead
+    }
+
+    #[inline]
+    pub fn set_move_overhead(&mut self, duration: Duration) {
+        self.move_overhead = duration;
+    }
+
+    #[inline]
+    pub fn with_move_overhead(mut self, duration: Duration) -> Self {
+        self.set_move_overhead(duration);
+        self
+    }
+
     pub fn max_time(&self) -> Duration {
         self.max_time
     }
 
-    pub fn is_time_up(&mut self, move_overhead: Duration) -> bool {
+    pub fn is_time_up(&mut self) -> bool {
         if self.max_time == Duration::MAX {
             return false;
         }
-        self.stop_search = self.time_elapsed() + move_overhead >= self.max_time;
+        self.stop_search = self.time_elapsed() + self.move_overhead >= self.max_time;
         self.stop_search
     }
 
-    pub fn check_stop(&mut self, move_overhead: Duration, enable_timer: bool) -> bool {
+    pub fn check_stop(&mut self, enable_timer: bool) -> bool {
         if self.stopper.load(MEMORY_ORDERING) {
             return true;
         }
@@ -74,7 +92,7 @@ impl Timer {
         if self.stop_search {
             return true;
         }
-        self.is_time_up(move_overhead)
+        self.is_time_up()
     }
 
     pub fn update_max_time(&mut self, depth: Depth, score: Score) {
