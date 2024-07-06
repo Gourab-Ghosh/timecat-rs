@@ -66,7 +66,7 @@ impl TimecatBuilder {
                 .join(" ");
             match Parser::parse_command(&command_string) {
                 Ok(user_commands) => self.user_commands.extend(user_commands),
-                Err(error) => print_or_log!(
+                Err(error) => println_wasm!(
                     "{}",
                     error
                         .stringify_with_optional_raw_input(Some(&command_string))
@@ -94,7 +94,7 @@ impl Timecat {
             user_command
                 .run_command(&mut self.engine, &self.uci_state_manager)
                 .unwrap_or_else(|error| {
-                    print_or_log!("{}", error.stringify().colorize(ERROR_MESSAGE_STYLE))
+                    println_wasm!("{}", error.stringify().colorize(ERROR_MESSAGE_STYLE))
                 });
         }
         if GLOBAL_TIMECAT_STATE.terminate_engine() {
@@ -118,7 +118,7 @@ impl Timecat {
         loop {
             if GLOBAL_TIMECAT_STATE.terminate_engine() {
                 if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-                    print_or_log!(
+                    println_wasm!(
                         "{}",
                         "Program ended successfully!".colorize(SUCCESS_MESSAGE_STYLE)
                     );
@@ -126,18 +126,18 @@ impl Timecat {
                 break;
             }
             let raw_input = if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-                print_or_log!();
+                println_wasm!();
                 let raw_input = get_input(
                     "Enter Command: ".colorize(INPUT_MESSAGE_STYLE),
                     &self.io_reader,
                 );
-                print_or_log!();
+                println_wasm!();
                 raw_input
             } else {
                 get_input("", &self.io_reader)
             };
             self.run_uci_command(&raw_input).unwrap_or_else(|error| {
-                print_or_log!(
+                println_wasm!(
                     "{}",
                     error
                         .stringify_with_optional_raw_input(Some(raw_input.as_str()))

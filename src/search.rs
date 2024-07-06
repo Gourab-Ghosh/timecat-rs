@@ -122,7 +122,7 @@ impl SearchInfo {
             Self::format_info("time", self.get_time_elapsed().stringify()),
             Self::format_info("pv", get_pv_string(&self.sub_board, &self.pv)),
         ];
-        print_or_log!("{}", outputs.join(" "));
+        println_wasm!("{}", outputs.join(" "));
     }
 
     pub fn print_warning_message(&self, mut alpha: Score, mut beta: Score) {
@@ -138,7 +138,7 @@ impl SearchInfo {
             self.get_score().stringify(),
             self.get_time_elapsed().stringify(),
         );
-        print_or_log!("{}", warning_message.colorize(WARNING_MESSAGE_STYLE));
+        println_wasm!("{}", warning_message.colorize(WARNING_MESSAGE_STYLE));
     }
 }
 
@@ -254,7 +254,7 @@ impl Searcher {
         num_nodes_searched: usize,
         time_elapsed: Duration,
     ) {
-        print_or_log!(
+        println_wasm!(
             "{} {} {} {} {} {} {} {} {} {} {}",
             "info".colorize(INFO_MESSAGE_STYLE),
             "curr move".colorize(INFO_MESSAGE_STYLE),

@@ -18,7 +18,7 @@ pub fn format_info<T: fmt::Display>(desc: &str, info: T, add_info_string: bool) 
 }
 
 pub fn force_println_info<T: fmt::Display>(desc: &str, info: T) {
-    print_or_log!("{}", format_info(desc, info, true));
+    println_wasm!("{}", format_info(desc, info, true));
 }
 
 #[inline]
@@ -34,13 +34,13 @@ pub fn get_engine_version() -> String {
 }
 
 pub fn print_engine_version() {
-    print_or_log!("{}", get_engine_version().colorize(SUCCESS_MESSAGE_STYLE));
+    println_wasm!("{}", get_engine_version().colorize(SUCCESS_MESSAGE_STYLE));
 }
 
 #[cfg(feature = "engine")]
 pub fn print_engine_info(transposition_table: &TranspositionTable, evaluator: &Evaluator) {
     print_engine_version();
-    print_or_log!();
+    println_wasm!();
     transposition_table.print_info();
     evaluator.print_info();
 }
@@ -56,5 +56,5 @@ pub fn print_cache_table_info(
     if GLOBAL_TIMECAT_STATE.is_in_uci_mode() {
         to_print = "info string ".to_string() + to_print.trim();
     }
-    print_or_log!("{}", to_print.colorize(INFO_MESSAGE_STYLE));
+    println_wasm!("{}", to_print.colorize(INFO_MESSAGE_STYLE));
 }

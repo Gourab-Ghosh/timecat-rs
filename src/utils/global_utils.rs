@@ -20,7 +20,7 @@ fn print_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
     if GLOBAL_TIMECAT_STATE.is_in_uci_mode() {
         to_print = format!("{} {to_print}", "info string".colorize(INFO_MESSAGE_STYLE))
     }
-    print_or_log!("{to_print}");
+    println_wasm!("{to_print}");
 }
 
 #[derive(Debug)]

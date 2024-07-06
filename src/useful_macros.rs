@@ -89,7 +89,29 @@ macro_rules! match_interpolate {
 
 #[cfg(feature = "wasm")]
 #[macro_export]
-macro_rules! print_or_log {
+macro_rules! print_wasm {
+    () => {
+        gloo::console::log!()
+    };
+    ($($arg:tt)*) => {
+        gloo::console::log!(format!($($arg)*))
+    };
+}
+
+#[cfg(not(feature = "wasm"))]
+#[macro_export]
+macro_rules! print_wasm {
+    () => {
+        print!()
+    };
+    ($($arg:tt)*) => {
+        print!($($arg)*)
+    };
+}
+
+#[cfg(feature = "wasm")]
+#[macro_export]
+macro_rules! println_wasm {
     () => {
         gloo::console::log!("\n")
     };
@@ -100,7 +122,7 @@ macro_rules! print_or_log {
 
 #[cfg(not(feature = "wasm"))]
 #[macro_export]
-macro_rules! print_or_log {
+macro_rules! println_wasm {
     () => {
         println!()
     };
