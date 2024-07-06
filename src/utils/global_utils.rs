@@ -24,7 +24,6 @@ pub fn print_uci_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>
 }
 
 pub struct TimecatDefaults {
-    pub terminate_engine: bool,
     #[cfg(feature = "colored")]
     pub colored: bool,
     pub console_mode: bool,
@@ -38,7 +37,6 @@ pub struct TimecatDefaults {
 }
 
 pub const TIMECAT_DEFAULTS: TimecatDefaults = TimecatDefaults {
-    terminate_engine: false,
     #[cfg(feature = "colored")]
     colored: true,
     console_mode: true,
@@ -73,7 +71,7 @@ impl Default for GlobalTimecatState {
 impl GlobalTimecatState {
     pub const fn new() -> Self {
         GlobalTimecatState {
-            _terminate_engine: AtomicBool::new(TIMECAT_DEFAULTS.terminate_engine),
+            _terminate_engine: AtomicBool::new(false),
             #[cfg(feature = "colored")]
             _colored: AtomicBool::new(TIMECAT_DEFAULTS.colored),
             _console_mode: AtomicBool::new(TIMECAT_DEFAULTS.console_mode),
