@@ -1,6 +1,8 @@
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
 #[cfg(feature = "inbuilt_nnue")]
 mod nnue_features {
-    pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+    use super::*;
     pub use std::fs::File;
     pub use std::path::{Path, PathBuf};
 
@@ -76,10 +78,10 @@ mod nnue_features {
 }
 
 #[cfg(feature = "inbuilt_nnue")]
-fn main() {
+fn main() -> Result<()> {
     use nnue_features::*;
 
-    let output_dir = std::env::var("OUT_DIR").unwrap();
+    let output_dir = std::env::var("OUT_DIR")?;
     let output_nnue_dir = Path::new(&output_dir).join("nnue_dir");
     // Backing up nnue file in local cache directory to prevent downloading it multiple times
     let nnue_dir = dirs::cache_dir()
@@ -88,19 +90,22 @@ fn main() {
     match check_and_download_nnue(&nnue_dir) {
         Ok(_) => {
             if nnue_dir != output_nnue_dir {
-                std::fs::create_dir_all(output_nnue_dir.clone()).unwrap();
-                std::fs::copy(nnue_dir.join("nn.nnue"), output_nnue_dir.join("nn.nnue")).unwrap();
+                std::fs::create_dir_all(output_nnue_dir.clone())?;
+                std::fs::copy(nnue_dir.join("nn.nnue"), output_nnue_dir.join("nn.nnue"))?;
             }
         }
         Err(err) => {
             if nnue_dir == output_nnue_dir {
-                panic!("{}", err);
+                return Err(err.into());
             } else {
-                check_and_download_nnue(&nnue_dir).unwrap();
+                check_and_download_nnue(&nnue_dir)?;
             }
         }
     }
+    Ok(())
 }
 
 #[cfg(not(feature = "inbuilt_nnue"))]
-fn main() {}
+fn main() -> Result<()> {
+    Ok(())
+}

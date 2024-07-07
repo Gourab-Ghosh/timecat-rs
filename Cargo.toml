@@ -1,7 +1,7 @@
 [package]
 name = "timecat"
 authors = ["Gourab Ghosh"]
-version = "1.26.7"
+version = "1.26.8"
 edition = "2021"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
@@ -20,6 +20,7 @@ include = [
     "README.md",
     "documentation/**/*.md",
 ]
+default-run = "timecat"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -67,6 +68,11 @@ serde = ["dep:serde", "web-time?/serde"]
 wasm = ["dep:web-time", "dep:gloo"]
 experimental = []
 debug = ["binary", "experimental", "colored", "speed"]
+
+[[bin]]
+name = "timecat"
+path = "src/bin/timecat.rs"
+required-features = ["binary", "speed"]
 
 [package.metadata.docs.rs]
 all-features = true
