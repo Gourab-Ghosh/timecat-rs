@@ -16,7 +16,6 @@ categories = [
     "algorithms",
     "artificial-intelligence",
     "games",
-    "data-structures",
 ]
 readme = "README.md"
 include = [
