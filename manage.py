@@ -50,6 +50,10 @@ def main():
         if check_errors(FEATURE_SETS_CHECK):
             return
 
+    if "clippy" in args:
+        if check_errors(FEATURE_SETS_CHECK, clippy = True):
+            return
+
     if "test" in args:
         if test_package("--release" in args):
             return
