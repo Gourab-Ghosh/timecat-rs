@@ -10,13 +10,7 @@ documentation = "https://docs.rs/timecat"
 license-file = "LICENSE"
 # keywords = ["rust", "chess-engine", "chess", "uci", "alpha-beta-pruning", "negamax", "chess-ai", "uci-chess-engine", "nnue", "timecat", "timecat-rs"]
 keywords = ["chess-engine", "chess", "uci", "nnue", "ai"]
-categories = [
-    "chess",
-    "nnue",
-    "algorithms",
-    "artificial-intelligence",
-    "games",
-]
+categories = ["chess", "nnue", "algorithms", "artificial-intelligence", "games"]
 readme = "README.md"
 include = [
     "src/",
