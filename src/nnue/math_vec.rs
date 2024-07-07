@@ -232,23 +232,6 @@ impl<T, const N: usize> IndexMut<usize> for MathVec<T, N> {
     }
 }
 
-pub trait ClippedRelu<InputType, OutputType, const N: usize> {
-    fn clipped_relu(
-        &self,
-        scale_by_pow_of_two: OutputType,
-        min: InputType,
-        max: InputType,
-    ) -> MathVec<OutputType, N>;
-
-    fn clipped_relu_into(
-        &self,
-        scale_by_pow_of_two: OutputType,
-        min: InputType,
-        max: InputType,
-        output: &mut [OutputType; N],
-    );
-}
-
 macro_rules! impl_clipped_relu {
     ($from: ty, $to: ty) => {
         impl<const N: usize> ClippedRelu<$from, $to, N> for MathVec<$from, N> {

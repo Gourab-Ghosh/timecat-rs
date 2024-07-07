@@ -36,19 +36,6 @@ pub struct TimecatDefaults {
     pub chess960_mode: bool,
 }
 
-pub const TIMECAT_DEFAULTS: TimecatDefaults = TimecatDefaults {
-    #[cfg(feature = "colored")]
-    colored: true,
-    console_mode: true,
-    t_table_size: CacheTableSize::Exact(16),
-    long_algebraic_notation: false,
-    num_threads: unsafe { NonZeroUsize::new_unchecked(1) },
-    move_overhead: Duration::from_millis(200),
-    use_own_book: false,
-    debug_mode: true,
-    chess960_mode: false,
-};
-
 #[derive(Debug)]
 pub struct GlobalTimecatState {
     #[cfg(feature = "colored")]

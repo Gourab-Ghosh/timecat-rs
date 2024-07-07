@@ -1,7 +1,7 @@
 use super::*;
 pub use PieceType::*;
 
-mod all_pieces {
+pub mod all_pieces {
     #![allow(non_upper_case_globals)]
     use super::*;
 
@@ -103,6 +103,23 @@ impl Piece {
     #[inline]
     pub const fn get_color(self) -> Color {
         self.color
+    }
+
+    #[inline]
+    pub fn flip_color(&mut self) {
+        self.color = !self.color
+    }
+
+    #[inline]
+    pub fn to_int(self) -> u8 {
+        //TODO: Replace with match statements
+        self.to_index() as u8
+    }
+
+    #[inline]
+    pub fn to_index(self) -> usize {
+        //TODO: Replace with match statements
+        NUM_COLORS * self.get_piece_type().to_index() + self.get_color().to_index()
     }
 
     #[inline]

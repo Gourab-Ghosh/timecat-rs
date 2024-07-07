@@ -1,15 +1,5 @@
 use super::*;
 
-pub trait Compress {
-    type CompressedItem;
-
-    fn compress(self) -> Self::CompressedItem;
-}
-
-pub trait Decompress<T> {
-    fn decompress(self) -> T;
-}
-
 impl Compress for Option<PieceType> {
     type CompressedItem = u8;
 

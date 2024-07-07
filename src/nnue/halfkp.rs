@@ -206,17 +206,13 @@ pub struct HalfKPModel {
 }
 
 impl HalfKPModel {
-    pub fn index(&self, turn: Color, piece: Piece, mut square: Square) -> usize {
-        let mut piece_color = piece.get_color();
+    pub fn index(&self, turn: Color, mut piece: Piece, mut square: Square) -> usize {
         let king = get_item_unchecked!(self.accumulator.king_squares_rotated, turn.to_index());
         if turn == Black {
             square = square.rotate();
-            piece_color = !piece_color;
+            piece.flip_color();
         }
-        NUM_SQUARES
-            * (NUM_COLORS
-                * ((NUM_PIECE_TYPES - 1) * king.to_index() + piece.get_piece_type().to_index())
-                + piece_color.to_index())
+        NUM_SQUARES * (NUM_COLORS * (NUM_PIECE_TYPES - 1) * king.to_index() + piece.to_index())
             + square.to_index()
     }
 

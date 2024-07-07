@@ -33,11 +33,6 @@ pub fn flip_board_fen(fen: &str) -> Result<String> {
 }
 
 #[cfg(feature = "colored")]
-pub trait CustomColorize {
-    fn colorize(&self, style_functions: &[ColoredStringFunction]) -> String;
-}
-
-#[cfg(feature = "colored")]
 impl<T: ToString> CustomColorize for T {
     fn colorize(&self, style_functions: &[ColoredStringFunction]) -> String {
         let self_string = self.to_string();
@@ -53,25 +48,11 @@ impl<T: ToString> CustomColorize for T {
 }
 
 #[cfg(not(feature = "colored"))]
-pub trait CustomColorize {
-    fn colorize(&self, _: &[fn(String) -> String]) -> String;
-}
-
-#[cfg(not(feature = "colored"))]
 impl<T: ToString> CustomColorize for T {
     #[inline]
     fn colorize(&self, _: &[fn(String) -> String]) -> String {
         self.to_string()
     }
-}
-
-pub trait Stringify {
-    fn stringify(&self) -> String;
-}
-
-pub trait StringifyScore {
-    fn stringify_score(self) -> String;
-    fn stringify_score_uci(self) -> String;
 }
 
 impl StringifyScore for Score {
@@ -120,26 +101,6 @@ impl Stringify for Score {
         } else {
             self.stringify_score_uci()
         }
-    }
-}
-
-pub trait StringifyMove {
-    fn uci(self) -> String;
-    fn algebraic(self, sub_board: &SubBoard, long: bool) -> Result<String>;
-    fn stringify_move(self, sub_board: &SubBoard) -> Result<String>;
-
-    fn san(self, sub_board: &SubBoard) -> Result<String>
-    where
-        Self: Sized,
-    {
-        self.algebraic(sub_board, false)
-    }
-
-    fn lan(self, sub_board: &SubBoard) -> Result<String>
-    where
-        Self: Sized,
-    {
-        self.algebraic(sub_board, true)
     }
 }
 

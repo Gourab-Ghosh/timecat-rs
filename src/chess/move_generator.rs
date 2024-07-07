@@ -647,9 +647,6 @@ impl MoveGenerator {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Move> + '_ {
-        const OPTIONAL_PROMOTION_PIECES: &[Option<PieceType>] =
-            &[Some(Queen), Some(Knight), Some(Rook), Some(Bishop)];
-        const NO_PROMOTION_PIECES: &[Option<PieceType>] = &[None];
         self.square_and_bitboard_array
             .iter()
             .filter(|square_and_bitboard| {
@@ -660,10 +657,10 @@ impl MoveGenerator {
                 !(square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty()
             })
             .flat_map(move |square_and_bitboard| {
-                let promotion_pieces = if square_and_bitboard.promotion {
-                    OPTIONAL_PROMOTION_PIECES
+                let promotion_pieces: &[Option<PieceType>] = if square_and_bitboard.promotion {
+                    const { &[Some(Queen), Some(Knight), Some(Rook), Some(Bishop)] }
                 } else {
-                    NO_PROMOTION_PIECES
+                    const { &[None] }
                 };
                 promotion_pieces.iter().flat_map(move |&promotion| {
                     (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).map(

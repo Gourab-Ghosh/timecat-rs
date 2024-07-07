@@ -1,6 +1,6 @@
 use super::*;
 
-pub trait IntoSpin {
+trait IntoSpin {
     fn into_spin(self) -> Spin;
 }
 
@@ -54,7 +54,7 @@ enum UCIOptionType {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct SpinValue<T: Clone + Copy + IntoSpin> {
+struct SpinValue<T: Clone + Copy + IntoSpin> {
     default: T,
     min: T,
     max: T,

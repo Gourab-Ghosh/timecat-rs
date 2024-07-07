@@ -1,7 +1,7 @@
-mod halfkp;
-mod layer;
-mod math_vec;
-mod nnue_utils;
+pub mod halfkp;
+pub mod layer;
+pub mod math_vec;
+pub mod nnue_utils;
 
 use super::*;
 pub use halfkp::*;

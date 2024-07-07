@@ -293,33 +293,19 @@ pub mod files {
     ];
 }
 
-pub mod function_overloads {
+pub mod default_parameters {
     use super::*;
 
-    pub trait SubBoardMethodOverload<T> {
-        fn parse_san(&self, _: &str) -> Result<T>;
-        fn parse_lan(&self, _: &str) -> Result<T>;
-        fn parse_uci(&self, _: &str) -> Result<T>;
-        fn make_move_new(&self, _: T) -> Self;
-        #[inline]
-        fn make_move(&mut self, valid_or_null_move: T)
-        where
-            Self: Sized,
-        {
-            *self = self.make_move_new(valid_or_null_move);
-        }
-    }
-
-    pub trait BoardMethodOverload<T> {
-        // TODO: Avoid Code Repetition
-        fn push_unchecked(&mut self, _: T);
-        fn push(&mut self, _: T) -> Result<()>;
-        fn gives_repetition(&self, _: T) -> bool;
-        fn gives_threefold_repetition(&self, _: T) -> bool;
-        fn gives_claimable_threefold_repetition(&self, _: T) -> bool;
-    }
-
-    pub trait SearcherMethodOverload<T> {
-        fn push_unchecked(&mut self, _: T);
-    }
+    pub const TIMECAT_DEFAULTS: TimecatDefaults = TimecatDefaults {
+        #[cfg(feature = "colored")]
+        colored: true,
+        console_mode: true,
+        t_table_size: CacheTableSize::Exact(16),
+        long_algebraic_notation: false,
+        num_threads: unsafe { NonZeroUsize::new_unchecked(1) },
+        move_overhead: Duration::from_millis(200),
+        use_own_book: false,
+        debug_mode: true,
+        chess960_mode: false,
+    };
 }

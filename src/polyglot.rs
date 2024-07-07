@@ -254,7 +254,7 @@ pub fn get_move_from_polyglot_move_int(move_int: usize) -> Result<Move> {
     Move::new(source, dest, promotion)
 }
 
-mod array_implementation {
+pub mod array_implementation {
     use super::*;
 
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -417,7 +417,7 @@ mod array_implementation {
     }
 }
 
-mod map_implementation {
+pub mod map_implementation {
     use super::*;
 
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]

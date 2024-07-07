@@ -4,39 +4,39 @@
 #![allow(clippy::needless_doctest_main)]
 // #![warn(missing_docs)]
 
-mod board;
-mod chess;
-mod constants;
+pub mod board;
+pub mod chess;
+pub mod constants;
 #[cfg(feature = "engine")]
-mod engine;
-mod error;
+pub mod engine;
+pub mod error;
 #[cfg(feature = "nnue_reader")]
-mod evaluate;
+pub mod evaluate;
 #[cfg(feature = "nnue_reader")]
-mod nnue;
+pub mod nnue;
 #[cfg(feature = "engine")]
-mod parse;
+pub mod parse;
 #[cfg(feature = "experimental")]
-mod polyglot;
+pub mod polyglot;
 #[cfg(feature = "binary")]
-mod runner;
+pub mod runner;
 #[cfg(feature = "engine")]
-mod search;
+pub mod search;
 #[cfg(feature = "engine")]
-mod selfplay;
+pub mod selfplay;
 #[cfg(feature = "engine")]
-mod sort;
+pub mod sort;
 #[cfg(feature = "experimental")]
-mod syzygy;
+pub mod syzygy;
 #[cfg(feature = "engine")]
 #[cfg(feature = "debug")]
-mod tests;
-mod timer;
-mod tt;
+pub mod tests;
+pub mod timer;
+pub mod tt;
 #[cfg(feature = "engine")]
-mod uci;
-mod useful_macros;
-mod utils;
+pub mod uci;
+pub mod useful_macros;
+pub mod utils;
 
 pub mod prelude {
     use super::*;
@@ -65,7 +65,7 @@ pub mod prelude {
         H8, PROMOTION_PIECES, STARTING_POSITION_FEN, UPPER_BOARD_MASK,
     };
 
-    pub use constants::function_overloads::*;
+    pub use utils::custom_traits::*;
 
     #[cfg(feature = "engine")]
     pub use super::{self_play, Engine, GoCommand};
@@ -81,13 +81,13 @@ pub use constants::bitboard_and_square::*;
 pub use constants::board::*;
 pub use constants::cache_table::*;
 pub use constants::color::*;
+pub use constants::default_parameters::*;
 pub use constants::description::*;
 #[cfg(feature = "engine")]
 pub use constants::engine::*;
 pub use constants::evaluate::*;
 pub use constants::fen::*;
 pub use constants::files::*;
-pub use constants::function_overloads::*;
 pub use constants::io::*;
 pub use constants::piece::*;
 pub use constants::print_style::*;
