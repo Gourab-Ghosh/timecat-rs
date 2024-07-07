@@ -38,7 +38,7 @@ impl TimecatBuilder {
                 .parse()
                 .unwrap_or(TIMECAT_DEFAULTS.num_threads);
             self.user_commands.push(UserCommand::SetUCIOption {
-                user_input: format!("setoption name Thread value {}", num_threads),
+                user_input: format!("setoption name Threads value {}", num_threads),
             });
         }
         if args.contains(&"--help") {
