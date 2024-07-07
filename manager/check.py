@@ -19,7 +19,7 @@ def check_errors(feature_sets_check, clippy = False, verbose = True) -> bool:
     feature_sets_check = sorted(feature_sets_check, key = lambda k: (-1 if k is None else len(k), k))
     if verbose:
         print("Updating Packages...")
-    if os.system("cargo update --quiet"):
+    if os.system("cargo update"):
         sys.exit(1)
     try:
         os.environ["NNUE_DOWNLOAD"] = "PAUSE"
