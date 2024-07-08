@@ -83,10 +83,7 @@ fn main() {
     println!("Current Evaluation: {}\n", evaluation);
 
     // Initialize the engine with the current board state.
-    let engine = Engine::new(
-        board,
-        TranspositionTable::default(),
-    );
+    let engine = DefaultEngine::from_board(board);
 
     // Configure the engine to search for the best move up to a depth of 10 plies.
     let response = engine.go_verbose(GoCommand::Depth(10));
@@ -112,7 +109,7 @@ use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Create the default engine initialized with the standard starting position.
-    let mut runner = timecat::TimecatBuilder::default().build();
+    let mut runner = timecat::TimecatBuilder::<timecat::Timer>::default().build();
 
     // List of UCI commands to be executed on the chess engine.
     let uci_commands = [
@@ -145,7 +142,7 @@ use std::error::Error;
 
 fn main() {
     self_play(
-        &mut Engine::default(),
+        &mut DefaultEngine::default(),
         GoCommand::MoveTime(Duration::from_millis(10)),
         // set to verbose mode (true/false)
         true,

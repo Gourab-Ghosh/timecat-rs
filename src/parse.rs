@@ -49,7 +49,7 @@ pub enum UserCommand {
 }
 
 impl UserCommand {
-    fn print_engine_uci_info(uci_state_manager: &UCIStateManager) {
+    fn print_engine_uci_info<T: TimeManager>(uci_state_manager: &UCIStateManager<T>) {
         println_wasm!(
             "{}",
             format!("id name {}", get_engine_version()).colorize(INFO_MESSAGE_STYLE)
@@ -67,10 +67,10 @@ impl UserCommand {
         "Sadly, the help message is till now not implemented. But type uci to go into the uci mode and visit the link \"https://backscattering.de/chess/uci/\" to know the necessary commands required to use an uci chess engine.".colorize(ERROR_MESSAGE_STYLE)
     }
 
-    pub fn run_command(
+    pub fn run_command<T: TimeManager>(
         &self,
-        engine: &mut Engine,
-        uci_state_manager: &UCIStateManager,
+        engine: &mut Engine<T>,
+        uci_state_manager: &UCIStateManager<T>,
     ) -> Result<()> {
         match self {
             Self::TerminateEngine => engine.set_termination(true),
@@ -208,7 +208,7 @@ impl GoAndPerft {
         }
     }
 
-    fn run_perft_command(engine: &mut Engine, depth: Depth) -> Result<()> {
+    fn run_perft_command<T: TimeManager>(engine: &mut Engine<T>, depth: Depth) -> Result<()> {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!("{}\n", engine.get_board());
         }
@@ -226,7 +226,7 @@ impl GoAndPerft {
         Ok(())
     }
 
-    fn run_go_command(engine: &mut Engine, go_command: GoCommand) -> Result<()> {
+    fn run_go_command<T: TimeManager>(engine: &mut Engine<T>, go_command: GoCommand) -> Result<()> {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!("{}\n", engine.get_board());
         }
@@ -329,7 +329,7 @@ impl Set {
         }
     }
 
-    fn set_board_fen(engine: &mut Engine, fen: &str) -> Result<()> {
+    fn set_board_fen<T: TimeManager>(engine: &mut Engine<T>, fen: &str) -> Result<()> {
         if !Board::is_good_fen(fen) {
             return Err(BadFen {
                 fen: fen.to_string(),
@@ -355,7 +355,7 @@ impl Set {
 struct Push;
 
 impl Push {
-    fn push_moves(engine: &mut Engine, commands: &[&str]) -> Result<()> {
+    fn push_moves<T: TimeManager>(engine: &mut Engine<T>, commands: &[&str]) -> Result<()> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         for move_text in commands.iter().skip(2) {
             let valid_or_null_move = match second_command.as_str() {
@@ -375,7 +375,7 @@ impl Push {
 struct Pop;
 
 impl Pop {
-    fn pop_moves(engine: &mut Engine, num_moves: u16) -> Result<()> {
+    fn pop_moves<T: TimeManager>(engine: &mut Engine<T>, num_moves: u16) -> Result<()> {
         for _ in 0..num_moves {
             if engine.get_board().has_empty_stack() {
                 return Err(EmptyStack);

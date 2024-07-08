@@ -92,9 +92,10 @@ impl GoResponse {
 }
 
 #[derive(Debug)]
-pub struct Engine {
+pub struct Engine<T: TimeManager> {
     board: Board,
     transposition_table: Arc<TranspositionTable>,
+    timer: T,
     num_threads: NonZeroUsize,
     move_overhead: Duration,
     num_nodes_searched: Arc<AtomicUsize>,
@@ -104,11 +105,12 @@ pub struct Engine {
     terminate: Arc<AtomicBool>,
 }
 
-impl Engine {
-    pub fn new(board: Board, transposition_table: TranspositionTable) -> Self {
+impl<T: TimeManager> Engine<T> {
+    pub fn new(board: Board, transposition_table: TranspositionTable, timer: T) -> Self {
         Self {
             board,
             transposition_table: transposition_table.into(),
+            timer,
             num_threads: TIMECAT_DEFAULTS.num_threads,
             move_overhead: TIMECAT_DEFAULTS.move_overhead,
             num_nodes_searched: AtomicUsize::new(0).into(),
@@ -164,14 +166,6 @@ impl Engine {
         let result = self.board.set_fen(fen);
         self.reset_variables();
         result
-    }
-
-    #[inline]
-    pub fn from_fen(fen: &str) -> Result<Self> {
-        Ok(Engine::new(
-            Board::from_fen(fen)?,
-            TranspositionTable::default(),
-        ))
     }
 
     #[inline]
@@ -291,11 +285,28 @@ impl Engine {
     }
 }
 
-impl Clone for Engine {
+impl<T: TimeManager + Default> Engine<T> {
+    #[inline]
+    pub fn from_board(board: Board) -> Self {
+        Self::new(
+            board,
+            TranspositionTable::default(),
+            T::default(),
+        )
+    }
+
+    #[inline]
+    pub fn from_fen(fen: &str) -> Result<Self> {
+        Ok(Self::from_board(Board::from_fen(fen)?))
+    }
+}
+
+impl<T: TimeManager + Clone> Clone for Engine<T> {
     fn clone(&self) -> Self {
         Self {
             board: self.board.clone(),
             transposition_table: self.transposition_table.as_ref().clone().into(),
+            timer: self.timer.clone(),
             num_nodes_searched: AtomicUsize::new(self.num_nodes_searched.load(MEMORY_ORDERING))
                 .into(),
             selective_depth: AtomicUsize::new(self.selective_depth.load(MEMORY_ORDERING)).into(),
@@ -307,8 +318,12 @@ impl Clone for Engine {
     }
 }
 
-impl Default for Engine {
+impl<T: TimeManager + Default> Default for Engine<T> {
     fn default() -> Self {
-        Self::new(Board::default(), TranspositionTable::default())
+        Self::new(
+            Board::default(),
+            TranspositionTable::default(),
+            T::default(),
+        )
     }
 }

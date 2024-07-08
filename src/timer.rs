@@ -153,6 +153,8 @@ impl Timer {
     }
 }
 
+impl TimeManager for Timer {}
+
 impl Default for Timer {
     fn default() -> Self {
         Self::new(Arc::new(AtomicBool::new(false)))

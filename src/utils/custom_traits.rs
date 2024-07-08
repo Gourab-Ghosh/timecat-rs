@@ -67,6 +67,8 @@ pub trait StringifyMove {
     }
 }
 
+pub trait TimeManager {}
+
 pub trait SubBoardMethodOverload<T> {
     fn parse_san(&self, _: &str) -> Result<T>;
     fn parse_lan(&self, _: &str) -> Result<T>;

@@ -7,7 +7,7 @@ pub mod description {
 }
 
 pub mod types {
-    use super::TimecatError;
+    use super::*;
 
     pub type Ply = usize;
     pub type Depth = i8;
@@ -15,6 +15,8 @@ pub mod types {
     pub type MoveWeight = i64;
     pub type NumMoves = u16;
     pub type Spin = u128;
+    #[cfg(feature = "engine")]
+    pub type DefaultEngine = Engine<Timer>;
 
     #[cfg(feature = "colored")]
     pub type ColoredStringFunction = fn(colored::ColoredString) -> colored::ColoredString;

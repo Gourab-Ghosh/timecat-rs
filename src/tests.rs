@@ -1,21 +1,19 @@
 use super::*;
 
-static DUMMY_UCI_STATE_MANAGER: UCIStateManager = UCIStateManager::dummy();
-
-pub fn parse_command(engine: &mut Engine, raw_input: &str) {
+pub fn parse_command<T: TimeManager>(engine: &mut Engine<T>, raw_input: &str) {
     Parser::parse_command(raw_input)
         .unwrap_or_else(|err| panic!("{}", err.stringify_with_optional_raw_input(Some(raw_input))))
         .into_iter()
         .for_each(|user_command| {
             user_command
-                .run_command(engine, &DUMMY_UCI_STATE_MANAGER)
+                .run_command(engine, &UCIStateManager::dummy())
                 .unwrap()
         });
 }
 
 #[allow(unused_variables)]
 #[rustfmt::skip]
-pub fn test(engine: &mut Engine) -> Result<()> {
+pub fn test<T: TimeManager>(engine: &mut Engine<T>) -> Result<()> {
     // open_tablebase("directory", true, true, None, Board::new());
     let could_have_probably_played_better_move = [
         "5rk1/6pp/p1p5/1p1pqn2/1P6/2NP3P/2PQ1PP1/R5K1 w - - 0 26",

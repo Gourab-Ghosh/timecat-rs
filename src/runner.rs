@@ -1,13 +1,13 @@
 use super::*;
 
 #[derive(Default)]
-pub struct TimecatBuilder {
+pub struct TimecatBuilder<T: TimeManager> {
     user_commands: Vec<UserCommand>,
-    engine: Option<Engine>,
+    engine: Option<Engine<T>>,
 }
 
-impl TimecatBuilder {
-    pub fn build(self) -> Timecat {
+impl<T: TimeManager + Default> TimecatBuilder<T> {
+    pub fn build(self) -> Timecat<T> {
         let io_reader = IoReader::default();
         Timecat {
             user_commands: self.user_commands,
@@ -19,7 +19,9 @@ impl TimecatBuilder {
             uci_state_manager: UCIStateManager::default(),
         }
     }
+}
 
+impl<T: TimeManager> TimecatBuilder<T> {
     pub fn parse_args(mut self, args: &[&str]) -> Self {
         if args.contains(&"--uci") {
             self.user_commands
@@ -80,14 +82,14 @@ impl TimecatBuilder {
     }
 }
 
-pub struct Timecat {
+pub struct Timecat<T: TimeManager> {
     user_commands: Vec<UserCommand>,
-    engine: Engine,
+    engine: Engine<T>,
     io_reader: IoReader,
-    uci_state_manager: UCIStateManager,
+    uci_state_manager: UCIStateManager<T>,
 }
 
-impl Timecat {
+impl<T: TimeManager> Timecat<T> {
     pub fn run(mut self) {
         self.io_reader.start_reader_in_parallel();
         for user_command in self.user_commands.iter() {

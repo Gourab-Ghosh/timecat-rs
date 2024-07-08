@@ -68,7 +68,7 @@ pub mod prelude {
     pub use utils::custom_traits::*;
 
     #[cfg(feature = "engine")]
-    pub use super::{self_play, Engine, GoCommand};
+    pub use super::{self_play, GoCommand, DefaultEngine};
 }
 
 pub use arrayvec::ArrayVec;

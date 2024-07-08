@@ -27,28 +27,28 @@ impl_into_spin!(CacheTableSize, unwrap);
 impl_into_spin!(Duration, as_millis);
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-enum UCIOptionType {
+enum UCIOptionType<T: TimeManager> {
     Button {
-        function: fn(&mut Engine),
+        function: fn(&mut Engine<T>),
     },
     Check {
         default: bool,
-        function: fn(&mut Engine, bool),
+        function: fn(&mut Engine<T>, bool),
     },
     String {
         default: String,
-        function: fn(&mut Engine, &str),
+        function: fn(&mut Engine<T>, &str),
     },
     Spin {
         default: Spin,
         min: Spin,
         max: Spin,
-        function: fn(&mut Engine, Spin),
+        function: fn(&mut Engine<T>, Spin),
     },
     Combo {
         default: String,
         options: Vec<String>,
-        function: fn(&mut Engine, &str),
+        function: fn(&mut Engine<T>, &str),
     },
 }
 
@@ -83,14 +83,14 @@ impl<T: Clone + Copy + IntoSpin> SpinValue<T> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct UCIOption {
+pub struct UCIOption<T: TimeManager> {
     name: String,
     sorted_alias: Vec<String>,
-    option_type: UCIOptionType,
+    option_type: UCIOptionType<T>,
 }
 
-impl UCIOption {
-    fn new(name: &str, option_type: UCIOptionType) -> Self {
+impl<T: TimeManager> UCIOption<T> {
+    fn new(name: &str, option_type: UCIOptionType<T>) -> Self {
         Self {
             name: name.trim().to_string(),
             sorted_alias: vec![],
@@ -104,10 +104,10 @@ impl UCIOption {
         self
     }
 
-    fn new_spin<T: Clone + Copy + IntoSpin>(
+    fn new_spin<U: Clone + Copy + IntoSpin>(
         name: &str,
-        values: SpinValue<T>,
-        function: fn(&mut Engine, Spin),
+        values: SpinValue<U>,
+        function: fn(&mut Engine<T>, Spin),
     ) -> Self {
         UCIOption::new(
             name,
@@ -120,15 +120,15 @@ impl UCIOption {
         )
     }
 
-    fn new_check(name: &str, default: bool, function: fn(&mut Engine, bool)) -> Self {
+    fn new_check(name: &str, default: bool, function: fn(&mut Engine<T>, bool)) -> Self {
         UCIOption::new(name, UCIOptionType::Check { default, function })
     }
 
-    fn new_button(name: &str, function: fn(&mut Engine)) -> Self {
+    fn new_button(name: &str, function: fn(&mut Engine<T>)) -> Self {
         UCIOption::new(name, UCIOptionType::Button { function })
     }
 
-    fn set_option(&self, engine: &mut Engine, value_string: String) -> Result<()> {
+    fn set_option(&self, engine: &mut Engine<T>, value_string: String) -> Result<()> {
         match self.option_type {
             UCIOptionType::Check { function, .. } => {
                 function(engine, value_string.parse()?);
@@ -161,7 +161,7 @@ impl UCIOption {
     }
 }
 
-impl fmt::Display for UCIOption {
+impl<T: TimeManager> fmt::Display for UCIOption<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match &self.option_type {
             UCIOptionType::Check { default, .. } => {
@@ -222,45 +222,40 @@ impl fmt::Display for UCIOption {
     }
 }
 
-pub struct UCIStateManager {
-    options: RwLock<Vec<UCIOption>>,
+pub struct UCIStateManager<T: TimeManager> {
+    options: Vec<UCIOption<T>>,
 }
 
-impl UCIStateManager {
+impl<T: TimeManager> UCIStateManager<T> {
     pub const fn dummy() -> Self {
         Self {
-            options: RwLock::new(Vec::new()),
+            options: Vec::new(),
         }
     }
 
     fn new() -> Self {
         Self {
-            options: RwLock::new(get_uci_state_manager()),
+            options: get_uci_state_manager(),
         }
     }
 
-    pub fn get_option(&self, command_name: &str) -> Option<UCIOption> {
+    pub fn get_option(&self, command_name: &str) -> Option<&UCIOption<T>> {
         let command_name = command_name.to_string();
-        self.options
-            .read()
-            .unwrap()
-            .iter()
-            .find(
-                |UCIOption {
-                     name, sorted_alias, ..
-                 }| {
-                    name.eq_ignore_ascii_case(&command_name)
-                        || sorted_alias.binary_search(&command_name).is_ok()
-                },
-            )
-            .cloned()
+        self.options.iter().find(
+            |UCIOption {
+                 name, sorted_alias, ..
+             }| {
+                name.eq_ignore_ascii_case(&command_name)
+                    || sorted_alias.binary_search(&command_name).is_ok()
+            },
+        )
     }
 
-    pub fn get_all_options(&self) -> Vec<UCIOption> {
-        self.options.read().unwrap().to_owned()
+    pub fn get_all_options(&self) -> &[UCIOption<T>] {
+        &self.options
     }
 
-    pub fn run_command(&self, engine: &mut Engine, user_input: &str) -> Result<()> {
+    pub fn run_command(&self, engine: &mut Engine<T>, user_input: &str) -> Result<()> {
         let binding = Parser::sanitize_string(user_input);
         let commands = binding.split_whitespace().collect_vec();
         if commands
@@ -297,13 +292,13 @@ impl UCIStateManager {
     }
 }
 
-impl Default for UCIStateManager {
+impl<T: TimeManager> Default for UCIStateManager<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-fn get_uci_state_manager() -> Vec<UCIOption> {
+fn get_uci_state_manager<T: TimeManager>() -> Vec<UCIOption<T>> {
     let t_table_size_uci = SpinValue::new(
         TIMECAT_DEFAULTS.t_table_size,
         CacheTableSize::Exact(1),

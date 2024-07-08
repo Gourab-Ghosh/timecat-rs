@@ -23,7 +23,10 @@ fn main() {
     if !std::io::stdout().is_terminal() {
         GLOBAL_TIMECAT_STATE.set_colored(false, false);
     }
-    TimecatBuilder::default().parse_args(&args).build().run();
+    TimecatBuilder::<Timer>::default()
+        .parse_args(&args)
+        .build()
+        .run();
 }
 
 #[cfg(not(feature = "binary"))]
