@@ -31,7 +31,8 @@ pub mod syzygy;
 #[cfg(feature = "engine")]
 #[cfg(feature = "debug")]
 pub mod tests;
-pub mod timer;
+#[cfg(feature = "engine")]
+pub mod search_controller;
 pub mod tt;
 #[cfg(feature = "engine")]
 pub mod uci;
@@ -68,7 +69,7 @@ pub mod prelude {
     pub use utils::custom_traits::*;
 
     #[cfg(feature = "engine")]
-    pub use super::{self_play, GoCommand, DefaultEngine};
+    pub use super::{self_play, GoCommand, Engine};
 }
 
 pub use arrayvec::ArrayVec;
@@ -94,7 +95,7 @@ pub use constants::print_style::*;
 pub use constants::ranks::*;
 pub use constants::types::*;
 #[cfg(feature = "engine")]
-pub use engine::{Engine, GoCommand};
+pub use engine::{CustomEngine, GoCommand};
 pub use error::*;
 #[cfg(feature = "nnue_reader")]
 pub use evaluate::*;
@@ -138,7 +139,8 @@ pub use std::time::{Duration, Instant};
 #[cfg(feature = "engine")]
 #[cfg(feature = "debug")]
 pub use tests::test;
-pub use timer::Timer;
+#[cfg(feature = "engine")]
+pub use search_controller::SearchController;
 pub use tt::*;
 #[cfg(feature = "engine")]
 pub use uci::*;

@@ -1,39 +1,23 @@
 use super::*;
 
 #[derive(Clone, Debug)]
-pub struct Timer {
+pub struct SearchController {
     start_instant: Instant,
     move_overhead: Duration,
     max_time: Duration,
     stop_search: bool,
-    stopper: Arc<AtomicBool>,
-    is_dummy: bool,
+    stop_command: Arc<AtomicBool>,
 }
 
-impl Timer {
-    pub fn new(stopper: Arc<AtomicBool>) -> Self {
+impl SearchController {
+    pub fn new() -> Self {
         Self {
             start_instant: Instant::now(),
-            move_overhead: Duration::ZERO,
+            move_overhead: TIMECAT_DEFAULTS.move_overhead,
             max_time: Duration::MAX,
             stop_search: false,
-            stopper,
-            is_dummy: false,
+            stop_command: AtomicBool::new(false).into(),
         }
-    }
-
-    pub fn new_dummy(stopper: Arc<AtomicBool>) -> Self {
-        timer::Timer {
-            is_dummy: true,
-            stopper,
-            ..Default::default()
-        }
-    }
-
-    pub fn reset_variables(&mut self) {
-        self.start_instant = Instant::now();
-        self.max_time = Duration::MAX;
-        self.stop_search = false;
     }
 
     pub fn reset_start_time(&mut self) {
@@ -44,30 +28,6 @@ impl Timer {
     pub fn set_max_time(&mut self, duration: Duration) {
         self.max_time = duration;
         self.stop_search = false;
-    }
-
-    pub fn get_clock(&self) -> Instant {
-        self.start_instant
-    }
-
-    pub fn time_elapsed(&self) -> Duration {
-        self.start_instant.elapsed()
-    }
-
-    #[inline]
-    pub fn get_move_overhead(&self) -> Duration {
-        self.move_overhead
-    }
-
-    #[inline]
-    pub fn set_move_overhead(&mut self, duration: Duration) {
-        self.move_overhead = duration;
-    }
-
-    #[inline]
-    pub fn with_move_overhead(mut self, duration: Duration) -> Self {
-        self.set_move_overhead(duration);
-        self
     }
 
     pub fn max_time(&self) -> Duration {
@@ -81,32 +41,53 @@ impl Timer {
         self.stop_search = self.time_elapsed() + self.move_overhead >= self.max_time;
         self.stop_search
     }
+}
 
-    pub fn check_stop(&mut self, enable_timer: bool) -> bool {
-        if self.stopper.load(MEMORY_ORDERING) {
-            return true;
-        }
-        if self.is_dummy || !enable_timer {
-            return false;
-        }
-        if self.stop_search {
-            return true;
-        }
-        self.is_time_up()
+impl SearchControl for SearchController {
+    #[inline]
+    fn get_move_overhead(&self) -> Duration {
+        self.move_overhead
     }
 
-    pub fn update_max_time(&mut self, depth: Depth, score: Score) {
+    #[inline]
+    fn set_move_overhead(&mut self, duration: Duration) {
+        self.move_overhead = duration;
+    }
+    
+    #[inline]
+    fn time_elapsed(&self) -> Duration {
+        self.start_instant.elapsed()
+    }
+    
+    #[inline]
+    fn get_stop_command(&self) -> Arc<AtomicBool> {
+        self.stop_command.clone()
+    }
+
+    #[inline]
+    fn set_stop_command(&self, b: bool) {
+        self.stop_command.store(b, MEMORY_ORDERING);
+    }
+    
+    fn reset_variables(&mut self) {
+        self.start_instant = Instant::now();
+        self.max_time = Duration::MAX;
+        self.stop_search = false;
+        self.set_stop_command(false);
+    }
+
+    fn update_max_time(&mut self, searcher: &Searcher) {
         if self.max_time != Duration::MAX
-            && depth >= 10
-            && score >= WINNING_SCORE_THRESHOLD
+            && searcher.get_current_depth() >= 10
+            && searcher.get_score() >= WINNING_SCORE_THRESHOLD
             && self.time_elapsed() > Duration::from_secs(10)
         {
             self.stop_search = true;
         }
     }
 
-    #[cfg(feature = "engine")]
-    pub fn parse_time_based_command(&mut self, board: &Board, command: GoCommand) {
+    fn parse_time_based_go_command(&mut self, searcher: &Searcher, command: GoCommand) {
+        let board = searcher.get_board();
         match command {
             GoCommand::MoveTime(duration) => self.set_max_time(duration),
             GoCommand::Timed {
@@ -151,12 +132,23 @@ impl Timer {
             _ => panic!("Expected Timed Command!"),
         }
     }
+
+    fn stop_search(&mut self, searcher: &Searcher) -> bool {
+        if self.stop_command.load(MEMORY_ORDERING) {
+            return true;
+        }
+        if !searcher.is_main_threaded() {
+            return false;
+        }
+        if self.stop_search {
+            return true;
+        }
+        self.is_time_up()
+    }
 }
 
-impl TimeManager for Timer {}
-
-impl Default for Timer {
+impl Default for SearchController {
     fn default() -> Self {
-        Self::new(Arc::new(AtomicBool::new(false)))
+        Self::new()
     }
 }

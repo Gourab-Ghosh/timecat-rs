@@ -23,7 +23,7 @@ fn main() {
     if !std::io::stdout().is_terminal() {
         GLOBAL_TIMECAT_STATE.set_colored(false, false);
     }
-    TimecatBuilder::<Timer>::default()
+    TimecatBuilder::<SearchController>::default()
         .parse_args(&args)
         .build()
         .run();

@@ -67,7 +67,25 @@ pub trait StringifyMove {
     }
 }
 
-pub trait TimeManager {}
+#[cfg(feature = "engine")]
+// TODO: Try to remove static lifetime from T
+pub trait SearchControl: Clone + Send + 'static {
+    fn get_move_overhead(&self) -> Duration;
+    fn set_move_overhead(&mut self, duration: Duration);
+    fn time_elapsed(&self) -> Duration;
+    fn get_stop_command(&self) -> Arc<AtomicBool>;
+    fn set_stop_command(&self, b: bool);
+    fn reset_variables(&mut self);
+    fn stop_search(&mut self, searcher: &Searcher) -> bool;
+    fn parse_time_based_go_command(&mut self, searcher: &Searcher, command: GoCommand);
+    fn update_max_time(&mut self, searcher: &Searcher);
+
+    #[inline]
+    fn with_move_overhead(mut self, duration: Duration) -> Self {
+        self.set_move_overhead(duration);
+        self
+    }
+}
 
 pub trait SubBoardMethodOverload<T> {
     fn parse_san(&self, _: &str) -> Result<T>;

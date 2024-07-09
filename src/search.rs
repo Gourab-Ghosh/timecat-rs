@@ -41,12 +41,12 @@ pub struct SearchInfo {
     collisions: usize,
     // #[serde(serialize_with = "serialize_time_instant", deserialize_with = "deserialize_time_instant")]
     // #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_time_instant"))]
-    clock: Instant,
+    time_elapsed: Duration,
     pv: Vec<Move>,
 }
 
 impl SearchInfo {
-    pub fn new(searcher: &Searcher) -> Self {
+    pub fn new(searcher: &Searcher, time_elapsed: Duration) -> Self {
         Self {
             sub_board: searcher.initial_sub_board.to_owned(),
             depth: searcher.get_current_depth(),
@@ -57,7 +57,7 @@ impl SearchInfo {
             overwrites: searcher.get_num_overwrites(),
             collisions: searcher.get_num_collisions(),
             zero_hit: searcher.get_zero_hit(),
-            clock: searcher.timer.get_clock(),
+            time_elapsed,
             pv: searcher.get_pv().into_iter().copied().collect_vec(),
         }
     }
@@ -83,7 +83,7 @@ impl SearchInfo {
     }
 
     pub fn get_time_elapsed(&self) -> Duration {
-        self.clock.elapsed()
+        self.time_elapsed
     }
 
     #[inline]
@@ -198,7 +198,6 @@ pub struct Searcher {
     pv_table: PVTable,
     best_moves: Vec<Move>,
     move_sorter: MoveSorter,
-    timer: Timer,
     num_nodes_searched: Arc<AtomicUsize>,
     selective_depth: Arc<AtomicUsize>,
     ply: Ply,
@@ -213,8 +212,6 @@ impl Searcher {
         transposition_table: Arc<TranspositionTable>,
         num_nodes_searched: Arc<AtomicUsize>,
         selective_depth: Arc<AtomicUsize>,
-        stopper: Arc<AtomicBool>,
-        move_overhead: Duration,
     ) -> Self {
         Self {
             id,
@@ -224,12 +221,6 @@ impl Searcher {
             pv_table: PVTable::new(),
             best_moves: Vec::new(),
             move_sorter: MoveSorter::new(),
-            timer: if id == 0 {
-                Timer::new(stopper)
-            } else {
-                Timer::new_dummy(stopper)
-            }
-            .with_move_overhead(move_overhead),
             num_nodes_searched,
             selective_depth,
             ply: 0,
@@ -239,8 +230,17 @@ impl Searcher {
     }
 
     #[inline]
-    fn is_main_threaded(&self) -> bool {
+    pub fn is_main_threaded(&self) -> bool {
         self.id == 0
+    }
+
+    #[inline]
+    pub fn stop_search(&self, controller: Option<&mut impl SearchControl>) -> bool {
+        if let Some(controller) = controller {
+            controller.stop_search(self)
+        } else {
+            false
+        }
     }
 
     fn pop(&mut self) -> ValidOrNullMove {
@@ -248,7 +248,8 @@ impl Searcher {
         self.board.pop()
     }
 
-    fn print_root_node_info(
+    #[inline]
+    pub fn print_root_node_info(
         board: &Board,
         curr_move: Move,
         depth: Depth,
@@ -316,6 +317,7 @@ impl Searcher {
         depth: Depth,
         mut alpha: Score,
         beta: Score,
+        mut controller: Option<&mut impl SearchControl>,
         print_move_info: bool,
     ) -> Option<Score> {
         if FOLLOW_PV {
@@ -331,8 +333,10 @@ impl Searcher {
                 Some(0)
             };
         }
-        let enable_timer = depth > 1 && self.is_main_threaded();
-        if self.timer.check_stop(enable_timer) {
+        if !(depth > 1 && self.is_main_threaded()) {
+            controller = None;
+        }
+        if self.stop_search(controller.as_deref_mut()) {
             return None;
         }
         let key = self.board.get_hash();
@@ -348,9 +352,9 @@ impl Searcher {
             let clock = Instant::now();
             self.push_unchecked(move_);
             if move_index == 0
-                || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, enable_timer)? > alpha
+                || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, controller.as_deref_mut())? > alpha
             {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, enable_timer)?;
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, controller.as_deref_mut())?;
                 max_score = max_score.max(score);
             }
             self.pop();
@@ -384,7 +388,7 @@ impl Searcher {
                 }
             }
         }
-        if !self.timer.check_stop(enable_timer) {
+        if !self.stop_search(controller.as_deref_mut()) {
             self.transposition_table
                 .write(key, depth, self.ply, alpha, flag, self.get_best_move());
         }
@@ -408,7 +412,7 @@ impl Searcher {
         mut depth: Depth,
         mut alpha: Score,
         mut beta: Score,
-        enable_timer: bool,
+        mut controller: Option<&mut impl SearchControl>,
     ) -> Option<Score> {
         self.pv_table.set_length(self.ply, self.ply);
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
@@ -468,8 +472,8 @@ impl Searcher {
         if self.ply == MAX_PLY - 1 {
             return Some(self.board.evaluate_flipped());
         }
-        // enable_timer &= depth > 3;
-        if self.timer.check_stop(enable_timer) {
+        // enable_controller &= depth > 3;
+        if self.stop_search(controller.as_deref_mut()) {
             return None;
         }
         if depth == 0 {
@@ -500,7 +504,7 @@ impl Searcher {
                 let r = 1920 + (depth as i32) * 2368;
                 let reduced_depth = (((depth as u32) * 4096 - (r as u32)) / 4096) as Depth;
                 self.push_unchecked(ValidOrNullMove::NullMove);
-                let score = -self.alpha_beta(reduced_depth, -beta, -beta + 1, enable_timer)?;
+                let score = -self.alpha_beta(reduced_depth, -beta, -beta + 1, controller.as_deref_mut())?;
                 self.pop();
                 if score >= beta {
                     return Some(beta);
@@ -569,7 +573,7 @@ impl Searcher {
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, enable_timer)?;
+                score = -self.alpha_beta(depth - 1, -beta, -alpha, controller.as_deref_mut())?;
             } else {
                 if safe_to_apply_lmr {
                     let lmr_reduction = Self::get_lmr_reduction(depth, move_index, is_pv_node);
@@ -578,7 +582,7 @@ impl Searcher {
                             depth - 1 - lmr_reduction,
                             -alpha - 1,
                             -alpha,
-                            enable_timer,
+                            controller.as_deref_mut(),
                         )?
                     } else {
                         alpha + 1
@@ -587,9 +591,9 @@ impl Searcher {
                     score = alpha + 1;
                 }
                 if score > alpha {
-                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha, enable_timer)?;
+                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha, controller.as_deref_mut())?;
                     if score > alpha && score < beta {
-                        score = -self.alpha_beta(depth - 1, -beta, -alpha, enable_timer)?;
+                        score = -self.alpha_beta(depth - 1, -beta, -alpha, controller.as_deref_mut())?;
                     }
                 }
             }
@@ -617,7 +621,7 @@ impl Searcher {
                 }
             }
         }
-        if !self.timer.check_stop(enable_timer) {
+        if !self.stop_search(controller.as_deref_mut()) {
             self.transposition_table.write(
                 key,
                 depth,
@@ -678,34 +682,47 @@ impl Searcher {
         alpha
     }
 
+    #[inline]
+    pub fn get_board(&self) -> &Board {
+        &self.board
+    }
+
+    #[inline]
     pub fn get_num_nodes_searched(&self) -> usize {
         self.num_nodes_searched.load(MEMORY_ORDERING)
     }
 
+    #[inline]
     pub fn get_selective_depth(&self) -> Ply {
         self.selective_depth.load(MEMORY_ORDERING)
     }
 
+    #[inline]
     pub fn get_hash_full(&self) -> f64 {
         self.transposition_table.get_hash_full()
     }
 
+    #[inline]
     pub fn get_num_overwrites(&self) -> usize {
         self.transposition_table.get_num_overwrites()
     }
 
+    #[inline]
     pub fn get_num_collisions(&self) -> usize {
         self.transposition_table.get_num_collisions()
     }
 
+    #[inline]
     pub fn get_zero_hit(&self) -> usize {
         self.transposition_table.get_zero_hit()
     }
 
+    #[inline]
     pub fn get_pv(&self) -> Vec<&Move> {
         self.pv_table.get_pv(0)
     }
 
+    #[inline]
     pub fn get_pv_from_t_table(&self) -> Vec<Move> {
         extract_pv_from_t_table(&self.initial_sub_board, &self.transposition_table)
             .into_iter()
@@ -713,48 +730,54 @@ impl Searcher {
             .collect_vec()
     }
 
+    #[inline]
     pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
         Some(**self.pv_table.get_pv(0).get(n)?)
     }
 
+    #[inline]
     pub fn get_best_move(&self) -> Option<Move> {
         self.get_nth_pv_move(0)
     }
 
+    #[inline]
     pub fn get_ponder_move(&self) -> Option<Move> {
         self.get_nth_pv_move(1)
     }
 
+    #[inline]
     pub fn get_score(&self) -> Score {
         self.score
     }
 
+    #[inline]
     pub fn get_current_depth(&self) -> Depth {
         self.current_depth
     }
 
-    pub fn get_search_info(&self) -> SearchInfo {
-        SearchInfo::new(self)
+    #[inline]
+    pub fn get_search_info(&self, controller: &impl SearchControl) -> SearchInfo {
+        SearchInfo::new(self, controller.time_elapsed())
     }
 
-    pub fn go(&mut self, mut command: GoCommand, print_info: bool) {
+    pub fn go(&mut self, mut command: GoCommand, mut controller: impl SearchControl, print_info: bool) -> SearchInfo {
         if self.board.generate_legal_moves().len() == 1 {
             command = GoCommand::Depth(1);
         } else if command.is_timed() || command.is_move_time() {
-            self.timer.parse_time_based_command(&self.board, command);
+            controller.parse_time_based_go_command(&self, command);
         }
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
         self.current_depth = 1;
         while self.current_depth < Depth::MAX {
-            if self.timer.check_stop(true) {
+            if self.stop_search(Some(&mut controller)) {
                 break;
             }
             let last_score = self.score;
             self.score = self
-                .search(self.current_depth, alpha, beta, print_info)
+                .search(self.current_depth, alpha, beta, Some(&mut controller), print_info)
                 .unwrap_or(self.score);
-            let search_info = self.get_search_info();
+            let search_info = self.get_search_info(&controller);
             if print_info && self.is_main_threaded() {
                 search_info.print_info();
             }
@@ -767,7 +790,7 @@ impl Searcher {
                 self.score = last_score;
                 continue;
             } else if self.is_main_threaded() {
-                self.timer.update_max_time(self.current_depth, self.score);
+                controller.update_max_time(&self);
             }
             let cutoff = if is_checkmate(self.score) {
                 5
@@ -782,6 +805,7 @@ impl Searcher {
             self.current_depth += 1;
         }
         self.current_depth -= 1;
+        self.get_search_info(&controller)
     }
 }
 

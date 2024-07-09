@@ -16,7 +16,7 @@ pub mod types {
     pub type NumMoves = u16;
     pub type Spin = u128;
     #[cfg(feature = "engine")]
-    pub type DefaultEngine = Engine<Timer>;
+    pub type Engine = CustomEngine<SearchController>;
 
     #[cfg(feature = "colored")]
     pub type ColoredStringFunction = fn(colored::ColoredString) -> colored::ColoredString;

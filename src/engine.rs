@@ -92,30 +92,26 @@ impl GoResponse {
 }
 
 #[derive(Debug)]
-pub struct Engine<T: TimeManager> {
+pub struct CustomEngine<T: SearchControl> {
     board: Board,
     transposition_table: Arc<TranspositionTable>,
-    timer: T,
+    controller: T,
     num_threads: NonZeroUsize,
-    move_overhead: Duration,
     num_nodes_searched: Arc<AtomicUsize>,
     selective_depth: Arc<AtomicUsize>,
-    stopper: Arc<AtomicBool>,
     optional_io_reader: Option<IoReader>,
     terminate: Arc<AtomicBool>,
 }
 
-impl<T: TimeManager> Engine<T> {
-    pub fn new(board: Board, transposition_table: TranspositionTable, timer: T) -> Self {
+impl<T: SearchControl> CustomEngine<T> {
+    pub fn new(board: Board, transposition_table: TranspositionTable, controller: T) -> Self {
         Self {
             board,
             transposition_table: transposition_table.into(),
-            timer,
+            controller,
             num_threads: TIMECAT_DEFAULTS.num_threads,
-            move_overhead: TIMECAT_DEFAULTS.move_overhead,
             num_nodes_searched: AtomicUsize::new(0).into(),
             selective_depth: AtomicUsize::new(0).into(),
-            stopper: AtomicBool::new(false).into(),
             optional_io_reader: None,
             terminate: AtomicBool::new(false).into(),
         }
@@ -151,11 +147,11 @@ impl<T: TimeManager> Engine<T> {
         self
     }
 
-    fn reset_variables(&self) {
+    fn reset_variables(&mut self) {
         self.num_nodes_searched.store(0, MEMORY_ORDERING);
         self.selective_depth.store(0, MEMORY_ORDERING);
-        self.stopper.store(false, MEMORY_ORDERING);
         self.transposition_table.reset_variables();
+        self.controller.reset_variables();
         self.board.get_evaluator().reset_variables();
         if CLEAR_TABLE_AFTER_EACH_SEARCH {
             self.transposition_table.clear()
@@ -179,13 +175,13 @@ impl<T: TimeManager> Engine<T> {
     }
 
     #[inline]
-    pub fn get_move_overhead(&self) -> Duration {
-        self.move_overhead
+    pub fn get_search_controller(&self) -> &impl SearchControl {
+        &self.controller
     }
 
     #[inline]
-    pub fn set_move_overhead(&mut self, move_overhead: Duration) {
-        self.move_overhead = move_overhead;
+    pub fn get_search_controller_mut(&mut self) -> &mut impl SearchControl {
+        &mut self.controller
     }
 
     #[inline]
@@ -206,11 +202,9 @@ impl<T: TimeManager> Engine<T> {
             self.transposition_table.clone(),
             self.num_nodes_searched.clone(),
             self.selective_depth.clone(),
-            self.stopper.clone(),
-            self.move_overhead,
         )
     }
-
+    
     #[inline]
     pub fn terminate(&self) -> bool {
         self.terminate.load(MEMORY_ORDERING)
@@ -222,52 +216,54 @@ impl<T: TimeManager> Engine<T> {
     }
 
     fn update_stop_command(
-        stopper: Arc<AtomicBool>,
+        stop_command: Arc<AtomicBool>,
         io_reader: IoReader,
         terminate: Arc<AtomicBool>,
     ) {
-        while !stopper.load(MEMORY_ORDERING) {
+        while !stop_command.load(MEMORY_ORDERING) {
             match io_reader
                 .read_line_once()
                 .unwrap_or_default()
                 .to_lowercase()
                 .trim()
             {
-                "stop" => stopper.store(true, MEMORY_ORDERING),
+                "stop" => stop_command.store(true, MEMORY_ORDERING),
                 "quit" | "exit" => {
-                    stopper.store(true, MEMORY_ORDERING);
+                    stop_command.store(true, MEMORY_ORDERING);
                     terminate.store(true, MEMORY_ORDERING);
                 }
                 _ => {}
             }
         }
     }
+}
 
-    pub fn go(&self, command: GoCommand, verbose: bool) -> GoResponse {
+impl<T: SearchControl> CustomEngine<T> {
+    pub fn go(&mut self, command: GoCommand, verbose: bool) -> GoResponse {
         self.reset_variables();
         let mut join_handles = vec![];
         for id in 1..self.num_threads.get() {
-            let join_handle = thread::spawn({
-                let mut threaded_searcher = self.generate_searcher(id);
-                move || threaded_searcher.go(GoCommand::Infinite, false)
+            let mut threaded_searcher = self.generate_searcher(id);
+            let controller = self.controller.clone();
+            let join_handle = thread::spawn(move || {
+                threaded_searcher.go(GoCommand::Infinite, controller, false);
             });
             join_handles.push(join_handle);
         }
         if let Some(io_reader) = self.optional_io_reader.as_ref() {
-            let stopper = self.stopper.clone();
+            let stop_command = self.controller.get_stop_command();
             let reader = io_reader.clone();
             let terminate = self.terminate.clone();
             join_handles.push(thread::spawn(move || {
-                Self::update_stop_command(stopper, reader, terminate)
+                Self::update_stop_command(stop_command, reader, terminate);
             }));
         }
         let mut main_thread_searcher = self.generate_searcher(0);
-        main_thread_searcher.go(command, verbose);
-        self.stopper.store(true, MEMORY_ORDERING);
+        let mut search_info = main_thread_searcher.go(command, self.controller.clone(), verbose);
+        self.controller.set_stop_command(true);
         for join_handle in join_handles {
             join_handle.join().unwrap();
         }
-        let mut search_info = main_thread_searcher.get_search_info();
         if search_info.get_pv().is_empty() && self.board.status() == BoardStatus::Ongoing {
             search_info.set_pv(&[self.board.generate_legal_moves().next().unwrap()]);
         }
@@ -275,17 +271,17 @@ impl<T: TimeManager> Engine<T> {
     }
 
     #[inline]
-    pub fn go_quiet(&self, command: GoCommand) -> GoResponse {
+    pub fn go_quiet(&mut self, command: GoCommand) -> GoResponse {
         self.go(command, false)
     }
 
     #[inline]
-    pub fn go_verbose(&self, command: GoCommand) -> GoResponse {
+    pub fn go_verbose(&mut self, command: GoCommand) -> GoResponse {
         self.go(command, true)
     }
 }
 
-impl<T: TimeManager + Default> Engine<T> {
+impl<T: SearchControl + Default> CustomEngine<T> {
     #[inline]
     pub fn from_board(board: Board) -> Self {
         Self::new(
@@ -301,16 +297,15 @@ impl<T: TimeManager + Default> Engine<T> {
     }
 }
 
-impl<T: TimeManager + Clone> Clone for Engine<T> {
+impl<T: SearchControl> Clone for CustomEngine<T> {
     fn clone(&self) -> Self {
         Self {
             board: self.board.clone(),
             transposition_table: self.transposition_table.as_ref().clone().into(),
-            timer: self.timer.clone(),
+            controller: self.controller.clone(),
             num_nodes_searched: AtomicUsize::new(self.num_nodes_searched.load(MEMORY_ORDERING))
                 .into(),
             selective_depth: AtomicUsize::new(self.selective_depth.load(MEMORY_ORDERING)).into(),
-            stopper: AtomicBool::new(self.stopper.load(MEMORY_ORDERING)).into(),
             optional_io_reader: self.optional_io_reader.clone(),
             terminate: AtomicBool::new(self.terminate.load(MEMORY_ORDERING)).into(),
             ..*self
@@ -318,7 +313,7 @@ impl<T: TimeManager + Clone> Clone for Engine<T> {
     }
 }
 
-impl<T: TimeManager + Default> Default for Engine<T> {
+impl<T: SearchControl + Default> Default for CustomEngine<T> {
     fn default() -> Self {
         Self::new(
             Board::default(),
