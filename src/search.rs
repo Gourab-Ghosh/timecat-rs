@@ -46,7 +46,7 @@ pub struct SearchInfo {
 }
 
 impl SearchInfo {
-    pub fn new(searcher: &Searcher, time_elapsed: Duration) -> Self {
+    pub fn new(searcher: &Searcher) -> Self {
         Self {
             sub_board: searcher.initial_sub_board.to_owned(),
             depth: searcher.get_current_depth(),
@@ -57,7 +57,7 @@ impl SearchInfo {
             overwrites: searcher.get_num_overwrites(),
             collisions: searcher.get_num_collisions(),
             zero_hit: searcher.get_zero_hit(),
-            time_elapsed,
+            time_elapsed: searcher.get_time_elapsed(),
             pv: searcher.get_pv().into_iter().copied().collect_vec(),
         }
     }
@@ -189,7 +189,7 @@ impl Default for PVTable {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Searcher {
     id: usize,
     initial_sub_board: SubBoard,
@@ -203,6 +203,8 @@ pub struct Searcher {
     ply: Ply,
     score: Score,
     current_depth: Depth,
+    clock: Instant,
+    stop_command: Arc<AtomicBool>,
 }
 
 impl Searcher {
@@ -212,6 +214,7 @@ impl Searcher {
         transposition_table: Arc<TranspositionTable>,
         num_nodes_searched: Arc<AtomicUsize>,
         selective_depth: Arc<AtomicUsize>,
+        stop_command: Arc<AtomicBool>,
     ) -> Self {
         Self {
             id,
@@ -226,16 +229,149 @@ impl Searcher {
             ply: 0,
             score: 0,
             current_depth: 0,
+            clock: Instant::now(),
+            stop_command,
         }
     }
 
     #[inline]
     pub fn is_main_threaded(&self) -> bool {
-        self.id == 0
+        self.get_id() == 0
+    }
+
+    #[inline]
+    pub fn get_id(&self) -> usize {
+        self.id
+    }
+
+    #[inline]
+    pub fn get_initial_sub_board(&self) -> &SubBoard {
+        &self.initial_sub_board
+    }
+
+    #[inline]
+    pub fn get_board(&self) -> &Board {
+        &self.board
+    }
+
+    #[inline]
+    pub fn get_transposition_table(&self) -> &TranspositionTable {
+        &self.transposition_table
+    }
+
+    #[inline]
+    pub fn get_pv_table(&self) -> &PVTable {
+        &self.pv_table
+    }
+
+    #[inline]
+    pub fn get_best_moves(&self) -> &[Move] {
+        &self.best_moves
+    }
+
+    #[inline]
+    pub fn get_move_sorter(&self) -> &MoveSorter {
+        &self.move_sorter
+    }
+
+    #[inline]
+    pub fn get_ply(&self) -> Ply {
+        self.ply
+    }
+
+    #[inline]
+    pub fn get_stop_command(&self) -> Arc<AtomicBool> {
+        self.stop_command.clone()
+    }
+
+    #[inline]
+    pub fn get_num_nodes_searched(&self) -> usize {
+        self.num_nodes_searched.load(MEMORY_ORDERING)
+    }
+
+    #[inline]
+    pub fn get_selective_depth(&self) -> Ply {
+        self.selective_depth.load(MEMORY_ORDERING)
+    }
+
+    #[inline]
+    pub fn get_clock(&self) -> Instant {
+        self.clock
+    }
+
+    #[inline]
+    pub fn get_time_elapsed(&self) -> Duration {
+        self.clock.elapsed()
+    }
+
+    #[inline]
+    pub fn get_hash_full(&self) -> f64 {
+        self.transposition_table.get_hash_full()
+    }
+
+    #[inline]
+    pub fn get_num_overwrites(&self) -> usize {
+        self.transposition_table.get_num_overwrites()
+    }
+
+    #[inline]
+    pub fn get_num_collisions(&self) -> usize {
+        self.transposition_table.get_num_collisions()
+    }
+
+    #[inline]
+    pub fn get_zero_hit(&self) -> usize {
+        self.transposition_table.get_zero_hit()
+    }
+
+    #[inline]
+    pub fn get_pv(&self) -> Vec<&Move> {
+        self.pv_table.get_pv(0)
+    }
+
+    #[inline]
+    pub fn get_pv_from_t_table(&self) -> Vec<Move> {
+        extract_pv_from_t_table(&self.initial_sub_board, &self.transposition_table)
+            .into_iter()
+            .map_into()
+            .collect_vec()
+    }
+
+    #[inline]
+    pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
+        Some(**self.pv_table.get_pv(0).get(n)?)
+    }
+
+    #[inline]
+    pub fn get_best_move(&self) -> Option<Move> {
+        self.get_nth_pv_move(0)
+    }
+
+    #[inline]
+    pub fn get_ponder_move(&self) -> Option<Move> {
+        self.get_nth_pv_move(1)
+    }
+
+    #[inline]
+    pub fn get_score(&self) -> Score {
+        self.score
+    }
+
+    #[inline]
+    pub fn get_current_depth(&self) -> Depth {
+        self.current_depth
+    }
+
+    #[inline]
+    pub fn get_search_info(&self) -> SearchInfo {
+        SearchInfo::new(self)
     }
 
     #[inline]
     pub fn stop_search(&self, controller: Option<&mut impl SearchControl>) -> bool {
+        if self.stop_command.load(MEMORY_ORDERING) {
+            return true;
+        }
         if let Some(controller) = controller {
             controller.stop_search(self)
         } else {
@@ -682,85 +818,7 @@ impl Searcher {
         alpha
     }
 
-    #[inline]
-    pub fn get_board(&self) -> &Board {
-        &self.board
-    }
-
-    #[inline]
-    pub fn get_num_nodes_searched(&self) -> usize {
-        self.num_nodes_searched.load(MEMORY_ORDERING)
-    }
-
-    #[inline]
-    pub fn get_selective_depth(&self) -> Ply {
-        self.selective_depth.load(MEMORY_ORDERING)
-    }
-
-    #[inline]
-    pub fn get_hash_full(&self) -> f64 {
-        self.transposition_table.get_hash_full()
-    }
-
-    #[inline]
-    pub fn get_num_overwrites(&self) -> usize {
-        self.transposition_table.get_num_overwrites()
-    }
-
-    #[inline]
-    pub fn get_num_collisions(&self) -> usize {
-        self.transposition_table.get_num_collisions()
-    }
-
-    #[inline]
-    pub fn get_zero_hit(&self) -> usize {
-        self.transposition_table.get_zero_hit()
-    }
-
-    #[inline]
-    pub fn get_pv(&self) -> Vec<&Move> {
-        self.pv_table.get_pv(0)
-    }
-
-    #[inline]
-    pub fn get_pv_from_t_table(&self) -> Vec<Move> {
-        extract_pv_from_t_table(&self.initial_sub_board, &self.transposition_table)
-            .into_iter()
-            .map_into()
-            .collect_vec()
-    }
-
-    #[inline]
-    pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
-        Some(**self.pv_table.get_pv(0).get(n)?)
-    }
-
-    #[inline]
-    pub fn get_best_move(&self) -> Option<Move> {
-        self.get_nth_pv_move(0)
-    }
-
-    #[inline]
-    pub fn get_ponder_move(&self) -> Option<Move> {
-        self.get_nth_pv_move(1)
-    }
-
-    #[inline]
-    pub fn get_score(&self) -> Score {
-        self.score
-    }
-
-    #[inline]
-    pub fn get_current_depth(&self) -> Depth {
-        self.current_depth
-    }
-
-    #[inline]
-    pub fn get_search_info(&self, controller: &impl SearchControl) -> SearchInfo {
-        SearchInfo::new(self, controller.time_elapsed())
-    }
-
-    pub fn go(&mut self, mut command: GoCommand, mut controller: impl SearchControl, print_info: bool) -> SearchInfo {
+    pub fn go(&mut self, mut command: GoCommand, mut controller: impl SearchControl, print_info: bool) {
         if self.board.generate_legal_moves().len() == 1 {
             command = GoCommand::Depth(1);
         } else if command.is_timed() || command.is_move_time() {
@@ -777,7 +835,7 @@ impl Searcher {
             self.score = self
                 .search(self.current_depth, alpha, beta, Some(&mut controller), print_info)
                 .unwrap_or(self.score);
-            let search_info = self.get_search_info(&controller);
+            let search_info = self.get_search_info();
             if print_info && self.is_main_threaded() {
                 search_info.print_info();
             }
@@ -790,7 +848,7 @@ impl Searcher {
                 self.score = last_score;
                 continue;
             } else if self.is_main_threaded() {
-                controller.update_max_time(&self);
+                controller.update_control_logic(&self);
             }
             let cutoff = if is_checkmate(self.score) {
                 5
@@ -805,7 +863,6 @@ impl Searcher {
             self.current_depth += 1;
         }
         self.current_depth -= 1;
-        self.get_search_info(&controller)
     }
 }
 

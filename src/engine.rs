@@ -100,6 +100,7 @@ pub struct CustomEngine<T: SearchControl> {
     num_nodes_searched: Arc<AtomicUsize>,
     selective_depth: Arc<AtomicUsize>,
     optional_io_reader: Option<IoReader>,
+    stop_command: Arc<AtomicBool>,
     terminate: Arc<AtomicBool>,
 }
 
@@ -113,6 +114,7 @@ impl<T: SearchControl> CustomEngine<T> {
             num_nodes_searched: AtomicUsize::new(0).into(),
             selective_depth: AtomicUsize::new(0).into(),
             optional_io_reader: None,
+            stop_command: AtomicBool::new(false).into(),
             terminate: AtomicBool::new(false).into(),
         }
     }
@@ -156,6 +158,8 @@ impl<T: SearchControl> CustomEngine<T> {
         if CLEAR_TABLE_AFTER_EACH_SEARCH {
             self.transposition_table.clear()
         }
+        self.set_stop_command(false);
+        self.set_termination(false);
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<()> {
@@ -202,9 +206,20 @@ impl<T: SearchControl> CustomEngine<T> {
             self.transposition_table.clone(),
             self.num_nodes_searched.clone(),
             self.selective_depth.clone(),
+            self.stop_command.clone(),
         )
     }
     
+    #[inline]
+    pub fn get_stop_command(&self) -> bool {
+        self.stop_command.load(MEMORY_ORDERING)
+    }
+
+    #[inline]
+    pub fn set_stop_command(&self, b: bool) {
+        self.stop_command.store(b, MEMORY_ORDERING);
+    }
+
     #[inline]
     pub fn terminate(&self) -> bool {
         self.terminate.load(MEMORY_ORDERING)
@@ -251,7 +266,7 @@ impl<T: SearchControl> CustomEngine<T> {
             join_handles.push(join_handle);
         }
         if let Some(io_reader) = self.optional_io_reader.as_ref() {
-            let stop_command = self.controller.get_stop_command();
+            let stop_command = self.stop_command.clone();
             let reader = io_reader.clone();
             let terminate = self.terminate.clone();
             join_handles.push(thread::spawn(move || {
@@ -259,11 +274,12 @@ impl<T: SearchControl> CustomEngine<T> {
             }));
         }
         let mut main_thread_searcher = self.generate_searcher(0);
-        let mut search_info = main_thread_searcher.go(command, self.controller.clone(), verbose);
-        self.controller.set_stop_command(true);
+        main_thread_searcher.go(command, self.controller.clone(), verbose);
+        self.set_stop_command(true);
         for join_handle in join_handles {
             join_handle.join().unwrap();
         }
+        let mut search_info = main_thread_searcher.get_search_info();
         if search_info.get_pv().is_empty() && self.board.status() == BoardStatus::Ongoing {
             search_info.set_pv(&[self.board.generate_legal_moves().next().unwrap()]);
         }
@@ -307,6 +323,7 @@ impl<T: SearchControl> Clone for CustomEngine<T> {
                 .into(),
             selective_depth: AtomicUsize::new(self.selective_depth.load(MEMORY_ORDERING)).into(),
             optional_io_reader: self.optional_io_reader.clone(),
+            stop_command: AtomicBool::new(self.stop_command.load(MEMORY_ORDERING)).into(),
             terminate: AtomicBool::new(self.terminate.load(MEMORY_ORDERING)).into(),
             ..*self
         }

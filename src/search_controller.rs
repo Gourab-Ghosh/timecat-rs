@@ -2,26 +2,21 @@ use super::*;
 
 #[derive(Clone, Debug)]
 pub struct SearchController {
-    start_instant: Instant,
     move_overhead: Duration,
     max_time: Duration,
     stop_search: bool,
-    stop_command: Arc<AtomicBool>,
 }
 
 impl SearchController {
     pub fn new() -> Self {
         Self {
-            start_instant: Instant::now(),
             move_overhead: TIMECAT_DEFAULTS.move_overhead,
             max_time: Duration::MAX,
             stop_search: false,
-            stop_command: AtomicBool::new(false).into(),
         }
     }
 
     pub fn reset_start_time(&mut self) {
-        self.start_instant = Instant::now();
         self.stop_search = false;
     }
 
@@ -34,11 +29,11 @@ impl SearchController {
         self.max_time
     }
 
-    pub fn is_time_up(&mut self) -> bool {
+    pub fn is_time_up(&mut self, time_elapsed: Duration) -> bool {
         if self.max_time == Duration::MAX {
             return false;
         }
-        self.stop_search = self.time_elapsed() + self.move_overhead >= self.max_time;
+        self.stop_search = time_elapsed + self.move_overhead >= self.max_time;
         self.stop_search
     }
 }
@@ -54,33 +49,16 @@ impl SearchControl for SearchController {
         self.move_overhead = duration;
     }
     
-    #[inline]
-    fn time_elapsed(&self) -> Duration {
-        self.start_instant.elapsed()
-    }
-    
-    #[inline]
-    fn get_stop_command(&self) -> Arc<AtomicBool> {
-        self.stop_command.clone()
-    }
-
-    #[inline]
-    fn set_stop_command(&self, b: bool) {
-        self.stop_command.store(b, MEMORY_ORDERING);
-    }
-    
     fn reset_variables(&mut self) {
-        self.start_instant = Instant::now();
         self.max_time = Duration::MAX;
         self.stop_search = false;
-        self.set_stop_command(false);
     }
 
-    fn update_max_time(&mut self, searcher: &Searcher) {
+    fn update_control_logic(&mut self, searcher: &Searcher) {
         if self.max_time != Duration::MAX
             && searcher.get_current_depth() >= 10
             && searcher.get_score() >= WINNING_SCORE_THRESHOLD
-            && self.time_elapsed() > Duration::from_secs(10)
+            && searcher.get_time_elapsed() > Duration::from_secs(10)
         {
             self.stop_search = true;
         }
@@ -134,16 +112,13 @@ impl SearchControl for SearchController {
     }
 
     fn stop_search(&mut self, searcher: &Searcher) -> bool {
-        if self.stop_command.load(MEMORY_ORDERING) {
-            return true;
-        }
         if !searcher.is_main_threaded() {
             return false;
         }
         if self.stop_search {
             return true;
         }
-        self.is_time_up()
+        self.is_time_up(searcher.get_time_elapsed())
     }
 }
 
