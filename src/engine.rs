@@ -48,7 +48,7 @@ impl GoCommand {
     }
 }
 
-// #[cfg_attr(all(feature = "serde", feature = "wasm"), derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct GoResponse {
     search_info: SearchInfo,

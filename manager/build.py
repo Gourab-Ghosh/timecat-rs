@@ -8,7 +8,7 @@ def run_command_with_target_cpu_native(command: str):
         os.environ["RUSTFLAGS"] = get_environment_variables()
         # os.environ["RUSTFLAGS"] = get_environment_variables("-Ofast", "-mavx2", "-funroll-loops")
         # os.environ["RUSTFLAGS"] = get_environment_variables("-mavx2", "-funroll-loops")
-        os.system(command)
+        return os.system(command)
     finally:
         del os.environ["RUSTFLAGS"]
 

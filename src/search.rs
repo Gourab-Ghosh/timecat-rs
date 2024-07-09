@@ -1,33 +1,7 @@
 use super::*;
 use EntryFlag::*;
 
-// #[cfg(feature = "serde")]
-// fn serialize_time_instant<S>(instant: &Instant, serializer: S) -> std::result::Result<S::Ok, S::Error>
-// where
-//     S: serde::Serializer,
-// {
-//     serializer.serialize_str(&format!("{:?}", instant))
-// }
-
-// fn deserialize_date<'de, D>(deserializer: D) -> Result<String, D::Error>
-// where
-//     D: Deserializer<'de>,
-// {
-//     use serde::{Serializer, Deserializer, Deserialize, Serialize};
-//     use serde::de::{self, Visitor};
-//     use std::fmt;
-//     let s = String::deserialize(deserializer)?;
-//     // Convert the date from "DD-MM-YYYY" back to "YYYY-MM-DD"
-//     let date_parts: Vec<&str> = s.split('-').collect();
-//     if date_parts.len() == 3 {
-//         let formatted_date = format!("{}-{}-{}", date_parts[2], date_parts[1], date_parts[0]);
-//         Ok(formatted_date)
-//     } else {
-//         Err(D::Error::custom("Invalid date format"))
-//     }
-// }
-
-// #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct SearchInfo {
     sub_board: SubBoard,
@@ -39,8 +13,6 @@ pub struct SearchInfo {
     overwrites: usize,
     zero_hit: usize,
     collisions: usize,
-    // #[serde(serialize_with = "serialize_time_instant", deserialize_with = "deserialize_time_instant")]
-    // #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_time_instant"))]
     time_elapsed: Duration,
     pv: Vec<Move>,
 }
