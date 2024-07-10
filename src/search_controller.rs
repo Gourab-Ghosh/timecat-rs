@@ -5,7 +5,8 @@ use super::*;
 pub struct SearchController {
     move_overhead: Duration,
     max_time: Duration,
-    stop_search: bool,
+    max_depth: Depth,
+    stop_search_at_every_node: bool,
 }
 
 impl SearchController {
@@ -13,17 +14,18 @@ impl SearchController {
         Self {
             move_overhead: TIMECAT_DEFAULTS.move_overhead,
             max_time: Duration::MAX,
-            stop_search: false,
+            max_depth: Depth::MAX,
+            stop_search_at_every_node: false,
         }
     }
 
     pub fn reset_start_time(&mut self) {
-        self.stop_search = false;
+        self.stop_search_at_every_node = false;
     }
 
     pub fn set_max_time(&mut self, duration: Duration) {
         self.max_time = duration;
-        self.stop_search = false;
+        self.stop_search_at_every_node = false;
     }
 
     pub fn max_time(&self) -> Duration {
@@ -34,8 +36,8 @@ impl SearchController {
         if self.max_time == Duration::MAX {
             return false;
         }
-        self.stop_search = time_elapsed + self.move_overhead >= self.max_time;
-        self.stop_search
+        self.stop_search_at_every_node = time_elapsed + self.move_overhead >= self.max_time;
+        self.stop_search_at_every_node
     }
 }
 
@@ -52,22 +54,23 @@ impl SearchControl for SearchController {
 
     fn reset_variables(&mut self) {
         self.max_time = Duration::MAX;
-        self.stop_search = false;
+        self.max_depth = Depth::MAX;
+        self.stop_search_at_every_node = false;
     }
 
-    fn update_control_logic(&mut self, searcher: &Searcher) {
+    fn on_search_completion(&mut self, searcher: &Searcher) {
         if self.max_time != Duration::MAX
             && searcher.is_main_threaded()
             && !searcher.is_outside_aspiration_window()
-            && searcher.get_current_depth() >= 10
+            && searcher.get_depth_completed() >= 10
             && searcher.get_score() >= WINNING_SCORE_THRESHOLD
             && searcher.get_time_elapsed() > Duration::from_secs(10)
         {
-            self.stop_search = true;
+            self.stop_search_at_every_node = true;
         }
     }
 
-    fn parse_time_based_go_command(&mut self, searcher: &Searcher, command: GoCommand) {
+    fn on_receiving_go_command(&mut self, searcher: &Searcher, command: GoCommand) {
         let board = searcher.get_board();
         match command {
             GoCommand::MoveTime(duration) => self.set_max_time(duration),
@@ -110,15 +113,20 @@ impl SearchControl for SearchController {
                     .max(Duration::from_millis(100));
                 self.set_max_time(search_time);
             }
-            _ => panic!("Expected Timed Command!"),
+            GoCommand::Depth(depth) => self.max_depth = depth,
+            GoCommand::Infinite | GoCommand::Ponder => (),
         }
     }
 
-    fn stop_search(&mut self, searcher: &Searcher) -> bool {
+    fn stop_search_at_root_node(&mut self, searcher: &Searcher) -> bool {
+        searcher.get_depth_completed() == self.max_depth || self.stop_search_at_every_node(searcher)
+    }
+
+    fn stop_search_at_every_node(&mut self, searcher: &Searcher) -> bool {
         if !searcher.is_main_threaded() {
             return false;
         }
-        if self.stop_search {
+        if self.stop_search_at_every_node {
             return true;
         }
         self.is_time_up(searcher.get_time_elapsed())

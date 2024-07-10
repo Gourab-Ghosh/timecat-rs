@@ -5,7 +5,7 @@ use EntryFlag::*;
 #[derive(Clone, Debug)]
 pub struct SearchInfo {
     sub_board: SubBoard,
-    depth: Depth,
+    current_depth: Depth,
     seldepth: Ply,
     score: Score,
     nodes: usize,
@@ -21,7 +21,7 @@ impl SearchInfo {
     pub fn new(searcher: &Searcher) -> Self {
         Self {
             sub_board: searcher.initial_sub_board.to_owned(),
-            depth: searcher.get_current_depth(),
+            current_depth: searcher.get_depth_completed() + 1,
             seldepth: searcher.get_selective_depth(),
             score: searcher.get_score(),
             nodes: searcher.get_num_nodes_searched(),
@@ -34,8 +34,8 @@ impl SearchInfo {
         }
     }
 
-    pub fn get_depth(&self) -> Depth {
-        self.depth
+    pub fn get_current_depth(&self) -> Depth {
+        self.current_depth
     }
 
     pub fn get_pv(&self) -> &[Move] {
@@ -78,7 +78,7 @@ impl SearchInfo {
         let nps = (self.nodes as u128 * 10_u128.pow(9)) / self.get_time_elapsed().as_nanos();
         let outputs = [
             "info".colorize(INFO_MESSAGE_STYLE),
-            Self::format_info("depth", self.depth),
+            Self::format_info("depth", self.current_depth),
             Self::format_info("seldepth", self.seldepth),
             Self::format_info("score", self.get_score().stringify()),
             Self::format_info("nodes", self.nodes),
@@ -104,7 +104,7 @@ impl SearchInfo {
         }
         let warning_message = format!(
             "info string resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {}, beta {} and score {} with time {}",
-            self.depth,
+            self.current_depth,
             alpha.stringify(),
             beta.stringify(),
             self.get_score().stringify(),
@@ -174,7 +174,7 @@ pub struct Searcher {
     selective_depth: Arc<AtomicUsize>,
     ply: Ply,
     score: Score,
-    current_depth: Depth,
+    depth_completed: Depth,
     is_outside_aspiration_window: bool,
     clock: Instant,
     stop_command: Arc<AtomicBool>,
@@ -201,7 +201,7 @@ impl Searcher {
             selective_depth,
             ply: 0,
             score: 0,
-            current_depth: 0,
+            depth_completed: 0,
             is_outside_aspiration_window: false,
             clock: Instant::now(),
             stop_command,
@@ -332,8 +332,8 @@ impl Searcher {
     }
 
     #[inline]
-    pub fn get_current_depth(&self) -> Depth {
-        self.current_depth
+    pub fn get_depth_completed(&self) -> Depth {
+        self.depth_completed
     }
 
     #[inline]
@@ -347,12 +347,12 @@ impl Searcher {
     }
 
     #[inline]
-    pub fn stop_search(&self, controller: Option<&mut impl SearchControl>) -> bool {
+    pub fn stop_search_at_every_node(&self, controller: Option<&mut impl SearchControl>) -> bool {
         if self.stop_command.load(MEMORY_ORDERING) {
             return true;
         }
         if let Some(controller) = controller {
-            controller.stop_search(self)
+            controller.stop_search_at_every_node(self)
         } else {
             false
         }
@@ -451,7 +451,7 @@ impl Searcher {
         if !(depth > 1 && self.is_main_threaded()) {
             controller = None;
         }
-        if self.stop_search(controller.as_deref_mut()) {
+        if self.stop_search_at_every_node(controller.as_deref_mut()) {
             return None;
         }
         let key = self.board.get_hash();
@@ -504,7 +504,7 @@ impl Searcher {
                 }
             }
         }
-        if !self.stop_search(controller) {
+        if !self.stop_search_at_every_node(controller) {
             self.transposition_table
                 .write(key, depth, self.ply, alpha, flag, self.get_best_move());
         }
@@ -589,7 +589,7 @@ impl Searcher {
             return Some(self.board.evaluate_flipped());
         }
         // enable_controller &= depth > 3;
-        if self.stop_search(controller.as_deref_mut()) {
+        if self.stop_search_at_every_node(controller.as_deref_mut()) {
             return None;
         }
         if depth == 0 {
@@ -748,7 +748,7 @@ impl Searcher {
                 }
             }
         }
-        if !self.stop_search(controller) {
+        if !self.stop_search_at_every_node(controller) {
             self.transposition_table.write(
                 key,
                 depth,
@@ -817,20 +817,19 @@ impl Searcher {
     ) {
         if self.board.generate_legal_moves().len() == 1 {
             command = GoCommand::Depth(1);
-        } else if command.is_timed() || command.is_move_time() {
-            controller.parse_time_based_go_command(self, command);
         }
+        controller.on_receiving_go_command(self, command);
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
-        self.current_depth = 1;
-        while self.current_depth < Depth::MAX {
-            if self.stop_search(Some(&mut controller)) {
-                break;
-            }
+        self.depth_completed = 0;
+        while self.depth_completed < Depth::MAX
+            && !self.stop_command.load(MEMORY_ORDERING)
+            && !controller.stop_search_at_root_node(self)
+        {
             let last_score = self.score;
             self.score = self
                 .search(
-                    self.current_depth,
+                    self.depth_completed + 1,
                     alpha,
                     beta,
                     Some(&mut controller),
@@ -842,7 +841,7 @@ impl Searcher {
                 search_info.print_info();
             }
             self.is_outside_aspiration_window = self.score <= alpha || self.score >= beta;
-            controller.update_control_logic(self);
+            controller.on_search_completion(self);
             if self.is_outside_aspiration_window {
                 if print_info && self.is_main_threaded() {
                     search_info.print_warning_message(alpha, beta);
@@ -859,12 +858,8 @@ impl Searcher {
             };
             alpha = self.score - cutoff;
             beta = self.score + cutoff;
-            if command == GoCommand::Depth(self.current_depth) {
-                break;
-            }
-            self.current_depth += 1;
+            self.depth_completed += 1;
         }
-        self.current_depth -= 1;
     }
 }
 

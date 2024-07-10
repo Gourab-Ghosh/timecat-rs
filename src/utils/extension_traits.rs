@@ -73,9 +73,10 @@ pub trait SearchControl: Clone + Send + 'static {
     fn get_move_overhead(&self) -> Duration;
     fn set_move_overhead(&mut self, duration: Duration);
     fn reset_variables(&mut self);
-    fn stop_search(&mut self, searcher: &Searcher) -> bool;
-    fn parse_time_based_go_command(&mut self, searcher: &Searcher, command: GoCommand);
-    fn update_control_logic(&mut self, searcher: &Searcher);
+    fn stop_search_at_root_node(&mut self, searcher: &Searcher) -> bool;
+    fn stop_search_at_every_node(&mut self, searcher: &Searcher) -> bool;
+    fn on_receiving_go_command(&mut self, searcher: &Searcher, command: GoCommand);
+    fn on_search_completion(&mut self, searcher: &Searcher);
 
     #[inline]
     fn with_move_overhead(mut self, duration: Duration) -> Self {
