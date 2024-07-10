@@ -209,7 +209,7 @@ impl<T: SearchControl> CustomEngine<T> {
             self.stop_command.clone(),
         )
     }
-    
+
     #[inline]
     pub fn get_stop_command(&self) -> bool {
         self.stop_command.load(MEMORY_ORDERING)
@@ -300,11 +300,7 @@ impl<T: SearchControl> CustomEngine<T> {
 impl<T: SearchControl + Default> CustomEngine<T> {
     #[inline]
     pub fn from_board(board: Board) -> Self {
-        Self::new(
-            board,
-            TranspositionTable::default(),
-            T::default(),
-        )
+        Self::new(board, TranspositionTable::default(), T::default())
     }
 
     #[inline]

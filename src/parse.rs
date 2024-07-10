@@ -208,7 +208,10 @@ impl GoAndPerft {
         }
     }
 
-    fn run_perft_command<T: SearchControl>(engine: &mut CustomEngine<T>, depth: Depth) -> Result<()> {
+    fn run_perft_command<T: SearchControl>(
+        engine: &mut CustomEngine<T>,
+        depth: Depth,
+    ) -> Result<()> {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!("{}\n", engine.get_board());
         }
@@ -226,7 +229,10 @@ impl GoAndPerft {
         Ok(())
     }
 
-    fn run_go_command<T: SearchControl>(engine: &mut CustomEngine<T>, go_command: GoCommand) -> Result<()> {
+    fn run_go_command<T: SearchControl>(
+        engine: &mut CustomEngine<T>,
+        go_command: GoCommand,
+    ) -> Result<()> {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!("{}\n", engine.get_board());
         }

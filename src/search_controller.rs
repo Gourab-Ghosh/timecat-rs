@@ -49,7 +49,7 @@ impl SearchControl for SearchController {
     fn set_move_overhead(&mut self, duration: Duration) {
         self.move_overhead = duration;
     }
-    
+
     fn reset_variables(&mut self) {
         self.max_time = Duration::MAX;
         self.stop_search = false;

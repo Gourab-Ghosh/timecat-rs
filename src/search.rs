@@ -460,7 +460,8 @@ impl Searcher {
             let clock = Instant::now();
             self.push_unchecked(move_);
             if move_index == 0
-                || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, controller.as_deref_mut())? > alpha
+                || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, controller.as_deref_mut())?
+                    > alpha
             {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha, controller.as_deref_mut())?;
                 max_score = max_score.max(score);
@@ -612,7 +613,8 @@ impl Searcher {
                 let r = 1920 + (depth as i32) * 2368;
                 let reduced_depth = (((depth as u32) * 4096 - (r as u32)) / 4096) as Depth;
                 self.push_unchecked(ValidOrNullMove::NullMove);
-                let score = -self.alpha_beta(reduced_depth, -beta, -beta + 1, controller.as_deref_mut())?;
+                let score =
+                    -self.alpha_beta(reduced_depth, -beta, -beta + 1, controller.as_deref_mut())?;
                 self.pop();
                 if score >= beta {
                     return Some(beta);
@@ -699,9 +701,19 @@ impl Searcher {
                     score = alpha + 1;
                 }
                 if score > alpha {
-                    score = -self.alpha_beta(depth - 1, -alpha - 1, -alpha, controller.as_deref_mut())?;
+                    score = -self.alpha_beta(
+                        depth - 1,
+                        -alpha - 1,
+                        -alpha,
+                        controller.as_deref_mut(),
+                    )?;
                     if score > alpha && score < beta {
-                        score = -self.alpha_beta(depth - 1, -beta, -alpha, controller.as_deref_mut())?;
+                        score = -self.alpha_beta(
+                            depth - 1,
+                            -beta,
+                            -alpha,
+                            controller.as_deref_mut(),
+                        )?;
                     }
                 }
             }
@@ -790,7 +802,12 @@ impl Searcher {
         alpha
     }
 
-    pub fn go(&mut self, mut command: GoCommand, mut controller: impl SearchControl, print_info: bool) {
+    pub fn go(
+        &mut self,
+        mut command: GoCommand,
+        mut controller: impl SearchControl,
+        print_info: bool,
+    ) {
         if self.board.generate_legal_moves().len() == 1 {
             command = GoCommand::Depth(1);
         } else if command.is_timed() || command.is_move_time() {
@@ -805,7 +822,13 @@ impl Searcher {
             }
             let last_score = self.score;
             self.score = self
-                .search(self.current_depth, alpha, beta, Some(&mut controller), print_info)
+                .search(
+                    self.current_depth,
+                    alpha,
+                    beta,
+                    Some(&mut controller),
+                    print_info,
+                )
                 .unwrap_or(self.score);
             let search_info = self.get_search_info();
             if print_info && self.is_main_threaded() {

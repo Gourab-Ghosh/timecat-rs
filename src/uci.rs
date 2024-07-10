@@ -353,7 +353,9 @@ fn get_uci_state_manager<T: SearchControl>() -> Vec<UCIOption<T>> {
         }),
         UCIOption::new_spin("Move Overhead", move_overhead_uci, |engine, value| {
             let duration = Duration::from_millis(value as u64);
-            engine.get_search_controller_mut().set_move_overhead(duration);
+            engine
+                .get_search_controller_mut()
+                .set_move_overhead(duration);
             print_uci_info("Move Overhead is set to", duration.stringify());
         }),
         // UCIOption::new_check(

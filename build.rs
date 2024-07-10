@@ -4,6 +4,7 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 mod nnue_features {
     use super::*;
     pub use std::fs::File;
+    pub use std::io::Write;
     pub use std::path::{Path, PathBuf};
 
     pub const NNUE_FILE_NAME: &str = "nn-62ef826d1a6d.nnue";
@@ -36,12 +37,16 @@ mod nnue_features {
     }
 
     pub fn generate_nnue_file(nnue_file: &mut File) -> Result<()> {
-        let nnue_file_link = format!("https://tests.stockfishchess.org/api/nn/{}", NNUE_FILE_NAME);
-        reqwest::blocking::get(nnue_file_link)
-            .map_err(|_| "Could not download NNUE file! Check your internet connection!")?
-            .copy_to(nnue_file)
-            .map_err(|_| "Could not copy NNUE file data to the nnue file!")?;
-        Ok(())
+        let url = format!("https://tests.stockfishchess.org/api/nn/{}", NNUE_FILE_NAME);
+        let response = minreq::get(url).send()?;
+        if response.status_code == 200 {
+            nnue_file
+                .write_all(&response.as_bytes())
+                .map_err(|_| "Could not copy NNUE file data to the nnue file!")?;
+            Ok(())
+        } else {
+            Err(format!("Could not download NNUE file! Check your internet connection! Got response status code {}", response.status_code).into())
+        }
     }
 
     pub fn check_and_download_nnue(nnue_dir: &PathBuf) -> Result<()> {

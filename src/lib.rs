@@ -23,6 +23,8 @@ pub mod runner;
 #[cfg(feature = "engine")]
 pub mod search;
 #[cfg(feature = "engine")]
+pub mod search_controller;
+#[cfg(feature = "engine")]
 pub mod selfplay;
 #[cfg(feature = "engine")]
 pub mod sort;
@@ -31,8 +33,6 @@ pub mod syzygy;
 #[cfg(feature = "engine")]
 #[cfg(feature = "debug")]
 pub mod tests;
-#[cfg(feature = "engine")]
-pub mod search_controller;
 pub mod tt;
 #[cfg(feature = "engine")]
 pub mod uci;
@@ -69,7 +69,7 @@ pub mod prelude {
     pub use utils::custom_traits::*;
 
     #[cfg(feature = "engine")]
-    pub use super::{self_play, GoCommand, Engine};
+    pub use super::{self_play, Engine, GoCommand};
 }
 
 pub use arrayvec::ArrayVec;
@@ -110,6 +110,8 @@ pub use runner::*;
 #[cfg(feature = "engine")]
 pub use search::*;
 #[cfg(feature = "engine")]
+pub use search_controller::SearchController;
+#[cfg(feature = "engine")]
 pub use selfplay::self_play;
 #[cfg(feature = "serde")]
 pub use serde::{Deserialize, Serialize};
@@ -139,8 +141,6 @@ pub use std::time::{Duration, Instant};
 #[cfg(feature = "engine")]
 #[cfg(feature = "debug")]
 pub use tests::test;
-#[cfg(feature = "engine")]
-pub use search_controller::SearchController;
 pub use tt::*;
 #[cfg(feature = "engine")]
 pub use uci::*;
