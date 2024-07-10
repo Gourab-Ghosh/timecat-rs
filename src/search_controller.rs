@@ -57,6 +57,8 @@ impl SearchControl for SearchController {
 
     fn update_control_logic(&mut self, searcher: &Searcher) {
         if self.max_time != Duration::MAX
+            && searcher.is_main_threaded()
+            && !searcher.is_outside_aspiration_window()
             && searcher.get_current_depth() >= 10
             && searcher.get_score() >= WINNING_SCORE_THRESHOLD
             && searcher.get_time_elapsed() > Duration::from_secs(10)

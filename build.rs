@@ -41,7 +41,7 @@ mod nnue_features {
         let response = minreq::get(url).send()?;
         if response.status_code == 200 {
             nnue_file
-                .write_all(&response.as_bytes())
+                .write_all(response.as_bytes())
                 .map_err(|_| "Could not copy NNUE file data to the nnue file!")?;
             Ok(())
         } else {
@@ -101,7 +101,7 @@ fn main() -> Result<()> {
         }
         Err(err) => {
             if nnue_dir == output_nnue_dir {
-                return Err(err.into());
+                return Err(err);
             } else {
                 check_and_download_nnue(&nnue_dir)?;
             }

@@ -175,6 +175,7 @@ pub struct Searcher {
     ply: Ply,
     score: Score,
     current_depth: Depth,
+    is_outside_aspiration_window: bool,
     clock: Instant,
     stop_command: Arc<AtomicBool>,
 }
@@ -201,6 +202,7 @@ impl Searcher {
             ply: 0,
             score: 0,
             current_depth: 0,
+            is_outside_aspiration_window: false,
             clock: Instant::now(),
             stop_command,
         }
@@ -332,6 +334,11 @@ impl Searcher {
     #[inline]
     pub fn get_current_depth(&self) -> Depth {
         self.current_depth
+    }
+
+    #[inline]
+    pub fn is_outside_aspiration_window(&self) -> bool {
+        self.is_outside_aspiration_window
     }
 
     #[inline]
@@ -497,7 +504,7 @@ impl Searcher {
                 }
             }
         }
-        if !self.stop_search(controller.as_deref_mut()) {
+        if !self.stop_search(controller) {
             self.transposition_table
                 .write(key, depth, self.ply, alpha, flag, self.get_best_move());
         }
@@ -741,7 +748,7 @@ impl Searcher {
                 }
             }
         }
-        if !self.stop_search(controller.as_deref_mut()) {
+        if !self.stop_search(controller) {
             self.transposition_table.write(
                 key,
                 depth,
@@ -811,7 +818,7 @@ impl Searcher {
         if self.board.generate_legal_moves().len() == 1 {
             command = GoCommand::Depth(1);
         } else if command.is_timed() || command.is_move_time() {
-            controller.parse_time_based_go_command(&self, command);
+            controller.parse_time_based_go_command(self, command);
         }
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
@@ -834,7 +841,9 @@ impl Searcher {
             if print_info && self.is_main_threaded() {
                 search_info.print_info();
             }
-            if self.score <= alpha || self.score >= beta {
+            self.is_outside_aspiration_window = self.score <= alpha || self.score >= beta;
+            controller.update_control_logic(self);
+            if self.is_outside_aspiration_window {
                 if print_info && self.is_main_threaded() {
                     search_info.print_warning_message(alpha, beta);
                 }
@@ -842,8 +851,6 @@ impl Searcher {
                 beta = INFINITY;
                 self.score = last_score;
                 continue;
-            } else if self.is_main_threaded() {
-                controller.update_control_logic(&self);
             }
             let cutoff = if is_checkmate(self.score) {
                 5
