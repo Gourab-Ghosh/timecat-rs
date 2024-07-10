@@ -224,34 +224,34 @@ impl MoveSorter {
         // pv move
         if self.score_pv && pv_move == Some(move_) {
             self.score_pv = false;
-            return 129000000;
+            return 900000;
         }
         // best move
         if best_move == Some(move_) {
-            return 128000000;
+            return 800000;
         }
         if board.is_capture(move_) {
-            return 126000000 + Self::score_capture(move_, None, board);
+            return 600000 + Self::score_capture(move_, None, board);
         }
         for (idx, &stored_move) in get_item_unchecked!(self.killer_moves, ply)
             .iter()
             .enumerate()
         {
             if stored_move == Some(move_) {
-                return 125000000 - idx as MoveWeight;
+                return 500000 - idx as MoveWeight;
             }
         }
         // history
         let history_score = self.get_history_score(move_, board);
         if history_score != 0 {
-            return 124000000 + history_score;
+            return 400000 + history_score;
         }
         // move pieces towards the king
         let source = move_.get_source();
         let dest = move_.get_dest();
         if is_easily_winning_position {
             if let Some(score) = Self::score_easily_winning_position_moves(board, source, dest) {
-                return 123000000 + score;
+                return 300000 + score;
             }
         }
         let move_made_sub_board = board.make_move_new(move_);
@@ -259,7 +259,7 @@ impl MoveSorter {
         let checkers = move_made_sub_board.get_checkers();
         let moving_piece = board.piece_type_at(source).unwrap();
         if !checkers.is_empty() {
-            return -127000000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
+            return -700000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
         MAX_MOVES_PER_POSITION as MoveWeight
             - move_made_sub_board.generate_legal_moves().len() as MoveWeight
@@ -297,14 +297,14 @@ impl MoveSorter {
         WeightedMoveListSorter::from_iter(moves_vec.into_iter().enumerate().map(|(idx, m)| {
             WeightedMove::new(
                 m,
-                1000 * self.score_move(
+                (self.score_move(
                     m,
                     board,
                     ply,
                     best_move,
                     pv_move,
                     is_easily_winning_position,
-                ) + MAX_MOVES_PER_POSITION as MoveWeight
+                ) << 10)
                     - idx as MoveWeight,
             )
         }))

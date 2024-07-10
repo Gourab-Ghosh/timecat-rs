@@ -12,7 +12,7 @@ pub mod types {
     pub type Ply = usize;
     pub type Depth = i8;
     pub type Score = i16;
-    pub type MoveWeight = i64;
+    pub type MoveWeight = i32;
     pub type NumMoves = u16;
     pub type Spin = u128;
     #[cfg(feature = "engine")]

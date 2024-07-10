@@ -70,7 +70,7 @@ impl SearchControl for SearchController {
         }
     }
 
-    fn on_receiving_go_command(&mut self, searcher: &Searcher, command: GoCommand) {
+    fn on_receiving_go_command(&mut self, command: GoCommand, searcher: &Searcher) {
         let board = searcher.get_board();
         match command {
             GoCommand::MoveTime(duration) => self.set_max_time(duration),

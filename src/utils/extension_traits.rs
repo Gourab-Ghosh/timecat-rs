@@ -75,7 +75,7 @@ pub trait SearchControl: Clone + Send + 'static {
     fn reset_variables(&mut self);
     fn stop_search_at_root_node(&mut self, searcher: &Searcher) -> bool;
     fn stop_search_at_every_node(&mut self, searcher: &Searcher) -> bool;
-    fn on_receiving_go_command(&mut self, searcher: &Searcher, command: GoCommand);
+    fn on_receiving_go_command(&mut self, command: GoCommand, searcher: &Searcher);
     fn on_search_completion(&mut self, searcher: &Searcher);
 
     #[inline]

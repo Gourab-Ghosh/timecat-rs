@@ -167,7 +167,7 @@ impl Evaluator {
                         )
                         .unwrap();
                     let mut non_king_pieces = [non_king_white_piece, non_king_black_piece];
-                    non_king_pieces.sort();
+                    non_king_pieces.sort_unstable();
                     if non_king_pieces == [Pawn, Rook] {
                         return false;
                     }

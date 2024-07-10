@@ -116,7 +116,7 @@ pub use selfplay::self_play;
 pub use serde::{Deserialize, Serialize};
 #[cfg(feature = "engine")]
 pub use sort::*;
-pub use std::cmp::Ordering;
+pub use std::cmp::{Ordering, Reverse};
 pub use std::convert::From;
 pub use std::env;
 pub use std::error::Error;

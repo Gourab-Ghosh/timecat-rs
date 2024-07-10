@@ -625,7 +625,7 @@ pub fn search_all_moves_from_file(path: &str, board: &Board) -> Result<Vec<Weigh
                 break;
             }
         }
-        moves.sort_unstable_by_key(|wm| -wm.weight);
+        moves.sort_unstable_by_key(|wm| Reverse(wm.weight));
     }
     Ok(moves)
 }

@@ -423,7 +423,7 @@ impl Searcher {
                 )
             })
             .collect_vec();
-        moves_vec_sorted.sort_by_key(|&t| -t.1);
+        moves_vec_sorted.sort_by_key(|&t| Reverse(t.1));
         moves_vec_sorted
     }
 
@@ -818,7 +818,7 @@ impl Searcher {
         if self.board.generate_legal_moves().len() == 1 {
             command = GoCommand::Depth(1);
         }
-        controller.on_receiving_go_command(self, command);
+        controller.on_receiving_go_command(command, self);
         let mut alpha = -INFINITY;
         let mut beta = INFINITY;
         self.depth_completed = 0;
