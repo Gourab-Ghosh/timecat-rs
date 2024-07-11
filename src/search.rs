@@ -122,17 +122,18 @@ impl SearchInfo {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct PVTable {
-    length: [usize; MAX_PLY],
-    table: [[Option<Move>; MAX_PLY]; MAX_PLY],
+    length: SerdeWrapper<[usize; MAX_PLY]>,
+    table: SerdeWrapper<[SerdeWrapper<[Option<Move>; MAX_PLY]>; MAX_PLY]>,
 }
 
 impl PVTable {
     pub fn new() -> Self {
         Self {
-            length: [0; MAX_PLY],
-            table: [[None; MAX_PLY]; MAX_PLY],
+            length: [0; MAX_PLY].into(),
+            table: [[None; MAX_PLY].into(); MAX_PLY].into(),
         }
     }
 

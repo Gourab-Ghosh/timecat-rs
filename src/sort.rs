@@ -1,5 +1,6 @@
 use super::*;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct WeightedMoveListSorter {
     weighted_moves: Vec<WeightedMove>,
@@ -79,11 +80,12 @@ impl FromIterator<WeightedMove> for WeightedMoveListSorter {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct MoveSorter {
-    killer_moves: [[Option<Move>; NUM_KILLER_MOVES]; MAX_PLY],
+    killer_moves: SerdeWrapper<[SerdeWrapper<[Option<Move>; NUM_KILLER_MOVES]>; MAX_PLY]>,
     // TODO: change this into 64 x 12 array
-    history_move_scores: [[[MoveWeight; 64]; 2]; 6],
+    history_move_scores: SerdeWrapper<[SerdeWrapper<[SerdeWrapper<[MoveWeight; 64]>; 2]>; 6]>,
     follow_pv: bool,
     score_pv: bool,
 }
@@ -94,8 +96,8 @@ impl MoveSorter {
     }
 
     pub fn reset_variables(&mut self) {
-        self.killer_moves.fill([None; NUM_KILLER_MOVES]);
-        self.history_move_scores = [[[0; 64]; 2]; 6];
+        self.killer_moves.fill([None; NUM_KILLER_MOVES].into());
+        self.history_move_scores = [[[0; 64].into(); 2].into(); 6].into();
         self.follow_pv = false;
         self.score_pv = false;
     }
@@ -390,8 +392,8 @@ impl MoveSorter {
 impl Default for MoveSorter {
     fn default() -> Self {
         Self {
-            killer_moves: [[None; NUM_KILLER_MOVES]; MAX_PLY],
-            history_move_scores: [[[0; 64]; 2]; 6],
+            killer_moves: [[None; NUM_KILLER_MOVES].into(); MAX_PLY].into(),
+            history_move_scores: [[[0; 64].into(); 2].into(); 6].into(),
             follow_pv: false,
             score_pv: false,
         }

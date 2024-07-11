@@ -1,10 +1,11 @@
 use super::*;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone)]
 pub struct SubBoardBuilder {
-    pieces: [Option<Piece>; 64],
+    pieces: SerdeWrapper<[Option<Piece>; 64]>,
     turn: Color,
-    castle_rights: [CastleRights; 2],
+    castle_rights: SerdeWrapper<[CastleRights; 2]>,
     ep_file: Option<File>,
     halfmove_clock: u8,
     fullmove_number: NumMoves,
@@ -14,9 +15,9 @@ impl SubBoardBuilder {
     /// Returns empty board builder with white to move
     pub fn new() -> Self {
         Self {
-            pieces: [None; 64],
+            pieces: [None; 64].into(),
             turn: White,
-            castle_rights: [CastleRights::None, CastleRights::None],
+            castle_rights: [CastleRights::None, CastleRights::None].into(),
             ep_file: None,
             halfmove_clock: 0,
             fullmove_number: 1,
@@ -33,9 +34,9 @@ impl SubBoardBuilder {
         fullmove_number: u16,
     ) -> SubBoardBuilder {
         let mut result = SubBoardBuilder {
-            pieces: [None; 64],
+            pieces: [None; 64].into(),
             turn,
-            castle_rights: [white_castle_rights, black_castle_rights],
+            castle_rights: [white_castle_rights, black_castle_rights].into(),
             ep_file,
             halfmove_clock,
             fullmove_number,

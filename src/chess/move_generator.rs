@@ -441,6 +441,7 @@ impl SquareAndBitBoard {
 
 type MoveList = ArrayVec<SquareAndBitBoard, 18>;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct MoveGenerator {
     square_and_bitboard_array: MoveList,
