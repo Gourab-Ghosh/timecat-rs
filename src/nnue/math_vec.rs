@@ -5,19 +5,25 @@ pub struct MathVec<T, const N: usize> {
     array: [T; N],
 }
 
+#[cfg(feature = "serde")]
 impl<T: Serialize, const N: usize> Serialize for MathVec<T, N> {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer {
+    where
+        S: serde::Serializer,
+    {
         self.array.serialize(serializer)
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de, T: Deserialize<'de>, const N: usize> Deserialize<'de> for MathVec<T, N> {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: serde::Deserializer<'de> {
-        Ok(SerdeWrapper::<[T; N]>::deserialize(deserializer)?.into_inner().into())
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(SerdeWrapper::<[T; N]>::deserialize(deserializer)?
+            .into_inner()
+            .into())
     }
 }
 

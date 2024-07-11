@@ -156,6 +156,7 @@ The `selfplay` command works on the binary as well.
 
 ## Cargo Features
 - `binary`: Enables binary builds, including NNUE and engine functionalities.
+- `nnue_reader`: Binread support.
 - `nnue_reader`: Adds support for NNUE evaluation by reading nnue files.
 - `inbuilt_nnue`: Integrate built-in NNUE evaluation support by including the nnue file directly into the binary, fetched using the minreq library.
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.

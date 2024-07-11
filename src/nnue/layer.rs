@@ -1,5 +1,6 @@
 use super::*;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, BinRead)]
 pub struct Layer<
     W: BinRead<Args = ()> + Debug,
@@ -8,8 +9,8 @@ pub struct Layer<
     const NUM_OUTPUTS: usize,
 > {
     biases: Box<MathVec<B, NUM_OUTPUTS>>,
-    #[br(count = NUM_OUTPUTS, map = |v: Vec<MathVec<W, NUM_INPUTS>>| v.try_into().unwrap())]
-    weights_transpose: Box<[MathVec<W, NUM_INPUTS>; NUM_OUTPUTS]>,
+    #[br(count = NUM_OUTPUTS, map = |v: Vec<MathVec<W, NUM_INPUTS>>| SerdeWrapper::from_boxed_value(v.try_into().unwrap()))]
+    weights_transpose: Box<SerdeWrapper<[MathVec<W, NUM_INPUTS>; NUM_OUTPUTS]>>,
 }
 
 impl<

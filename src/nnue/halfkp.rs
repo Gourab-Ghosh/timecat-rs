@@ -14,12 +14,17 @@ const FINAL_NUM_OUTPUTS: usize = 1;
 
 type AccumulatorDataType = i16;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 struct HalfKPFeatureTransformer<T> {
     weights: Box<
-        [MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS],
+        SerdeWrapper<
+            [MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>;
+                HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS],
+        >,
     >,
     // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=75296
-    bona_piece_zero_weights: Box<[MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; NUM_SQUARES]>,
+    bona_piece_zero_weights:
+        Box<SerdeWrapper<[MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; NUM_SQUARES]>>,
     biases: Box<MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>>,
 }
 
@@ -43,8 +48,10 @@ impl<T: BinRead<Args = ()> + Debug> BinRead for HalfKPFeatureTransformer<T> {
             }
         }
         Ok(Self {
-            weights: weights.try_into().unwrap(),
-            bona_piece_zero_weights: bona_piece_zero_weights.try_into().unwrap(),
+            weights: SerdeWrapper::from_boxed_value(weights.try_into().unwrap()),
+            bona_piece_zero_weights: SerdeWrapper::from_boxed_value(
+                bona_piece_zero_weights.try_into().unwrap(),
+            ),
             biases,
         })
     }
@@ -78,25 +85,30 @@ impl<T: Clone, U: From<T> + Debug> From<&HalfKPFeatureTransformer<T>>
 {
     fn from(value: &HalfKPFeatureTransformer<T>) -> Self {
         HalfKPFeatureTransformer {
-            weights: value
-                .weights
-                .iter()
-                .map_into()
-                .collect_vec()
-                .try_into()
-                .unwrap(),
-            bona_piece_zero_weights: value
-                .bona_piece_zero_weights
-                .iter()
-                .map_into()
-                .collect_vec()
-                .try_into()
-                .unwrap(),
+            weights: SerdeWrapper::from_boxed_value(
+                value
+                    .weights
+                    .iter()
+                    .map_into()
+                    .collect_vec()
+                    .try_into()
+                    .unwrap(),
+            ),
+            bona_piece_zero_weights: SerdeWrapper::from_boxed_value(
+                value
+                    .bona_piece_zero_weights
+                    .iter()
+                    .map_into()
+                    .collect_vec()
+                    .try_into()
+                    .unwrap(),
+            ),
             biases: Box::new(value.get_biases().into()),
         }
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(BinRead)]
 struct HalfKPNetwork {
     pub hidden_layer_1: Layer<
