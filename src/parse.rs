@@ -350,10 +350,10 @@ impl Set {
 
     #[cfg(feature = "colored")]
     fn set_color(b: bool) -> Result<()> {
-        if GLOBAL_TIMECAT_STATE.is_colored() == b {
+        if GLOBAL_TIMECAT_STATE.is_colored_output() == b {
             return Err(ColoredOutputUnchanged { b });
         }
-        GLOBAL_TIMECAT_STATE.set_colored(b, true);
+        GLOBAL_TIMECAT_STATE.set_colored_output(b, true);
         Ok(())
     }
 }

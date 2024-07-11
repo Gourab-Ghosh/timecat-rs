@@ -64,7 +64,7 @@ impl GlobalTimecatState {
 
     #[cfg(feature = "colored")]
     #[inline]
-    pub fn is_colored(&self) -> bool {
+    pub fn is_colored_output(&self) -> bool {
         self._colored.load(MEMORY_ORDERING)
     }
 
@@ -75,7 +75,7 @@ impl GlobalTimecatState {
     }
 
     #[cfg(feature = "colored")]
-    pub fn set_colored(&self, b: bool, verbose: bool) {
+    pub fn set_colored_output(&self, b: bool, verbose: bool) {
         self._colored.store(b, MEMORY_ORDERING);
         if verbose {
             print_uci_info("Colored output is set to", b);

@@ -36,7 +36,7 @@ pub fn flip_board_fen(fen: &str) -> Result<String> {
 impl<T: ToString> CustomColorize for T {
     fn colorize(&self, style_functions: &[ColoredStringFunction]) -> String {
         let self_string = self.to_string();
-        if style_functions.is_empty() || !GLOBAL_TIMECAT_STATE.is_colored() {
+        if style_functions.is_empty() || !GLOBAL_TIMECAT_STATE.is_colored_output() {
             return self_string;
         }
         let mut colorized_string = self_string.as_str().into();
