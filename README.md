@@ -159,7 +159,7 @@ The `selfplay` command works on the binary as well.
 - `nnue_reader`: Adds support for NNUE evaluation by reading nnue files.
 - `inbuilt_nnue`: Integrate built-in NNUE evaluation support by including the nnue file directly into the binary, fetched using the minreq library.
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
-- `extras`: Adds some functionalities not needed in binary, to get better insights of the behavior of the code.
+- `extras`: Adds some functionalities not needed in binary, to get better insights of the behavior of the code. These feature is disabled by default because they requires some computations which are not needed in the binary.
 - `colored`: Displays all information in a visually appealing colored format for enhanced readability.
 - `speed`: Optimize the code to improve speed by using unsafe rust. Note that the gain in speed might not be significant in some cases.
 - `serde`: Enables serialization and deserialization support via `serde`.
