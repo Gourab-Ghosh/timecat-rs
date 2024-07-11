@@ -9,13 +9,13 @@ pub struct SearchInfo {
     seldepth: Ply,
     score: Score,
     nodes: usize,
-    #[cfg(feature = "non_binary_feature")]
+    #[cfg(feature = "extras")]
     hash_full: f64,
-    #[cfg(feature = "non_binary_feature")]
+    #[cfg(feature = "extras")]
     overwrites: usize,
-    #[cfg(feature = "non_binary_feature")]
+    #[cfg(feature = "extras")]
     zero_hit: usize,
-    #[cfg(feature = "non_binary_feature")]
+    #[cfg(feature = "extras")]
     collisions: usize,
     time_elapsed: Duration,
     pv: Vec<Move>,
@@ -29,13 +29,13 @@ impl SearchInfo {
             seldepth: searcher.get_selective_depth(),
             score: searcher.get_score(),
             nodes: searcher.get_num_nodes_searched(),
-            #[cfg(feature = "non_binary_feature")]
+            #[cfg(feature = "extras")]
             hash_full: searcher.get_transposition_table().get_hash_full(),
-            #[cfg(feature = "non_binary_feature")]
+            #[cfg(feature = "extras")]
             overwrites: searcher.get_transposition_table().get_num_overwrites(),
-            #[cfg(feature = "non_binary_feature")]
+            #[cfg(feature = "extras")]
             collisions: searcher.get_transposition_table().get_num_collisions(),
-            #[cfg(feature = "non_binary_feature")]
+            #[cfg(feature = "extras")]
             zero_hit: searcher.get_transposition_table().get_zero_hit(),
             time_elapsed: searcher.get_time_elapsed(),
             pv: searcher.get_pv().into_iter().copied().collect_vec(),
@@ -77,7 +77,7 @@ impl SearchInfo {
     }
 
     pub fn print_info(&self) {
-        #[cfg(feature = "non_binary_feature")]
+        #[cfg(feature = "extras")]
         let hashfull_string = if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             format!("{:.2}%", self.hash_full)
         } else {
@@ -91,13 +91,13 @@ impl SearchInfo {
             Self::format_info("score", self.get_score().stringify()),
             Self::format_info("nodes", self.nodes),
             Self::format_info("nps", nps),
-            #[cfg(feature = "non_binary_feature")]
+            #[cfg(feature = "extras")]
             Self::format_info("hashfull", hashfull_string),
-            #[cfg(feature = "non_binary_feature")]
+            #[cfg(feature = "extras")]
             Self::format_info("overwrites", self.overwrites),
-            #[cfg(feature = "non_binary_feature")]
+            #[cfg(feature = "extras")]
             Self::format_info("collisions", self.collisions),
-            #[cfg(feature = "non_binary_feature")]
+            #[cfg(feature = "extras")]
             Self::format_info("zero hit", self.zero_hit),
             Self::format_info("time", self.get_time_elapsed().stringify()),
             Self::format_info("pv", get_pv_string(&self.sub_board, &self.pv)),

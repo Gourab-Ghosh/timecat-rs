@@ -1,7 +1,7 @@
 [package]
 name = "timecat"
 authors = ["Gourab Ghosh"]
-version = "1.28.0"
+version = "1.28.1"
 edition = "2021"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
@@ -65,13 +65,13 @@ binary = ["inbuilt_nnue", "engine"]
 nnue_reader = ["dep:binread"]
 inbuilt_nnue = ["dep:minreq", "dep:sha256", "dep:dirs", "nnue_reader"]
 engine = ["inbuilt_nnue"]
-non_binary_feature = []
+extras = []
 colored = ["dep:colored"]
 speed = []
 serde = ["dep:serde", "web-time?/serde"]
 wasm = ["dep:web-time", "dep:gloo"]
 experimental = []
-debug = ["binary", "experimental", "colored", "speed", "non_binary_feature"]
+debug = ["binary", "experimental", "colored", "speed", "extras"]
 
 [[bin]]
 name = "timecat"
