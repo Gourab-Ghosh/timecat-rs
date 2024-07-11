@@ -110,7 +110,7 @@ impl fmt::Display for CacheTableSize {
     }
 }
 
-#[cfg(any(feature = "debug", not(feature = "binary")))]
+#[cfg(feature = "non_binary_feature")]
 macro_rules! update_variables {
     ($self: ident, $e_copy: ident, $hash: ident, $entry: ident) => {
         if let Some(e) = $e_copy {
@@ -134,9 +134,13 @@ pub struct CacheTable<T> {
     size: RwLock<CacheTableSize>,
     mask: AtomicUsize,
     is_safe_to_do_bitwise_and: AtomicBool,
+    #[cfg(feature = "non_binary_feature")]
     num_overwrites: AtomicUsize,
+    #[cfg(feature = "non_binary_feature")]
     num_collisions: AtomicUsize,
+    #[cfg(feature = "non_binary_feature")]
     num_cells_filled: AtomicUsize,
+    #[cfg(feature = "non_binary_feature")]
     zero_hit: AtomicUsize,
 }
 
@@ -175,9 +179,13 @@ impl<T: Copy + PartialEq> CacheTable<T> {
             size: RwLock::new(size),
             mask: Default::default(),
             is_safe_to_do_bitwise_and: Default::default(),
+            #[cfg(feature = "non_binary_feature")]
             num_overwrites: AtomicUsize::new(0),
+            #[cfg(feature = "non_binary_feature")]
             num_collisions: AtomicUsize::new(0),
+            #[cfg(feature = "non_binary_feature")]
             num_cells_filled: AtomicUsize::new(0),
+            #[cfg(feature = "non_binary_feature")]
             zero_hit: AtomicUsize::new(0),
         };
         cache_table.reset_mask(&cache_table.table.read().unwrap());
@@ -209,11 +217,11 @@ impl<T: Copy + PartialEq> CacheTable<T> {
         let hash = NonZeroU64::new(hash).unwrap_or(DEFAULT_HASH);
         let mut table = self.table.write().unwrap();
         let e = get_item_unchecked_mut!(table, self.get_index(hash.get()));
-        #[cfg(any(feature = "debug", not(feature = "binary")))]
+        #[cfg(feature = "non_binary_feature")]
         let e_copy = *e;
         *e = Some(CacheTableEntry { hash, entry });
         drop(table);
-        #[cfg(any(feature = "debug", not(feature = "binary")))]
+        #[cfg(feature = "non_binary_feature")]
         update_variables!(self, e_copy, hash, entry);
     }
 
@@ -228,11 +236,11 @@ impl<T: Copy + PartialEq> CacheTable<T> {
             true
         };
         if to_replace {
-            #[cfg(any(feature = "debug", not(feature = "binary")))]
+            #[cfg(feature = "non_binary_feature")]
             let e_copy = *e;
             *e = Some(CacheTableEntry { hash, entry });
             drop(table);
-            #[cfg(any(feature = "debug", not(feature = "binary")))]
+            #[cfg(feature = "non_binary_feature")]
             update_variables!(self, e_copy, hash, entry);
         }
     }
@@ -240,6 +248,7 @@ impl<T: Copy + PartialEq> CacheTable<T> {
     #[inline]
     pub fn clear(&self) {
         self.table.write().unwrap().fill(None);
+        #[cfg(feature = "non_binary_feature")]
         self.num_cells_filled.store(0, MEMORY_ORDERING);
         self.reset_variables()
     }
@@ -249,40 +258,49 @@ impl<T: Copy + PartialEq> CacheTable<T> {
         &self.table
     }
 
+    #[cfg(feature = "non_binary_feature")]
     #[inline]
     pub fn get_num_overwrites(&self) -> usize {
         self.num_overwrites.load(MEMORY_ORDERING)
     }
 
+    #[cfg(feature = "non_binary_feature")]
     #[inline]
     pub fn get_num_collisions(&self) -> usize {
         self.num_collisions.load(MEMORY_ORDERING)
     }
+
+    #[cfg(feature = "non_binary_feature")]
     #[inline]
     pub fn get_num_cells_filled(&self) -> usize {
         self.num_cells_filled.load(MEMORY_ORDERING)
     }
 
+    #[cfg(feature = "non_binary_feature")]
     #[inline]
     pub fn get_zero_hit(&self) -> usize {
         self.zero_hit.load(MEMORY_ORDERING)
     }
 
+    #[cfg(feature = "non_binary_feature")]
     #[inline]
     pub fn reset_num_overwrites(&self) {
         self.num_overwrites.store(0, MEMORY_ORDERING);
     }
 
+    #[cfg(feature = "non_binary_feature")]
     #[inline]
     pub fn reset_num_collisions(&self) {
         self.num_collisions.store(0, MEMORY_ORDERING);
     }
 
+    #[cfg(feature = "non_binary_feature")]
     #[inline]
     pub fn reset_num_cells_filled(&self) {
         self.num_cells_filled.store(0, MEMORY_ORDERING);
     }
 
+    #[cfg(feature = "non_binary_feature")]
     #[inline]
     pub fn reset_zero_hit(&self) {
         self.zero_hit.store(0, MEMORY_ORDERING);
@@ -290,11 +308,15 @@ impl<T: Copy + PartialEq> CacheTable<T> {
 
     /// Variable needed to be reset per search
     pub fn reset_variables(&self) {
-        self.reset_num_overwrites();
-        self.reset_num_collisions();
-        self.reset_zero_hit();
+        #[cfg(feature = "non_binary_feature")]
+        {
+            self.reset_num_overwrites();
+            self.reset_num_collisions();
+            self.reset_zero_hit();
+        }
     }
 
+    #[cfg(feature = "non_binary_feature")]
     #[inline]
     pub fn get_hash_full(&self) -> f64 {
         (self.num_cells_filled.load(MEMORY_ORDERING) as f64 / self.len() as f64) * 100.0
@@ -305,6 +327,7 @@ impl<T: Copy + PartialEq> CacheTable<T> {
         self.table.read().unwrap().len()
     }
 
+    #[cfg(feature = "non_binary_feature")]
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.get_num_cells_filled() == 0
@@ -336,9 +359,13 @@ impl<T: Copy + PartialEq> Clone for CacheTable<T> {
             is_safe_to_do_bitwise_and: AtomicBool::new(
                 self.is_safe_to_do_bitwise_and.load(MEMORY_ORDERING),
             ),
+            #[cfg(feature = "non_binary_feature")]
             num_overwrites: AtomicUsize::new(self.num_overwrites.load(MEMORY_ORDERING)),
+            #[cfg(feature = "non_binary_feature")]
             num_collisions: AtomicUsize::new(self.num_collisions.load(MEMORY_ORDERING)),
+            #[cfg(feature = "non_binary_feature")]
             num_cells_filled: AtomicUsize::new(self.num_cells_filled.load(MEMORY_ORDERING)),
+            #[cfg(feature = "non_binary_feature")]
             zero_hit: AtomicUsize::new(self.zero_hit.load(MEMORY_ORDERING)),
         }
     }

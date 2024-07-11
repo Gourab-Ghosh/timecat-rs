@@ -9,9 +9,13 @@ pub struct SearchInfo {
     seldepth: Ply,
     score: Score,
     nodes: usize,
+    #[cfg(feature = "non_binary_feature")]
     hash_full: f64,
+    #[cfg(feature = "non_binary_feature")]
     overwrites: usize,
+    #[cfg(feature = "non_binary_feature")]
     zero_hit: usize,
+    #[cfg(feature = "non_binary_feature")]
     collisions: usize,
     time_elapsed: Duration,
     pv: Vec<Move>,
@@ -25,10 +29,14 @@ impl SearchInfo {
             seldepth: searcher.get_selective_depth(),
             score: searcher.get_score(),
             nodes: searcher.get_num_nodes_searched(),
-            hash_full: searcher.get_hash_full(),
-            overwrites: searcher.get_num_overwrites(),
-            collisions: searcher.get_num_collisions(),
-            zero_hit: searcher.get_zero_hit(),
+            #[cfg(feature = "non_binary_feature")]
+            hash_full: searcher.get_transposition_table().get_hash_full(),
+            #[cfg(feature = "non_binary_feature")]
+            overwrites: searcher.get_transposition_table().get_num_overwrites(),
+            #[cfg(feature = "non_binary_feature")]
+            collisions: searcher.get_transposition_table().get_num_collisions(),
+            #[cfg(feature = "non_binary_feature")]
+            zero_hit: searcher.get_transposition_table().get_zero_hit(),
             time_elapsed: searcher.get_time_elapsed(),
             pv: searcher.get_pv().into_iter().copied().collect_vec(),
         }
@@ -69,7 +77,7 @@ impl SearchInfo {
     }
 
     pub fn print_info(&self) {
-        #[cfg(any(feature = "debug", not(feature = "binary")))]
+        #[cfg(feature = "non_binary_feature")]
         let hashfull_string = if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             format!("{:.2}%", self.hash_full)
         } else {
@@ -83,13 +91,13 @@ impl SearchInfo {
             Self::format_info("score", self.get_score().stringify()),
             Self::format_info("nodes", self.nodes),
             Self::format_info("nps", nps),
-            #[cfg(any(feature = "debug", not(feature = "binary")))]
+            #[cfg(feature = "non_binary_feature")]
             Self::format_info("hashfull", hashfull_string),
-            #[cfg(feature = "debug")]
+            #[cfg(feature = "non_binary_feature")]
             Self::format_info("overwrites", self.overwrites),
-            #[cfg(feature = "debug")]
+            #[cfg(feature = "non_binary_feature")]
             Self::format_info("collisions", self.collisions),
-            #[cfg(feature = "debug")]
+            #[cfg(feature = "non_binary_feature")]
             Self::format_info("zero hit", self.zero_hit),
             Self::format_info("time", self.get_time_elapsed().stringify()),
             Self::format_info("pv", get_pv_string(&self.sub_board, &self.pv)),
@@ -276,26 +284,6 @@ impl Searcher {
     #[inline]
     pub fn get_time_elapsed(&self) -> Duration {
         self.clock.elapsed()
-    }
-
-    #[inline]
-    pub fn get_hash_full(&self) -> f64 {
-        self.transposition_table.get_hash_full()
-    }
-
-    #[inline]
-    pub fn get_num_overwrites(&self) -> usize {
-        self.transposition_table.get_num_overwrites()
-    }
-
-    #[inline]
-    pub fn get_num_collisions(&self) -> usize {
-        self.transposition_table.get_num_collisions()
-    }
-
-    #[inline]
-    pub fn get_zero_hit(&self) -> usize {
-        self.transposition_table.get_zero_hit()
     }
 
     #[inline]
