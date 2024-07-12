@@ -57,6 +57,7 @@ mod serde_implementations {
     use serde::ser::SerializeTuple;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use std::marker::PhantomData;
+    use std::mem::MaybeUninit;
 
     impl<T: Serialize, const N: usize> Serialize for SerdeWrapper<[T; N]> {
         fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
@@ -90,16 +91,17 @@ mod serde_implementations {
                 where
                     V: de::SeqAccess<'de>,
                 {
-                    let mut array: [Option<T>; N] = std::array::from_fn(|_| None);
+                    let mut array: [MaybeUninit<T>; N] =
+                        unsafe { MaybeUninit::uninit().assume_init() };
                     for i in 0..N {
-                        array[i] = Some(
+                        array[i] = MaybeUninit::new(
                             seq.next_element()?
-                                .ok_or(de::Error::invalid_length(i, &self))?,
+                                .ok_or_else(|| de::Error::invalid_length(i, &self))?,
                         );
                     }
-                    Ok(SerdeWrapper(
-                        array.map(|element| unsafe { element.unwrap_unchecked() }),
-                    ))
+                    Ok(SerdeWrapper(unsafe {
+                        std::ptr::read(&array as *const _ as *const [T; N])
+                    }))
                 }
             }
 

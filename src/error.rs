@@ -80,6 +80,14 @@ pub enum TimecatError {
     },
 }
 
+impl TimecatError {
+    pub fn get_custom_error<E: Error>(error: E) -> Self {
+        Self::CustomError {
+            err_msg: format!("{error}! Please try again!"),
+        }
+    }
+}
+
 impl fmt::Display for TimecatError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -180,9 +188,7 @@ macro_rules! impl_error_convert {
     ($class:ty) => {
         impl From<$class> for TimecatError {
             fn from(error: $class) -> Self {
-                CustomError {
-                    err_msg: format!("{error}! Please try again!"),
-                }
+                Self::get_custom_error(error)
             }
         }
     };
