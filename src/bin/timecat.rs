@@ -6,7 +6,6 @@
 // https://github.com/zxqfl/sashimi
 // https://backscattering.de/chess/uci/
 
-#[cfg(feature = "binary")]
 fn main() {
     use std::io::IsTerminal;
     use timecat::*;
@@ -27,9 +26,4 @@ fn main() {
         .parse_args(&args)
         .build()
         .run();
-}
-
-#[cfg(not(feature = "binary"))]
-fn main() {
-    println!("Enable the Binary feature and Compile again!");
 }

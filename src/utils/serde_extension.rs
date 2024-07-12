@@ -55,7 +55,7 @@ mod serde_implementations {
     use super::*;
     use serde::de::{self, Visitor};
     use serde::ser::SerializeTuple;
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use serde::{Deserializer, Serializer};
     use std::marker::PhantomData;
     use std::mem::MaybeUninit;
 
