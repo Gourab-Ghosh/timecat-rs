@@ -1,5 +1,6 @@
 use super::*;
 
+#[repr(transparent)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MathVec<T, const N: usize> {
     array: [T; N],
