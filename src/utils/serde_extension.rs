@@ -91,19 +91,15 @@ mod serde_implementations {
                     V: de::SeqAccess<'de>,
                 {
                     let mut array: [Option<T>; N] = std::array::from_fn(|_| None);
-
                     for i in 0..N {
-                        if let Some(value) = seq.next_element()? {
-                            array[i] = Some(value);
-                        } else {
-                            return Err(de::Error::invalid_length(i, &self));
-                        }
+                        array[i] = Some(
+                            seq.next_element()?
+                                .ok_or(de::Error::invalid_length(i, &self))?,
+                        );
                     }
-
-                    // SAFETY: We know all elements are `Some` so we can unwrap them safely
-                    let array = array.map(|element| element.unwrap());
-
-                    Ok(SerdeWrapper(array))
+                    Ok(SerdeWrapper(
+                        array.map(|element| unsafe { element.unwrap_unchecked() }),
+                    ))
                 }
             }
 
