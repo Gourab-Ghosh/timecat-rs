@@ -14,7 +14,7 @@ macro_rules! test_serde_wrapper {
     ($func_name: ident, $data: expr) => {
         #[test]
         fn $func_name() -> std::result::Result<(), Box<dyn Error>> {
-            test_serde(SerdeWrapper::from($data))
+            test_serde(SerdeWrapper::new($data))
         }
     };
 }
@@ -24,7 +24,7 @@ macro_rules! test_serde_wrapper_empty_array {
         #[test]
         fn $func_name() -> std::result::Result<(), Box<dyn Error>> {
             let empty_array: [$type; 0] = [];
-            test_serde(SerdeWrapper::from(empty_array))
+            test_serde(SerdeWrapper::new(empty_array))
         }
     };
 }

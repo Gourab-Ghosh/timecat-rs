@@ -6,6 +6,11 @@ pub struct SerdeWrapper<T>(T);
 
 impl<T> SerdeWrapper<T> {
     #[inline]
+    pub const fn new(value: T) -> Self {
+        Self(value)
+    }
+
+    #[inline]
     pub fn into_inner(self) -> T {
         self.0
     }
@@ -34,6 +39,12 @@ impl<T> DerefMut for SerdeWrapper<T> {
 impl<T> From<T> for SerdeWrapper<T> {
     fn from(value: T) -> Self {
         SerdeWrapper(value)
+    }
+}
+
+impl<T> From<T> for SerdeWrapper<Arc<T>> {
+    fn from(value: T) -> Self {
+        Arc::new(value).into()
     }
 }
 
@@ -111,6 +122,24 @@ mod serde_implementations {
                     marker: PhantomData,
                 },
             )
+        }
+    }
+
+    impl<T: Serialize> Serialize for SerdeWrapper<Arc<T>> {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            self.as_ref().serialize(serializer)
+        }
+    }
+
+    impl<'de, T: Deserialize<'de>> Deserialize<'de> for SerdeWrapper<Arc<T>> {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            Ok(T::deserialize(deserializer)?.into())
         }
     }
 }

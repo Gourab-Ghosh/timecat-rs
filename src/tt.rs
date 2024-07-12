@@ -24,8 +24,8 @@ to_unsigned!(i64, u64);
 to_unsigned!(i128, u128);
 to_unsigned!(isize, usize);
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[allow(clippy::enum_variant_names)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
 pub enum EntryFlag {
     #[default]

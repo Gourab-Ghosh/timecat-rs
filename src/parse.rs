@@ -1,6 +1,7 @@
 use super::*;
 use TimecatError::*;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum UserCommand {
     TerminateEngine,

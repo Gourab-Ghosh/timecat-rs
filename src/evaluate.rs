@@ -11,10 +11,11 @@ static HALFKP_MODEL_READER: LazyStatic<HalfKPModelReader> = LazyStatic::new(|| {
         .unwrap()
 });
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Evaluator {
     model: HalfKPModel,
-    score_cache: Arc<CacheTable<Score>>,
+    score_cache: SerdeWrapper<Arc<CacheTable<Score>>>,
 }
 
 impl Evaluator {
@@ -30,7 +31,7 @@ impl Evaluator {
     pub fn new(sub_board: &SubBoard) -> Self {
         Self {
             model: HALFKP_MODEL_READER.to_model(sub_board),
-            score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE)),
+            score_cache: CacheTable::new(EVALUATOR_SIZE).into(),
         }
     }
 
@@ -42,7 +43,7 @@ impl Evaluator {
 
         Ok(Self {
             model,
-            score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE)),
+            score_cache: CacheTable::new(EVALUATOR_SIZE).into(),
         })
     }
 
@@ -55,7 +56,7 @@ impl Evaluator {
 
         Ok(Self {
             model,
-            score_cache: Arc::new(CacheTable::new(EVALUATOR_SIZE)),
+            score_cache: CacheTable::new(EVALUATOR_SIZE).into(),
         })
     }
 

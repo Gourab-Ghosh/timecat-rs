@@ -170,23 +170,24 @@ impl Default for PVTable {
     }
 }
 
+// #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Searcher {
     id: usize,
     initial_sub_board: SubBoard,
     board: Board,
-    transposition_table: Arc<TranspositionTable>,
+    transposition_table: SerdeWrapper<Arc<TranspositionTable>>,
     pv_table: PVTable,
     best_moves: Vec<Move>,
     move_sorter: MoveSorter,
-    num_nodes_searched: Arc<AtomicUsize>,
-    selective_depth: Arc<AtomicUsize>,
+    num_nodes_searched: SerdeWrapper<Arc<AtomicUsize>>,
+    selective_depth: SerdeWrapper<Arc<AtomicUsize>>,
     ply: Ply,
     score: Score,
     depth_completed: Depth,
     is_outside_aspiration_window: bool,
     clock: Instant,
-    stop_command: Arc<AtomicBool>,
+    stop_command: SerdeWrapper<Arc<AtomicBool>>,
 }
 
 impl Searcher {
@@ -202,18 +203,18 @@ impl Searcher {
             id,
             initial_sub_board: board.get_sub_board().to_owned(),
             board,
-            transposition_table,
+            transposition_table: transposition_table.into(),
             pv_table: PVTable::new(),
             best_moves: Vec::new(),
             move_sorter: MoveSorter::new(),
-            num_nodes_searched,
-            selective_depth,
+            num_nodes_searched: num_nodes_searched.into(),
+            selective_depth: selective_depth.into(),
             ply: 0,
             score: 0,
             depth_completed: 0,
             is_outside_aspiration_window: false,
             clock: Instant::now(),
-            stop_command,
+            stop_command: stop_command.into(),
         }
     }
 
@@ -264,7 +265,7 @@ impl Searcher {
 
     #[inline]
     pub fn get_stop_command(&self) -> Arc<AtomicBool> {
-        self.stop_command.clone()
+        self.stop_command.clone().into_inner()
     }
 
     #[inline]

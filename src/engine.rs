@@ -91,17 +91,18 @@ impl GoResponse {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct CustomEngine<T: SearchControl> {
     board: Board,
-    transposition_table: Arc<TranspositionTable>,
+    transposition_table: SerdeWrapper<Arc<TranspositionTable>>,
     controller: T,
     num_threads: NonZeroUsize,
-    num_nodes_searched: Arc<AtomicUsize>,
-    selective_depth: Arc<AtomicUsize>,
+    num_nodes_searched: SerdeWrapper<Arc<AtomicUsize>>,
+    selective_depth: SerdeWrapper<Arc<AtomicUsize>>,
     optional_io_reader: Option<IoReader>,
-    stop_command: Arc<AtomicBool>,
-    terminate: Arc<AtomicBool>,
+    stop_command: SerdeWrapper<Arc<AtomicBool>>,
+    terminate: SerdeWrapper<Arc<AtomicBool>>,
 }
 
 impl<T: SearchControl> CustomEngine<T> {
@@ -203,10 +204,10 @@ impl<T: SearchControl> CustomEngine<T> {
         Searcher::new(
             id,
             self.board.clone(),
-            self.transposition_table.clone(),
-            self.num_nodes_searched.clone(),
-            self.selective_depth.clone(),
-            self.stop_command.clone(),
+            self.transposition_table.clone().into_inner(),
+            self.num_nodes_searched.clone().into_inner(),
+            self.selective_depth.clone().into_inner(),
+            self.stop_command.clone().into_inner(),
         )
     }
 
@@ -266,9 +267,9 @@ impl<T: SearchControl> CustomEngine<T> {
             join_handles.push(join_handle);
         }
         if let Some(io_reader) = self.optional_io_reader.as_ref() {
-            let stop_command = self.stop_command.clone();
+            let stop_command = self.stop_command.clone().into_inner();
             let reader = io_reader.clone();
-            let terminate = self.terminate.clone();
+            let terminate = self.terminate.clone().into_inner();
             join_handles.push(thread::spawn(move || {
                 Self::update_stop_command(stop_command, reader, terminate);
             }));

@@ -38,3 +38,25 @@ impl<T: BinRead<Args = ()> + Copy + PartialEq + Send + Sync + 'static> BinRead f
         }
     }
 }
+
+#[cfg(feature = "serde")]
+impl<T: Serialize> Serialize for Magic<T> {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.architecture.serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, T: Deserialize<'de>> Deserialize<'de> for Magic<T> {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(Self {
+            architecture: T::deserialize(deserializer)?,
+        })
+    }
+}

@@ -1,7 +1,7 @@
 [package]
 name = "timecat"
 authors = ["Gourab Ghosh"]
-version = "1.28.2"
+version = "1.28.3"
 edition = "2021"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
@@ -61,9 +61,9 @@ dirs = { version = "5", optional = true }
 serde_json = "1"
 
 [features]
-default = ["binary", "serde"]
+# default = ["binary", "serde"]
 # default = ["debug"]
-# default = ["binary", "colored", "speed"]
+default = ["binary", "colored", "speed"]
 binary = ["inbuilt_nnue", "engine"]
 binread = ["dep:binread"]
 nnue_reader = ["binread"]

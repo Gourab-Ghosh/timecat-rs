@@ -136,6 +136,7 @@ impl Debug for HalfKPNetwork {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, BinRead)]
 pub struct HalfKPModelReader {
     #[br(args(VERSION))]
@@ -147,13 +148,13 @@ pub struct HalfKPModelReader {
     description: String,
     #[br(args(TRANSFORMER_ARCHITECTURE))]
     transformer_architecture: Magic<u32>,
-    #[br(map = Arc::new)]
+    #[br(map = |x| SerdeWrapper::from(Arc::new(x)))]
     // #[br(map = |transformer: HalfKPFeatureTransformer<i16>| Arc::new((&transformer).into()))]
-    transformer: Arc<HalfKPFeatureTransformer<AccumulatorDataType>>,
+    transformer: SerdeWrapper<Arc<HalfKPFeatureTransformer<AccumulatorDataType>>>,
     #[br(args(NETWORK_ARCHITECTURE))]
     network_architecture: Magic<u32>,
-    #[br(map = Arc::new)]
-    network: Arc<HalfKPNetwork>,
+    #[br(map = |x| SerdeWrapper::from(Arc::new(x)))]
+    network: SerdeWrapper<Arc<HalfKPNetwork>>,
 }
 
 impl HalfKPModelReader {
@@ -166,23 +167,19 @@ impl HalfKPModelReader {
             self.transformer.get_biases().into(),
             self.transformer.get_biases().into(),
         ];
+        let sub_board: SubBoard = SubBoardBuilder::new()
+            .add_piece(white_king_square, WhiteKing)
+            .add_piece(black_king_square, BlackKing)
+            .try_into()
+            .unwrap();
         let halfkp_model = HalfKPModel {
             accumulator: Accumulator {
-                king_squares_rotated: [white_king_square, black_king_square.rotate()],
-                accumulators: CustomDebug::new(accumulators, |_| {
-                    format!("Accumulators[{}x2]", HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS)
-                }),
+                king_squares_rotated: [white_king_square, black_king_square.rotate()].into(),
+                accumulators: accumulators.into(),
             },
             transformer: self.transformer.clone(),
             network: self.network.clone(),
-            last_sub_board: CustomDebug::new(
-                SubBoardBuilder::new()
-                    .add_piece(white_king_square, WhiteKing)
-                    .add_piece(black_king_square, BlackKing)
-                    .try_into()
-                    .unwrap(),
-                |sub_board| sub_board.get_fen(),
-            ),
+            last_sub_board: sub_board,
         };
         halfkp_model
     }
@@ -202,19 +199,21 @@ impl HalfKPModelReader {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 struct Accumulator {
-    king_squares_rotated: [Square; 2],
+    king_squares_rotated: SerdeWrapper<[Square; 2]>,
     accumulators:
-        CustomDebug<[MathVec<AccumulatorDataType, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; 2]>,
+        SerdeWrapper<[MathVec<AccumulatorDataType, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; 2]>,
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct HalfKPModel {
-    transformer: Arc<HalfKPFeatureTransformer<AccumulatorDataType>>,
-    network: Arc<HalfKPNetwork>,
+    transformer: SerdeWrapper<Arc<HalfKPFeatureTransformer<AccumulatorDataType>>>,
+    network: SerdeWrapper<Arc<HalfKPNetwork>>,
     accumulator: Accumulator,
-    last_sub_board: CustomDebug<SubBoard>,
+    last_sub_board: SubBoard,
 }
 
 impl HalfKPModel {
@@ -268,7 +267,7 @@ impl HalfKPModel {
 
     #[inline]
     fn update_last_sub_board(&mut self, sub_board: SubBoard) {
-        self.last_sub_board = CustomDebug::new(sub_board.clone(), |sub_board| sub_board.get_fen());
+        self.last_sub_board = sub_board;
     }
 
     pub fn reset_model(&mut self, sub_board: &SubBoard) {
@@ -276,7 +275,8 @@ impl HalfKPModel {
         self.accumulator.king_squares_rotated = [
             sub_board.get_king_square(White),
             sub_board.get_king_square(Black).rotate(),
-        ];
+        ]
+        .into();
         self.update_empty_model(sub_board);
         self.update_last_sub_board(sub_board.clone());
     }
@@ -398,22 +398,18 @@ impl HalfKPModel {
             transformer: self.transformer.clone(),
             network: self.network.clone(),
             accumulator: Accumulator {
-                accumulators: CustomDebug::new(
-                    [
-                        self.transformer.get_biases().clone(),
-                        self.transformer.get_biases().clone(),
-                    ],
-                    self.accumulator
-                        .accumulators
-                        .get_debug_message_func()
-                        .to_owned(),
-                ),
+                accumulators: [
+                    self.transformer.get_biases().clone(),
+                    self.transformer.get_biases().clone(),
+                ]
+                .into(),
                 king_squares_rotated: [
                     sub_board.get_king_square(White),
                     sub_board.get_king_square(Black).rotate(),
-                ],
+                ]
+                .into(),
             },
-            last_sub_board: CustomDebug::new(sub_board.clone(), |sub_board| sub_board.get_fen()),
+            last_sub_board: sub_board.clone(),
         };
         model.update_empty_model(sub_board);
         model.evaluate_current_state(sub_board.turn())

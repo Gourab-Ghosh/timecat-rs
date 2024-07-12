@@ -103,7 +103,7 @@ fn main() -> Result<()> {
             if nnue_dir == output_nnue_dir {
                 return Err(err);
             } else {
-                check_and_download_nnue(&nnue_dir)?;
+                check_and_download_nnue(&output_nnue_dir)?;
             }
         }
     }

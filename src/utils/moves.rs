@@ -354,12 +354,14 @@ impl DerefMut for ValidOrNullMove {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum CastleMoveType {
     KingSide,
     QueenSide,
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, PartialEq, Eq, Default, Debug, Hash)]
 pub enum MoveType {
     Capture {
@@ -372,6 +374,7 @@ pub enum MoveType {
     Other,
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MoveWithInfo {
     valid_or_null_move: ValidOrNullMove,
     type_: MoveType,

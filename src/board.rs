@@ -31,6 +31,7 @@ impl GameResult {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Board {
     sub_board: SubBoard,

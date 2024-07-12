@@ -23,6 +23,7 @@ pub fn print_uci_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>
     println_wasm!("{to_print}");
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TimecatDefaults {
     #[cfg(feature = "colored")]
     pub colored: bool,
@@ -36,6 +37,7 @@ pub struct TimecatDefaults {
     pub chess960_mode: bool,
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct GlobalTimecatState {
     #[cfg(feature = "colored")]

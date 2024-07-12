@@ -1,13 +1,12 @@
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
 pub enum CastleRights {
-    None = 0,
-    KingSide = 1,
-    QueenSide = 2,
-    Both = 3,
+    None,
+    KingSide,
+    QueenSide,
+    Both,
 }
 
 const CASTLES_PER_SQUARE: [[usize; 64]; 2] = [
@@ -70,13 +69,26 @@ impl CastleRights {
     /// Remove castle rights, and return a new `CastleRights`.
     #[inline]
     pub const fn remove(self, remove: Self) -> Self {
-        Self::from_index(self.to_index() & !remove.to_index())
+        match (self, remove) {
+            (lhs, Self::None) => lhs,
+            (_, Self::Both)
+            | (Self::None, _)
+            | (Self::KingSide, Self::KingSide)
+            | (Self::QueenSide, Self::QueenSide) => Self::None,
+            (Self::Both, Self::QueenSide) | (Self::KingSide, Self::QueenSide) => Self::KingSide,
+            (Self::Both, Self::KingSide) | (Self::QueenSide, Self::KingSide) => Self::QueenSide,
+        }
     }
 
     /// Convert `CastleRights` to `usize` for table lookups
     #[inline]
     pub const fn to_index(self) -> usize {
-        self as usize
+        match self {
+            Self::None => 0,
+            Self::KingSide => 1,
+            Self::QueenSide => 2,
+            Self::Both => 3,
+        }
     }
 
     /// Convert `usize` to `CastleRights`.  Panic if invalid number.
@@ -140,7 +152,16 @@ impl Add for CastleRights {
     #[allow(clippy::suspicious_arithmetic_impl)]
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        Self::from_index(self.to_index() | rhs.to_index())
+        match (self, rhs) {
+            (Self::Both, _)
+            | (_, Self::Both)
+            | (Self::KingSide, Self::QueenSide)
+            | (Self::QueenSide, Self::KingSide) => Self::Both,
+            (Self::None, rhs) => rhs,
+            (lhs, Self::None) => lhs,
+            (Self::KingSide, Self::KingSide) => Self::KingSide,
+            (Self::QueenSide, Self::QueenSide) => Self::QueenSide,
+        }
     }
 }
 
