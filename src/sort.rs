@@ -84,8 +84,7 @@ impl FromIterator<WeightedMove> for WeightedMoveListSorter {
 #[derive(Debug, Clone)]
 pub struct MoveSorter {
     killer_moves: SerdeWrapper<[SerdeWrapper<[Option<Move>; NUM_KILLER_MOVES]>; MAX_PLY]>,
-    // TODO: change this into 64 x 12 array
-    history_move_scores: SerdeWrapper<[SerdeWrapper<[SerdeWrapper<[MoveWeight; 64]>; 2]>; 6]>,
+    history_move_scores: SerdeWrapper<[SerdeWrapper<[MoveWeight; 64]>; 12]>,
     follow_pv: bool,
     score_pv: bool,
 }
@@ -97,7 +96,7 @@ impl MoveSorter {
 
     pub fn reset_variables(&mut self) {
         self.killer_moves.fill([None; NUM_KILLER_MOVES].into());
-        self.history_move_scores = [[[0; 64].into(); 2].into(); 6].into();
+        self.history_move_scores = [[0; 64].into(); 12].into();
         self.follow_pv = false;
         self.score_pv = false;
     }
@@ -118,12 +117,8 @@ impl MoveSorter {
         let src = history_move.get_source();
         let dest = history_move.get_dest();
         let piece = board.piece_at(src).unwrap();
-        *get_item_unchecked_mut!(
-            self.history_move_scores,
-            piece.get_piece_type().to_index(),
-            piece.get_color().to_index(),
-            dest.to_index()
-        ) += depth;
+        *get_item_unchecked_mut!(self.history_move_scores, piece.to_index(), dest.to_index()) +=
+            depth;
     }
 
     #[inline]
@@ -131,12 +126,7 @@ impl MoveSorter {
         let src = history_move.get_source();
         let dest = history_move.get_dest();
         let piece = board.piece_at(src).unwrap();
-        *get_item_unchecked!(
-            self.history_move_scores,
-            piece.get_piece_type().to_index(),
-            piece.get_color().to_index(),
-            dest.to_index()
-        )
+        *get_item_unchecked!(self.history_move_scores, piece.to_index(), dest.to_index())
     }
 
     fn get_least_attackers_move(square: Square, board: &SubBoard) -> Option<Move> {
@@ -393,7 +383,7 @@ impl Default for MoveSorter {
     fn default() -> Self {
         Self {
             killer_moves: [[None; NUM_KILLER_MOVES].into(); MAX_PLY].into(),
-            history_move_scores: [[[0; 64].into(); 2].into(); 6].into(),
+            history_move_scores: [[0; 64].into(); 12].into(),
             follow_pv: false,
             score_pv: false,
         }

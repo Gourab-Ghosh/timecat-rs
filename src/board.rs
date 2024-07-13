@@ -488,7 +488,7 @@ impl fmt::Display for Board {
 
 impl Default for Board {
     fn default() -> Self {
-        STARTING_POSITION_FEN.into()
+        Self::from_fen(STARTING_POSITION_FEN).unwrap()
     }
 }
 
@@ -497,12 +497,6 @@ impl FromStr for Board {
 
     fn from_str(fen: &str) -> Result<Self> {
         Self::from_fen(fen)
-    }
-}
-
-impl From<&str> for Board {
-    fn from(fen: &str) -> Self {
-        Self::from_fen(fen).unwrap()
     }
 }
 

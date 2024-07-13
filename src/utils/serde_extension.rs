@@ -104,8 +104,8 @@ mod serde_implementations {
                 {
                     let mut array: [MaybeUninit<T>; N] =
                         unsafe { MaybeUninit::uninit().assume_init() };
-                    for i in 0..N {
-                        array[i] = MaybeUninit::new(
+                    for (i, entry) in array.iter_mut().enumerate() {
+                        *entry = MaybeUninit::new(
                             seq.next_element()?
                                 .ok_or_else(|| de::Error::invalid_length(i, &self))?,
                         );

@@ -80,7 +80,7 @@ impl File {
             Self::H => 7,
         }
     }
-    
+
     #[inline]
     pub const fn to_index(self) -> usize {
         self.to_int() as usize

@@ -149,7 +149,6 @@ impl CastleRights {
 impl Add for CastleRights {
     type Output = Self;
 
-    #[allow(clippy::suspicious_arithmetic_impl)]
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
         match (self, rhs) {

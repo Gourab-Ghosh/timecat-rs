@@ -172,7 +172,7 @@ impl HalfKPModelReader {
             .add_piece(black_king_square, BlackKing)
             .try_into()
             .unwrap();
-        let halfkp_model = HalfKPModel {
+        HalfKPModel {
             accumulator: Accumulator {
                 king_squares_rotated: [white_king_square, black_king_square.rotate()].into(),
                 accumulators: accumulators.into(),
@@ -180,8 +180,7 @@ impl HalfKPModelReader {
             transformer: self.transformer.clone(),
             network: self.network.clone(),
             last_sub_board: sub_board,
-        };
-        halfkp_model
+        }
     }
 
     pub fn to_model(&self, sub_board: &SubBoard) -> HalfKPModel {
