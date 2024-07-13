@@ -276,13 +276,13 @@ fn test_board_material_score_track() {
     let mut black_material_score = INITIAL_MATERIAL_SCORE_ABS / 2;
     board_material_check_command!(board.push_san("e4").unwrap(); board; white_material_score; black_material_score);
     board_material_check_command!(board.push_san("d5").unwrap(); board; white_material_score; black_material_score);
-    black_material_score -= Pawn.evaluate();
+    black_material_score -= PAWN_VALUE;
     board_material_check_command!(board.push_san("exd5").unwrap(); board; white_material_score; black_material_score);
-    white_material_score -= Pawn.evaluate();
+    white_material_score -= PAWN_VALUE;
     board_material_check_command!(board.push_san("Qxd5").unwrap(); board; white_material_score; black_material_score);
-    white_material_score += Pawn.evaluate();
+    white_material_score += PAWN_VALUE;
     board_material_check_command!(board.pop(); board; white_material_score; black_material_score);
-    black_material_score += Pawn.evaluate();
+    black_material_score += PAWN_VALUE;
     board_material_check_command!(board.pop(); board; white_material_score; black_material_score);
 }
 

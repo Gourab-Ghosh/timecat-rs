@@ -640,8 +640,8 @@ impl Searcher {
                 let futility_margin = match depth {
                     0 => 0,
                     1 => PAWN_VALUE,
-                    2 => Knight.evaluate(),
-                    3 => Rook.evaluate(),
+                    2 => const { Knight.evaluate() },
+                    3 => const { Rook.evaluate() },
                     _ => unreachable!(),
                 };
                 futility_pruning = static_evaluation + futility_margin <= alpha;
@@ -784,7 +784,7 @@ impl Searcher {
                 return beta;
             }
             // delta pruning
-            let mut delta = Queen.evaluate();
+            let mut delta = const { Queen.evaluate() };
             if let Some(piece) = move_.get_promotion() {
                 delta += piece.evaluate() - PAWN_VALUE;
             }

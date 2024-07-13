@@ -132,7 +132,7 @@ impl Evaluator {
 
     fn king_corner_forcing_evaluation(sub_board: &SubBoard, material_score: Score) -> Score {
         let is_bishop_knight_endgame = sub_board.get_num_pieces() == 4
-            && material_score.abs() == Knight.evaluate() + Bishop.evaluate();
+            && material_score.abs() == const { Knight.evaluate() + Bishop.evaluate() };
         let winning_side = if material_score.is_positive() {
             White
         } else {
@@ -145,7 +145,7 @@ impl Evaluator {
     }
 
     pub fn is_easily_winning_position(sub_board: &SubBoard, material_score: Score) -> bool {
-        if material_score.abs() > PAWN_VALUE + Bishop.evaluate() {
+        if material_score.abs() > const { PAWN_VALUE + Bishop.evaluate() } {
             let white_occupied = sub_board.occupied_co(White);
             let black_occupied = sub_board.occupied_co(Black);
             let num_white_pieces = white_occupied.popcnt();

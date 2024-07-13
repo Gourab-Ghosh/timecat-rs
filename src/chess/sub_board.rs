@@ -924,7 +924,7 @@ impl SubBoard {
 
     #[inline]
     pub fn get_non_pawn_material_score_abs(&self) -> Score {
-        self.get_material_score() - Pawn.evaluate() * self.get_piece_mask(Pawn).popcnt() as Score
+        self.get_material_score() - PAWN_VALUE * self.get_piece_mask(Pawn).popcnt() as Score
     }
 
     #[cfg(feature = "inbuilt_nnue")]
