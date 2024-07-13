@@ -1,64 +1,92 @@
 #[cfg(not(feature = "speed"))]
 #[macro_export]
 macro_rules! get_item_unchecked {
-    ($vec:expr, $index:expr) => {
-        &$vec[$index]
+    ($arr:expr, $index:expr $(,)?) => {
+        &$arr[$index]
     };
-    ($vec:expr, $index1:expr, $index2:expr) => {
-        &$vec[$index1][$index2]
+
+    (const $arr:expr, $index:expr $(,)?) => {
+        &const { $arr }[$index]
     };
-    ($vec:expr, $index1:expr, $index2:expr, $index3:expr) => {
-        &$vec[$index1][$index2][$index3]
+
+    ($arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+        get_item_unchecked!($arr[$index], $($rest),+)
+    };
+
+    (const $arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+        get_item_unchecked!(
+            get_item_unchecked!(const arr, index),
+            $($rest),+,
+        )
     };
 }
 
 #[cfg(not(feature = "speed"))]
 #[macro_export]
 macro_rules! get_item_unchecked_mut {
-    ($vec:expr, $index:expr) => {
-        &mut $vec[$index]
+    ($arr:expr, $index:expr $(,)?) => {
+        &mut $arr[$index]
     };
-    ($vec:expr, $index1:expr, $index2:expr) => {
-        &mut $vec[$index1][$index2]
+
+    (const $arr:expr, $index:expr $(,)?) => {
+        &mut const { $arr }[$index]
     };
-    ($vec:expr, $index1:expr, $index2:expr, $index3:expr) => {
-        &mut $vec[$index1][$index2][$index3]
+
+    ($arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+        get_item_unchecked_mut!($arr[$index], $($rest),+)
+    };
+
+    (const $arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+        get_item_unchecked_mut!(
+            get_item_unchecked_mut!(const arr, index),
+            $($rest),+,
+        )
     };
 }
 
 #[cfg(feature = "speed")]
 #[macro_export]
 macro_rules! get_item_unchecked {
-    ($vec:expr, $index:expr) => {
-        unsafe { $vec.get_unchecked($index) }
+    ($arr:expr, $index:expr $(,)?) => {
+        unsafe { $arr.get_unchecked($index) }
     };
-    ($vec:expr, $index1:expr, $index2:expr) => {
-        unsafe { $vec.get_unchecked($index1).get_unchecked($index2) }
+
+    (const $arr:expr, $index:expr $(,)?) => {
+        unsafe { const { $arr }.get_unchecked($index) }
     };
-    ($vec:expr, $index1:expr, $index2:expr, $index3:expr) => {
-        unsafe {
-            $vec.get_unchecked($index1)
-                .get_unchecked($index2)
-                .get_unchecked($index3)
-        }
+
+    ($arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+        get_item_unchecked!($arr.get_unchecked($index), $($rest),+)
+    };
+
+    (const $arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+        get_item_unchecked!(
+            get_item_unchecked!(const arr, index),
+            $($rest),+,
+        )
     };
 }
 
 #[cfg(feature = "speed")]
 #[macro_export]
 macro_rules! get_item_unchecked_mut {
-    ($vec:expr, $index:expr) => {
-        unsafe { $vec.get_unchecked_mut($index) }
+    ($arr:expr, $index:expr $(,)?) => {
+        unsafe { $arr.get_unchecked_mut($index) }
     };
-    ($vec:expr, $index1:expr, $index2:expr) => {
-        unsafe { $vec.get_unchecked_mut($index1).get_unchecked_mut($index2) }
+
+    (const $arr:expr, $index:expr $(,)?) => {
+        unsafe { const { $arr }.get_unchecked_mut($index) }
     };
-    ($vec:expr, $index1:expr, $index2:expr, $index3:expr) => {
-        unsafe {
-            $vec.get_unchecked_mut($index1)
-                .get_unchecked_mut($index2)
-                .get_unchecked_mut($index3)
-        }
+
+    ($arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+        get_item_unchecked_mut!($arr.get_unchecked_mut($index), $($rest),+)
+    };
+
+    (const $arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+        get_item_unchecked_mut!(
+            get_item_unchecked_mut!(const arr, index),
+            $($rest),+,
+        )
     };
 }
 

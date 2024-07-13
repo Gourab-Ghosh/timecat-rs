@@ -33,7 +33,7 @@ pub mod bitboard_and_square {
     pub const NUM_SQUARES: usize = 64;
 
     macro_rules! generate_bitboard_and_square_constants {
-        (@bb_squares $(($file:expr, $rank:expr)), *$(,)?) => {
+        (@bb_squares $(($file:expr, $rank:expr)),+ $(,)?) => {
             paste! {
                 $(
                     pub const [<BB_$file$rank>]: BitBoard = BitBoard::new(1 << (8 * ($rank - 1) + $file as usize));
@@ -45,7 +45,7 @@ pub mod bitboard_and_square {
             }
         };
 
-        (@bb_ranks_and_files $(($file:expr, $rank:expr)), *$(,)?) => {
+        (@bb_ranks_and_files $(($file:expr, $rank:expr)),+ $(,)?) => {
             $(
                 paste!{
                     pub const [<BB_RANK_$rank>]: BitBoard = BitBoard::new(0xff << (($rank - 1) << 3));

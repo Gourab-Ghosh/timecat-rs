@@ -1018,27 +1018,6 @@ impl SubBoardMethodOverload<Move> for SubBoard {
 
         let ksq = opp_king.to_square();
 
-        const CASTLE_ROOK_START: [File; 8] = [
-            File::A,
-            File::A,
-            File::A,
-            File::A,
-            File::H,
-            File::H,
-            File::H,
-            File::H,
-        ];
-        const CASTLE_ROOK_END: [File; 8] = [
-            File::D,
-            File::D,
-            File::D,
-            File::D,
-            File::F,
-            File::F,
-            File::F,
-            File::F,
-        ];
-
         if moved == Knight {
             result._checkers ^= get_knight_moves(ksq) & dest_bb;
         } else if moved == Pawn {
@@ -1069,11 +1048,31 @@ impl SubBoardMethodOverload<Move> for SubBoard {
             let index = dest.get_file().to_index();
             let start = BitBoard::from_rank_and_file(
                 my_backrank,
-                *get_item_unchecked!(CASTLE_ROOK_START, index),
+                match index {
+                    0 => File::A,
+                    1 => File::A,
+                    2 => File::A,
+                    3 => File::A,
+                    4 => File::H,
+                    5 => File::H,
+                    6 => File::H,
+                    7 => File::H,
+                    _ => unreachable!(),
+                },
             );
             let end = BitBoard::from_rank_and_file(
                 my_backrank,
-                *get_item_unchecked!(CASTLE_ROOK_END, index),
+                match index {
+                    0 => File::D,
+                    1 => File::D,
+                    2 => File::D,
+                    3 => File::D,
+                    4 => File::F,
+                    5 => File::F,
+                    6 => File::F,
+                    7 => File::F,
+                    _ => unreachable!(),
+                },
             );
             result.xor(Rook, start, self.turn());
             result.xor(Rook, end, self.turn());

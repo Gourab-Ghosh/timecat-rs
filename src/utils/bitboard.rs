@@ -1,5 +1,6 @@
 use super::*;
 
+#[repr(transparent)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
 pub struct BitBoard(u64);
@@ -22,7 +23,7 @@ impl BitBoard {
 
     #[inline]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Self {
-        Self(1 << ((rank.to_int() << 3) + file.to_int()))
+        Self(1 << ((rank.to_int() << 3) | file.to_int()))
     }
 
     #[inline]
@@ -33,11 +34,6 @@ impl BitBoard {
     #[inline]
     pub const fn reverse_colors(self) -> Self {
         Self(self.0.swap_bytes())
-    }
-
-    #[inline]
-    pub const fn to_size(self, right_shift: u8) -> usize {
-        (self.0 >> right_shift) as usize
     }
 
     #[inline]
@@ -83,6 +79,16 @@ impl BitBoard {
     #[inline]
     pub fn contains(self, square: Square) -> bool {
         !(self & square.to_bitboard()).is_empty()
+    }
+
+    #[inline]
+    pub const fn into_inner(self) -> u64 {
+        self.0
+    }
+
+    #[inline]
+    pub const fn to_usize(self) -> usize {
+        self.0 as usize
     }
 }
 
