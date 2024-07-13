@@ -1,5 +1,5 @@
 # Use a specific base image
-FROM rust:1-slim-bullseye AS builder
+FROM rust:slim-bullseye AS builder
 
 # Setup the working directory
 WORKDIR /root/timecat
