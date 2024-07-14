@@ -9,29 +9,6 @@ pub enum CastleRights {
     Both,
 }
 
-const CASTLES_PER_SQUARE: [[usize; 64]; 2] = [
-    [
-        2, 0, 0, 0, 3, 0, 0, 1, // 1
-        0, 0, 0, 0, 0, 0, 0, 0, // 2
-        0, 0, 0, 0, 0, 0, 0, 0, // 3
-        0, 0, 0, 0, 0, 0, 0, 0, // 4
-        0, 0, 0, 0, 0, 0, 0, 0, // 5
-        0, 0, 0, 0, 0, 0, 0, 0, // 6
-        0, 0, 0, 0, 0, 0, 0, 0, // 7
-        0, 0, 0, 0, 0, 0, 0, 0, // 8
-    ],
-    [
-        0, 0, 0, 0, 0, 0, 0, 0, // 1
-        0, 0, 0, 0, 0, 0, 0, 0, // 2
-        0, 0, 0, 0, 0, 0, 0, 0, // 3
-        0, 0, 0, 0, 0, 0, 0, 0, // 4
-        0, 0, 0, 0, 0, 0, 0, 0, // 5
-        0, 0, 0, 0, 0, 0, 0, 0, // 6
-        0, 0, 0, 0, 0, 0, 0, 0, // 7
-        2, 0, 0, 0, 3, 0, 0, 1, // 8
-    ],
-];
-
 impl CastleRights {
     /// Can I castle kingside?
     #[inline]
@@ -46,12 +23,25 @@ impl CastleRights {
     }
 
     #[inline]
-    pub fn square_to_castle_rights(color: Color, square: Square) -> Self {
-        Self::from_index(*get_item_unchecked!(
-            CASTLES_PER_SQUARE,
-            color.to_index(),
-            square.to_index()
-        ))
+    pub const fn square_to_castle_rights(color: Color, square: Square) -> Self {
+        match color {
+            White => {
+                match square {
+                    A1 => Self::QueenSide,
+                    E1 => Self::Both,
+                    H1 => Self::KingSide,
+                    _ => Self::None,
+                }
+            }
+            Black => {
+                match square {
+                    A8 => Self::QueenSide,
+                    E8 => Self::Both,
+                    H8 => Self::KingSide,
+                    _ => Self::None,
+                }
+            }
+        }
     }
 
     /// What squares need to be empty to castle kingside?
