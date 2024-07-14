@@ -1,6 +1,7 @@
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(u8)]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
 pub enum File {
     A = 0,
@@ -16,17 +17,7 @@ pub enum File {
 impl File {
     #[inline]
     pub const fn from_index(i: usize) -> Self {
-        match i {
-            0 => Self::A,
-            1 => Self::B,
-            2 => Self::C,
-            3 => Self::D,
-            4 => Self::E,
-            5 => Self::F,
-            6 => Self::G,
-            7 => Self::H,
-            _ => unreachable!(),
-        }
+        unsafe { std::mem::transmute((i & 7) as u8) }
     }
 
     #[inline]
@@ -68,29 +59,19 @@ impl File {
     }
 
     #[inline]
-    pub const fn to_int(self) -> u8 {
-        match self {
-            Self::A => 0,
-            Self::B => 1,
-            Self::C => 2,
-            Self::D => 3,
-            Self::E => 4,
-            Self::F => 5,
-            Self::G => 6,
-            Self::H => 7,
-        }
+    pub const fn to_index(self) -> usize {
+        self as usize
     }
 
     #[inline]
-    pub const fn to_index(self) -> usize {
-        self.to_int() as usize
+    pub const fn to_int(self) -> u8 {
+        self as u8
     }
 }
 
 impl FromStr for File {
     type Err = TimecatError;
 
-    #[inline]
     fn from_str(s: &str) -> Result<Self> {
         match s.to_lowercase().trim() {
             "a" => Ok(Self::A),

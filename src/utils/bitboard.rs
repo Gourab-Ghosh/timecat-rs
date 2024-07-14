@@ -63,7 +63,7 @@ impl BitBoard {
         bb = ((bb >> 8) & 0x00ff_00ff_00ff_00ff) | ((bb & 0x00ff_00ff_00ff_00ff) << 8);
         bb = ((bb >> 16) & 0x0000_ffff_0000_ffff) | ((bb & 0x0000_ffff_0000_ffff) << 16);
         bb = (bb >> 32) | ((bb & 0x0000_0000_ffff_ffff) << 32);
-        Self::new(bb)
+        Self(bb)
     }
 
     /// <https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating#MirrorHorizontally>
@@ -73,7 +73,7 @@ impl BitBoard {
         bb = ((bb >> 1) & 0x5555_5555_5555_5555) | ((bb & 0x5555_5555_5555_5555) << 1);
         bb = ((bb >> 2) & 0x3333_3333_3333_3333) | ((bb & 0x3333_3333_3333_3333) << 2);
         bb = ((bb >> 4) & 0x0f0f_0f0f_0f0f_0f0f) | ((bb & 0x0f0f_0f0f_0f0f_0f0f) << 4);
-        Self::new(bb)
+        Self(bb)
     }
 
     #[inline]

@@ -1,13 +1,37 @@
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(u8)]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
 pub enum CastleRights {
-    None,
-    KingSide,
-    QueenSide,
-    Both,
+    None = 0,
+    KingSide = 1,
+    QueenSide = 2,
+    Both = 3,
 }
+
+const CASTLES_PER_SQUARE: [[usize; 64]; 2] = [
+    [
+        2, 0, 0, 0, 3, 0, 0, 1, // 1
+        0, 0, 0, 0, 0, 0, 0, 0, // 2
+        0, 0, 0, 0, 0, 0, 0, 0, // 3
+        0, 0, 0, 0, 0, 0, 0, 0, // 4
+        0, 0, 0, 0, 0, 0, 0, 0, // 5
+        0, 0, 0, 0, 0, 0, 0, 0, // 6
+        0, 0, 0, 0, 0, 0, 0, 0, // 7
+        0, 0, 0, 0, 0, 0, 0, 0, // 8
+    ],
+    [
+        0, 0, 0, 0, 0, 0, 0, 0, // 1
+        0, 0, 0, 0, 0, 0, 0, 0, // 2
+        0, 0, 0, 0, 0, 0, 0, 0, // 3
+        0, 0, 0, 0, 0, 0, 0, 0, // 4
+        0, 0, 0, 0, 0, 0, 0, 0, // 5
+        0, 0, 0, 0, 0, 0, 0, 0, // 6
+        0, 0, 0, 0, 0, 0, 0, 0, // 7
+        2, 0, 0, 0, 3, 0, 0, 1, // 8
+    ],
+];
 
 impl CastleRights {
     /// Can I castle kingside?
@@ -23,25 +47,12 @@ impl CastleRights {
     }
 
     #[inline]
-    pub const fn square_to_castle_rights(color: Color, square: Square) -> Self {
-        match color {
-            White => {
-                match square {
-                    A1 => Self::QueenSide,
-                    E1 => Self::Both,
-                    H1 => Self::KingSide,
-                    _ => Self::None,
-                }
-            }
-            Black => {
-                match square {
-                    A8 => Self::QueenSide,
-                    E8 => Self::Both,
-                    H8 => Self::KingSide,
-                    _ => Self::None,
-                }
-            }
-        }
+    pub fn square_to_castle_rights(color: Color, square: Square) -> Self {
+        Self::from_index(*get_item_unchecked!(
+            CASTLES_PER_SQUARE,
+            color.to_index(),
+            square.to_index()
+        ))
     }
 
     /// What squares need to be empty to castle kingside?
@@ -59,26 +70,13 @@ impl CastleRights {
     /// Remove castle rights, and return a new `CastleRights`.
     #[inline]
     pub const fn remove(self, remove: Self) -> Self {
-        match (self, remove) {
-            (lhs, Self::None) => lhs,
-            (_, Self::Both)
-            | (Self::None, _)
-            | (Self::KingSide, Self::KingSide)
-            | (Self::QueenSide, Self::QueenSide) => Self::None,
-            (Self::Both, Self::QueenSide) | (Self::KingSide, Self::QueenSide) => Self::KingSide,
-            (Self::Both, Self::KingSide) | (Self::QueenSide, Self::KingSide) => Self::QueenSide,
-        }
+        Self::from_index(self.to_index() & !remove.to_index())
     }
 
     /// Convert `CastleRights` to `usize` for table lookups
     #[inline]
     pub const fn to_index(self) -> usize {
-        match self {
-            Self::None => 0,
-            Self::KingSide => 1,
-            Self::QueenSide => 2,
-            Self::Both => 3,
-        }
+        self as usize
     }
 
     /// Convert `usize` to `CastleRights`.  Panic if invalid number.
@@ -139,18 +137,10 @@ impl CastleRights {
 impl Add for CastleRights {
     type Output = Self;
 
+    #[allow(clippy::suspicious_arithmetic_impl)]
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Self::Both, _)
-            | (_, Self::Both)
-            | (Self::KingSide, Self::QueenSide)
-            | (Self::QueenSide, Self::KingSide) => Self::Both,
-            (Self::None, rhs) => rhs,
-            (lhs, Self::None) => lhs,
-            (Self::KingSide, Self::KingSide) => Self::KingSide,
-            (Self::QueenSide, Self::QueenSide) => Self::QueenSide,
-        }
+        Self::from_index(self.to_index() | rhs.to_index())
     }
 }
 

@@ -2,17 +2,18 @@ use super::*;
 pub use Square::*;
 
 #[rustfmt::skip]
+#[repr(u8)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
 pub enum Square {
-    A1, B1, C1, D1, E1, F1, G1, H1,
-    A2, B2, C2, D2, E2, F2, G2, H2,
-    A3, B3, C3, D3, E3, F3, G3, H3,
-    A4, B4, C4, D4, E4, F4, G4, H4,
-    A5, B5, C5, D5, E5, F5, G5, H5,
-    A6, B6, C6, D6, E6, F6, G6, H6,
-    A7, B7, C7, D7, E7, F7, G7, H7,
-    A8, B8, C8, D8, E8, F8, G8, H8,
+    A1 =  0, B1 =  1, C1 =  2, D1 =  3, E1 =  4, F1 =  5, G1 =  6, H1 =  7,
+    A2 =  8, B2 =  9, C2 = 10, D2 = 11, E2 = 12, F2 = 13, G2 = 14, H2 = 15,
+    A3 = 16, B3 = 17, C3 = 18, D3 = 19, E3 = 20, F3 = 21, G3 = 22, H3 = 23,
+    A4 = 24, B4 = 25, C4 = 26, D4 = 27, E4 = 28, F4 = 29, G4 = 30, H4 = 31,
+    A5 = 32, B5 = 33, C5 = 34, D5 = 35, E5 = 36, F5 = 37, G5 = 38, H5 = 39,
+    A6 = 40, B6 = 41, C6 = 42, D6 = 43, E6 = 44, F6 = 45, G6 = 46, H6 = 47,
+    A7 = 48, B7 = 49, C7 = 50, D7 = 51, E7 = 52, F7 = 53, G7 = 54, H7 = 55,
+    A8 = 56, B8 = 57, C8 = 58, D8 = 59, E8 = 60, F8 = 61, G8 = 62, H8 = 63,
 }
 
 impl Square {
@@ -29,17 +30,7 @@ impl Square {
     #[rustfmt::skip]
     #[inline]
     pub const fn from_int(int: u8) -> Self {
-        match int {
-             0 => A1,  1 => B1,  2 => C1,  3 => D1,  4 => E1,  5 => F1,  6 => G1,  7 => H1,
-             8 => A2,  9 => B2, 10 => C2, 11 => D2, 12 => E2, 13 => F2, 14 => G2, 15 => H2,
-            16 => A3, 17 => B3, 18 => C3, 19 => D3, 20 => E3, 21 => F3, 22 => G3, 23 => H3,
-            24 => A4, 25 => B4, 26 => C4, 27 => D4, 28 => E4, 29 => F4, 30 => G4, 31 => H4,
-            32 => A5, 33 => B5, 34 => C5, 35 => D5, 36 => E5, 37 => F5, 38 => G5, 39 => H5,
-            40 => A6, 41 => B6, 42 => C6, 43 => D6, 44 => E6, 45 => F6, 46 => G6, 47 => H6,
-            48 => A7, 49 => B7, 50 => C7, 51 => D7, 52 => E7, 53 => F7, 54 => G7, 55 => H7,
-            56 => A8, 57 => B8, 58 => C8, 59 => D8, 60 => E8, 61 => F8, 62 => G8, 63 => H8,
-            _ => unreachable!(),
-        }
+        unsafe { std::mem::transmute(int & 63) }
     }
 
     #[inline]
@@ -53,49 +44,53 @@ impl Square {
     }
 
     #[inline]
-    pub fn get_rank(self) -> Rank {
+    pub const fn get_rank(self) -> Rank {
         Rank::from_index(self.to_index() >> 3)
     }
 
     #[inline]
-    pub fn get_file(self) -> File {
+    pub const fn get_file(self) -> File {
         File::from_index(self.to_index() & 7)
     }
 
     #[inline]
-    pub fn up(self) -> Option<Square> {
-        Some(Square::from_rank_and_file(
-            self.get_rank().up()?,
-            self.get_file(),
-        ))
+    pub const fn up(self) -> Option<Square> {
+        if let Some(rank) = self.get_rank().up() {
+            Some(Square::from_rank_and_file(rank, self.get_file()))
+        } else {
+            None
+        }
     }
 
     #[inline]
-    pub fn down(self) -> Option<Square> {
-        Some(Square::from_rank_and_file(
-            self.get_rank().down()?,
-            self.get_file(),
-        ))
+    pub const fn down(self) -> Option<Square> {
+        if let Some(rank) = self.get_rank().down() {
+            Some(Square::from_rank_and_file(rank, self.get_file()))
+        } else {
+            None
+        }
     }
 
     #[inline]
-    pub fn left(self) -> Option<Square> {
-        Some(Square::from_rank_and_file(
-            self.get_rank(),
-            self.get_file().left()?,
-        ))
+    pub const fn left(self) -> Option<Square> {
+        if let Some(file) = self.get_file().left() {
+            Some(Square::from_rank_and_file(self.get_rank(), file))
+        } else {
+            None
+        }
     }
 
     #[inline]
-    pub fn right(self) -> Option<Square> {
-        Some(Square::from_rank_and_file(
-            self.get_rank(),
-            self.get_file().right()?,
-        ))
+    pub const fn right(self) -> Option<Square> {
+        if let Some(file) = self.get_file().right() {
+            Some(Square::from_rank_and_file(self.get_rank(), file))
+        } else {
+            None
+        }
     }
 
     #[inline]
-    pub fn forward(self, color: Color) -> Option<Square> {
+    pub const fn forward(self, color: Color) -> Option<Square> {
         match color {
             White => self.up(),
             Black => self.down(),
@@ -103,7 +98,7 @@ impl Square {
     }
 
     #[inline]
-    pub fn backward(self, color: Color) -> Option<Square> {
+    pub const fn backward(self, color: Color) -> Option<Square> {
         match color {
             White => self.down(),
             Black => self.up(),
@@ -198,38 +193,20 @@ impl Square {
 
     #[rustfmt::skip]
     #[inline]
-    pub const fn vertical_mirror(self) -> Self {
-        match self {
-            A1 => H1, B1 => G1, C1 => F1, D1 => E1, E1 => D1, F1 => C1, G1 => B1, H1 => A1,
-            A2 => H2, B2 => G2, C2 => F2, D2 => E2, E2 => D2, F2 => C2, G2 => B2, H2 => A2,
-            A3 => H3, B3 => G3, C3 => F3, D3 => E3, E3 => D3, F3 => C3, G3 => B3, H3 => A3,
-            A4 => H4, B4 => G4, C4 => F4, D4 => E4, E4 => D4, F4 => C4, G4 => B4, H4 => A4,
-            A5 => H5, B5 => G5, C5 => F5, D5 => E5, E5 => D5, F5 => C5, G5 => B5, H5 => A5,
-            A6 => H6, B6 => G6, C6 => F6, D6 => E6, E6 => D6, F6 => C6, G6 => B6, H6 => A6,
-            A7 => H7, B7 => G7, C7 => F7, D7 => E7, E7 => D7, F7 => C7, G7 => B7, H7 => A7,
-            A8 => H8, B8 => G8, C8 => F8, D8 => E8, E8 => D8, F8 => C8, G8 => B8, H8 => A8,
-        }
+    pub fn vertical_mirror(self) -> Self {
+        *get_item_unchecked!(SQUARES_VERTICAL_MIRROR, self.to_index())
     }
 
     #[rustfmt::skip]
     #[inline]
-    pub const fn horizontal_mirror(self) -> Self {
-        match self {
-            A1 => A8, B1 => B8, C1 => C8, D1 => D8, E1 => E8, F1 => F8, G1 => G8, H1 => H8,
-            A2 => A7, B2 => B7, C2 => C7, D2 => D7, E2 => E7, F2 => F7, G2 => G7, H2 => H7,
-            A3 => A6, B3 => B6, C3 => C6, D3 => D6, E3 => E6, F3 => F6, G3 => G6, H3 => H6,
-            A4 => A5, B4 => B5, C4 => C5, D4 => D5, E4 => E5, F4 => F5, G4 => G5, H4 => H5,
-            A5 => A4, B5 => B4, C5 => C4, D5 => D4, E5 => E4, F5 => F4, G5 => G4, H5 => H4,
-            A6 => A3, B6 => B3, C6 => C3, D6 => D3, E6 => E3, F6 => F3, G6 => G3, H6 => H3,
-            A7 => A2, B7 => B2, C7 => C2, D7 => D2, E7 => E2, F7 => F2, G7 => G2, H7 => H2,
-            A8 => A1, B8 => B1, C8 => C1, D8 => D1, E8 => E1, F8 => F1, G8 => G1, H8 => H1,
-        }
+    pub fn horizontal_mirror(self) -> Self {
+        *get_item_unchecked!(SQUARES_HORIZONTAL_MIRROR, self.to_index())
     }
 
     #[rustfmt::skip]
     #[inline]
-    pub const fn rotate(self) -> Self {
-        self.vertical_mirror().horizontal_mirror()
+    pub fn rotate(self) -> Self {
+        *get_item_unchecked!(SQUARES_ROTATED, self.to_index())
     }
 }
 

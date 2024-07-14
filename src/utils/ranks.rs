@@ -1,32 +1,23 @@
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(u8)]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
 pub enum Rank {
-    First,
-    Second,
-    Third,
-    Fourth,
-    Fifth,
-    Sixth,
-    Seventh,
-    Eighth,
+    First = 0,
+    Second = 1,
+    Third = 2,
+    Fourth = 3,
+    Fifth = 4,
+    Sixth = 5,
+    Seventh = 6,
+    Eighth = 7,
 }
 
 impl Rank {
     #[inline]
     pub const fn from_index(i: usize) -> Self {
-        match i {
-            0 => Self::First,
-            1 => Self::Second,
-            2 => Self::Third,
-            3 => Self::Fourth,
-            4 => Self::Fifth,
-            5 => Self::Sixth,
-            6 => Self::Seventh,
-            7 => Self::Eighth,
-            _ => unreachable!(),
-        }
+        unsafe { std::mem::transmute((i & 7) as u8) }
     }
 
     #[inline]
@@ -68,22 +59,13 @@ impl Rank {
     }
 
     #[inline]
-    pub const fn to_int(self) -> u8 {
-        match self {
-            Self::First => 0,
-            Self::Second => 1,
-            Self::Third => 2,
-            Self::Fourth => 3,
-            Self::Fifth => 4,
-            Self::Sixth => 5,
-            Self::Seventh => 6,
-            Self::Eighth => 7,
-        }
+    pub const fn to_index(self) -> usize {
+        self as usize
     }
 
     #[inline]
-    pub const fn to_index(self) -> usize {
-        self.to_int() as usize
+    pub const fn to_int(self) -> u8 {
+        self as u8
     }
 }
 
