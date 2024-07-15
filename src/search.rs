@@ -137,12 +137,11 @@ impl PVTable {
         }
     }
 
-    #[allow(unused_unsafe)]
     pub fn get_pv(&self, ply: Ply) -> Vec<&Move> {
         get_item_unchecked!(
             self.table,
             ply,
-            0..unsafe { *self.length.get_unchecked(ply) }
+            0..get_item_unchecked!(@internal self.length, ply).to_owned()
         )
         .iter()
         .filter_map(|opt_move| opt_move.as_ref())

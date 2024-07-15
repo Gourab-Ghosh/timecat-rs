@@ -1,92 +1,112 @@
 #[cfg(not(feature = "speed"))]
 #[macro_export]
 macro_rules! get_item_unchecked {
-    ($arr:expr, $index:expr $(,)?) => {
-        &$arr[$index]
+    (@internal $indexable:expr, $index:expr $(,)?) => {
+        $indexable[$index]
     };
 
-    (const $arr:expr, $index:expr $(,)?) => {
-        &const { $arr }[$index]
+    (@internal const $indexable:expr, $index:expr $(,)?) => {
+        const { $indexable }[$index]
     };
 
-    ($arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
-        get_item_unchecked!($arr[$index], $($rest),+)
+    (@internal $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+        get_item_unchecked!(@internal $indexable[$index], $($rest),+)
     };
 
-    (const $arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+    (@internal const $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
         get_item_unchecked!(
-            get_item_unchecked!(const arr, index),
+            @internal
+            get_item_unchecked!(@internal const $indexable, $index),
             $($rest),+,
         )
+    };
+
+    ($($arg:tt)*) => {
+        &get_item_unchecked!(@internal $($arg)*)
     };
 }
 
 #[cfg(not(feature = "speed"))]
 #[macro_export]
 macro_rules! get_item_unchecked_mut {
-    ($arr:expr, $index:expr $(,)?) => {
-        &mut $arr[$index]
+    (@internal $indexable:expr, $index:expr $(,)?) => {
+        $indexable[$index]
     };
 
-    (const $arr:expr, $index:expr $(,)?) => {
-        &mut const { $arr }[$index]
+    (@internal const $indexable:expr, $index:expr $(,)?) => {
+        const { $indexable }[$index]
     };
 
-    ($arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
-        get_item_unchecked_mut!($arr[$index], $($rest),+)
+    (@internal $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+        get_item_unchecked_mut!(@internal $indexable[$index], $($rest),+)
     };
 
-    (const $arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+    (@internal const $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
         get_item_unchecked_mut!(
-            get_item_unchecked_mut!(const arr, index),
+            @internal
+            get_item_unchecked_mut!(@internal const $indexable, $index),
             $($rest),+,
         )
+    };
+
+    ($($arg:tt)*) => {
+        &mut get_item_unchecked_mut!(@internal $($arg)*)
     };
 }
 
 #[cfg(feature = "speed")]
 #[macro_export]
 macro_rules! get_item_unchecked {
-    ($arr:expr, $index:expr $(,)?) => {
-        unsafe { $arr.get_unchecked($index) }
+    (@internal $indexable:expr, $index:expr $(,)?) => {
+        $indexable.get_unchecked($index)
     };
 
-    (const $arr:expr, $index:expr $(,)?) => {
-        unsafe { const { $arr }.get_unchecked($index) }
+    (@internal const $indexable:expr, $index:expr $(,)?) => {
+        const { $indexable }.get_unchecked($index)
     };
 
-    ($arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
-        get_item_unchecked!($arr.get_unchecked($index), $($rest),+)
+    (@internal $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+        get_item_unchecked!(@internal $indexable.get_unchecked($index), $($rest),+)
     };
 
-    (const $arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+    (@internal const $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
         get_item_unchecked!(
-            get_item_unchecked!(const arr, index),
+            @internal
+            get_item_unchecked!(@internal const $indexable, $index),
             $($rest),+,
         )
+    };
+
+    ($($arg:tt)*) => {
+        unsafe { get_item_unchecked!(@internal $($arg)*) }
     };
 }
 
 #[cfg(feature = "speed")]
 #[macro_export]
 macro_rules! get_item_unchecked_mut {
-    ($arr:expr, $index:expr $(,)?) => {
-        unsafe { $arr.get_unchecked_mut($index) }
+    (@internal $indexable:expr, $index:expr $(,)?) => {
+        $indexable.get_unchecked_mut($index)
     };
 
-    (const $arr:expr, $index:expr $(,)?) => {
-        unsafe { const { $arr }.get_unchecked_mut($index) }
+    (@internal const $indexable:expr, $index:expr $(,)?) => {
+        const { $indexable }.get_unchecked_mut($index)
     };
 
-    ($arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
-        get_item_unchecked_mut!($arr.get_unchecked_mut($index), $($rest),+)
+    (@internal $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+        get_item_unchecked_mut!(@internal $indexable.get_unchecked_mut($index), $($rest),+)
     };
 
-    (const $arr:expr, $index:expr, $($rest:expr),+ $(,)?) => {
+    (@internal const $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
         get_item_unchecked_mut!(
-            get_item_unchecked_mut!(const arr, index),
+            @internal
+            get_item_unchecked_mut!(@internal const $indexable, $index),
             $($rest),+,
         )
+    };
+
+    ($($arg:tt)*) => {
+        unsafe { get_item_unchecked_mut!(@internal $($arg)*) }
     };
 }
 
