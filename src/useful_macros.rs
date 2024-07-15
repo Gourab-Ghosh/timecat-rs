@@ -10,7 +10,11 @@ macro_rules! get_item_unchecked {
     };
 
     (@internal $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
-        get_item_unchecked!(@internal $indexable[$index], $($rest),+)
+        get_item_unchecked!(
+            @internal
+            get_item_unchecked!(@internal $indexable, $index),
+            $($rest),+,
+        )
     };
 
     (@internal const $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
@@ -38,7 +42,11 @@ macro_rules! get_item_unchecked_mut {
     };
 
     (@internal $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
-        get_item_unchecked_mut!(@internal $indexable[$index], $($rest),+)
+        get_item_unchecked_mut!(
+            @internal
+            get_item_unchecked_mut!(@internal $indexable, $index),
+            $($rest),+,
+        )
     };
 
     (@internal const $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
@@ -66,7 +74,11 @@ macro_rules! get_item_unchecked {
     };
 
     (@internal $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
-        get_item_unchecked!(@internal $indexable.get_unchecked($index), $($rest),+)
+        get_item_unchecked!(
+            @internal
+            get_item_unchecked!(@internal $indexable, $index),
+            $($rest),+,
+        )
     };
 
     (@internal const $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
@@ -94,7 +106,11 @@ macro_rules! get_item_unchecked_mut {
     };
 
     (@internal $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
-        get_item_unchecked_mut!(@internal $indexable.get_unchecked_mut($index), $($rest),+)
+        get_item_unchecked_mut!(
+            @internal
+            get_item_unchecked_mut!(@internal $indexable, $index),
+            $($rest),+,
+        )
     };
 
     (@internal const $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
