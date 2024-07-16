@@ -25,7 +25,7 @@ impl SearchInfo {
     pub fn new(searcher: &Searcher) -> Self {
         Self {
             sub_board: searcher.initial_sub_board.to_owned(),
-            current_depth: searcher.get_depth_completed() + 1,
+            current_depth: searcher.get_depth_completed().saturating_add(1),
             seldepth: searcher.get_selective_depth(),
             score: searcher.get_score(),
             nodes: searcher.get_num_nodes_searched(),

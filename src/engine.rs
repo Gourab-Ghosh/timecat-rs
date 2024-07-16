@@ -153,12 +153,12 @@ impl<T: SearchControl> CustomEngine<T> {
     fn reset_variables(&mut self) {
         self.num_nodes_searched.store(0, MEMORY_ORDERING);
         self.selective_depth.store(0, MEMORY_ORDERING);
-        self.transposition_table.reset_variables();
         self.controller.reset_variables();
         self.board.get_evaluator().reset_variables();
         if CLEAR_TABLE_AFTER_EACH_SEARCH {
             self.transposition_table.clear()
         }
+        self.transposition_table.reset_variables();
         self.set_stop_command(false);
         self.set_termination(false);
     }

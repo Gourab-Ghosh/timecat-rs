@@ -15,7 +15,7 @@ COPY documentation ./documentation
 ENV RUSTFLAGS="-C target-cpu=native"
 
 # Build the application
-RUN cargo build --release --bin timecat --no-default-features --features="binary speed"
+RUN cargo build --release --bin timecat --no-default-features --features binary
 
 # Use a minimal base image for the final stage
 FROM debian:bullseye-slim

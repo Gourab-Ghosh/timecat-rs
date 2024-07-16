@@ -24,15 +24,11 @@ def main():
         [],
         ["default"],
         ["nnue_reader"],
-        ["nnue_reader", "speed"],
         ["inbuilt_nnue"],
-        ["inbuilt_nnue", "speed"],
         ["binary"],
         ["engine", "serde"],
         ["engine", "serde", "wasm"],
-        ["binary", "speed"],
         ["binary", "serde"],
-        ["binary", "speed", "serde"],
     ]
 
     if sys.platform == "linux":

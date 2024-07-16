@@ -1,4 +1,4 @@
-#[cfg(not(feature = "speed"))]
+#[cfg(debug_assertions)]
 #[macro_export]
 macro_rules! get_item_unchecked {
     (@internal $indexable:expr, $index:expr $(,)?) => {
@@ -30,7 +30,7 @@ macro_rules! get_item_unchecked {
     };
 }
 
-#[cfg(not(feature = "speed"))]
+#[cfg(debug_assertions)]
 #[macro_export]
 macro_rules! get_item_unchecked_mut {
     (@internal $indexable:expr, $index:expr $(,)?) => {
@@ -62,7 +62,7 @@ macro_rules! get_item_unchecked_mut {
     };
 }
 
-#[cfg(feature = "speed")]
+#[cfg(not(debug_assertions))]
 #[macro_export]
 macro_rules! get_item_unchecked {
     (@internal $indexable:expr, $index:expr $(,)?) => {
@@ -94,7 +94,7 @@ macro_rules! get_item_unchecked {
     };
 }
 
-#[cfg(feature = "speed")]
+#[cfg(not(debug_assertions))]
 #[macro_export]
 macro_rules! get_item_unchecked_mut {
     (@internal $indexable:expr, $index:expr $(,)?) => {
@@ -128,26 +128,52 @@ macro_rules! get_item_unchecked_mut {
 
 #[macro_export]
 macro_rules! interpolate {
-    ($start:expr, $end:expr, $alpha:expr) => {
-        ((1.0 - ($alpha as f64)) * ($start as f64) + ($alpha as f64) * ($end as f64))
+    (@internal $start:expr, $end:expr, $alpha:expr) => {
+        (1.0 - $alpha) * $start + $alpha * $end
+    };
+
+    ($start:expr, $end:expr, $alpha:expr $(,)?) => {
+        {
+            let start = $start as f64;
+            let end = $end as f64;
+            let alpha = $alpha as f64;
+            interpolate!(@internal start, end, alpha)
+        }
     };
 }
 
 #[macro_export]
 macro_rules! inverse_interpolate {
-    ($start:expr, $end:expr, $value:expr) => {
-        (($value as f64) - ($start as f64)) / (($end as f64) - ($start as f64))
+    (@internal $start:expr, $end:expr, $value:expr) => {
+        ($value - $start) / ($end - $start)
+    };
+
+    ($start:expr, $end:expr, $value:expr $(,)?) => {
+        {
+            let start = $start as f64;
+            let end = $end as f64;
+            let value = $value as f64;
+            inverse_interpolate!(@internal start, end, alpha)
+        }
     };
 }
 
 #[macro_export]
 macro_rules! match_interpolate {
-    ($new_start:expr, $new_end:expr, $old_start:expr, $old_end:expr, $old_value:expr) => {
-        interpolate!(
-            $new_start,
-            $new_end,
-            inverse_interpolate!($old_start, $old_end, $old_value)
-        )
+    ($new_start:expr, $new_end:expr, $old_start:expr, $old_end:expr, $old_value:expr $(,)?) => {
+        {
+            let new_start = $new_start as f64;
+            let new_end = $new_end as f64;
+            let old_start = $old_start as f64;
+            let old_end = $old_end as f64;
+            let old_value = $old_value as f64;
+            interpolate!(
+                @internal
+                new_start,
+                new_end,
+                (inverse_interpolate!(@internal old_start, old_end, old_value))
+            )
+        }
     };
 }
 

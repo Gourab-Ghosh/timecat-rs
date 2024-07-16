@@ -162,13 +162,12 @@ The `selfplay` command works on the binary as well.
 - `engine`: Provides the Engine struct for in-depth position analysis and move searching.
 - `extras`: Adds some functionalities not needed in binary, to get better insights of the behavior of the code. These feature is disabled by default because they requires some computations which are not needed in the binary.
 - `colored`: Displays all information in a visually appealing colored format for enhanced readability.
-- `speed`: Optimize the code to improve speed by using unsafe rust. Note that the gain in speed might not be significant in some cases.
 - `serde`: Enables serialization and deserialization support via `serde`.
 - `wasm`: Webassembly support (Still in Testing phase).
 - `debug`: Intended solely for development use.
 - `experimental`: Codes under development for upcoming features.
 
-Default features include `binary`, `colored` and `speed`.
+Default features include `binary` and `colored`.
 
 ## TODO
 - [ ] Implement other variants of chess.
