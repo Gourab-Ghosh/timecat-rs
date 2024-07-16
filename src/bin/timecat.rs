@@ -5,6 +5,7 @@
 // https://github.com/dsekercioglu/blackmarlin.git
 // https://github.com/zxqfl/sashimi
 // https://backscattering.de/chess/uci/
+// https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#halfkav2-feature-set
 
 fn main() {
     use std::io::IsTerminal;
