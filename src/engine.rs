@@ -255,6 +255,7 @@ impl<T: SearchControl> CustomEngine<T> {
 }
 
 impl<T: SearchControl> CustomEngine<T> {
+    #[must_use = "If you don't need the response, you can just search the position."]
     pub fn go(&mut self, command: GoCommand, verbose: bool) -> GoResponse {
         self.reset_variables();
         let mut join_handles = vec![];
@@ -288,11 +289,13 @@ impl<T: SearchControl> CustomEngine<T> {
     }
 
     #[inline]
+    #[must_use = "If you don't need the response, you can just search the position."]
     pub fn go_quiet(&mut self, command: GoCommand) -> GoResponse {
         self.go(command, false)
     }
 
     #[inline]
+    #[must_use = "If you don't need the response, you can just search the position."]
     pub fn go_verbose(&mut self, command: GoCommand) -> GoResponse {
         self.go(command, true)
     }
