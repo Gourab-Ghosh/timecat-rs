@@ -90,7 +90,7 @@ pub struct Timecat<T: ChessEngine> {
 }
 
 impl<T: ChessEngine> Timecat<T> {
-    pub fn run(mut self) {
+    pub fn run(&mut self) {
         self.io_reader.start_reader_in_parallel();
         for user_command in self.user_commands.iter() {
             user_command
@@ -103,7 +103,7 @@ impl<T: ChessEngine> Timecat<T> {
             return;
         }
         self.engine.print_info();
-        Self::main_loop.run_and_print_time(&mut self);
+        Self::main_loop.run_and_print_time(self);
     }
 
     pub fn run_uci_command(&mut self, raw_input: &str) -> Result<()> {
@@ -148,6 +148,6 @@ impl<T: ChessEngine> Timecat<T> {
 
     pub fn uci_loop(&mut self) {
         GLOBAL_TIMECAT_STATE.set_to_uci_mode();
-        self.main_loop();
+        self.run();
     }
 }

@@ -325,12 +325,11 @@ impl Searcher {
         }
         let key = self.board.get_hash();
         let mut score = -CHECKMATE_SCORE;
-        let mut max_score = score;
         let mut flag = HashAlpha;
         let is_endgame = self.board.is_endgame();
         let moves = self.get_sorted_root_node_moves();
         for (move_index, &(move_, _)) in moves.iter().enumerate() {
-            if !is_endgame && self.is_draw_move(move_.into()) && max_score > -DRAW_SCORE {
+            if !is_endgame && self.is_draw_move(move_.into()) && score > -DRAW_SCORE {
                 continue;
             }
             let clock = Instant::now();
@@ -340,7 +339,6 @@ impl Searcher {
                     > alpha
             {
                 score = -self.alpha_beta(depth - 1, -beta, -alpha, controller.as_deref_mut())?;
-                max_score = max_score.max(score);
             }
             self.pop();
             if print_move_info && self.is_main_threaded() {
@@ -378,7 +376,7 @@ impl Searcher {
                 .write(key, depth, self.ply, alpha, flag, self.get_best_move());
         }
         self.update_best_moves();
-        Some(max_score)
+        Some(alpha)
     }
 
     fn get_lmr_reduction(depth: Depth, move_index: usize, is_pv_node: bool) -> Depth {
@@ -682,7 +680,7 @@ impl Searcher {
         &mut self,
         mut command: GoCommand,
         mut controller: impl SearchControl,
-        print_info: bool,
+        verbose: bool,
     ) {
         if self.board.generate_legal_moves().len() == 1 {
             command = GoCommand::Depth(1);
@@ -702,17 +700,17 @@ impl Searcher {
                     alpha,
                     beta,
                     Some(&mut controller),
-                    print_info,
+                    verbose,
                 )
                 .unwrap_or(self.score);
             let search_info = self.get_search_info();
-            if print_info && self.is_main_threaded() {
+            if verbose && self.is_main_threaded() {
                 search_info.print_info();
             }
             self.is_outside_aspiration_window = self.score <= alpha || self.score >= beta;
-            controller.on_search_completion(self);
+            controller.on_each_search_completion(self);
             if self.is_outside_aspiration_window {
-                if print_info && self.is_main_threaded() {
+                if verbose && self.is_main_threaded() {
                     search_info.print_warning_message(alpha, beta);
                 }
                 alpha = -INFINITY;

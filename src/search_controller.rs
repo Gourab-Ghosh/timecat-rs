@@ -58,7 +58,7 @@ impl SearchControl for SearchController {
         self.stop_search_at_every_node = false;
     }
 
-    fn on_search_completion(&mut self, searcher: &Searcher) {
+    fn on_each_search_completion(&mut self, searcher: &Searcher) {
         if self.max_time != Duration::MAX
             && searcher.is_main_threaded()
             && !searcher.is_outside_aspiration_window()
