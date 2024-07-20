@@ -144,7 +144,8 @@ impl PVTable {
             0..get_item_unchecked!(@internal self.length, ply).to_owned()
         )
         .iter()
-        .filter_map(|opt_move| opt_move.as_ref())
+        .take_while(|opt_move| opt_move.is_some())
+        .map(|opt_move| opt_move.as_ref().unwrap())
         .collect_vec()
     }
 
