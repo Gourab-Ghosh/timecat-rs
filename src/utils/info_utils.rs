@@ -37,14 +37,6 @@ pub fn print_engine_version() {
     println_wasm!("{}", get_engine_version().colorize(SUCCESS_MESSAGE_STYLE));
 }
 
-#[cfg(feature = "engine")]
-pub fn print_engine_info(transposition_table: &TranspositionTable, evaluator: &Evaluator) {
-    print_engine_version();
-    println_wasm!();
-    transposition_table.print_info();
-    evaluator.print_info();
-}
-
 pub fn print_cache_table_info(
     name: &str,
     table_len: impl fmt::Display,

@@ -10,8 +10,8 @@ fn calculate_prediction_accuracy(rms: f64) -> f64 {
     (prediction_accuracy_func(rms) * 100.0) / prediction_accuracy_func(0.0)
 }
 
-pub fn self_play<T: SearchControl>(
-    engine: &mut CustomEngine<T>,
+pub fn self_play(
+    engine: &mut impl ChessEngine,
     go_command: GoCommand,
     verbose: bool,
     move_limit: impl Into<Option<NumMoves>> + Copy,

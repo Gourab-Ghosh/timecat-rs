@@ -7,34 +7,33 @@
 pub mod board;
 pub mod chess;
 pub mod constants;
-#[cfg(feature = "engine")]
+#[cfg(feature = "inbuilt_engine")]
 pub mod engine;
 pub mod error;
 #[cfg(feature = "nnue_reader")]
 pub mod evaluate;
 #[cfg(feature = "nnue_reader")]
 pub mod nnue;
-#[cfg(feature = "engine")]
+#[cfg(feature = "binary")]
 pub mod parse;
 #[cfg(feature = "experimental")]
 pub mod polyglot;
 #[cfg(feature = "binary")]
 pub mod runner;
-#[cfg(feature = "engine")]
+#[cfg(feature = "inbuilt_engine")]
 pub mod search;
-#[cfg(feature = "engine")]
+#[cfg(feature = "inbuilt_engine")]
 pub mod search_controller;
-#[cfg(feature = "engine")]
 pub mod selfplay;
-#[cfg(feature = "engine")]
+#[cfg(feature = "inbuilt_engine")]
 pub mod sort;
 #[cfg(feature = "experimental")]
 pub mod syzygy;
-#[cfg(feature = "engine")]
+#[cfg(feature = "inbuilt_engine")]
 #[cfg(feature = "debug")]
 pub mod tests;
 pub mod tt;
-#[cfg(feature = "engine")]
+#[cfg(feature = "binary")]
 pub mod uci;
 pub mod useful_macros;
 pub mod utils;
@@ -67,7 +66,7 @@ pub mod prelude {
 
     pub use utils::extension_traits::*;
 
-    #[cfg(feature = "engine")]
+    #[cfg(feature = "inbuilt_engine")]
     pub use super::{self_play, Engine, GoCommand};
 }
 
@@ -79,11 +78,13 @@ pub use chess::*;
 pub use constants::atomic::*;
 pub use constants::bitboard_and_square::*;
 pub use constants::board::*;
+#[cfg(feature = "binary")]
+pub use constants::binary::*;
 pub use constants::cache_table::*;
 pub use constants::color::*;
 pub use constants::default_parameters::*;
 pub use constants::description::*;
-#[cfg(feature = "engine")]
+#[cfg(feature = "inbuilt_engine")]
 pub use constants::engine::*;
 pub use constants::evaluate::*;
 pub use constants::fen::*;
@@ -93,28 +94,27 @@ pub use constants::piece::*;
 pub use constants::print_style::*;
 pub use constants::ranks::*;
 pub use constants::types::*;
-#[cfg(feature = "engine")]
-pub use engine::{CustomEngine, GoCommand};
+#[cfg(feature = "inbuilt_engine")]
+pub use engine::CustomEngine;
 pub use error::*;
 #[cfg(feature = "nnue_reader")]
 pub use evaluate::*;
 pub use itertools::*;
 #[cfg(feature = "nnue_reader")]
 pub use nnue::*;
-#[cfg(feature = "engine")]
+#[cfg(feature = "binary")]
 pub use parse::*;
 pub use paste::paste;
 #[cfg(feature = "binary")]
 pub use runner::*;
-#[cfg(feature = "engine")]
+#[cfg(feature = "inbuilt_engine")]
 pub use search::*;
-#[cfg(feature = "engine")]
+#[cfg(feature = "inbuilt_engine")]
 pub use search_controller::SearchController;
-#[cfg(feature = "engine")]
 pub use selfplay::self_play;
 #[cfg(feature = "serde")]
 pub use serde::{Deserialize, Serialize};
-#[cfg(feature = "engine")]
+#[cfg(feature = "inbuilt_engine")]
 pub use sort::*;
 pub use std::cmp::{Ordering, Reverse};
 pub use std::convert::From;
@@ -137,11 +137,11 @@ pub use std::sync::{Arc, RwLock};
 pub use std::thread;
 #[cfg(not(feature = "wasm"))]
 pub use std::time::{Duration, Instant};
-#[cfg(feature = "engine")]
+#[cfg(feature = "inbuilt_engine")]
 #[cfg(feature = "debug")]
 pub use tests::test;
 pub use tt::*;
-#[cfg(feature = "engine")]
+#[cfg(feature = "binary")]
 pub use uci::*;
 pub use utils::*;
 #[cfg(feature = "wasm")]

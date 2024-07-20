@@ -26,8 +26,8 @@ def main():
         ["nnue_reader"],
         ["inbuilt_nnue"],
         ["binary"],
-        ["engine", "serde"],
-        ["engine", "serde", "wasm"],
+        ["inbuilt_engine", "serde"],
+        ["inbuilt_engine", "serde", "wasm"],
         ["binary", "serde"],
     ]
 

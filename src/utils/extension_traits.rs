@@ -67,7 +67,7 @@ pub trait StringifyMove {
     }
 }
 
-#[cfg(feature = "engine")]
+#[cfg(feature = "inbuilt_engine")]
 // TODO: Try to remove static lifetime from T
 pub trait SearchControl: Clone + Send + 'static {
     fn get_move_overhead(&self) -> Duration;
@@ -81,6 +81,43 @@ pub trait SearchControl: Clone + Send + 'static {
     #[inline]
     fn with_move_overhead(mut self, duration: Duration) -> Self {
         self.set_move_overhead(duration);
+        self
+    }
+}
+
+pub trait ChessEngine {
+    fn get_board(&self) -> &Board;
+    fn get_board_mut(&mut self) -> &mut Board;
+    fn evaluate_board(&mut self) -> Score;
+    fn set_fen(&mut self, fen: &str) -> Result<()>;
+    fn get_transposition_table(&self) -> &TranspositionTable;
+    fn get_num_threads(&self) -> usize;
+    fn set_num_threads(&mut self, num_threads: NonZeroUsize);
+    fn get_move_overhead(&self) -> Duration;
+    fn set_move_overhead(&mut self, duration: Duration);
+    fn get_num_nodes_searched(&self) -> usize;
+    fn terminate(&self) -> bool;
+    fn set_termination(&self, b: bool);
+    fn clear_hash(&self);
+    fn print_info(&self);
+    fn get_optional_io_reader(&self) -> Option<IoReader>;
+    fn set_optional_io_reader(&mut self, optional_io_reader: IoReader);
+    fn go(&mut self, command: GoCommand, verbose: bool) -> SearchInfo;
+
+    #[inline]
+    #[must_use = "If you don't need the response, you can just search the position."]
+    fn go_quiet(&mut self, command: GoCommand) -> SearchInfo {
+        self.go(command, false)
+    }
+
+    #[inline]
+    #[must_use = "If you don't need the response, you can just search the position."]
+    fn go_verbose(&mut self, command: GoCommand) -> SearchInfo {
+        self.go(command, true)
+    }
+
+    fn with_io_reader(mut self, optional_io_reader: IoReader) -> Self where Self: Sized {
+        self.set_optional_io_reader(optional_io_reader);
         self
     }
 }

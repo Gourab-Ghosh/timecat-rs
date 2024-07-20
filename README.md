@@ -1,6 +1,6 @@
 # Timecat Chess Engine
 
-Timecat is a UCI-compatible chess engine designed in Rust that combines powerful algorithms and advanced evaluation techniques to deliver top-notch chess analysis and gameplay. Using alpha-beta pruning with the negamax algorithm and the NNUE evaluation method, Timecat achieves enhanced depth and accuracy in game analysis.
+Timecat is a UCI-compatible chess engine designed in Rust that combines powerful algorithms and advanced evaluation techniques to deliver top-notch chess analysis and game play. Using alpha-beta pruning with the negamax algorithm and the NNUE evaluation method, Timecat achieves enhanced depth and accuracy in game analysis.
 
 ## Timecat as a Library
 Timecat was originally conceived as a personal project. However, with the onset of a new chess-related project, I realized the benefits of publishing Timecat as a library to avoid excessive code duplication. Initially designed for personal use, Timecat will now be refined and updated to enhance its functionality and usability as a library, making it more accessible and beneficial for other users. Also the documentation will be further improved.
@@ -59,9 +59,9 @@ cargo add timecat --no-default-features
 ```
 
 ### Examples
-This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize the inbuilt engine to find optimal moves using the `timecat` library. Some features such as position evaluation (`nnue`) and engine computation (`engine`) are optional and can be enabled via cargo features.
+This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize the inbuilt engine to find optimal moves using the `timecat` library. Some features such as position evaluation (`inbuilt_nnue`) and engine computation (`engine`) are optional and can be enabled via cargo features.
 
-First, add the timecat crate to your project with the necessary features enabled (`nnue` feature is already enabled within the `engine` feature):
+First, add the timecat crate to your project with the necessary features enabled (`inbuilt_nnue` feature is already enabled within the `inbuilt_engine` feature):
 ```bash
 cargo add timecat --no-default-features --features engine
 ```
@@ -78,7 +78,7 @@ fn main() {
     board.push_san("e4").expect("Failed to make move: e4");
     board.push_san("e5").expect("Failed to make move: e5");
 
-    // Evaluate the current board position using the nnue feature.
+    // Evaluate the current board position using the inbuilt_nnue feature.
     let evaluation = board.evaluate();
     println!("Current Evaluation: {}\n", evaluation);
 
@@ -95,7 +95,7 @@ fn main() {
 }
 ```
 
-You can use UCI commands, although it's not recommended in production environments due to potential parsing delays and unpredictable outputs. The `nnue` and `engine` features are also required in this context.
+You can use UCI commands, although it's not recommended in production environments due to potential parsing delays and unpredictable outputs. The `inbuilt_nnue` and `inbuilt_engine` features are also required in this context.
 
 As previous, add the timecat crate to your project:
 ```bash
@@ -109,7 +109,7 @@ use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Create the default engine initialized with the standard starting position.
-    let mut runner = timecat::TimecatBuilder::<timecat::SearchController>::default().build();
+    let mut runner = timecat::TimecatBuilder::<Engine>::default().build();
 
     // List of UCI commands to be executed on the chess engine.
     let uci_commands = [
@@ -159,7 +159,7 @@ The `selfplay` command works on the binary as well.
 - `nnue_reader`: Binread support.
 - `nnue_reader`: Adds support for NNUE evaluation by reading nnue files.
 - `inbuilt_nnue`: Integrate built-in NNUE evaluation support by including the nnue file directly into the binary, fetched using the minreq library.
-- `engine`: Provides the Engine struct for in-depth position analysis and move searching.
+- `inbuilt_engine`: Provides an inbuilt Engine struct for in-depth position analysis and move searching.
 - `extras`: Adds some functionalities not needed in binary, to get better insights of the behavior of the code. These feature is disabled by default because they requires some computations which are not needed in the binary.
 - `colored`: Displays all information in a visually appealing colored format for enhanced readability.
 - `serde`: Enables serialization and deserialization support via `serde`.

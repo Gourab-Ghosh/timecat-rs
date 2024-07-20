@@ -27,28 +27,28 @@ impl_into_spin!(CacheTableSize, unwrap);
 impl_into_spin!(Duration, as_millis);
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-enum UCIOptionType<T: SearchControl> {
+enum UCIOptionType<T: ChessEngine> {
     Button {
-        function: fn(&mut CustomEngine<T>),
+        function: fn(&mut T),
     },
     Check {
         default: bool,
-        function: fn(&mut CustomEngine<T>, bool),
+        function: fn(&mut T, bool),
     },
     String {
         default: String,
-        function: fn(&mut CustomEngine<T>, &str),
+        function: fn(&mut T, &str),
     },
     Spin {
         default: Spin,
         min: Spin,
         max: Spin,
-        function: fn(&mut CustomEngine<T>, Spin),
+        function: fn(&mut T, Spin),
     },
     Combo {
         default: String,
         options: Vec<String>,
-        function: fn(&mut CustomEngine<T>, &str),
+        function: fn(&mut T, &str),
     },
 }
 
@@ -83,13 +83,13 @@ impl<T: Clone + Copy + IntoSpin> SpinValue<T> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct UCIOption<T: SearchControl> {
+pub struct UCIOption<T: ChessEngine> {
     name: String,
     sorted_alias: Vec<String>,
     option_type: UCIOptionType<T>,
 }
 
-impl<T: SearchControl> UCIOption<T> {
+impl<T: ChessEngine> UCIOption<T> {
     fn new(name: &str, option_type: UCIOptionType<T>) -> Self {
         Self {
             name: name.trim().to_string(),
@@ -107,7 +107,7 @@ impl<T: SearchControl> UCIOption<T> {
     fn new_spin<U: Clone + Copy + IntoSpin>(
         name: &str,
         values: SpinValue<U>,
-        function: fn(&mut CustomEngine<T>, Spin),
+        function: fn(&mut T, Spin),
     ) -> Self {
         UCIOption::new(
             name,
@@ -120,15 +120,15 @@ impl<T: SearchControl> UCIOption<T> {
         )
     }
 
-    fn new_check(name: &str, default: bool, function: fn(&mut CustomEngine<T>, bool)) -> Self {
+    fn new_check(name: &str, default: bool, function: fn(&mut T, bool)) -> Self {
         UCIOption::new(name, UCIOptionType::Check { default, function })
     }
 
-    fn new_button(name: &str, function: fn(&mut CustomEngine<T>)) -> Self {
+    fn new_button(name: &str, function: fn(&mut T)) -> Self {
         UCIOption::new(name, UCIOptionType::Button { function })
     }
 
-    fn set_option(&self, engine: &mut CustomEngine<T>, value_string: String) -> Result<()> {
+    fn set_option(&self, engine: &mut T, value_string: String) -> Result<()> {
         match self.option_type {
             UCIOptionType::Check { function, .. } => {
                 function(engine, value_string.parse()?);
@@ -161,7 +161,7 @@ impl<T: SearchControl> UCIOption<T> {
     }
 }
 
-impl<T: SearchControl> fmt::Display for UCIOption<T> {
+impl<T: ChessEngine> fmt::Display for UCIOption<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match &self.option_type {
             UCIOptionType::Check { default, .. } => {
@@ -222,11 +222,11 @@ impl<T: SearchControl> fmt::Display for UCIOption<T> {
     }
 }
 
-pub struct UCIStateManager<T: SearchControl> {
+pub struct UCIStateManager<T: ChessEngine> {
     options: Vec<UCIOption<T>>,
 }
 
-impl<T: SearchControl> UCIStateManager<T> {
+impl<T: ChessEngine> UCIStateManager<T> {
     pub const fn dummy() -> Self {
         Self {
             options: Vec::new(),
@@ -255,7 +255,7 @@ impl<T: SearchControl> UCIStateManager<T> {
         &self.options
     }
 
-    pub fn run_command(&self, engine: &mut CustomEngine<T>, user_input: &str) -> Result<()> {
+    pub fn run_command(&self, engine: &mut T, user_input: &str) -> Result<()> {
         let binding = Parser::sanitize_string(user_input);
         let commands = binding.split_whitespace().collect_vec();
         if commands
@@ -292,13 +292,13 @@ impl<T: SearchControl> UCIStateManager<T> {
     }
 }
 
-impl<T: SearchControl> Default for UCIStateManager<T> {
+impl<T: ChessEngine> Default for UCIStateManager<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-fn get_uci_state_manager<T: SearchControl>() -> Vec<UCIOption<T>> {
+fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
     let t_table_size_uci = SpinValue::new(
         TIMECAT_DEFAULTS.t_table_size,
         CacheTableSize::Exact(1),
@@ -321,11 +321,11 @@ fn get_uci_state_manager<T: SearchControl>() -> Vec<UCIOption<T>> {
         Duration::MAX,
     );
 
-    let options = vec![
+    let options: Vec<UCIOption<T>> = vec![
         UCIOption::new_spin(
             "Threads",
             SpinValue::new(TIMECAT_DEFAULTS.num_threads.get(), 1, 1024),
-            |engine, value| {
+            |engine: &mut T, value| {
                 let num_threads = unsafe { NonZeroUsize::new_unchecked(value as usize) };
                 engine.set_num_threads(num_threads);
                 print_uci_info("Number of threads is set to", num_threads);
@@ -347,15 +347,12 @@ fn get_uci_state_manager<T: SearchControl>() -> Vec<UCIOption<T>> {
             }
         }),
         UCIOption::new_button("Clear Hash", |engine| {
-            engine.get_transposition_table().clear();
-            engine.get_board().get_evaluator().clear();
+            engine.clear_hash();
             print_uci_info::<&str>("All hash tables are cleared!", None);
         }),
         UCIOption::new_spin("Move Overhead", move_overhead_uci, |engine, value| {
             let duration = Duration::from_millis(value as u64);
-            engine
-                .get_search_controller_mut()
-                .set_move_overhead(duration);
+            engine.set_move_overhead(duration);
             print_uci_info("Move Overhead is set to", duration.stringify());
         }),
         // UCIOption::new_check(

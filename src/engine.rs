@@ -1,97 +1,6 @@
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum GoCommand {
-    Infinite,
-    MoveTime(Duration),
-    Depth(Depth),
-    // Nodes(usize),
-    // Mate(usize),
-    Ponder,
-    // SearchMoves(Vec<Move>),
-    Timed {
-        wtime: Duration,
-        btime: Duration,
-        winc: Duration,
-        binc: Duration,
-        moves_to_go: Option<NumMoves>,
-    },
-}
-
-impl GoCommand {
-    pub const fn from_millis(millis: u64) -> Self {
-        Self::MoveTime(Duration::from_millis(millis))
-    }
-
-    pub fn is_infinite(&self) -> bool {
-        self == &Self::Infinite
-    }
-
-    pub fn is_move_time(&self) -> bool {
-        matches!(self, Self::MoveTime(_))
-    }
-
-    pub fn is_depth(&self) -> bool {
-        matches!(self, Self::Depth(_))
-    }
-
-    pub fn is_timed(&self) -> bool {
-        matches!(self, Self::Timed { .. })
-    }
-
-    pub fn depth_or(&self, depth: Depth) -> Depth {
-        match self {
-            Self::Depth(depth) => *depth,
-            _ => depth,
-        }
-    }
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug)]
-pub struct GoResponse {
-    search_info: SearchInfo,
-}
-
-impl GoResponse {
-    #[inline]
-    fn new(search_info: SearchInfo) -> Self {
-        Self { search_info }
-    }
-
-    #[inline]
-    pub fn search_info(&self) -> &SearchInfo {
-        &self.search_info
-    }
-
-    #[inline]
-    pub fn get_pv(&self) -> &[Move] {
-        self.search_info.get_pv()
-    }
-
-    #[inline]
-    pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
-        self.search_info.get_pv().get(n).copied()
-    }
-
-    #[inline]
-    pub fn get_best_move(&self) -> Option<Move> {
-        self.get_nth_pv_move(0)
-    }
-
-    #[inline]
-    pub fn get_ponder_move(&self) -> Option<Move> {
-        self.get_nth_pv_move(1)
-    }
-
-    #[inline]
-    pub fn get_score(&self) -> Score {
-        self.search_info.get_score()
-    }
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct CustomEngine<T: SearchControl> {
     board: Board,
@@ -120,36 +29,6 @@ impl<T: SearchControl> CustomEngine<T> {
         }
     }
 
-    #[inline]
-    pub fn get_board(&self) -> &Board {
-        &self.board
-    }
-
-    #[inline]
-    pub fn get_board_mut(&mut self) -> &mut Board {
-        &mut self.board
-    }
-
-    #[inline]
-    pub fn get_transposition_table(&self) -> &TranspositionTable {
-        &self.transposition_table
-    }
-
-    #[inline]
-    pub fn get_optional_io_reader(&self) -> Option<IoReader> {
-        self.optional_io_reader.clone()
-    }
-
-    #[inline]
-    pub fn set_optional_io_reader(&mut self, optional_io_reader: IoReader) {
-        self.optional_io_reader = Some(optional_io_reader);
-    }
-
-    pub fn with_io_reader(mut self, optional_io_reader: IoReader) -> Self {
-        self.set_optional_io_reader(optional_io_reader);
-        self
-    }
-
     fn reset_variables(&mut self) {
         self.num_nodes_searched.store(0, MEMORY_ORDERING);
         self.selective_depth.store(0, MEMORY_ORDERING);
@@ -163,22 +42,6 @@ impl<T: SearchControl> CustomEngine<T> {
         self.set_termination(false);
     }
 
-    pub fn set_fen(&mut self, fen: &str) -> Result<()> {
-        let result = self.board.set_fen(fen);
-        self.reset_variables();
-        result
-    }
-
-    #[inline]
-    pub fn get_num_threads(&self) -> usize {
-        self.num_threads.get()
-    }
-
-    #[inline]
-    pub fn set_num_threads(&mut self, num_threads: NonZeroUsize) {
-        self.num_threads = num_threads;
-    }
-
     #[inline]
     pub fn get_search_controller(&self) -> &impl SearchControl {
         &self.controller
@@ -187,11 +50,6 @@ impl<T: SearchControl> CustomEngine<T> {
     #[inline]
     pub fn get_search_controller_mut(&mut self) -> &mut impl SearchControl {
         &mut self.controller
-    }
-
-    #[inline]
-    pub fn get_num_nodes_searched(&self) -> usize {
-        self.num_nodes_searched.load(MEMORY_ORDERING)
     }
 
     #[inline]
@@ -221,16 +79,6 @@ impl<T: SearchControl> CustomEngine<T> {
         self.stop_command.store(b, MEMORY_ORDERING);
     }
 
-    #[inline]
-    pub fn terminate(&self) -> bool {
-        self.terminate.load(MEMORY_ORDERING)
-    }
-
-    #[inline]
-    pub fn set_termination(&self, b: bool) {
-        self.terminate.store(b, MEMORY_ORDERING);
-    }
-
     fn update_stop_command(
         stop_command: Arc<AtomicBool>,
         io_reader: IoReader,
@@ -254,9 +102,92 @@ impl<T: SearchControl> CustomEngine<T> {
     }
 }
 
-impl<T: SearchControl> CustomEngine<T> {
+impl<T: SearchControl> ChessEngine for CustomEngine<T> {
+    #[inline]
+    fn get_board(&self) -> &Board {
+        &self.board
+    }
+
+    #[inline]
+    fn get_board_mut(&mut self) -> &mut Board {
+        &mut self.board
+    }
+
+    fn set_fen(&mut self, fen: &str) -> Result<()> {
+        self.board.set_fen(fen)?;
+        self.reset_variables();
+        Ok(())
+    }
+
+    #[inline]
+    fn evaluate_board(&mut self) -> Score {
+        self.board.evaluate()
+    }
+    
+    #[inline]
+    fn get_transposition_table(&self) -> &TranspositionTable {
+        &self.transposition_table
+    }
+    
+    #[inline]
+    fn get_num_threads(&self) -> usize {
+        self.num_threads.get()
+    }
+
+    #[inline]
+    fn set_num_threads(&mut self, num_threads: NonZeroUsize) {
+        self.num_threads = num_threads;
+    }
+
+    #[inline]
+    fn get_move_overhead(&self) -> Duration {
+        self.controller.get_move_overhead()
+    }
+
+    #[inline]
+    fn set_move_overhead(&mut self, duration: Duration) {
+        self.controller.set_move_overhead(duration);
+    }
+
+    #[inline]
+    fn get_num_nodes_searched(&self) -> usize {
+        self.num_nodes_searched.load(MEMORY_ORDERING)
+    }
+
+    #[inline]
+    fn terminate(&self) -> bool {
+        self.terminate.load(MEMORY_ORDERING)
+    }
+
+    #[inline]
+    fn set_termination(&self, b: bool) {
+        self.terminate.store(b, MEMORY_ORDERING);
+    }
+
+    fn clear_hash(&self) {
+        self.get_transposition_table().clear();
+        self.get_board().get_evaluator().clear();
+    }
+    
+    fn print_info(&self) {
+        print_engine_version();
+        println_wasm!();
+        self.transposition_table.print_info();
+        self.board.get_evaluator().print_info();
+    }
+
+    #[inline]
+    fn get_optional_io_reader(&self) -> Option<IoReader> {
+        self.optional_io_reader.clone()
+    }
+
+    #[inline]
+    fn set_optional_io_reader(&mut self, optional_io_reader: IoReader) {
+        self.optional_io_reader = Some(optional_io_reader);
+    }
+
     #[must_use = "If you don't need the response, you can just search the position."]
-    pub fn go(&mut self, command: GoCommand, verbose: bool) -> GoResponse {
+    fn go(&mut self, command: GoCommand, verbose: bool) -> SearchInfo {
         self.reset_variables();
         let mut join_handles = vec![];
         for id in 1..self.num_threads.get() {
@@ -285,19 +216,7 @@ impl<T: SearchControl> CustomEngine<T> {
         if search_info.get_pv().is_empty() && self.board.status() == BoardStatus::Ongoing {
             search_info.set_pv(&[self.board.generate_legal_moves().next().unwrap()]);
         }
-        GoResponse::new(search_info)
-    }
-
-    #[inline]
-    #[must_use = "If you don't need the response, you can just search the position."]
-    pub fn go_quiet(&mut self, command: GoCommand) -> GoResponse {
-        self.go(command, false)
-    }
-
-    #[inline]
-    #[must_use = "If you don't need the response, you can just search the position."]
-    pub fn go_verbose(&mut self, command: GoCommand) -> GoResponse {
-        self.go(command, true)
+        search_info
     }
 }
 

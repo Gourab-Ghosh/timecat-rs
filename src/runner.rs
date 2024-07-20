@@ -1,12 +1,12 @@
 use super::*;
 
 #[derive(Default)]
-pub struct TimecatBuilder<T: SearchControl = SearchController> {
+pub struct TimecatBuilder<T: ChessEngine> {
     user_commands: Vec<UserCommand>,
-    engine: Option<CustomEngine<T>>,
+    engine: Option<T>,
 }
 
-impl<T: SearchControl + Default> TimecatBuilder<T> {
+impl<T: ChessEngine + Default> TimecatBuilder<T> {
     pub fn build(self) -> Timecat<T> {
         let io_reader = IoReader::default();
         Timecat {
@@ -21,7 +21,7 @@ impl<T: SearchControl + Default> TimecatBuilder<T> {
     }
 }
 
-impl<T: SearchControl> TimecatBuilder<T> {
+impl<T: ChessEngine> TimecatBuilder<T> {
     pub fn parse_args(mut self, args: &[&str]) -> Self {
         if args.contains(&"--uci") {
             self.user_commands
@@ -82,14 +82,14 @@ impl<T: SearchControl> TimecatBuilder<T> {
     }
 }
 
-pub struct Timecat<T: SearchControl = SearchController> {
+pub struct Timecat<T: ChessEngine> {
     user_commands: Vec<UserCommand>,
-    engine: CustomEngine<T>,
+    engine: T,
     io_reader: IoReader,
     uci_state_manager: UCIStateManager<T>,
 }
 
-impl<T: SearchControl> Timecat<T> {
+impl<T: ChessEngine> Timecat<T> {
     pub fn run(mut self) {
         self.io_reader.start_reader_in_parallel();
         for user_command in self.user_commands.iter() {
@@ -102,10 +102,7 @@ impl<T: SearchControl> Timecat<T> {
         if self.engine.terminate() {
             return;
         }
-        print_engine_info(
-            self.engine.get_transposition_table(),
-            self.engine.get_board().get_evaluator(),
-        );
+        self.engine.print_info();
         Self::main_loop.run_and_print_time(&mut self);
     }
 

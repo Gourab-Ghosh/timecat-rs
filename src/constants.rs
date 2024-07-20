@@ -15,7 +15,7 @@ pub mod types {
     pub type MoveWeight = i32;
     pub type NumMoves = u16;
     pub type Spin = u128;
-    #[cfg(feature = "engine")]
+    #[cfg(feature = "inbuilt_engine")]
     pub type Engine = CustomEngine<SearchController>;
 
     #[cfg(feature = "colored")]
@@ -195,11 +195,9 @@ pub mod cache_table {
     pub const DEFAULT_HASH: NonZeroU64 = unsafe { NonZeroU64::new_unchecked(1) };
 }
 
-#[cfg(feature = "engine")]
+#[cfg(feature = "inbuilt_engine")]
 pub mod engine {
     use super::*;
-
-    pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
 
     pub const CLEAR_TABLE_AFTER_EACH_SEARCH: bool = true;
     pub const NUM_KILLER_MOVES: usize = 3;
@@ -235,6 +233,13 @@ pub mod engine {
     ];
 
     pub const LMR_TABLE: [[Depth; 64]; 64] = [[0; 64]; 64];
+}
+
+#[cfg(feature = "binary")]
+pub mod binary {
+    use super::*;
+
+    pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
 }
 
 pub mod io {
