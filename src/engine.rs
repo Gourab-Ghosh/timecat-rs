@@ -40,7 +40,7 @@ impl<T: SearchControl> CustomEngine<T> {
         self.controller.reset_variables();
         self.board.get_evaluator().reset_variables();
         if CLEAR_TABLE_AFTER_EACH_SEARCH {
-            self.transposition_table.clear()
+            self.transposition_table.clear();
         }
         self.transposition_table.reset_variables();
         self.set_stop_command(false);
