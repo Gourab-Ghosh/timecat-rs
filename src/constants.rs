@@ -127,6 +127,7 @@ pub mod board {
     pub const EMPTY_SPACE_UNICODE_SYMBOL: &str = " ";
     pub const WHITE_PIECE_UNICODE_SYMBOLS: [&str; 6] = ["♙", "♘", "♗", "♖", "♕", "♔"];
     pub const BLACK_PIECE_UNICODE_SYMBOLS: [&str; 6] = ["♟", "♞", "♝", "♜", "♛", "♚"];
+    pub const MAX_MOVES_PER_POSITION: usize = 250;
 }
 
 pub mod fen {
@@ -215,7 +216,6 @@ pub mod engine {
     pub const LMR_MOVE_DIVIDER: f64 = 2.25;
 
     pub const ASPIRATION_WINDOW_CUTOFF: Score = PAWN_VALUE / 2;
-    pub const MAX_MOVES_PER_POSITION: usize = 250;
 
     pub const FOLLOW_PV: bool = true;
     pub const PRINT_MOVE_INFO_DURATION_THRESHOLD: Duration = Duration::from_millis(1000);
