@@ -118,14 +118,10 @@ impl SearchInfo {
         seldepth: Ply,
         score: Score,
         nodes: usize,
-        #[cfg(feature = "extras")]
-        hash_full: f64,
-        #[cfg(feature = "extras")]
-        overwrites: usize,
-        #[cfg(feature = "extras")]
-        zero_hit: usize,
-        #[cfg(feature = "extras")]
-        collisions: usize,
+        #[cfg(feature = "extras")] hash_full: f64,
+        #[cfg(feature = "extras")] overwrites: usize,
+        #[cfg(feature = "extras")] zero_hit: usize,
+        #[cfg(feature = "extras")] collisions: usize,
         time_elapsed: Duration,
         pv: Vec<Move>,
     ) -> Self {

@@ -86,11 +86,14 @@ pub trait SearchControl: Clone + Send + 'static {
 }
 
 pub trait ChessEngine {
+    type TranspositionTable;
+    type IoReader;
+
     fn get_board(&self) -> &Board;
     fn get_board_mut(&mut self) -> &mut Board;
     fn evaluate_board(&mut self) -> Score;
     fn set_fen(&mut self, fen: &str) -> Result<()>;
-    fn get_transposition_table(&self) -> &TranspositionTable;
+    fn set_transposition_table_size(&self, size: CacheTableSize);
     fn get_num_threads(&self) -> usize;
     fn set_num_threads(&mut self, num_threads: NonZeroUsize);
     fn get_move_overhead(&self) -> Duration;
@@ -100,8 +103,8 @@ pub trait ChessEngine {
     fn set_termination(&self, b: bool);
     fn clear_hash(&self);
     fn print_info(&self);
-    fn get_optional_io_reader(&self) -> Option<IoReader>;
-    fn set_optional_io_reader(&mut self, optional_io_reader: IoReader);
+    fn get_optional_io_reader(&self) -> Option<Self::IoReader>;
+    fn set_optional_io_reader(&mut self, optional_io_reader: Self::IoReader);
     fn go(&mut self, command: GoCommand, verbose: bool) -> SearchInfo;
 
     #[inline]
@@ -116,7 +119,10 @@ pub trait ChessEngine {
         self.go(command, true)
     }
 
-    fn with_io_reader(mut self, optional_io_reader: IoReader) -> Self where Self: Sized {
+    fn with_io_reader(mut self, optional_io_reader: Self::IoReader) -> Self
+    where
+        Self: Sized,
+    {
         self.set_optional_io_reader(optional_io_reader);
         self
     }

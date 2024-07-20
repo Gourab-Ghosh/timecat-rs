@@ -335,14 +335,10 @@ fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
         UCIOption::new_spin("Hash", t_table_size_uci, {
             |engine, value| {
                 let size = CacheTableSize::Exact(value as usize);
-                let transposition_table = engine.get_transposition_table();
-                transposition_table.set_size(size);
-                if GLOBAL_TIMECAT_STATE.is_in_debug_mode() {
-                    transposition_table.print_info();
-                }
+                engine.set_transposition_table_size(size);
                 print_uci_info(
                     "Transposition table is set to size to",
-                    size.to_cache_table_memory_size::<TranspositionTableEntry>(),
+                    size.to_memory_size_in_mb::<TranspositionTableEntry>(),
                 );
             }
         }),

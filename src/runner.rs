@@ -6,7 +6,7 @@ pub struct TimecatBuilder<T: ChessEngine> {
     engine: Option<T>,
 }
 
-impl<T: ChessEngine + Default> TimecatBuilder<T> {
+impl<T: ChessEngine<IoReader = IoReader> + Default> TimecatBuilder<T> {
     pub fn build(self) -> Timecat<T> {
         let io_reader = IoReader::default();
         Timecat {

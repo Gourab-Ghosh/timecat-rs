@@ -73,7 +73,7 @@ impl CacheTableSize {
         std::mem::size_of::<Option<CacheTableEntry<T>>>()
     }
 
-    pub fn to_cache_table_and_entry_size<T>(self) -> (usize, usize) {
+    pub fn to_num_entries_and_entry_size<T>(self) -> (usize, usize) {
         let mut size = self.unwrap();
         let entry_size = Self::get_entry_size::<T>();
         size *= 2_usize.pow(20);
@@ -93,13 +93,13 @@ impl CacheTableSize {
     }
 
     #[inline]
-    pub fn to_cache_table_size<T>(self) -> usize {
-        self.to_cache_table_and_entry_size::<T>().0
+    pub fn to_num_entries<T>(self) -> usize {
+        self.to_num_entries_and_entry_size::<T>().0
     }
 
     #[inline]
-    pub fn to_cache_table_memory_size<T>(self) -> usize {
-        let (size, entry_size) = self.to_cache_table_and_entry_size::<T>();
+    pub fn to_memory_size_in_mb<T>(self) -> usize {
+        let (size, entry_size) = self.to_num_entries_and_entry_size::<T>();
         size * entry_size / 2_usize.pow(20)
     }
 }
@@ -147,7 +147,7 @@ pub struct CacheTable<T> {
 impl<T: Copy + PartialEq> CacheTable<T> {
     #[inline]
     fn generate_table(size: CacheTableSize) -> Box<[Option<CacheTableEntry<T>>]> {
-        vec![None; size.to_cache_table_size::<T>()].into_boxed_slice()
+        vec![None; size.to_num_entries::<T>()].into_boxed_slice()
     }
 
     #[inline]

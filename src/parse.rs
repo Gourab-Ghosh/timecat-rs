@@ -84,10 +84,9 @@ impl UserCommand {
             &Self::SetDebugMode(b) => GLOBAL_TIMECAT_STATE.set_debug_mode(b),
             Self::PrintText(s) => println_wasm!("{s}"),
             Self::DisplayBoard => println_wasm!("{}", engine.get_board()),
-            Self::DisplayBoardEvaluation => force_println_info(
-                "Current Score",
-                engine.evaluate_board().stringify(),
-            ),
+            Self::DisplayBoardEvaluation => {
+                force_println_info("Current Score", engine.evaluate_board().stringify())
+            }
             Self::PrintUCIInfo => Self::print_engine_uci_info(uci_state_manager),
             Self::UCIMode => {
                 Self::PrintUCIInfo.run_command(engine, uci_state_manager)?;
@@ -207,10 +206,7 @@ impl GoAndPerft {
         }
     }
 
-    fn run_perft_command(
-        engine: &mut impl ChessEngine,
-        depth: Depth,
-    ) -> Result<()> {
+    fn run_perft_command(engine: &mut impl ChessEngine, depth: Depth) -> Result<()> {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!("{}\n", engine.get_board());
         }
@@ -228,10 +224,7 @@ impl GoAndPerft {
         Ok(())
     }
 
-    fn run_go_command(
-        engine: &mut impl ChessEngine,
-        go_command: GoCommand,
-    ) -> Result<()> {
+    fn run_go_command(engine: &mut impl ChessEngine, go_command: GoCommand) -> Result<()> {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!("{}\n", engine.get_board());
         }

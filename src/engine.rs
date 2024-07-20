@@ -29,6 +29,11 @@ impl<T: SearchControl> CustomEngine<T> {
         }
     }
 
+    #[inline]
+    fn get_transposition_table(&self) -> &TranspositionTable {
+        &self.transposition_table
+    }
+
     fn reset_variables(&mut self) {
         self.num_nodes_searched.store(0, MEMORY_ORDERING);
         self.selective_depth.store(0, MEMORY_ORDERING);
@@ -103,6 +108,9 @@ impl<T: SearchControl> CustomEngine<T> {
 }
 
 impl<T: SearchControl> ChessEngine for CustomEngine<T> {
+    type TranspositionTable = TranspositionTable;
+    type IoReader = IoReader;
+
     #[inline]
     fn get_board(&self) -> &Board {
         &self.board
@@ -123,12 +131,14 @@ impl<T: SearchControl> ChessEngine for CustomEngine<T> {
     fn evaluate_board(&mut self) -> Score {
         self.board.evaluate()
     }
-    
-    #[inline]
-    fn get_transposition_table(&self) -> &TranspositionTable {
-        &self.transposition_table
+
+    fn set_transposition_table_size(&self, size: CacheTableSize) {
+        self.transposition_table.set_size(size);
+        if GLOBAL_TIMECAT_STATE.is_in_debug_mode() {
+            self.transposition_table.print_info();
+        }
     }
-    
+
     #[inline]
     fn get_num_threads(&self) -> usize {
         self.num_threads.get()
@@ -168,7 +178,7 @@ impl<T: SearchControl> ChessEngine for CustomEngine<T> {
         self.get_transposition_table().clear();
         self.get_board().get_evaluator().clear();
     }
-    
+
     fn print_info(&self) {
         print_engine_version();
         println_wasm!();
@@ -177,12 +187,12 @@ impl<T: SearchControl> ChessEngine for CustomEngine<T> {
     }
 
     #[inline]
-    fn get_optional_io_reader(&self) -> Option<IoReader> {
+    fn get_optional_io_reader(&self) -> Option<Self::IoReader> {
         self.optional_io_reader.clone()
     }
 
     #[inline]
-    fn set_optional_io_reader(&mut self, optional_io_reader: IoReader) {
+    fn set_optional_io_reader(&mut self, optional_io_reader: Self::IoReader) {
         self.optional_io_reader = Some(optional_io_reader);
     }
 

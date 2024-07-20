@@ -76,10 +76,10 @@ pub use binread::{BinRead, BinResult};
 pub use board::*;
 pub use chess::*;
 pub use constants::atomic::*;
-pub use constants::bitboard_and_square::*;
-pub use constants::board::*;
 #[cfg(feature = "binary")]
 pub use constants::binary::*;
+pub use constants::bitboard_and_square::*;
+pub use constants::board::*;
 pub use constants::cache_table::*;
 pub use constants::color::*;
 pub use constants::default_parameters::*;
