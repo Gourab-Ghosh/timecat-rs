@@ -520,7 +520,9 @@ impl Parser {
             #[cfg(feature = "inbuilt_nnue")]
             "eval" => UserCommand::DisplayBoardEvaluation.into(),
             #[cfg(not(feature = "inbuilt_nnue"))]
-            "eval" => Err(TimecatError::FeatureNotEnabled { s: "inbuilt nnue".to_string() }),
+            "eval" => Err(TimecatError::FeatureNotEnabled {
+                s: "inbuilt nnue".to_string(),
+            }),
             "reset board" => UserCommand::SetFen(STARTING_POSITION_FEN.to_owned()).into(),
             "stop" => UserCommand::Stop.into(),
             "help" => UserCommand::Help.into(),
