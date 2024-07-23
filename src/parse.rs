@@ -17,6 +17,7 @@ pub enum UserCommand {
     SetDebugMode(bool),
     PrintText(String),
     DisplayBoard,
+    #[cfg(feature = "inbuilt_nnue")]
     DisplayBoardEvaluation,
     PrintUCIInfo,
     UCIMode,
@@ -84,9 +85,11 @@ impl UserCommand {
             &Self::SetDebugMode(b) => GLOBAL_TIMECAT_STATE.set_debug_mode(b),
             Self::PrintText(s) => println_wasm!("{s}"),
             Self::DisplayBoard => println_wasm!("{}", engine.get_board()),
-            Self::DisplayBoardEvaluation => {
-                force_println_info("Current Score", engine.evaluate_board().stringify())
-            }
+            #[cfg(feature = "inbuilt_nnue")]
+            Self::DisplayBoardEvaluation => force_println_info(
+                "Current Score",
+                engine.get_board_mut().evaluate().stringify(),
+            ),
             Self::PrintUCIInfo => Self::print_engine_uci_info(uci_state_manager),
             Self::UCIMode => {
                 Self::PrintUCIInfo.run_command(engine, uci_state_manager)?;
@@ -514,7 +517,10 @@ impl Parser {
             }
             "isready" => UserCommand::IsReady.into(),
             "d" => UserCommand::DisplayBoard.into(),
+            #[cfg(feature = "inbuilt_nnue")]
             "eval" => UserCommand::DisplayBoardEvaluation.into(),
+            #[cfg(not(feature = "inbuilt_nnue"))]
+            "eval" => Err(TimecatError::FeatureNotEnabled { s: "inbuilt nnue".to_string() }),
             "reset board" => UserCommand::SetFen(STARTING_POSITION_FEN.to_owned()).into(),
             "stop" => UserCommand::Stop.into(),
             "help" => UserCommand::Help.into(),

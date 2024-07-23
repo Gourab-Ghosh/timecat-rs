@@ -34,19 +34,6 @@ impl<T: SearchControl> CustomEngine<T> {
         &self.transposition_table
     }
 
-    fn reset_variables(&mut self) {
-        self.num_nodes_searched.store(0, MEMORY_ORDERING);
-        self.selective_depth.store(0, MEMORY_ORDERING);
-        self.controller.reset_variables();
-        self.board.get_evaluator().reset_variables();
-        if CLEAR_TABLE_AFTER_EACH_SEARCH {
-            self.transposition_table.clear();
-        }
-        self.transposition_table.reset_variables();
-        self.set_stop_command(false);
-        self.set_termination(false);
-    }
-
     #[inline]
     pub fn get_search_controller(&self) -> &impl SearchControl {
         &self.controller
@@ -60,6 +47,21 @@ impl<T: SearchControl> CustomEngine<T> {
     #[inline]
     pub fn get_selective_depth(&self) -> Ply {
         self.selective_depth.load(MEMORY_ORDERING)
+    }
+
+    #[inline]
+    fn get_num_threads(&self) -> usize {
+        self.num_threads.get()
+    }
+
+    #[inline]
+    fn get_move_overhead(&self) -> Duration {
+        self.controller.get_move_overhead()
+    }
+
+    #[inline]
+    fn get_optional_io_reader(&self) -> Option<IoReader> {
+        self.optional_io_reader.clone()
     }
 
     #[inline]
@@ -108,7 +110,6 @@ impl<T: SearchControl> CustomEngine<T> {
 }
 
 impl<T: SearchControl> ChessEngine for CustomEngine<T> {
-    type TranspositionTable = TranspositionTable;
     type IoReader = IoReader;
 
     #[inline]
@@ -121,15 +122,17 @@ impl<T: SearchControl> ChessEngine for CustomEngine<T> {
         &mut self.board
     }
 
-    fn set_fen(&mut self, fen: &str) -> Result<()> {
-        self.board.set_fen(fen)?;
-        self.reset_variables();
-        Ok(())
-    }
-
-    #[inline]
-    fn evaluate_board(&mut self) -> Score {
-        self.board.evaluate()
+    fn reset_variables(&mut self) {
+        self.num_nodes_searched.store(0, MEMORY_ORDERING);
+        self.selective_depth.store(0, MEMORY_ORDERING);
+        self.controller.reset_variables();
+        self.board.get_evaluator().reset_variables();
+        if CLEAR_TABLE_AFTER_EACH_SEARCH {
+            self.transposition_table.clear();
+        }
+        self.transposition_table.reset_variables();
+        self.set_stop_command(false);
+        self.set_termination(false);
     }
 
     fn set_transposition_table_size(&self, size: CacheTableSize) {
@@ -140,18 +143,8 @@ impl<T: SearchControl> ChessEngine for CustomEngine<T> {
     }
 
     #[inline]
-    fn get_num_threads(&self) -> usize {
-        self.num_threads.get()
-    }
-
-    #[inline]
     fn set_num_threads(&mut self, num_threads: NonZeroUsize) {
         self.num_threads = num_threads;
-    }
-
-    #[inline]
-    fn get_move_overhead(&self) -> Duration {
-        self.controller.get_move_overhead()
     }
 
     #[inline]
@@ -184,11 +177,6 @@ impl<T: SearchControl> ChessEngine for CustomEngine<T> {
         println_wasm!();
         self.transposition_table.print_info();
         self.board.get_evaluator().print_info();
-    }
-
-    #[inline]
-    fn get_optional_io_reader(&self) -> Option<Self::IoReader> {
-        self.optional_io_reader.clone()
     }
 
     #[inline]

@@ -86,26 +86,34 @@ pub trait SearchControl: Clone + Send + 'static {
 }
 
 pub trait ChessEngine {
-    type TranspositionTable;
     type IoReader;
 
     fn get_board(&self) -> &Board;
     fn get_board_mut(&mut self) -> &mut Board;
-    fn evaluate_board(&mut self) -> Score;
-    fn set_fen(&mut self, fen: &str) -> Result<()>;
     fn set_transposition_table_size(&self, size: CacheTableSize);
-    fn get_num_threads(&self) -> usize;
     fn set_num_threads(&mut self, num_threads: NonZeroUsize);
-    fn get_move_overhead(&self) -> Duration;
     fn set_move_overhead(&mut self, duration: Duration);
     fn get_num_nodes_searched(&self) -> usize;
     fn terminate(&self) -> bool;
     fn set_termination(&self, b: bool);
     fn clear_hash(&self);
-    fn print_info(&self);
-    fn get_optional_io_reader(&self) -> Option<Self::IoReader>;
-    fn set_optional_io_reader(&mut self, optional_io_reader: Self::IoReader);
     fn go(&mut self, command: GoCommand, verbose: bool) -> SearchInfo;
+
+    fn set_fen(&mut self, fen: &str) -> Result<()> {
+        self.get_board_mut().set_fen(fen)?;
+        self.reset_variables();
+        Ok(())
+    }
+
+    #[inline]
+    fn print_info(&self) {}
+
+    #[inline]
+    fn reset_variables(&mut self) {}
+
+    #[inline]
+    #[allow(unused_variables)]
+    fn set_optional_io_reader(&mut self, optional_io_reader: Self::IoReader) {}
 
     #[inline]
     #[must_use = "If you don't need the response, you can just search the position."]
