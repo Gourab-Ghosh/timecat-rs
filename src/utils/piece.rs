@@ -56,8 +56,8 @@ impl PieceType {
         // never reset knight and bishop values as some logic depends on the current values in knight bishop endgame
         match self {
             Pawn => PAWN_VALUE,
-            Knight => (32 * PAWN_VALUE) / 10,
-            Bishop => (33 * PAWN_VALUE) / 10,
+            Knight => const { (32 * PAWN_VALUE) / 10 },
+            Bishop => const { (33 * PAWN_VALUE) / 10 },
             Rook => 5 * PAWN_VALUE,
             Queen => 9 * PAWN_VALUE,
             King => 20 * PAWN_VALUE,
