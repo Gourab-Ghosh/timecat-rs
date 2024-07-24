@@ -172,11 +172,11 @@ impl SearchInfo {
     }
 
     pub fn get_score(&self) -> Score {
-        let mut score = self.score;
-        if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-            score = self.sub_board.score_flipped(score);
-        }
-        score
+        self.score
+    }
+
+    pub fn get_score_flipped(&self) -> Score {
+        self.sub_board.score_flipped(self.get_score())
     }
 
     pub fn get_time_elapsed(&self) -> Duration {
@@ -232,7 +232,11 @@ impl SearchInfo {
             self.current_depth,
             alpha.stringify(),
             beta.stringify(),
-            self.get_score().stringify(),
+                if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
+                    self.get_score()
+                } else {
+                    self.get_score_flipped()
+                }.stringify(),
             self.get_time_elapsed().stringify(),
         );
         println_wasm!("{}", warning_message.colorize(WARNING_MESSAGE_STYLE));
@@ -242,7 +246,7 @@ impl SearchInfo {
 #[cfg(feature = "inbuilt_engine")]
 impl From<&Searcher> for SearchInfo {
     fn from(searcher: &Searcher) -> Self {
-        Self {
+        let mut search_info = Self {
             sub_board: searcher.get_initial_sub_board().to_owned(),
             current_depth: searcher.get_depth_completed().saturating_add(1),
             seldepth: searcher.get_selective_depth(),
@@ -258,6 +262,8 @@ impl From<&Searcher> for SearchInfo {
             zero_hit: searcher.get_transposition_table().get_zero_hit(),
             time_elapsed: searcher.get_time_elapsed(),
             pv: searcher.get_pv().into_iter().copied().collect_vec(),
-        }
+        };
+        search_info.score = search_info.sub_board.score_flipped(search_info.score);
+        search_info
     }
 }

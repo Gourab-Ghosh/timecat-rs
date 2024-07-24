@@ -213,17 +213,17 @@ impl Board {
     }
 
     #[inline]
-    pub fn get_all_moves(&self) -> Vec<ValidOrNullMove> {
+    pub fn get_all_stack_moves(&self) -> Vec<ValidOrNullMove> {
         self.stack.iter().map(|(_, m)| *m).collect_vec()
     }
 
     #[inline]
-    pub fn get_last_move(&self) -> Option<ValidOrNullMove> {
+    pub fn get_last_stack_move(&self) -> Option<ValidOrNullMove> {
         self.stack.last().map(|(_, m)| *m)
     }
 
     #[inline]
-    pub fn contains_null_move(&self) -> bool {
+    pub fn stack_contains_null_move(&self) -> bool {
         self.stack.iter().any(|(_, m)| m.is_null())
     }
 
