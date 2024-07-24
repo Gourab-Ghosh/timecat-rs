@@ -144,10 +144,12 @@ impl SearchInfo {
         }
     }
 
+    #[inline]
     pub fn get_current_depth(&self) -> Depth {
         self.current_depth
     }
 
+    #[inline]
     pub fn get_pv(&self) -> &[Move] {
         self.pv.as_slice()
     }
@@ -167,18 +169,22 @@ impl SearchInfo {
         self.get_nth_pv_move(1)
     }
 
+    #[inline]
     pub fn set_pv(&mut self, pv: &[Move]) {
         self.pv = pv.to_vec();
     }
 
+    #[inline]
     pub fn get_score(&self) -> Score {
         self.score
     }
 
+    #[inline]
     pub fn get_score_flipped(&self) -> Score {
         self.sub_board.score_flipped(self.get_score())
     }
 
+    #[inline]
     pub fn get_time_elapsed(&self) -> Duration {
         self.time_elapsed
     }
