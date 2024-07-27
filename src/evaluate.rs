@@ -254,7 +254,7 @@ impl Evaluator {
 
     #[cfg(feature = "inbuilt_nnue")]
     #[inline]
-    pub fn slow_evaluate_only_nnue(sub_board: &SubBoard) -> Score {
+    pub fn slow_evaluate_nnue_raw(sub_board: &SubBoard) -> Score {
         HALFKP_MODEL_READER
             .to_model(sub_board)
             .evaluate_current_state(sub_board.turn())
@@ -263,7 +263,7 @@ impl Evaluator {
     #[cfg(feature = "inbuilt_nnue")]
     #[inline]
     pub fn slow_evaluate(sub_board: &SubBoard) -> Score {
-        Self::evaluate_raw(sub_board, || Self::slow_evaluate_only_nnue(sub_board))
+        Self::evaluate_raw(sub_board, || Self::slow_evaluate_nnue_raw(sub_board))
     }
 
     #[inline]
