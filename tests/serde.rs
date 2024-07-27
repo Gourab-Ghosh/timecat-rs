@@ -1,7 +1,7 @@
 #[cfg(feature = "serde")]
 mod serde_tests {
     use timecat::*;
-    
+
     fn test_serde<T>(data: T) -> std::result::Result<(), Box<dyn Error>>
     where
         T: Serialize + for<'de> Deserialize<'de> + Debug + PartialEq,
@@ -11,7 +11,7 @@ mod serde_tests {
         assert_eq!(data, de_data);
         Ok(())
     }
-    
+
     macro_rules! test_serde_wrapper {
         ($func_name: ident, $data: expr) => {
             #[test]
@@ -20,7 +20,7 @@ mod serde_tests {
             }
         };
     }
-    
+
     macro_rules! test_serde_wrapper_empty_array {
         ($func_name: ident, $type: ty) => {
             #[test]
@@ -30,14 +30,14 @@ mod serde_tests {
             }
         };
     }
-    
+
     test_serde_wrapper!(serde_wrapper_test_1, [1, 2, 3, 4, 5]);
     test_serde_wrapper!(serde_wrapper_test_2, [1, 2, 3, 4, 5].map(|i| i.to_string()));
-    
+
     test_serde_wrapper_empty_array!(serde_wrapper_empty_array_test_1, i32);
     test_serde_wrapper_empty_array!(serde_wrapper_empty_array_test_2, String);
     test_serde_wrapper_empty_array!(serde_wrapper_empty_array_test_3, Vec<String>);
-    
+
     #[test]
     fn serde_wrapper_empty_array_test_str_1() -> std::result::Result<(), Box<dyn Error>> {
         let data: SerdeWrapper<[&str; 0]> = [].into();
@@ -46,7 +46,7 @@ mod serde_tests {
         assert_eq!(data, de_data);
         Ok(())
     }
-    
+
     #[test]
     fn serde_wrapper_empty_array_test_str_2() -> std::result::Result<(), Box<dyn Error>> {
         let data: SerdeWrapper<[&str; 2]> = ["foo", "bar"].into();
