@@ -27,12 +27,16 @@ impl Evaluator {
         );
     }
 
-    #[cfg(feature = "inbuilt_nnue")]
-    pub fn new(sub_board: &SubBoard) -> Self {
+    pub fn from_model(model: HalfKPModel) -> Self {
         Self {
-            model: HALFKP_MODEL_READER.to_model(sub_board),
+            model,
             score_cache: CacheTable::new(EVALUATOR_SIZE).into(),
         }
+    }
+
+    #[cfg(feature = "inbuilt_nnue")]
+    pub fn new(sub_board: &SubBoard) -> Self {
+        Self::from_model(HALFKP_MODEL_READER.to_model(sub_board))
     }
 
     pub fn from_nnue_bytes(nnue_bytes: &[u8], sub_board: &SubBoard) -> Result<Self> {
@@ -40,11 +44,7 @@ impl Evaluator {
         let model = HalfKPModelReader::read(&mut reader)
             .map_err(|_| TimecatError::BadNNUEFile)?
             .to_model(sub_board);
-
-        Ok(Self {
-            model,
-            score_cache: CacheTable::new(EVALUATOR_SIZE).into(),
-        })
+        Ok(Self::from_model(model))
     }
 
     pub fn from_nnue_path(path: &str, sub_board: &SubBoard) -> Result<Self> {
@@ -53,11 +53,7 @@ impl Evaluator {
         let model = HalfKPModelReader::read(&mut reader)
             .map_err(|_| TimecatError::BadNNUEFile)?
             .to_model(sub_board);
-
-        Ok(Self {
-            model,
-            score_cache: CacheTable::new(EVALUATOR_SIZE).into(),
-        })
+        Ok(Self::from_model(model))
     }
 
     #[inline]
