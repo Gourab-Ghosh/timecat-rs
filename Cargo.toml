@@ -1,7 +1,7 @@
 [package]
 name = "timecat"
 authors = ["Gourab Ghosh"]
-version = "1.30.5"
+version = "1.30.6"
 edition = "2021"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
@@ -15,6 +15,7 @@ categories = ["wasm", "algorithms", "games", "game-development"]
 readme = "README.md"
 include = [
     "src/",
+    "tests/",
     "!src/**/*.bak",
     "build.rs",
     "Cargo.toml",
