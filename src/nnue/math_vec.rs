@@ -264,12 +264,10 @@ macro_rules! impl_clipped_relu {
                 min: $from,
                 max: $from,
             ) -> MathVec<$to, N> {
-                let mut v = Vec::with_capacity(N);
-                v.extend(
-                    self.array
-                        .map(|x| (x >> scale_by_pow_of_two).clamp(min, max) as $to),
-                );
-                MathVec::new(v.try_into().unwrap())
+                MathVec::new(std::array::from_fn(|i| {
+                    (get_item_unchecked!(self.array, i) >> scale_by_pow_of_two).clamp(min, max)
+                        as $to
+                }))
             }
 
             fn clipped_relu_into(
