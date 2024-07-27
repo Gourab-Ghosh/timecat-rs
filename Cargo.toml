@@ -64,7 +64,6 @@ serde_json = "1"
 [features]
 # default = ["binary", "inbuilt_engine", "serde"]
 # default = ["debug"]
-# default = ["debug"]
 default = ["binary", "inbuilt_engine", "colored"]
 binary = []
 binread = ["dep:binread"]
