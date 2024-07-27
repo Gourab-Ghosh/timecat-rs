@@ -16,7 +16,7 @@ impl<T> SerdeWrapper<T> {
     }
 
     pub fn from_boxed_value(value: Box<T>) -> Box<Self> {
-        let raw: *mut T = Box::into_raw(value);
+        let raw = Box::into_raw(value);
         let wrapped_raw = raw as *mut Self;
         unsafe { Box::from_raw(wrapped_raw) }
     }

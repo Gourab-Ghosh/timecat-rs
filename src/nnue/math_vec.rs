@@ -264,10 +264,11 @@ macro_rules! impl_clipped_relu {
                 min: $from,
                 max: $from,
             ) -> MathVec<$to, N> {
-                MathVec::new(std::array::from_fn(|i| {
+                std::array::from_fn(|i| {
                     (get_item_unchecked!(self.array, i) >> scale_by_pow_of_two).clamp(min, max)
                         as $to
-                }))
+                })
+                .into()
             }
 
             fn clipped_relu_into(
@@ -325,14 +326,19 @@ impl<T, const N: usize> TryFrom<Vec<T>> for MathVec<T, N> {
     }
 }
 
+// impl<'a, T, U: From<&'a T> + Debug, const N: usize> From<&'a MathVec<T, N>> for MathVec<U, N> {
+//     fn from(value: &'a MathVec<T, N>) -> Self {
+//         value
+//             .iter()
+//             .map_into()
+//             .collect_vec()
+//             .try_into()
+//             .unwrap()
+//     }
+// }
+
 impl<T: Clone, U: From<T> + Debug, const N: usize> From<&MathVec<T, N>> for MathVec<U, N> {
     fn from(value: &MathVec<T, N>) -> Self {
-        value
-            .iter()
-            .cloned()
-            .map_into()
-            .collect_vec()
-            .try_into()
-            .unwrap()
+        std::array::from_fn(|i| get_item_unchecked!(value, i).clone().into()).into()
     }
 }
