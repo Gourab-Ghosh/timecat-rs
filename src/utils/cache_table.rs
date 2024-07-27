@@ -70,7 +70,7 @@ impl CacheTableSize {
 
     #[inline]
     pub const fn get_entry_size<T>() -> usize {
-        std::mem::size_of::<Option<CacheTableEntry<T>>>()
+        size_of::<Option<CacheTableEntry<T>>>()
     }
 
     pub fn to_num_entries_and_entry_size<T>(self) -> (usize, usize) {

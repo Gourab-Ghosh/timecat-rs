@@ -2,6 +2,7 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
 #![allow(clippy::needless_doctest_main)]
+#![allow(clippy::too_many_arguments)]
 // #![warn(missing_docs)]
 
 pub mod board;
@@ -135,7 +136,7 @@ pub use std::ops::{
 };
 pub use std::str::{FromStr, ParseBoolError};
 pub use std::sync::atomic::{AtomicBool, AtomicUsize};
-pub use std::sync::{Arc, RwLock};
+pub use std::sync::{Arc, LazyLock, RwLock};
 pub use std::thread;
 #[cfg(not(feature = "wasm"))]
 pub use std::time::{Duration, Instant};
