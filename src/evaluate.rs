@@ -248,7 +248,7 @@ impl Evaluator {
     }
 
     #[inline]
-    pub(crate) fn evaluate(&mut self, sub_board: &SubBoard) -> Score {
+    pub fn evaluate(&mut self, sub_board: &SubBoard) -> Score {
         self.hashed_evaluate(sub_board)
     }
 
