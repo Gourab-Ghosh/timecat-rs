@@ -1,4 +1,5 @@
 use super::*;
+use engine::EngineProperties;
 use EntryFlag::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -68,6 +69,7 @@ pub struct Searcher<P: PositionEvaluation> {
     is_outside_aspiration_window: bool,
     clock: Instant,
     stop_command: SerdeWrapper<Arc<AtomicBool>>,
+    properties: EngineProperties,
 }
 
 impl<P: PositionEvaluation> Searcher<P> {
@@ -79,6 +81,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         num_nodes_searched: Arc<AtomicUsize>,
         selective_depth: Arc<AtomicUsize>,
         stop_command: Arc<AtomicBool>,
+        properties: EngineProperties,
     ) -> Self {
         Self {
             id,
@@ -97,6 +100,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             is_outside_aspiration_window: false,
             clock: Instant::now(),
             stop_command: stop_command.into(),
+            properties,
         }
     }
 
@@ -417,17 +421,19 @@ impl<P: PositionEvaluation> Searcher<P> {
         if self.board.is_other_draw() {
             return Some(0);
         }
-        // // mate distance pruning
-        // alpha = alpha.max(-mate_score);
-        // beta = beta.min(mate_score - 1);
-        // if alpha >= beta {
-        //     return Some(alpha);
-        // }
-        // mate distance pruning
-        if mate_score < beta {
-            beta = mate_score;
-            if alpha >= mate_score {
-                return Some(mate_score);
+        if self.properties.use_mate_distance_pruning() {
+            // // mate distance pruning
+            // alpha = alpha.max(-mate_score);
+            // beta = beta.min(mate_score - 1);
+            // if alpha >= beta {
+            //     return Some(alpha);
+            // }
+            // mate distance pruning
+            if mate_score < beta {
+                beta = mate_score;
+                if alpha >= mate_score {
+                    return Some(mate_score);
+                }
             }
         }
         let checkers = self.board.get_checkers();

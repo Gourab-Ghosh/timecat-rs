@@ -1,6 +1,30 @@
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone)]
+pub struct EngineProperties {
+    _use_mate_distance_pruning: bool
+}
+
+impl EngineProperties {
+    pub fn use_mate_distance_pruning(&self) -> bool {
+        self._use_mate_distance_pruning
+    }
+
+    pub fn set_using_mate_distance_pruning(&mut self, value: bool) {
+        self._use_mate_distance_pruning = value;
+    }
+}
+
+impl Default for EngineProperties {
+    fn default() -> Self {
+        Self {
+            _use_mate_distance_pruning: true,
+        }
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
     board: Board,
@@ -13,6 +37,7 @@ pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
     optional_io_reader: Option<IoReader>,
     stop_command: SerdeWrapper<Arc<AtomicBool>>,
     terminate: SerdeWrapper<Arc<AtomicBool>>,
+    properties: EngineProperties,
 }
 
 impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
@@ -33,6 +58,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
             optional_io_reader: None,
             stop_command: AtomicBool::new(false).into(),
             terminate: AtomicBool::new(false).into(),
+            properties: EngineProperties::default(),
         }
     }
 
@@ -49,6 +75,16 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
     #[inline]
     pub fn get_search_controller_mut(&mut self) -> &mut impl SearchControl<Searcher<P>> {
         &mut self.controller
+    }
+
+    #[inline]
+    pub fn get_properties(&self) -> &EngineProperties {
+        &self.properties
+    }
+
+    #[inline]
+    pub fn get_properties_mut(&mut self) -> &mut EngineProperties {
+        &mut self.properties
     }
 
     #[inline]
@@ -81,6 +117,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
             self.num_nodes_searched.clone().into_inner(),
             self.selective_depth.clone().into_inner(),
             self.stop_command.clone().into_inner(),
+            self.properties.clone(),
         )
     }
 
@@ -266,6 +303,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> Clone for CustomEngin
             optional_io_reader: self.optional_io_reader.clone(),
             stop_command: AtomicBool::new(self.stop_command.load(MEMORY_ORDERING)).into(),
             terminate: AtomicBool::new(self.terminate.load(MEMORY_ORDERING)).into(),
+            properties: self.properties.clone(),
             ..*self
         }
     }
