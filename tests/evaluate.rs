@@ -2,7 +2,10 @@
 mod model_update_test {
     use timecat::*;
 
-    fn check_evaluation(board: &mut Board, depth: u8) -> std::result::Result<(), Vec<ValidOrNullMove>> {
+    fn check_evaluation(
+        board: &mut Board,
+        depth: u8,
+    ) -> std::result::Result<(), Vec<ValidOrNullMove>> {
         if depth == 0 {
             return Ok(());
         }
@@ -22,7 +25,7 @@ mod model_update_test {
         }
         Ok(())
     }
-    
+
     macro_rules! test_model_updated_correctly {
         ($func_name: ident, $fen: expr, $depth: expr) => {
             #[test]
@@ -39,7 +42,7 @@ mod model_update_test {
             }
         };
     }
-    
+
     test_model_updated_correctly!(model_accumulator_update_test_1, STARTING_POSITION_FEN, 4);
     test_model_updated_correctly!(
         model_accumulator_update_test_2,
