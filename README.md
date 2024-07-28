@@ -61,9 +61,9 @@ cargo add timecat --no-default-features
 ### Examples
 This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize the inbuilt engine to find optimal moves using the `timecat` library. Some features such as position evaluation (`inbuilt_nnue`) and engine computation (`engine`) are optional and can be enabled via cargo features.
 
-First, add the timecat crate to your project with the necessary features enabled (`inbuilt_nnue` feature is already enabled within the `inbuilt_engine` feature):
+First, add the timecat crate to your project with the necessary features enabled:
 ```bash
-cargo add timecat --no-default-features --features engine
+cargo add timecat --no-default-features --features "inbuilt_nnue inbuilt_engine extras"
 ```
 
 Then, you can proceed with the following Rust code:
