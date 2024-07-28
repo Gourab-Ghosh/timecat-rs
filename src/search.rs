@@ -51,10 +51,11 @@ impl Default for PVTable {
 
 // #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
-pub struct Searcher {
+pub struct Searcher<P: PositionEvaluation> {
     id: usize,
     initial_sub_board: SubBoard,
     board: Board,
+    evaluator: P,
     transposition_table: SerdeWrapper<Arc<TranspositionTable>>,
     pv_table: PVTable,
     best_moves: Vec<Move>,
@@ -69,10 +70,11 @@ pub struct Searcher {
     stop_command: SerdeWrapper<Arc<AtomicBool>>,
 }
 
-impl Searcher {
+impl<P: PositionEvaluation> Searcher<P> {
     pub fn new(
         id: usize,
         board: Board,
+        evaluator: P,
         transposition_table: Arc<TranspositionTable>,
         num_nodes_searched: Arc<AtomicUsize>,
         selective_depth: Arc<AtomicUsize>,
@@ -82,6 +84,7 @@ impl Searcher {
             id,
             initial_sub_board: board.get_sub_board().to_owned(),
             board,
+            evaluator,
             transposition_table: transposition_table.into(),
             pv_table: PVTable::new(),
             best_moves: Vec::new(),
@@ -216,7 +219,10 @@ impl Searcher {
     }
 
     #[inline]
-    pub fn stop_search_at_every_node(&self, controller: Option<&mut impl SearchControl>) -> bool {
+    pub fn stop_search_at_every_node(
+        &self,
+        controller: Option<&mut impl SearchControl<Self>>,
+    ) -> bool {
         if self.stop_command.load(MEMORY_ORDERING) {
             return true;
         }
@@ -230,6 +236,10 @@ impl Searcher {
     fn pop(&mut self) -> ValidOrNullMove {
         self.ply -= 1;
         self.board.pop()
+    }
+
+    fn evaluate_flipped(&mut self) -> Score {
+        self.evaluator.evaluate_flipped(&self.board)
     }
 
     #[inline]
@@ -282,13 +292,18 @@ impl Searcher {
                 self.transposition_table
                     .read_best_move(self.board.get_hash()),
                 self.get_best_move(),
-                Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
             )
             .map(|WeightedMove { move_, .. }| {
                 let pv_move = self.get_best_move();
                 (
                     move_,
-                    MoveSorter::score_root_moves(&mut self.board, move_, pv_move, &self.best_moves),
+                    MoveSorter::score_root_moves(
+                        &mut self.board,
+                        &mut self.evaluator,
+                        move_,
+                        pv_move,
+                        &self.best_moves,
+                    ),
                 )
             })
             .collect_vec();
@@ -301,7 +316,7 @@ impl Searcher {
         depth: Depth,
         mut alpha: Score,
         beta: Score,
-        mut controller: Option<&mut impl SearchControl>,
+        mut controller: Option<&mut impl SearchControl<Self>>,
         print_move_info: bool,
     ) -> Option<Score> {
         if FOLLOW_PV {
@@ -395,7 +410,7 @@ impl Searcher {
         mut depth: Depth,
         mut alpha: Score,
         mut beta: Score,
-        mut controller: Option<&mut impl SearchControl>,
+        mut controller: Option<&mut impl SearchControl<Self>>,
     ) -> Option<Score> {
         self.pv_table.set_length(self.ply, self.ply);
         let mate_score = CHECKMATE_SCORE - self.ply as Score;
@@ -453,7 +468,7 @@ impl Searcher {
             best_move
         };
         if self.ply == MAX_PLY - 1 {
-            return Some(self.board.evaluate_flipped());
+            return Some(self.evaluate_flipped());
         }
         // enable_controller &= depth > 3;
         if self.stop_search_at_every_node(controller.as_deref_mut()) {
@@ -467,7 +482,7 @@ impl Searcher {
         let mut futility_pruning = false;
         if not_in_check && !DISABLE_ALL_PRUNINGS {
             // static evaluation
-            let static_evaluation = self.board.evaluate_flipped();
+            let static_evaluation = self.evaluate_flipped();
             if depth < 3 && !is_pv_node && !is_checkmate(beta) {
                 let eval_margin = ((6 * PAWN_VALUE) / 5) * depth as Score;
                 let new_score = static_evaluation - eval_margin;
@@ -531,7 +546,6 @@ impl Searcher {
             self.ply,
             best_move,
             self.get_nth_pv_move(self.ply),
-            Evaluator::is_easily_winning_position(&self.board, self.board.get_material_score()),
         );
         if weighted_moves.is_empty() {
             return if not_in_check {
@@ -630,7 +644,7 @@ impl Searcher {
 
     fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {
         if self.ply == MAX_PLY - 1 {
-            return self.board.evaluate_flipped();
+            return self.evaluate_flipped();
         }
         self.pv_table.set_length(self.ply, self.ply);
         if self.board.is_other_draw() {
@@ -640,7 +654,7 @@ impl Searcher {
             self.selective_depth.fetch_max(self.ply, MEMORY_ORDERING);
         }
         self.num_nodes_searched.fetch_add(1, MEMORY_ORDERING);
-        let evaluation = self.board.evaluate_flipped();
+        let evaluation = self.evaluate_flipped();
         if evaluation >= beta {
             return beta;
         }
@@ -679,7 +693,7 @@ impl Searcher {
     pub fn go(
         &mut self,
         mut command: GoCommand,
-        mut controller: impl SearchControl,
+        mut controller: impl SearchControl<Self>,
         verbose: bool,
     ) {
         if self.board.generate_legal_moves().len() == 1 {
@@ -730,14 +744,14 @@ impl Searcher {
     }
 }
 
-impl SearcherMethodOverload<Move> for Searcher {
+impl<P: PositionEvaluation> SearcherMethodOverload<Move> for Searcher<P> {
     fn push_unchecked(&mut self, move_: Move) {
         self.board.push_unchecked(move_);
         self.ply += 1;
     }
 }
 
-impl SearcherMethodOverload<ValidOrNullMove> for Searcher {
+impl<P: PositionEvaluation> SearcherMethodOverload<ValidOrNullMove> for Searcher<P> {
     fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
         self.board.push_unchecked(valid_or_null_move);
         self.ply += 1;

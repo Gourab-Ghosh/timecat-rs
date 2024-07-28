@@ -88,7 +88,7 @@ impl UserCommand {
             #[cfg(feature = "inbuilt_nnue")]
             Self::DisplayBoardEvaluation => force_println_info(
                 "Current Score",
-                engine.get_board_mut().evaluate().stringify(),
+                engine.evaluate_current_position().stringify(),
             ),
             Self::PrintUCIInfo => Self::print_engine_uci_info(uci_state_manager),
             Self::UCIMode => {

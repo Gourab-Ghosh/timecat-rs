@@ -2,9 +2,10 @@ use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
-pub struct CustomEngine<T: SearchControl> {
+pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
     board: Board,
     transposition_table: SerdeWrapper<Arc<TranspositionTable>>,
+    evaluator: P,
     controller: T,
     num_threads: NonZeroUsize,
     num_nodes_searched: SerdeWrapper<Arc<AtomicUsize>>,
@@ -14,11 +15,17 @@ pub struct CustomEngine<T: SearchControl> {
     terminate: SerdeWrapper<Arc<AtomicBool>>,
 }
 
-impl<T: SearchControl> CustomEngine<T> {
-    pub fn new(board: Board, transposition_table: TranspositionTable, controller: T) -> Self {
+impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
+    pub fn new(
+        board: Board,
+        transposition_table: TranspositionTable,
+        controller: T,
+        evaluator: P,
+    ) -> Self {
         Self {
             board,
             transposition_table: transposition_table.into(),
+            evaluator,
             controller,
             num_threads: TIMECAT_DEFAULTS.num_threads,
             num_nodes_searched: AtomicUsize::new(0).into(),
@@ -35,12 +42,12 @@ impl<T: SearchControl> CustomEngine<T> {
     }
 
     #[inline]
-    pub fn get_search_controller(&self) -> &impl SearchControl {
+    pub fn get_search_controller(&self) -> &impl SearchControl<Searcher<P>> {
         &self.controller
     }
 
     #[inline]
-    pub fn get_search_controller_mut(&mut self) -> &mut impl SearchControl {
+    pub fn get_search_controller_mut(&mut self) -> &mut impl SearchControl<Searcher<P>> {
         &mut self.controller
     }
 
@@ -65,10 +72,11 @@ impl<T: SearchControl> CustomEngine<T> {
     }
 
     #[inline]
-    pub fn generate_searcher(&self, id: usize) -> Searcher {
+    pub fn generate_searcher(&self, id: usize) -> Searcher<P> {
         Searcher::new(
             id,
             self.board.clone(),
+            self.evaluator.clone(),
             self.transposition_table.clone().into_inner(),
             self.num_nodes_searched.clone().into_inner(),
             self.selective_depth.clone().into_inner(),
@@ -109,7 +117,7 @@ impl<T: SearchControl> CustomEngine<T> {
     }
 }
 
-impl<T: SearchControl> ChessEngine for CustomEngine<T> {
+impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for CustomEngine<T, P> {
     type IoReader = IoReader;
 
     #[inline]
@@ -126,7 +134,7 @@ impl<T: SearchControl> ChessEngine for CustomEngine<T> {
         self.num_nodes_searched.store(0, MEMORY_ORDERING);
         self.selective_depth.store(0, MEMORY_ORDERING);
         self.controller.reset_variables();
-        self.board.get_evaluator().reset_variables();
+        self.evaluator.reset_variables();
         if CLEAR_TABLE_AFTER_EACH_SEARCH {
             self.transposition_table.clear();
         }
@@ -167,21 +175,31 @@ impl<T: SearchControl> ChessEngine for CustomEngine<T> {
         self.terminate.store(b, MEMORY_ORDERING);
     }
 
-    fn clear_hash(&self) {
+    fn clear_hash(&mut self) {
         self.get_transposition_table().clear();
-        self.get_board().get_evaluator().clear();
+        self.evaluator.clear();
     }
 
     fn print_info(&self) {
         print_engine_version();
         println_wasm!();
         self.transposition_table.print_info();
-        self.board.get_evaluator().print_info();
+        self.evaluator.print_info();
     }
 
     #[inline]
     fn set_optional_io_reader(&mut self, optional_io_reader: Self::IoReader) {
         self.optional_io_reader = Some(optional_io_reader);
+    }
+
+    #[inline]
+    fn evaluate_current_position(&mut self) -> Score {
+        self.evaluator.evaluate(&self.board)
+    }
+
+    #[inline]
+    fn evaluate_current_position_flipped(&mut self) -> Score {
+        self.evaluator.evaluate_flipped(&self.board)
     }
 
     #[must_use = "If you don't need the response, you can just search the position."]
@@ -218,10 +236,15 @@ impl<T: SearchControl> ChessEngine for CustomEngine<T> {
     }
 }
 
-impl<T: SearchControl + Default> CustomEngine<T> {
+impl<T: SearchControl<Searcher<P>> + Default, P: PositionEvaluation + Default> CustomEngine<T, P> {
     #[inline]
     pub fn from_board(board: Board) -> Self {
-        Self::new(board, TranspositionTable::default(), T::default())
+        Self::new(
+            board,
+            TranspositionTable::default(),
+            T::default(),
+            P::default(),
+        )
     }
 
     #[inline]
@@ -230,11 +253,12 @@ impl<T: SearchControl + Default> CustomEngine<T> {
     }
 }
 
-impl<T: SearchControl> Clone for CustomEngine<T> {
+impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> Clone for CustomEngine<T, P> {
     fn clone(&self) -> Self {
         Self {
             board: self.board.clone(),
             transposition_table: self.transposition_table.as_ref().clone().into(),
+            evaluator: self.evaluator.clone(),
             controller: self.controller.clone(),
             num_nodes_searched: AtomicUsize::new(self.num_nodes_searched.load(MEMORY_ORDERING))
                 .into(),
@@ -247,12 +271,15 @@ impl<T: SearchControl> Clone for CustomEngine<T> {
     }
 }
 
-impl<T: SearchControl + Default> Default for CustomEngine<T> {
+impl<T: SearchControl<Searcher<P>> + Default, P: PositionEvaluation + Default> Default
+    for CustomEngine<T, P>
+{
     fn default() -> Self {
         Self::new(
             Board::default(),
             TranspositionTable::default(),
             T::default(),
+            P::default(),
         )
     }
 }

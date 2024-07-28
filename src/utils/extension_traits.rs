@@ -68,8 +68,8 @@ pub trait StringifyMove {
 }
 
 #[cfg(feature = "inbuilt_engine")]
-// TODO: Try to remove static lifetime from T
-pub trait SearchControl: Clone + Send + 'static {
+// TODO: Try to remove static lifetime from the trait
+pub trait SearchControl<Searcher>: Clone + Send + 'static {
     fn get_move_overhead(&self) -> Duration;
     fn set_move_overhead(&mut self, duration: Duration);
     fn reset_variables(&mut self);
@@ -85,6 +85,25 @@ pub trait SearchControl: Clone + Send + 'static {
     }
 }
 
+// TODO: Try to remove static lifetime from the trait
+pub trait PositionEvaluation: Clone + Send + 'static {
+    fn evaluate(&mut self, sub_board: &SubBoard) -> Score;
+
+    #[inline]
+    fn reset_variables(&mut self) {}
+
+    #[inline]
+    fn clear(&mut self) {}
+
+    #[inline]
+    fn print_info(&self) {}
+
+    #[inline]
+    fn evaluate_flipped(&mut self, sub_board: &SubBoard) -> Score {
+        sub_board.score_flipped(self.evaluate(sub_board))
+    }
+}
+
 pub trait ChessEngine {
     type IoReader;
 
@@ -96,7 +115,9 @@ pub trait ChessEngine {
     fn get_num_nodes_searched(&self) -> usize;
     fn terminate(&self) -> bool;
     fn set_termination(&self, b: bool);
-    fn clear_hash(&self);
+    fn clear_hash(&mut self);
+    fn evaluate_current_position(&mut self) -> Score;
+    fn evaluate_current_position_flipped(&mut self) -> Score;
     fn go(&mut self, command: GoCommand, verbose: bool) -> SearchInfo;
 
     fn set_fen(&mut self, fen: &str) -> Result<()> {

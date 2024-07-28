@@ -211,7 +211,6 @@ impl MoveSorter {
         ply: Ply,
         best_move: Option<Move>,
         pv_move: Option<Move>,
-        is_easily_winning_position: bool,
     ) -> MoveWeight {
         // pv move
         if self.score_pv && pv_move == Some(move_) {
@@ -238,18 +237,10 @@ impl MoveSorter {
         if history_score != 0 {
             return 400000 + history_score;
         }
-        // move pieces towards the king
-        let source = move_.get_source();
-        let dest = move_.get_dest();
-        if is_easily_winning_position {
-            if let Some(score) = Self::score_easily_winning_position_moves(board, source, dest) {
-                return 300000 + score;
-            }
-        }
         let move_made_sub_board = board.make_move_new(move_);
         // check
         let checkers = move_made_sub_board.get_checkers();
-        let moving_piece = board.piece_type_at(source).unwrap();
+        let moving_piece = board.piece_type_at(move_.get_source()).unwrap();
         if !checkers.is_empty() {
             return -700000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
@@ -264,7 +255,6 @@ impl MoveSorter {
         ply: Ply,
         mut best_move: Option<Move>,
         pv_move: Option<Move>,
-        is_easily_winning_position: bool,
     ) -> WeightedMoveListSorter {
         if best_move.is_none() {
             best_move = transposition_table.read_best_move(board.get_hash());
@@ -289,15 +279,7 @@ impl MoveSorter {
         WeightedMoveListSorter::from_iter(moves_vec.into_iter().enumerate().map(|(idx, m)| {
             WeightedMove::new(
                 m,
-                (self.score_move(
-                    m,
-                    board,
-                    ply,
-                    best_move,
-                    pv_move,
-                    is_easily_winning_position,
-                ) << 10)
-                    - idx as MoveWeight,
+                (self.score_move(m, board, ply, best_move, pv_move) << 10) - idx as MoveWeight,
             )
         }))
     }
@@ -320,8 +302,9 @@ impl MoveSorter {
         ))
     }
 
-    pub fn score_root_moves(
+    pub fn score_root_moves<P: PositionEvaluation>(
         board: &mut Board,
+        evaluator: &mut P,
         move_: Move,
         pv_move: Option<Move>,
         best_moves: &[Move],
@@ -346,7 +329,7 @@ impl MoveSorter {
             return -40;
         }
         let mut score = 0;
-        let mut evaluation = board.evaluate_flipped() as MoveWeight;
+        let mut evaluation = evaluator.evaluate_flipped(board) as MoveWeight;
         if evaluation == 0 {
             evaluation = 1;
         }

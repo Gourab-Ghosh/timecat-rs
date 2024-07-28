@@ -70,7 +70,10 @@ pub mod prelude {
     pub use utils::extension_traits::*;
 
     #[cfg(feature = "inbuilt_engine")]
-    pub use super::{self_play, Engine};
+    pub use super::self_play;
+
+    #[cfg(all(feature = "inbuilt_engine", feature = "nnue_reader"))]
+    pub use super::Engine;
 }
 
 pub use arrayvec::ArrayVec;

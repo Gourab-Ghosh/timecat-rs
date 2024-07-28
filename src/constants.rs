@@ -15,8 +15,8 @@ pub mod types {
     pub type MoveWeight = i32;
     pub type NumMoves = u16;
     pub type Spin = u128;
-    #[cfg(feature = "inbuilt_engine")]
-    pub type Engine = CustomEngine<SearchController>;
+    #[cfg(all(feature = "inbuilt_engine", feature = "nnue_reader"))]
+    pub type Engine = CustomEngine<SearchController, Evaluator>;
 
     #[cfg(feature = "colored")]
     pub type ColoredStringFunction = fn(colored::ColoredString) -> colored::ColoredString;

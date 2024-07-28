@@ -48,49 +48,6 @@ impl GoCommand {
     }
 }
 
-// #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-// #[derive(Clone, Debug)]
-// pub struct GoResponse {
-//     search_info: SearchInfo,
-// }
-
-// impl GoResponse {
-//     #[inline]
-//     fn new(search_info: SearchInfo) -> Self {
-//         Self { search_info }
-//     }
-
-//     #[inline]
-//     pub fn search_info(&self) -> &SearchInfo {
-//         &self.search_info
-//     }
-
-//     #[inline]
-//     pub fn get_pv(&self) -> &[Move] {
-//         self.search_info.get_pv()
-//     }
-
-//     #[inline]
-//     pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
-//         self.search_info.get_pv().get(n).copied()
-//     }
-
-//     #[inline]
-//     pub fn get_best_move(&self) -> Option<Move> {
-//         self.get_nth_pv_move(0)
-//     }
-
-//     #[inline]
-//     pub fn get_ponder_move(&self) -> Option<Move> {
-//         self.get_nth_pv_move(1)
-//     }
-
-//     #[inline]
-//     pub fn get_score(&self) -> Score {
-//         self.search_info.get_score()
-//     }
-// }
-
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct SearchInfo {
@@ -250,8 +207,8 @@ impl SearchInfo {
 }
 
 #[cfg(feature = "inbuilt_engine")]
-impl From<&Searcher> for SearchInfo {
-    fn from(searcher: &Searcher) -> Self {
+impl<P: PositionEvaluation> From<&Searcher<P>> for SearchInfo {
+    fn from(searcher: &Searcher<P>) -> Self {
         let mut search_info = Self {
             sub_board: searcher.get_initial_sub_board().to_owned(),
             current_depth: searcher.get_depth_completed().saturating_add(1),

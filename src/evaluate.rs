@@ -19,14 +19,6 @@ pub struct Evaluator {
 }
 
 impl Evaluator {
-    pub fn print_info(&self) {
-        print_cache_table_info(
-            "Evaluation Cache Table",
-            self.score_cache.len(),
-            self.score_cache.get_size(),
-        );
-    }
-
     pub fn from_model(model: HalfKPModel) -> Self {
         Self {
             model,
@@ -243,11 +235,6 @@ impl Evaluator {
         score
     }
 
-    #[inline]
-    pub fn evaluate(&mut self, sub_board: &SubBoard) -> Score {
-        self.hashed_evaluate(sub_board)
-    }
-
     #[cfg(feature = "inbuilt_nnue")]
     #[inline]
     pub fn slow_evaluate_nnue_raw(sub_board: &SubBoard) -> Score {
@@ -263,18 +250,34 @@ impl Evaluator {
     }
 
     #[inline]
-    pub fn reset_variables(&self) {
+    pub fn set_size(&self, size: CacheTableSize) {
+        self.score_cache.set_size(size);
+    }
+}
+
+impl PositionEvaluation for Evaluator {
+    #[inline]
+    fn evaluate(&mut self, sub_board: &SubBoard) -> Score {
+        self.hashed_evaluate(sub_board)
+    }
+
+    #[inline]
+    fn reset_variables(&mut self) {
         self.score_cache.reset_variables();
     }
 
     #[inline]
-    pub fn clear(&self) {
+    fn clear(&mut self) {
         self.score_cache.clear();
     }
 
     #[inline]
-    pub fn set_size(&self, size: CacheTableSize) {
-        self.score_cache.set_size(size);
+    fn print_info(&self) {
+        print_cache_table_info(
+            "Evaluation Cache Table",
+            self.score_cache.len(),
+            self.score_cache.get_size(),
+        );
     }
 }
 

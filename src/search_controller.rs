@@ -41,7 +41,7 @@ impl SearchController {
     }
 }
 
-impl SearchControl for SearchController {
+impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
     #[inline]
     fn get_move_overhead(&self) -> Duration {
         self.move_overhead
@@ -58,7 +58,7 @@ impl SearchControl for SearchController {
         self.stop_search_at_every_node = false;
     }
 
-    fn on_each_search_completion(&mut self, searcher: &Searcher) {
+    fn on_each_search_completion(&mut self, searcher: &Searcher<P>) {
         if self.max_time != Duration::MAX
             && searcher.is_main_threaded()
             && !searcher.is_outside_aspiration_window()
@@ -70,7 +70,7 @@ impl SearchControl for SearchController {
         }
     }
 
-    fn on_receiving_go_command(&mut self, command: GoCommand, searcher: &Searcher) {
+    fn on_receiving_go_command(&mut self, command: GoCommand, searcher: &Searcher<P>) {
         let board = searcher.get_board();
         match command {
             GoCommand::MoveTime(duration) => self.set_max_time(duration),
@@ -118,11 +118,11 @@ impl SearchControl for SearchController {
         }
     }
 
-    fn stop_search_at_root_node(&mut self, searcher: &Searcher) -> bool {
+    fn stop_search_at_root_node(&mut self, searcher: &Searcher<P>) -> bool {
         searcher.get_depth_completed() == self.max_depth || self.stop_search_at_every_node(searcher)
     }
 
-    fn stop_search_at_every_node(&mut self, searcher: &Searcher) -> bool {
+    fn stop_search_at_every_node(&mut self, searcher: &Searcher<P>) -> bool {
         if !searcher.is_main_threaded() {
             return false;
         }

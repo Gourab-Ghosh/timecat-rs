@@ -38,7 +38,7 @@ pub struct Board {
     stack: Vec<(SubBoard, ValidOrNullMove)>,
     starting_fen: String,
     repetition_table: RepetitionTable,
-    #[cfg(feature = "inbuilt_nnue")]
+    #[cfg(feature = "extras")]
     evaluator: Evaluator,
 }
 
@@ -74,12 +74,12 @@ impl Board {
         &self.sub_board
     }
 
-    #[cfg(feature = "inbuilt_nnue")]
+    #[cfg(feature = "extras")]
     pub fn get_evaluator(&self) -> &Evaluator {
         &self.evaluator
     }
 
-    #[cfg(feature = "inbuilt_nnue")]
+    #[cfg(feature = "extras")]
     pub fn get_evaluator_mut(&mut self) -> &mut Evaluator {
         &mut self.evaluator
     }
@@ -377,13 +377,13 @@ impl Board {
         self.perft_helper(depth, true)
     }
 
-    #[cfg(feature = "inbuilt_nnue")]
+    #[cfg(feature = "extras")]
     #[inline]
     pub fn evaluate(&mut self) -> Score {
         self.evaluator.evaluate(&self.sub_board)
     }
 
-    #[cfg(feature = "inbuilt_nnue")]
+    #[cfg(feature = "extras")]
     #[inline]
     pub fn evaluate_flipped(&mut self) -> Score {
         let score = self.evaluate();
@@ -503,7 +503,7 @@ impl FromStr for Board {
 impl From<SubBoard> for Board {
     fn from(sub_board: SubBoard) -> Self {
         let mut board = Self {
-            #[cfg(feature = "inbuilt_nnue")]
+            #[cfg(feature = "extras")]
             evaluator: Evaluator::new(&sub_board),
             starting_fen: sub_board.get_fen(),
             sub_board,
