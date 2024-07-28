@@ -3,7 +3,7 @@ use super::*;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct EngineProperties {
-    _use_mate_distance_pruning: bool
+    _use_mate_distance_pruning: bool,
 }
 
 impl EngineProperties {
