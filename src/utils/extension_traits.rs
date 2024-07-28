@@ -102,6 +102,11 @@ pub trait PositionEvaluation: Clone + Send + 'static {
     fn evaluate_flipped(&mut self, sub_board: &SubBoard) -> Score {
         sub_board.score_flipped(self.evaluate(sub_board))
     }
+
+    #[inline]
+    fn evaluate_checkmate(&mut self, mate_distance: usize) -> Score {
+        CHECKMATE_SCORE - mate_distance as Score
+    }
 }
 
 pub trait ChessEngine {

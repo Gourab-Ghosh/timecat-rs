@@ -327,7 +327,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         }
         if self.board.is_game_over() {
             return if self.board.is_checkmate() {
-                Some(-CHECKMATE_SCORE)
+                Some(-self.evaluator.evaluate_checkmate(0))
             } else {
                 Some(0)
             };
@@ -339,7 +339,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             return None;
         }
         let key = self.board.get_hash();
-        let mut score = -CHECKMATE_SCORE;
+        let mut score = -INFINITY;
         let mut flag = HashAlpha;
         let is_endgame = self.board.is_endgame();
         let moves = self.get_sorted_root_node_moves();
@@ -413,7 +413,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         mut controller: Option<&mut impl SearchControl<Self>>,
     ) -> Option<Score> {
         self.pv_table.set_length(self.ply, self.ply);
-        let mate_score = CHECKMATE_SCORE - self.ply as Score;
+        let mate_score = self.evaluator.evaluate_checkmate(self.ply);
         if self.board.is_other_draw() {
             return Some(0);
         }
