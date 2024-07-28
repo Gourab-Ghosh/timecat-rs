@@ -87,19 +87,23 @@ fn main() {
 
     // Configure the engine to search for the best move up to a depth of 10 plies.
     let response = engine.go_verbose(GoCommand::Depth(10));
-    let best_move = response.get_best_move()
-                            .expect("No best move found");
+    let best_move = response.get_best_move().expect("No best move found");
 
     // Output the best move found by the engine.
-    println!("\nBest Move: {}", best_move);
+    println!(
+        "\nBest Move: {}",
+        best_move
+            .san(engine.get_board())
+            .expect("Failed to generate SAN")
+    );
 }
 ```
 
-You can use UCI commands, although it's not recommended in production environments due to potential parsing delays and unpredictable outputs. The `inbuilt_nnue` and `inbuilt_engine` features are also required in this context.
+You can use UCI commands, although it's not recommended in production environments due to potential parsing delays. The `inbuilt_nnue` and `inbuilt_engine` features are also required in this context.
 
 As previous, add the timecat crate to your project:
 ```bash
-cargo add timecat --no-default-features --features engine
+cargo add timecat --no-default-features --features "inbuilt_nnue inbuilt_engine binary"
 ```
 
 Then, you can proceed with the following Rust code:
@@ -140,7 +144,7 @@ use timecat::prelude::*;
 use std::time::Duration;
 use std::error::Error;
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     self_play(
         &mut Engine::default(),
         GoCommand::MoveTime(Duration::from_millis(10)),
@@ -148,7 +152,9 @@ fn main() {
         true,
         // Limit to number of moves to play (u16/Some(u16)/None), None denoting no limit
         100,
-    );
+    )?;
+
+    Ok(())
 }
 ```
 
