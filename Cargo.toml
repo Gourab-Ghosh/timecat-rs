@@ -64,8 +64,8 @@ serde_json = "1"
 [features]
 # default = ["binary", "inbuilt_engine", "serde"]
 # default = ["debug"]
-default = ["binary", "inbuilt_nnue", "inbuilt_engine", "colored"]
-binary = []
+default = ["binary", "inbuilt_nnue", "colored"]
+binary = ["inbuilt_engine"]
 binread = ["dep:binread"]
 nnue_reader = ["binread"]
 inbuilt_nnue = ["dep:minreq", "dep:sha256", "dep:dirs", "nnue_reader"]
@@ -80,7 +80,7 @@ debug = ["binary", "inbuilt_engine", "experimental", "colored", "extras"]
 [[bin]]
 name = "timecat"
 path = "src/bin/timecat.rs"
-required-features = ["binary", "inbuilt_engine"]
+required-features = ["binary"]
 
 [package.metadata.docs.rs]
 all-features = true
