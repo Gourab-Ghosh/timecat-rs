@@ -9,7 +9,7 @@ pub mod board;
 pub mod chess;
 pub mod constants;
 #[cfg(feature = "inbuilt_engine")]
-pub mod engine;
+pub mod custom_engine;
 pub mod error;
 pub mod evaluate;
 #[cfg(feature = "nnue_reader")]
@@ -71,7 +71,7 @@ pub mod prelude {
     #[cfg(feature = "inbuilt_engine")]
     pub use super::self_play;
 
-    #[cfg(all(feature = "inbuilt_engine", feature = "nnue_reader"))]
+    #[cfg(feature = "inbuilt_engine")]
     pub use super::Engine;
 }
 
@@ -100,7 +100,7 @@ pub use constants::print_style::*;
 pub use constants::ranks::*;
 pub use constants::types::*;
 #[cfg(feature = "inbuilt_engine")]
-pub use engine::CustomEngine;
+pub use custom_engine::*;
 pub use error::*;
 pub use evaluate::*;
 pub use itertools::*;

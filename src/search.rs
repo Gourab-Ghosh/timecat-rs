@@ -1,5 +1,4 @@
 use super::*;
-use engine::EngineProperties;
 use EntryFlag::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
