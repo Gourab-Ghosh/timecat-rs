@@ -15,7 +15,6 @@ pub mod types {
     pub type MoveWeight = i32;
     pub type NumMoves = u16;
     pub type Spin = u128;
-    #[cfg(feature = "inbuilt_engine")]
     pub type Engine = CustomEngine<SearchController, Evaluator>;
 
     #[cfg(feature = "colored")]
@@ -196,7 +195,6 @@ pub mod cache_table {
     pub const DEFAULT_HASH: NonZeroU64 = unsafe { NonZeroU64::new_unchecked(1) };
 }
 
-#[cfg(feature = "inbuilt_engine")]
 pub mod engine {
     use super::*;
 

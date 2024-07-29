@@ -67,7 +67,6 @@ pub trait StringifyMove {
     }
 }
 
-#[cfg(feature = "inbuilt_engine")]
 // TODO: Try to remove static lifetime from the trait
 pub trait SearchControl<Searcher>: Clone + Send + 'static {
     fn get_move_overhead(&self) -> Duration;

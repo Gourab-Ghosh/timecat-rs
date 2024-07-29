@@ -62,20 +62,19 @@ dirs = { version = "5", optional = true }
 serde_json = "1"
 
 [features]
-# default = ["binary", "inbuilt_engine", "serde"]
+# default = ["binary", "serde"]
 # default = ["debug"]
 default = ["binary", "inbuilt_nnue", "colored"]
-binary = ["inbuilt_engine"]
+binary = []
 binread = ["dep:binread"]
 nnue_reader = ["binread"]
 inbuilt_nnue = ["dep:minreq", "dep:sha256", "dep:dirs", "nnue_reader"]
-inbuilt_engine = []
 extras = ["inbuilt_nnue"]
 colored = ["dep:colored"]
 serde = ["dep:serde", "web-time?/serde", "arrayvec/serde"]
 wasm = ["dep:web-time", "dep:gloo"]
 experimental = []
-debug = ["binary", "inbuilt_engine", "experimental", "colored", "extras"]
+debug = ["binary", "experimental", "colored", "extras"]
 
 [[bin]]
 name = "timecat"

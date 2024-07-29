@@ -59,11 +59,11 @@ cargo add timecat --no-default-features
 ```
 
 ### Examples
-This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize the inbuilt engine to find optimal moves using the `timecat` library. Some features such as position evaluation (`inbuilt_nnue`) and engine computation (`engine`) are optional and can be enabled via cargo features.
+This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize the inbuilt engine to find optimal moves using the `timecat` library. Some optional features needs to be enabled.
 
 First, add the timecat crate to your project with the necessary features enabled:
 ```bash
-cargo add timecat --no-default-features --features "inbuilt_nnue inbuilt_engine extras"
+cargo add timecat --no-default-features --features "inbuilt_nnue extras"
 ```
 
 Then, you can proceed with the following Rust code:
@@ -99,11 +99,11 @@ fn main() {
 }
 ```
 
-You can use UCI commands, although it's not recommended in production environments due to potential parsing delays. The `inbuilt_nnue` and `inbuilt_engine` features are also required in this context.
+You can use UCI commands, although it's not recommended in production environments due to potential parsing delays. The `binary` and `inbuilt_nnue` optional features are also required in this context.
 
 As previous, add the timecat crate to your project:
 ```bash
-cargo add timecat --no-default-features --features "inbuilt_nnue inbuilt_engine binary"
+cargo add timecat --no-default-features --features "inbuilt_nnue binary"
 ```
 
 Then, you can proceed with the following Rust code:
@@ -162,9 +162,9 @@ The `selfplay` command works on the binary as well.
 
 ## Cargo Features
 - `binary`: Enables binary builds, including NNUE and engine functionalities.
+- `binread`: Binread support.
 - `nnue_reader`: Adds support for NNUE evaluation by reading nnue files.
 - `inbuilt_nnue`: Integrate built-in NNUE evaluation support by including the nnue file directly into the binary, fetched using the minreq library.
-- `inbuilt_engine`: Provides an inbuilt Engine struct for in-depth position analysis and move searching.
 - `extras`: Adds some functionalities not needed in binary, to get better insights of the behavior of the code. These feature is disabled by default because they requires some computations which are not needed in the binary.
 - `colored`: Displays all information in a visually appealing colored format for enhanced readability.
 - `serde`: Enables serialization and deserialization support via `serde`.

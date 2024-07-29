@@ -206,7 +206,6 @@ impl SearchInfo {
     }
 }
 
-#[cfg(feature = "inbuilt_engine")]
 impl<P: PositionEvaluation> From<&Searcher<P>> for SearchInfo {
     fn from(searcher: &Searcher<P>) -> Self {
         let mut search_info = Self {
