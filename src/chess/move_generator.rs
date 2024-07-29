@@ -573,7 +573,7 @@ impl MoveGenerator {
     }
 
     pub fn is_legal_quick(sub_board: &SubBoard, move_: Move) -> bool {
-        let piece = sub_board.piece_type_at(move_.get_source()).unwrap();
+        let piece = sub_board.get_piece_type_at(move_.get_source()).unwrap();
         match piece {
             Rook => true,
             Bishop => true,
@@ -581,7 +581,7 @@ impl MoveGenerator {
             Queen => true,
             Pawn => {
                 if move_.get_source().get_file() != move_.get_dest().get_file()
-                    && sub_board.piece_type_at(move_.get_dest()).is_none()
+                    && sub_board.get_piece_type_at(move_.get_dest()).is_none()
                 {
                     // en-passant
                     PawnMoves::legal_ep_move(sub_board, move_.get_source(), move_.get_dest())

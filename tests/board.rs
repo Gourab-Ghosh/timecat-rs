@@ -286,6 +286,17 @@ fn test_board_material_score_track() {
     board_material_check_command!(board.pop(); board; white_material_score; black_material_score);
 }
 
+#[test]
+fn test_legal_capture_move_generator() {
+    let mut board = Board::default();
+    board.push_sans("e4 Nc6 e5 d5").unwrap();
+
+    assert_eq!(
+        board.generate_legal_captures().collect_vec(),
+        vec![Move::new(E5, D6, None).unwrap()]
+    )
+}
+
 // is_capture
 // is_quiet
 // is_zeroing

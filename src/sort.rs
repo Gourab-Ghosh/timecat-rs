@@ -116,7 +116,7 @@ impl MoveSorter {
         let depth = (depth as MoveWeight).pow(2);
         let src = history_move.get_source();
         let dest = history_move.get_dest();
-        let piece = board.piece_at(src).unwrap();
+        let piece = board.get_piece_at(src).unwrap();
         *get_item_unchecked_mut!(self.history_move_scores, piece.to_index(), dest.to_index()) +=
             depth;
     }
@@ -125,7 +125,7 @@ impl MoveSorter {
     pub fn get_history_score(&self, history_move: Move, board: &Board) -> MoveWeight {
         let src = history_move.get_source();
         let dest = history_move.get_dest();
-        let piece = board.piece_at(src).unwrap();
+        let piece = board.get_piece_at(src).unwrap();
         *get_item_unchecked!(self.history_move_scores, piece.to_index(), dest.to_index())
     }
 
@@ -140,7 +140,7 @@ impl MoveSorter {
             Some(valid_or_null_move) => valid_or_null_move,
             None => return 0,
         };
-        let capture_piece = board.piece_type_at(square).unwrap_or(Pawn);
+        let capture_piece = board.get_piece_type_at(square).unwrap_or(Pawn);
         (capture_piece.evaluate() - Self::see(square, &board.make_move_new(least_attackers_move)))
             .max(0)
     }
@@ -150,16 +150,19 @@ impl MoveSorter {
             Some(valid_or_null_move) => valid_or_null_move,
             None => return 0,
         };
-        let capture_piece = board.piece_type_at(square).unwrap_or(Pawn);
+        let capture_piece = board.get_piece_type_at(square).unwrap_or(Pawn);
         capture_piece.evaluate() - Self::see(square, &board.make_move_new(least_attackers_move))
     }
 
     fn mvv_lva(move_: Move, board: &SubBoard) -> MoveWeight {
         *get_item_unchecked!(
             MVV_LVA,
-            board.piece_type_at(move_.get_source()).unwrap().to_index(),
             board
-                .piece_type_at(move_.get_dest())
+                .get_piece_type_at(move_.get_source())
+                .unwrap()
+                .to_index(),
+            board
+                .get_piece_type_at(move_.get_dest())
                 .unwrap_or(Pawn)
                 .to_index()
         )
@@ -179,7 +182,7 @@ impl MoveSorter {
         source: Square,
         dest: Square,
     ) -> Option<MoveWeight> {
-        let moving_piece = board.piece_type_at(source).unwrap();
+        let moving_piece = board.get_piece_type_at(source).unwrap();
         if moving_piece != Pawn {
             let losing_color = !board.get_winning_side().unwrap_or(White);
             let losing_king_square = board.get_king_square(losing_color);
@@ -240,7 +243,7 @@ impl MoveSorter {
         let move_made_sub_board = board.make_move_new(move_);
         // check
         let checkers = move_made_sub_board.get_checkers();
-        let moving_piece = board.piece_type_at(move_.get_source()).unwrap();
+        let moving_piece = board.get_piece_type_at(move_.get_source()).unwrap();
         if !checkers.is_empty() {
             return -700000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }

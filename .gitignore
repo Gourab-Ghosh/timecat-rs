@@ -10,3 +10,4 @@ temp*
 flamegraph.svg
 *.log
 engine_paths.py
+gecko_profile.json

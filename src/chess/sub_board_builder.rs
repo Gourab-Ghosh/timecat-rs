@@ -337,7 +337,7 @@ impl From<&SubBoard> for SubBoardBuilder {
     fn from(board: &SubBoard) -> Self {
         let mut pieces = vec![];
         for square in ALL_SQUARES {
-            if let Some(piece) = board.piece_at(square) {
+            if let Some(piece) = board.get_piece_at(square) {
                 pieces.push((square, piece));
             }
         }

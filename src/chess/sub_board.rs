@@ -431,7 +431,7 @@ impl SubBoard {
     }
 
     #[inline]
-    pub fn piece_type_at(&self, square: Square) -> Option<PieceType> {
+    pub fn get_piece_type_at(&self, square: Square) -> Option<PieceType> {
         // TODO: check speed on Naive Algorithm
         let opp = square.to_bitboard();
         if (self.occupied() & opp).is_empty() {
@@ -479,9 +479,9 @@ impl SubBoard {
     }
 
     #[inline]
-    pub fn piece_at(&self, square: Square) -> Option<Piece> {
+    pub fn get_piece_at(&self, square: Square) -> Option<Piece> {
         Some(Piece::new(
-            self.piece_type_at(square)?,
+            self.get_piece_type_at(square)?,
             self.color_at(square)?,
         ))
     }
@@ -702,14 +702,14 @@ impl SubBoard {
     }
 
     pub fn piece_symbol_at(&self, square: Square) -> String {
-        match self.piece_at(square) {
+        match self.get_piece_at(square) {
             Some(piece) => piece.to_string(),
             None => EMPTY_SPACE_SYMBOL.to_string(),
         }
     }
 
     pub fn piece_unicode_symbol_at(&self, square: Square, flip_color: bool) -> String {
-        if let Some(piece) = self.piece_at(square) {
+        if let Some(piece) = self.get_piece_at(square) {
             let piece_index = piece.get_piece_type().to_index();
             let (white_pieces, black_pieces) = match flip_color {
                 true => (BLACK_PIECE_UNICODE_SYMBOLS, WHITE_PIECE_UNICODE_SYMBOLS),
@@ -997,11 +997,11 @@ impl SubBoardMethodOverload<Move> for SubBoard {
         let source_bb = source.to_bitboard();
         let dest_bb = dest.to_bitboard();
         let move_bb = source_bb ^ dest_bb;
-        let moved = self.piece_type_at(source).unwrap();
+        let moved = self.get_piece_type_at(source).unwrap();
 
         result.xor(moved, source_bb, self.turn());
         result.xor(moved, dest_bb, self.turn());
-        if let Some(captured) = self.piece_type_at(dest) {
+        if let Some(captured) = self.get_piece_type_at(dest) {
             result.xor(captured, dest_bb, !self.turn());
         }
 

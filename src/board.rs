@@ -131,7 +131,7 @@ impl Board {
     #[inline]
     pub fn to_board_string(&self, use_unicode: bool) -> String {
         self.sub_board.to_board_string(
-            self.stack.last().map(|(_, m)| *m).unwrap_or_default(),
+            self.stack.last().map_or(Default::default(), |(_, m)| *m),
             use_unicode,
         )
     }
@@ -139,7 +139,7 @@ impl Board {
     #[inline]
     pub fn to_unicode_string(&self) -> String {
         self.sub_board
-            .to_unicode_string(self.stack.last().map(|(_, m)| *m).unwrap_or_default())
+            .to_unicode_string(self.stack.last().map_or(Default::default(), |(_, m)| *m))
     }
 
     pub fn result(&self) -> GameResult {

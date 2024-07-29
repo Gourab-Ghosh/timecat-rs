@@ -77,12 +77,13 @@ impl Move {
             };
         }
 
-        let piece = sub_board
-            .piece_type_at(source)
-            .ok_or(TimecatError::InvalidSanOrLanMove {
-                valid_or_null_move: self.into(),
-                fen: sub_board.get_fen(),
-            })?;
+        let piece =
+            sub_board
+                .get_piece_type_at(source)
+                .ok_or(TimecatError::InvalidSanOrLanMove {
+                    valid_or_null_move: self.into(),
+                    fen: sub_board.get_fen(),
+                })?;
         let capture = sub_board.is_capture(self);
         let mut san = if piece == Pawn {
             String::new()

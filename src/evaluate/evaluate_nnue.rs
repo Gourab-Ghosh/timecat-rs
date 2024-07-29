@@ -142,14 +142,14 @@ impl EvaluatorNNUE {
             if num_pieces < 5 {
                 if num_white_pieces == 2 && num_black_pieces == 2 {
                     let non_king_white_piece = sub_board
-                        .piece_type_at(
+                        .get_piece_type_at(
                             (white_occupied & !sub_board.get_piece_mask(King))
                                 .next()
                                 .unwrap(),
                         )
                         .unwrap();
                     let non_king_black_piece = sub_board
-                        .piece_type_at(
+                        .get_piece_type_at(
                             (black_occupied & !sub_board.get_piece_mask(King))
                                 .next()
                                 .unwrap(),
@@ -168,7 +168,7 @@ impl EvaluatorNNUE {
                     if num_pieces == 3 {
                         let non_king_pieces: (PieceType, PieceType) = (bb
                             & !sub_board.get_piece_mask(King))
-                        .map(|s| sub_board.piece_type_at(s).unwrap())
+                        .map(|s| sub_board.get_piece_type_at(s).unwrap())
                         .collect_tuple()
                         .unwrap();
                         if non_king_pieces == (Knight, Knight) {
