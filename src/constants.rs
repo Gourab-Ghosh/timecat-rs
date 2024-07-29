@@ -265,6 +265,20 @@ pub mod piece {
     pub const NUM_PIECE_TYPES: usize = 6;
     pub const ALL_PIECE_TYPES: [PieceType; NUM_PIECE_TYPES] =
         [Pawn, Knight, Bishop, Rook, Queen, King];
+    pub const ALL_PIECES: [Piece; NUM_PIECE_TYPES * NUM_COLORS] = [
+        WhitePawn,
+        WhiteKnight,
+        WhiteBishop,
+        WhiteRook,
+        WhiteQueen,
+        WhiteKing,
+        BlackPawn,
+        BlackKnight,
+        BlackBishop,
+        BlackRook,
+        BlackQueen,
+        BlackKing,
+    ];
     pub const NUM_PROMOTION_PIECES: usize = 4;
     pub const PROMOTION_PIECES: [PieceType; NUM_PROMOTION_PIECES] = [Queen, Knight, Rook, Bishop];
 }

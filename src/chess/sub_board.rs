@@ -927,13 +927,11 @@ impl SubBoard {
         self.get_material_score() - PAWN_VALUE * self.get_piece_mask(Pawn).popcnt() as Score
     }
 
-    #[cfg(feature = "inbuilt_nnue")]
     #[inline]
     pub fn slow_evaluate(&self) -> Score {
         Evaluator::slow_evaluate(self)
     }
 
-    #[cfg(feature = "inbuilt_nnue")]
     #[inline]
     pub fn slow_evaluate_flipped(&self) -> Score {
         self.score_flipped(self.slow_evaluate())

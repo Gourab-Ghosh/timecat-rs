@@ -127,7 +127,7 @@ macro_rules! get_item_unchecked_mut {
 }
 
 #[macro_export]
-macro_rules! interpolate {
+macro_rules! interpolate_float {
     (@internal $start:expr, $end:expr, $alpha:expr) => {
         (1.0 - $alpha) * $start + $alpha * $end
     };
@@ -137,13 +137,13 @@ macro_rules! interpolate {
             let start = $start as f64;
             let end = $end as f64;
             let alpha = $alpha as f64;
-            interpolate!(@internal start, end, alpha)
+            interpolate_float!(@internal start, end, alpha)
         }
     };
 }
 
 #[macro_export]
-macro_rules! inverse_interpolate {
+macro_rules! inverse_interpolate_float {
     (@internal $start:expr, $end:expr, $value:expr) => {
         ($value - $start) / ($end - $start)
     };
@@ -153,13 +153,13 @@ macro_rules! inverse_interpolate {
             let start = $start as f64;
             let end = $end as f64;
             let value = $value as f64;
-            inverse_interpolate!(@internal start, end, alpha)
+            inverse_interpolate_float!(@internal start, end, alpha)
         }
     };
 }
 
 #[macro_export]
-macro_rules! match_interpolate {
+macro_rules! match_interpolate_float {
     ($new_start:expr, $new_end:expr, $old_start:expr, $old_end:expr, $old_value:expr $(,)?) => {
         {
             let new_start = $new_start as f64;
@@ -167,11 +167,11 @@ macro_rules! match_interpolate {
             let old_start = $old_start as f64;
             let old_end = $old_end as f64;
             let old_value = $old_value as f64;
-            interpolate!(
+            interpolate_float!(
                 @internal
                 new_start,
                 new_end,
-                (inverse_interpolate!(@internal old_start, old_end, old_value))
+                (inverse_interpolate_float!(@internal old_start, old_end, old_value))
             )
         }
     };

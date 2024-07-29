@@ -13,12 +13,12 @@ static HALFKP_MODEL_READER: LazyLock<HalfKPModelReader> = LazyLock::new(|| {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
-pub struct Evaluator {
+pub struct EvaluatorNNUE {
     model: HalfKPModel,
     score_cache: SerdeWrapper<Arc<CacheTable<Score>>>,
 }
 
-impl Evaluator {
+impl EvaluatorNNUE {
     pub fn from_model(model: HalfKPModel) -> Self {
         Self {
             model,
@@ -196,7 +196,7 @@ impl Evaluator {
         }
         let mut nnue_eval = nnue_eval_func();
         if nnue_eval.abs() > WINNING_SCORE_THRESHOLD {
-            let multiplier = match_interpolate!(
+            let multiplier = match_interpolate_float!(
                 0,
                 1,
                 WINNING_SCORE_THRESHOLD,
@@ -210,7 +210,7 @@ impl Evaluator {
                 White
             };
             nnue_eval += nnue_eval.signum()
-                * match_interpolate!(
+                * match_interpolate_float!(
                     0,
                     5.0 * multiplier,
                     MAX_MATERIAL_SCORE,
@@ -255,7 +255,7 @@ impl Evaluator {
     }
 }
 
-impl PositionEvaluation for Evaluator {
+impl PositionEvaluation for EvaluatorNNUE {
     #[inline]
     fn evaluate(&mut self, sub_board: &SubBoard) -> Score {
         self.hashed_evaluate(sub_board)
@@ -282,7 +282,7 @@ impl PositionEvaluation for Evaluator {
 }
 
 #[cfg(feature = "inbuilt_nnue")]
-impl Default for Evaluator {
+impl Default for EvaluatorNNUE {
     fn default() -> Self {
         Self::new(&SubBoard::default())
     }
