@@ -145,16 +145,13 @@ pub fn get_psqt_score_endgame(piece: Piece, square: Square) -> Score {
     *get_item_unchecked!(PSQT_ARRAY, get_psqt_score_index_endgame(piece, square))
 }
 
-#[inline]
-pub fn get_psqt_score(piece: Piece, mut square: Square, board_material_score_abs: Score) -> Score {
+pub fn get_psqt_score(piece: Piece, mut square: Square, alpha: f64) -> Score {
+    let alpha = (1000.0 * alpha) as i32;
     if piece.get_color() == White {
         square = square.horizontal_mirror();
     }
     let opening_index = (piece.get_piece_type().to_index() << 7) ^ square.to_index();
     let opening_score = *get_item_unchecked!(PSQT_ARRAY, opening_index) as i32;
-    let endgame_score = *get_item_unchecked!(PSQT_ARRAY, opening_index | 64) as i32;
-    ((board_material_score_abs as i32 * opening_score
-        + (INITIAL_MATERIAL_SCORE_ABS - board_material_score_abs) as i32
-        + endgame_score)
-        / INITIAL_MATERIAL_SCORE_ABS as i32) as Score
+    let endgame_score = *get_item_unchecked!(PSQT_ARRAY, opening_index ^ 64) as i32;
+    ((alpha * opening_score + (1000 - alpha) + endgame_score) / 1000 as i32) as Score
 }

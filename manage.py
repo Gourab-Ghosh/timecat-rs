@@ -55,7 +55,7 @@ def main():
             return
 
     if "build" in args:
-        if build_binary(True):
+        if build_binary(True, False):
             return
 
     if "run" in args:

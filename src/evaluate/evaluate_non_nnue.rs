@@ -19,7 +19,9 @@ impl PositionEvaluation for EvaluatorNonNNUE {
         let material_score = sub_board.get_material_score();
         let mut score = material_score;
         for (piece, square) in sub_board.iter() {
-            let psqt_score = get_psqt_score(piece, square, sub_board.get_material_score_abs());
+            let alpha =
+                sub_board.get_material_score_abs() as f64 / INITIAL_MATERIAL_SCORE_ABS as f64;
+            let psqt_score = get_psqt_score(piece, square, alpha);
             score += if piece.get_color() == White {
                 psqt_score
             } else {

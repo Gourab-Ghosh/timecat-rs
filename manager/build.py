@@ -12,8 +12,10 @@ def run_command_with_target_cpu_native(command: str):
     finally:
         del os.environ["RUSTFLAGS"]
 
-def build_binary(is_release: bool):
-    commands = ["cargo", "build", "--no-default-features", "--features", "debug"]
+def build_binary(is_release: bool, is_debug: bool = True):
+    commands = ["cargo", "build"]
+    if is_debug:
+        commands += ["--no-default-features", "--features", "debug"]
     if is_release:
         commands.append("--release")
         return run_command_with_target_cpu_native(" ".join(commands))
