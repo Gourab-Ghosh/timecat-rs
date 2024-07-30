@@ -22,10 +22,10 @@ impl EvaluatorNonNNUE {
         // Consider additional heuristics
         let mut mobility_score = 0;
         let mut king_safety_score = 0;
-        let mut pawn_structure_score = 0;
+        // let mut pawn_structure_score = 0;
         let mut center_control_score = 0;
-        let mut piece_activity_score = 0;
-        let mut threat_score = 0;
+        // let mut piece_activity_score = 0;
+        // let mut threat_score = 0;
     
         for (piece, square) in sub_board.iter() {
             let alpha =
@@ -57,15 +57,15 @@ impl EvaluatorNonNNUE {
                 };
             }
     
-            // Calculate pawn structure
-            if piece.get_piece_type() == Pawn {
-                let pawn_structure = Self::evaluate_pawn_structure(sub_board, square);
-                pawn_structure_score += if piece.get_color() == White {
-                    pawn_structure
-                } else {
-                    -pawn_structure
-                };
-            }
+            // // Calculate pawn structure
+            // if piece.get_piece_type() == Pawn {
+            //     let pawn_structure = Self::evaluate_pawn_structure(sub_board, square);
+            //     pawn_structure_score += if piece.get_color() == White {
+            //         pawn_structure
+            //     } else {
+            //         -pawn_structure
+            //     };
+            // }
     
             // Calculate control of the center
             if BB_CENTER.contains(square) {
@@ -76,30 +76,30 @@ impl EvaluatorNonNNUE {
                 };
             }
     
-            // Calculate piece activity
-            let piece_activity = Self::evaluate_piece_activity(sub_board, piece, square);
-            piece_activity_score += if piece.get_color() == White {
-                piece_activity
-            } else {
-                -piece_activity
-            };
+            // // Calculate piece activity
+            // let piece_activity = Self::evaluate_piece_activity(sub_board, piece, square);
+            // piece_activity_score += if piece.get_color() == White {
+            //     piece_activity
+            // } else {
+            //     -piece_activity
+            // };
     
-            // Calculate threats
-            let threats = Self::evaluate_threats(sub_board, piece, square);
-            threat_score += if piece.get_color() == White {
-                threats
-            } else {
-                -threats
-            };
+            // // Calculate threats
+            // let threats = Self::evaluate_threats(sub_board, piece, square);
+            // threat_score += if piece.get_color() == White {
+            //     threats
+            // } else {
+            //     -threats
+            // };
         }
     
         // Combine all heuristics into the final score
         score += mobility_score;
         score += king_safety_score;
-        score += pawn_structure_score;
+        // score += pawn_structure_score;
         score += center_control_score;
-        score += piece_activity_score;
-        score += threat_score;
+        // score += piece_activity_score;
+        // score += threat_score;
     
         score
     }
