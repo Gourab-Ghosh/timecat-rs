@@ -4,6 +4,8 @@ use super::*;
 #[derive(Debug, Clone)]
 pub struct EngineProperties {
     _use_mate_distance_pruning: bool,
+    _clear_table_after_each_search: bool,
+    _use_lmr: bool,
 }
 
 impl EngineProperties {
@@ -14,12 +16,30 @@ impl EngineProperties {
     pub fn set_using_mate_distance_pruning(&mut self, value: bool) {
         self._use_mate_distance_pruning = value;
     }
+
+    pub fn clear_table_after_each_search(&self) -> bool {
+        self._clear_table_after_each_search
+    }
+
+    pub fn set_clearing_table_after_each_search(&mut self, value: bool) {
+        self._clear_table_after_each_search = value;
+    }
+
+    pub fn use_lmr(&self) -> bool {
+        self._use_lmr
+    }
+
+    pub fn set_using_lmr(&mut self, value: bool) {
+        self._use_lmr = value;
+    }
 }
 
 impl Default for EngineProperties {
     fn default() -> Self {
         Self {
             _use_mate_distance_pruning: true,
+            _clear_table_after_each_search: true,
+            _use_lmr: true,
         }
     }
 }
@@ -172,7 +192,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
         self.selective_depth.store(0, MEMORY_ORDERING);
         self.controller.reset_variables();
         self.evaluator.reset_variables();
-        if CLEAR_TABLE_AFTER_EACH_SEARCH {
+        if self.properties.clear_table_after_each_search() {
             self.transposition_table.clear();
         }
         self.transposition_table.reset_variables();

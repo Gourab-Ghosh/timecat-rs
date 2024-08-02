@@ -209,7 +209,7 @@ pub fn get_polyglot_piece_value(piece: Piece) -> usize {
 pub fn polyglot_hash_from_board(board: &Board) -> u64 {
     let mut hash = 0;
     for piece_square in board.occupied() {
-        let piece = board.piece_at(piece_square).unwrap();
+        let piece = board.get_piece_at(piece_square).unwrap();
         let piece_value = get_polyglot_piece_value(piece);
         let index = 64 * piece_value + piece_square.to_index();
         hash ^= POLYGLOT_RANDOM_64[index];

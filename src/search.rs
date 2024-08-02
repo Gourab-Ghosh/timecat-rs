@@ -570,7 +570,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             }
             let mut safe_to_apply_lmr = move_index >= FULL_DEPTH_SEARCH_LMR
                 && depth >= REDUCTION_LIMIT_LMR
-                && !DISABLE_LMR
+                && self.properties.use_lmr()
                 && not_an_interesting_position;
             self.push_unchecked(move_);
             safe_to_apply_lmr &= !self.board.is_check();
@@ -663,9 +663,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         if evaluation >= beta {
             return beta;
         }
-        if evaluation > alpha {
-            alpha = evaluation;
-        }
+        alpha = alpha.max(evaluation);
         for WeightedMove { move_, weight } in self
             .move_sorter
             .get_weighted_capture_moves_sorted(&self.board, &self.transposition_table)
@@ -679,6 +677,10 @@ impl<P: PositionEvaluation> Searcher<P> {
             if score >= beta {
                 return beta;
             }
+            if score > alpha {
+                self.pv_table.update_table(self.ply, move_);
+                alpha = score;
+            }
             // delta pruning
             let mut delta = const { Queen.evaluate() };
             if let Some(piece) = move_.get_promotion() {
@@ -686,10 +688,6 @@ impl<P: PositionEvaluation> Searcher<P> {
             }
             if score + delta < alpha {
                 return alpha;
-            }
-            if score > alpha {
-                self.pv_table.update_table(self.ply, move_);
-                alpha = score;
             }
         }
         alpha

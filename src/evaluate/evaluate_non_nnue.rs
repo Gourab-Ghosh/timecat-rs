@@ -18,7 +18,7 @@ impl EvaluatorNonNNUE {
     fn evaluate_raw(sub_board: &SubBoard) -> Score {
         let material_score = sub_board.get_material_score();
         let mut score = material_score;
-    
+
         // Consider additional heuristics
         let mut mobility_score = 0;
         let mut king_safety_score = 0;
@@ -26,7 +26,7 @@ impl EvaluatorNonNNUE {
         let mut center_control_score = 0;
         // let mut piece_activity_score = 0;
         // let mut threat_score = 0;
-    
+
         for (piece, square) in sub_board.iter() {
             let alpha =
                 sub_board.get_material_score_abs() as f64 / INITIAL_MATERIAL_SCORE_ABS as f64;
@@ -36,7 +36,7 @@ impl EvaluatorNonNNUE {
             } else {
                 -psqt_score
             } as Score;
-    
+
             // Calculate mobility (number of legal moves)
             let mobility = sub_board
                 .generate_masked_legal_moves(square.to_bitboard(), BB_ALL)
@@ -46,7 +46,7 @@ impl EvaluatorNonNNUE {
             } else {
                 -mobility
             };
-    
+
             // Calculate king safety
             if piece.get_piece_type() == King {
                 let king_safety = Self::evaluate_king_safety(sub_board, square);
@@ -56,7 +56,7 @@ impl EvaluatorNonNNUE {
                     -king_safety
                 };
             }
-    
+
             // // Calculate pawn structure
             // if piece.get_piece_type() == Pawn {
             //     let pawn_structure = Self::evaluate_pawn_structure(sub_board, square);
@@ -66,7 +66,7 @@ impl EvaluatorNonNNUE {
             //         -pawn_structure
             //     };
             // }
-    
+
             // Calculate control of the center
             if BB_CENTER.contains(square) {
                 center_control_score += if piece.get_color() == White {
@@ -75,7 +75,7 @@ impl EvaluatorNonNNUE {
                     -CONTROL_CENTER_BONUS
                 };
             }
-    
+
             // // Calculate piece activity
             // let piece_activity = Self::evaluate_piece_activity(sub_board, piece, square);
             // piece_activity_score += if piece.get_color() == White {
@@ -83,7 +83,7 @@ impl EvaluatorNonNNUE {
             // } else {
             //     -piece_activity
             // };
-    
+
             // // Calculate threats
             // let threats = Self::evaluate_threats(sub_board, piece, square);
             // threat_score += if piece.get_color() == White {
@@ -92,7 +92,7 @@ impl EvaluatorNonNNUE {
             //     -threats
             // };
         }
-    
+
         // Combine all heuristics into the final score
         score += mobility_score;
         score += king_safety_score;
@@ -100,15 +100,15 @@ impl EvaluatorNonNNUE {
         score += center_control_score;
         // score += piece_activity_score;
         // score += threat_score;
-    
+
         score
     }
-    
+
     // Enhanced King Safety
     fn evaluate_king_safety(sub_board: &SubBoard, king_square: Square) -> Score {
         let king_color = sub_board.get_piece_at(king_square).unwrap().get_color();
         let mut safety_score = 0;
-    
+
         // Evaluate pawn shield (simplified, assuming a standard chessboard)
         let Some(forward_king_square) = king_square.forward(king_color) else {
             return 0;
@@ -121,7 +121,7 @@ impl EvaluatorNonNNUE {
         .into_iter()
         .flatten()
         .collect_vec();
-    
+
         for &shield_square in &pawn_shield_squares {
             if let Some(pawn) = sub_board.get_piece_at(shield_square) {
                 if pawn.get_piece_type() == Pawn && pawn.get_color() == king_color {
@@ -129,7 +129,7 @@ impl EvaluatorNonNNUE {
                 }
             }
         }
-    
+
         // Penalize open files or no pawn shield
         if pawn_shield_squares
             .iter()
@@ -137,7 +137,7 @@ impl EvaluatorNonNNUE {
         {
             safety_score -= 50; // Example penalty for an exposed king
         }
-    
+
         // // Penalize for enemy pieces attacking nearby squares
         // let enemy_color = !king_color;
         // let nearby_squares = king_square.neighbors();
@@ -146,20 +146,20 @@ impl EvaluatorNonNNUE {
         //         safety_score -= 20; // Example penalty for each attack on nearby squares
         //     }
         // }
-    
+
         safety_score
     }
-    
+
     // Enhanced Pawn Structure
     fn evaluate_pawn_structure(sub_board: &SubBoard, pawn_square: Square) -> Score {
         let mut structure_score = 0;
         let pawn = sub_board.get_piece_at(pawn_square).unwrap();
         let pawn_color = pawn.get_color();
-    
+
         // Evaluate isolated pawns (no friendly pawns on adjacent files)
         let file = pawn_square.get_file();
         let adjacent_files = [file.left(), file.right()];
-    
+
         let isolated = adjacent_files.iter().flatten().all(|&adj_file| {
             ALL_RANKS.iter().all(|&rank| {
                 let sq = Square::from_rank_and_file(rank, adj_file);
@@ -168,11 +168,11 @@ impl EvaluatorNonNNUE {
                 })
             })
         });
-    
+
         if isolated {
             structure_score -= 20; // Example penalty for isolated pawns
         }
-    
+
         // Evaluate doubled pawns (multiple pawns of the same color on the same file)
         let file_pawns = ALL_RANKS
             .iter()
@@ -183,16 +183,16 @@ impl EvaluatorNonNNUE {
                 })
             })
             .count();
-    
+
         if file_pawns > 1 {
             structure_score -= 10 * (file_pawns as Score - 1) as Score; // Example penalty for each doubled pawn
         }
-    
+
         // Evaluate passed pawns (no opposing pawns blocking or attacking the path to promotion)
         if sub_board.is_passed_pawn(pawn_square) {
             structure_score += 30; // Example bonus for passed pawns
         }
-    
+
         // // Evaluate backward pawns (no friendly pawns protecting from behind)
         // let backward = adjacent_files.iter().flatten().all(|&adj_file| {
         //     (0..pawn_square.get_rank()).all(|rank| {
@@ -202,19 +202,19 @@ impl EvaluatorNonNNUE {
         //         })
         //     })
         // });
-    
+
         // if backward {
         //     structure_score -= 15; // Example penalty for backward pawns
         // }
-    
+
         structure_score
     }
-    
+
     // Enhanced Piece Activity
     fn evaluate_piece_activity(sub_board: &SubBoard, _piece: Piece, square: Square) -> Score {
         let mut activity_score = 0;
         // let piece_color = piece.get_color();
-    
+
         // // Simplified example: give a bonus for pieces controlling key squares
         // let key_squares = [D4, E4, D5, E5]; // Central squares
         // for &key_square in &key_squares {
@@ -222,7 +222,7 @@ impl EvaluatorNonNNUE {
         //         activity_score += 5; // Example bonus for controlling a key square
         //     }
         // }
-    
+
         // Penalize pieces trapped or blocked by own pawns
         let piece_mobility = sub_board
             .generate_masked_legal_moves(square.to_bitboard(), BB_ALL)
@@ -230,15 +230,15 @@ impl EvaluatorNonNNUE {
         if piece_mobility < 2 {
             activity_score -= 10; // Example penalty for low mobility
         }
-    
+
         activity_score
     }
-    
+
     // Evaluate threats
     fn evaluate_threats(sub_board: &SubBoard, piece: Piece, square: Square) -> Score {
         let mut threat_score = 0;
         let piece_color = piece.get_color();
-    
+
         // Simplified example: give a bonus for attacking opponent's pieces
         for move_ in sub_board
             .generate_masked_legal_moves(square.to_bitboard(), sub_board.occupied_co(!piece_color))
@@ -248,9 +248,9 @@ impl EvaluatorNonNNUE {
                 piece_type => piece_type.evaluate(),
             }
         }
-    
+
         threat_score
-    }    
+    }
 }
 
 impl PositionEvaluation for EvaluatorNonNNUE {

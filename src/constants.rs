@@ -198,11 +198,9 @@ pub mod cache_table {
 pub mod engine {
     use super::*;
 
-    pub const CLEAR_TABLE_AFTER_EACH_SEARCH: bool = true;
     pub const NUM_KILLER_MOVES: usize = 3;
 
     pub const DISABLE_ALL_PRUNINGS: bool = false;
-    pub const DISABLE_LMR: bool = false || DISABLE_ALL_PRUNINGS;
 
     pub const NULL_MOVE_MIN_DEPTH: Depth = 2;
     pub const NULL_MOVE_MIN_REDUCTION: Depth = 2;
