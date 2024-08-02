@@ -84,10 +84,12 @@ pub struct TranspositionTable {
 }
 
 impl TranspositionTable {
+    #[inline]
     pub fn print_info(&self) {
         print_cache_table_info("Hash Table", self.table.len(), self.table.get_size());
     }
 
+    #[inline]
     fn generate_new_table(cache_table_size: CacheTableSize) -> CacheTable<TranspositionTableEntry> {
         CacheTable::new(cache_table_size)
     }
@@ -127,6 +129,7 @@ impl TranspositionTable {
         (Some((score, data.flag)), best_move)
     }
 
+    #[inline]
     pub fn read_best_move(&self, key: u64) -> Option<Move> {
         self.table.get(key)?.get_best_move()
     }
@@ -174,6 +177,7 @@ impl TranspositionTable {
         );
     }
 
+    #[inline]
     pub fn clear_best_moves(&self) {
         self.table
             .get_table()

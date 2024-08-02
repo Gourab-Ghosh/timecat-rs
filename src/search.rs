@@ -332,7 +332,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             return if self.board.is_checkmate() {
                 Some(-self.evaluator.evaluate_checkmate(0))
             } else {
-                Some(0)
+                Some(self.evaluator.evaluate_draw())
             };
         }
         if !(depth > 1 && self.is_main_threaded()) {
@@ -417,8 +417,9 @@ impl<P: PositionEvaluation> Searcher<P> {
     ) -> Option<Score> {
         self.pv_table.set_length(self.ply, self.ply);
         let mate_score = self.evaluator.evaluate_checkmate(self.ply);
+        let draw_score = self.evaluator.evaluate_draw();
         if self.board.is_other_draw() {
-            return Some(0);
+            return Some(draw_score);
         }
         if self.properties.use_mate_distance_pruning() {
             // // mate distance pruning
@@ -427,6 +428,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             // if alpha >= beta {
             //     return Some(alpha);
             // }
+
             // mate distance pruning
             if mate_score < beta {
                 beta = mate_score;
@@ -482,6 +484,9 @@ impl<P: PositionEvaluation> Searcher<P> {
         if depth == 0 {
             return Some(self.quiescence(alpha, beta));
         }
+        if self.is_main_threaded() && is_pv_node {
+            self.selective_depth.fetch_max(self.ply, MEMORY_ORDERING);
+        }
         self.num_nodes_searched.fetch_add(1, MEMORY_ORDERING);
         let not_in_check = checkers.is_empty();
         let mut futility_pruning = false;
@@ -493,6 +498,24 @@ impl<P: PositionEvaluation> Searcher<P> {
                 let new_score = static_evaluation - eval_margin;
                 if new_score >= beta {
                     return Some(new_score);
+                }
+            }
+            // razoring
+            const RAZORING_DEPTH: Depth = 3;
+            if !is_pv_node && depth <= RAZORING_DEPTH && !is_checkmate(beta) {
+                let mut score = static_evaluation + const { (5 * PAWN_VALUE) / 4 };
+                if score < beta {
+                    if depth == 1 {
+                        let new_score = self.quiescence(alpha, beta);
+                        return Some(new_score.max(score));
+                    }
+                    score += const { (7 * PAWN_VALUE) / 4 };
+                    if score < beta && depth < RAZORING_DEPTH {
+                        let new_score = self.quiescence(alpha, beta);
+                        if new_score < beta {
+                            return Some(new_score.max(score));
+                        }
+                    }
                 }
             }
             // null move pruning
@@ -512,24 +535,6 @@ impl<P: PositionEvaluation> Searcher<P> {
                 self.pop();
                 if score >= beta {
                     return Some(beta);
-                }
-            }
-            // razoring
-            let d = 3;
-            if !is_pv_node && depth <= d && !is_checkmate(beta) {
-                let mut score = static_evaluation + (5 * PAWN_VALUE) / 4;
-                if score < beta {
-                    if depth == 1 {
-                        let new_score = self.quiescence(alpha, beta);
-                        return Some(new_score.max(score));
-                    }
-                    score += (7 * PAWN_VALUE) / 4;
-                    if score < beta && depth < d {
-                        let new_score = self.quiescence(alpha, beta);
-                        if new_score < beta {
-                            return Some(new_score.max(score));
-                        }
-                    }
                 }
             }
             // futility pruning condition
@@ -554,7 +559,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         );
         if weighted_moves.is_empty() {
             return if not_in_check {
-                Some(0)
+                Some(draw_score)
             } else {
                 Some(-mate_score)
             };
@@ -653,9 +658,10 @@ impl<P: PositionEvaluation> Searcher<P> {
         }
         self.pv_table.set_length(self.ply, self.ply);
         if self.board.is_other_draw() {
-            return 0;
+            return self.evaluator.evaluate_draw();
         }
-        if self.is_main_threaded() {
+        let is_pv_node = alpha != beta - 1;
+        if self.is_main_threaded() && is_pv_node {
             self.selective_depth.fetch_max(self.ply, MEMORY_ORDERING);
         }
         self.num_nodes_searched.fetch_add(1, MEMORY_ORDERING);

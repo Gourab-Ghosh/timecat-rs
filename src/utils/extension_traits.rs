@@ -106,6 +106,11 @@ pub trait PositionEvaluation: Clone + Send + 'static {
     fn evaluate_checkmate(&mut self, mate_distance: usize) -> Score {
         CHECKMATE_SCORE - mate_distance as Score
     }
+
+    #[inline]
+    fn evaluate_draw(&mut self) -> Score {
+        0
+    }
 }
 
 pub trait ChessEngine {

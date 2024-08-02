@@ -150,7 +150,7 @@ impl SubBoard {
 
     #[inline]
     pub fn get_non_king_pieces_mask(&self) -> BitBoard {
-        self.occupied() & !self.get_piece_mask(King)
+        self.occupied() ^ self.get_piece_mask(King)
     }
 
     pub fn has_only_same_colored_bishop(&self) -> bool {
@@ -166,10 +166,11 @@ impl SubBoard {
             || non_king_pieces_mask & BB_DARK_SQUARES == bishop_bitboard
     }
 
+    #[inline]
     pub fn is_insufficient_material(&self) -> bool {
         match self.occupied().popcnt() {
             2 => true,
-            3 => [Pawn, Rook, Queen]
+            3 => const { [Pawn, Rook, Queen] }
                 .into_iter()
                 .all(|piece| self.get_piece_mask(piece).is_empty()),
             _ => self.has_only_same_colored_bishop(),
