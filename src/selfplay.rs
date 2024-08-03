@@ -59,7 +59,8 @@ pub fn self_play(
             max_time_taken_fen = engine.get_board().get_fen();
         }
         time_taken_vec.push(time_elapsed.as_secs_f64());
-        prediction_score_vec.push(score);
+        // TODO: Fix the logic.
+        prediction_score_vec.push(score.unwrap_or_default());
         let nps =
             (engine.get_num_nodes_searched() as u128 * 10u128.pow(9)) / time_elapsed.as_nanos();
         println_wasm!("\n{}\n", engine.get_board());
