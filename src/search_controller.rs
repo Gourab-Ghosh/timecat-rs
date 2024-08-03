@@ -119,7 +119,7 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
     }
 
     fn stop_search_at_root_node(&mut self, searcher: &Searcher<P>) -> bool {
-        searcher.get_depth_completed() == self.max_depth || self.stop_search_at_every_node(searcher)
+        searcher.get_depth_completed() >= self.max_depth || self.stop_search_at_every_node(searcher)
     }
 
     fn stop_search_at_every_node(&mut self, searcher: &Searcher<P>) -> bool {
