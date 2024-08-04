@@ -12,7 +12,7 @@ impl EvaluatorNonNNUE {
     }
 
     pub fn slow_evaluate(sub_board: &SubBoard) -> Score {
-        Self::default().evaluate(sub_board)
+        Self::new(sub_board).evaluate(sub_board)
     }
 
     fn evaluate_raw(sub_board: &SubBoard) -> Score {

@@ -111,7 +111,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
     fn get_num_nodes_searched(&self) -> usize {
         self.num_nodes_searched.load(MEMORY_ORDERING)
     }
-    
+
     #[inline]
     pub fn get_selective_depth(&self) -> Ply {
         self.selective_depth.load(MEMORY_ORDERING)

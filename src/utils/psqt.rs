@@ -153,5 +153,5 @@ pub fn get_psqt_score(piece: Piece, mut square: Square, alpha: f64) -> Score {
     let opening_index = (piece.get_piece_type().to_index() << 7) ^ square.to_index();
     let opening_score = *get_item_unchecked!(PSQT_ARRAY, opening_index) as i32;
     let endgame_score = *get_item_unchecked!(PSQT_ARRAY, opening_index ^ 64) as i32;
-    ((alpha * opening_score + (1000 - alpha) + endgame_score) / 1000 as i32) as Score
+    ((alpha * opening_score + (1000 - alpha) + endgame_score) / 1000) as Score
 }
