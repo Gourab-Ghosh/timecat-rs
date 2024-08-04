@@ -137,13 +137,13 @@ pub trait ChessEngine {
     fn set_optional_io_reader(&mut self, optional_io_reader: Self::IoReader) {}
 
     #[inline]
-    #[must_use = "If you don't need the response, you can just search the position."]
+    #[must_use = "If you don't need the search info, you can just search the position."]
     fn go_quiet(&mut self, command: GoCommand) -> SearchInfo {
         self.go(command, false)
     }
 
     #[inline]
-    #[must_use = "If you don't need the response, you can just search the position."]
+    #[must_use = "If you don't need the search info, you can just search the position."]
     fn go_verbose(&mut self, command: GoCommand) -> SearchInfo {
         self.go(command, true)
     }

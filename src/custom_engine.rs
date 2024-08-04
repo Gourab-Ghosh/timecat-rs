@@ -265,7 +265,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
         self.evaluator.evaluate_flipped(&self.board)
     }
 
-    #[must_use = "If you don't need the response, you can just search the position."]
+    #[must_use = "If you don't need the search info, you can just search the position."]
     fn go(&mut self, command: GoCommand, verbose: bool) -> SearchInfo {
         self.reset_variables();
         let mut join_handles = vec![];
