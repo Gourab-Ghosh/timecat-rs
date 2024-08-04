@@ -231,7 +231,6 @@ pub mod engine {
     pub const LMR_TABLE: [[Depth; 64]; 64] = [[0; 64]; 64];
 }
 
-#[cfg(feature = "binary")]
 pub mod binary {
     use super::*;
 

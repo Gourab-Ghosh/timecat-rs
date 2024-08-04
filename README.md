@@ -99,11 +99,11 @@ fn main() {
 }
 ```
 
-You can use UCI commands, although it's not recommended in production environments due to potential parsing delays. The `binary` and `inbuilt_nnue` optional features are also required in this context.
+You can use UCI commands, although it's not recommended in production environments due to potential parsing delays. The `inbuilt_nnue` optional feature is also required in this context.
 
 As previous, add the timecat crate to your project:
 ```bash
-cargo add timecat --no-default-features --features "inbuilt_nnue binary"
+cargo add timecat --no-default-features --features inbuilt_nnue
 ```
 
 Then, you can proceed with the following Rust code:
@@ -161,7 +161,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 The `selfplay` command works on the binary as well.
 
 ## Cargo Features
-- `binary`: Enables binary builds, including NNUE and engine functionalities.
 - `binread`: Binread support.
 - `nnue_reader`: Adds support for NNUE evaluation by reading nnue files.
 - `inbuilt_nnue`: Integrate built-in NNUE evaluation support by including the nnue file directly into the binary, fetched using the minreq library.
@@ -172,7 +171,7 @@ The `selfplay` command works on the binary as well.
 - `debug`: Intended solely for development use.
 - `experimental`: Codes under development for upcoming features.
 
-Default features include `binary` and `colored`.
+Default features include `inbuilt_nnue` and `colored`.
 
 ## TODO
 - [ ] Implement other variants of chess.

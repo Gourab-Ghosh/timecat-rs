@@ -23,12 +23,11 @@ def main():
     FEATURE_SETS_CHECK = [
         [],
         ["default"],
+        ["debug"],
         ["nnue_reader"],
         ["inbuilt_nnue"],
-        ["binary"],
         ["serde"],
         ["serde", "wasm"],
-        ["binary", "serde"],
     ]
 
     if sys.platform == "linux":

@@ -13,11 +13,9 @@ pub mod error;
 pub mod evaluate;
 #[cfg(feature = "nnue_reader")]
 pub mod nnue;
-#[cfg(feature = "binary")]
 pub mod parse;
 #[cfg(feature = "experimental")]
 pub mod polyglot;
-#[cfg(feature = "binary")]
 pub mod runner;
 pub mod search;
 pub mod search_controller;
@@ -28,7 +26,6 @@ pub mod syzygy;
 #[cfg(feature = "debug")]
 pub mod tests;
 pub mod tt;
-#[cfg(feature = "binary")]
 pub mod uci;
 pub mod useful_macros;
 pub mod utils;
@@ -71,7 +68,6 @@ pub use binread::{BinRead, BinResult};
 pub use board::*;
 pub use chess::*;
 pub use constants::atomic::*;
-#[cfg(feature = "binary")]
 pub use constants::binary::*;
 pub use constants::bitboard_and_square::*;
 pub use constants::board::*;
@@ -94,10 +90,8 @@ pub use evaluate::*;
 pub use itertools::*;
 #[cfg(feature = "nnue_reader")]
 pub use nnue::*;
-#[cfg(feature = "binary")]
 pub use parse::*;
 pub use paste::paste;
-#[cfg(feature = "binary")]
 pub use runner::*;
 pub use search::*;
 pub use search_controller::SearchController;
@@ -129,7 +123,6 @@ pub use std::time::{Duration, Instant};
 #[cfg(feature = "debug")]
 pub use tests::test;
 pub use tt::*;
-#[cfg(feature = "binary")]
 pub use uci::*;
 pub use utils::*;
 #[cfg(feature = "wasm")]
