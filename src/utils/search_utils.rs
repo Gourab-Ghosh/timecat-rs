@@ -196,6 +196,16 @@ impl SearchInfo {
     }
 
     #[inline]
+    pub fn get_num_nodes_searched(&self) -> Option<usize> {
+        self.nodes
+    }
+
+    #[inline]
+    pub fn get_nps(&self) -> Option<u128> {
+        Some((self.nodes? as u128 * 10_u128.pow(9)) / self.get_time_elapsed()?.as_nanos())
+    }
+
+    #[inline]
     pub fn get_pv(&self) -> &[Move] {
         self.pv.as_slice()
     }
@@ -237,18 +247,14 @@ impl SearchInfo {
 
     #[inline]
     fn format_info<T: fmt::Display>(desc: &str, info: Option<T>) -> Option<String> {
+        let info = info?;
         Some(format!(
             "{} {}",
             desc.trim()
                 .trim_end_matches(':')
                 .colorize(SUCCESS_MESSAGE_STYLE),
-            info?,
+            info,
         ))
-    }
-
-    #[inline]
-    pub fn get_nps(&self) -> Option<u128> {
-        Some((self.nodes? as u128 * 10_u128.pow(9)) / self.get_time_elapsed()?.as_nanos())
     }
 
     pub fn print_info(&self) {

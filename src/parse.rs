@@ -232,27 +232,28 @@ impl GoAndPerft {
             println_wasm!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
-        let response = engine.go(go_command, true);
+        let response = engine.go_verbose(go_command);
         let Some(best_move) = response.get_best_move() else {
             return Err(BestMoveNotFound {
                 fen: engine.get_board().get_fen(),
             });
         };
         let elapsed_time = clock.elapsed();
-        let position_count = engine.get_num_nodes_searched();
-        let nps = format!(
-            "{} Nodes/sec",
-            (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
-        );
         let pv_string = get_pv_string(engine.get_board().get_sub_board(), response.get_pv());
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!();
         }
         println_info("Score", response.get_score().stringify());
         println_info("PV Line", pv_string);
-        println_info("Position Count", position_count);
         println_info("Time", elapsed_time.stringify());
-        println_info("Speed", nps);
+        if let Some(position_count) = response.get_num_nodes_searched() {
+            let nps = format!(
+                "{} Nodes/sec",
+                (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
+            );
+            println_info("Position Count", position_count);
+            println_info("Speed", nps);
+        }
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_info(
                 "Best Move",

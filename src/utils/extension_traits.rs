@@ -121,25 +121,16 @@ pub trait ChessEngine {
     fn set_transposition_table_size(&self, size: CacheTableSize);
     fn set_num_threads(&mut self, num_threads: NonZeroUsize);
     fn set_move_overhead(&mut self, duration: Duration);
-    fn get_num_nodes_searched(&self) -> usize;
     fn terminate(&self) -> bool;
     fn set_termination(&self, b: bool);
+    fn set_fen(&mut self, fen: &str) -> Result<()>;
     fn clear_hash(&mut self);
     fn evaluate_current_position(&mut self) -> Score;
     fn evaluate_current_position_flipped(&mut self) -> Score;
     fn go(&mut self, command: GoCommand, verbose: bool) -> SearchInfo;
 
-    fn set_fen(&mut self, fen: &str) -> Result<()> {
-        self.get_board_mut().set_fen(fen)?;
-        self.reset_variables();
-        Ok(())
-    }
-
     #[inline]
     fn print_info(&self) {}
-
-    #[inline]
-    fn reset_variables(&mut self) {}
 
     #[inline]
     #[allow(unused_variables)]

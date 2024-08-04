@@ -108,23 +108,41 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
     }
 
     #[inline]
+    fn get_num_nodes_searched(&self) -> usize {
+        self.num_nodes_searched.load(MEMORY_ORDERING)
+    }
+    
+    #[inline]
     pub fn get_selective_depth(&self) -> Ply {
         self.selective_depth.load(MEMORY_ORDERING)
     }
 
     #[inline]
-    fn get_num_threads(&self) -> usize {
+    pub fn get_num_threads(&self) -> usize {
         self.num_threads.get()
     }
 
     #[inline]
-    fn get_move_overhead(&self) -> Duration {
+    pub fn get_move_overhead(&self) -> Duration {
         self.controller.get_move_overhead()
     }
 
     #[inline]
-    fn get_optional_io_reader(&self) -> Option<IoReader> {
+    pub fn get_optional_io_reader(&self) -> Option<IoReader> {
         self.optional_io_reader.clone()
+    }
+
+    pub fn reset_variables(&mut self) {
+        self.num_nodes_searched.store(0, MEMORY_ORDERING);
+        self.selective_depth.store(0, MEMORY_ORDERING);
+        self.controller.reset_variables();
+        self.evaluator.reset_variables();
+        if self.properties.clear_table_after_each_search() {
+            self.transposition_table.clear();
+        }
+        self.transposition_table.reset_variables();
+        self.set_stop_command(false);
+        self.set_termination(false);
     }
 
     #[inline]
@@ -187,17 +205,10 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
         &mut self.board
     }
 
-    fn reset_variables(&mut self) {
-        self.num_nodes_searched.store(0, MEMORY_ORDERING);
-        self.selective_depth.store(0, MEMORY_ORDERING);
-        self.controller.reset_variables();
-        self.evaluator.reset_variables();
-        if self.properties.clear_table_after_each_search() {
-            self.transposition_table.clear();
-        }
-        self.transposition_table.reset_variables();
-        self.set_stop_command(false);
-        self.set_termination(false);
+    fn set_fen(&mut self, fen: &str) -> Result<()> {
+        self.get_board_mut().set_fen(fen)?;
+        self.reset_variables();
+        Ok(())
     }
 
     fn set_transposition_table_size(&self, size: CacheTableSize) {
@@ -215,11 +226,6 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
     #[inline]
     fn set_move_overhead(&mut self, duration: Duration) {
         self.controller.set_move_overhead(duration);
-    }
-
-    #[inline]
-    fn get_num_nodes_searched(&self) -> usize {
-        self.num_nodes_searched.load(MEMORY_ORDERING)
     }
 
     #[inline]

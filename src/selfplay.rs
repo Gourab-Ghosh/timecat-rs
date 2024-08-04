@@ -61,15 +61,19 @@ pub fn self_play(
         time_taken_vec.push(time_elapsed.as_secs_f64());
         // TODO: Fix the logic.
         prediction_score_vec.push(score.unwrap_or_default());
-        let nps =
-            (engine.get_num_nodes_searched() as u128 * 10u128.pow(9)) / time_elapsed.as_nanos();
         println_wasm!("\n{}\n", engine.get_board());
         println_info("Best Move", best_move_san);
         println_info("Score", score.stringify());
-        println_info("Num Nodes Searched", engine.get_num_nodes_searched());
         println_info("PV Line", pv);
         println_info("Time Taken", time_elapsed.stringify());
-        println_info("Nodes per second", format!("{} nodes/s", nps));
+        if let Some(num_nodes_searched) = response.get_num_nodes_searched() {
+            let nps = format!(
+                "{} Nodes/sec",
+                (num_nodes_searched as u128 * 10u128.pow(9)) / time_elapsed.as_nanos()
+            );
+            println_info("Num Nodes Searched", num_nodes_searched);
+            println_info("Nodes per second", nps);
+        }
     }
     let mean = time_taken_vec.iter().sum::<f64>() / time_taken_vec.len() as f64;
     let std_err = (time_taken_vec
