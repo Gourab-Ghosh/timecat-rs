@@ -27,6 +27,7 @@ def main():
         ["nnue_reader"],
         ["inbuilt_nnue"],
         ["serde"],
+        ["pyo3"],
         ["serde", "wasm"],
     ]
 

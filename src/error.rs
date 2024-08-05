@@ -208,3 +208,10 @@ impl From<&str> for TimecatError {
         err_msg.to_string().into()
     }
 }
+
+#[cfg(feature = "pyo3")]
+impl From<TimecatError> for PyErr {
+    fn from(err: TimecatError) -> PyErr {
+        pyo3::exceptions::PyRuntimeError::new_err(format!("TimecatError occurred: {:?}", err))
+    }
+}

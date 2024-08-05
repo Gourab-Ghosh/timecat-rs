@@ -87,6 +87,8 @@ pub use constants::types::*;
 pub use custom_engine::*;
 pub use error::*;
 pub use evaluate::*;
+#[cfg(feature = "pyo3")]
+pub use pyo3::prelude::*;
 pub use itertools::*;
 #[cfg(feature = "nnue_reader")]
 pub use nnue::*;

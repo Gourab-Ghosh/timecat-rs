@@ -168,6 +168,7 @@ The `selfplay` command works on the binary as well.
 - `colored`: Displays all information in a visually appealing colored format for enhanced readability.
 - `serde`: Enables serialization and deserialization support via `serde`.
 - `wasm`: Webassembly support (Still in Testing phase).
+- `pyo3`: Pyo3 support.
 - `debug`: Intended solely for development use.
 - `experimental`: Codes under development for upcoming features.
 

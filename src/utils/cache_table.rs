@@ -39,6 +39,8 @@ pub enum CacheTableSize {
 }
 
 impl CacheTableSize {
+    pub const ZERO: Self = Self::Exact(0);
+    
     pub const fn unwrap(self) -> usize {
         match self {
             Self::Max(size) => size,
@@ -66,6 +68,11 @@ impl CacheTableSize {
     #[inline]
     pub const fn is_exact(self) -> bool {
         matches!(self, Self::Exact(_))
+    }
+
+    #[inline]
+    pub const fn is_zero(self) -> bool {
+        matches!(self, Self::ZERO)
     }
 
     #[inline]
