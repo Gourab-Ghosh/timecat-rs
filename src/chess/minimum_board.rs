@@ -291,7 +291,6 @@ impl MinimumBoard {
         self.make_move_new(move_).status() == BoardStatus::Checkmate
     }
 
-    #[inline]
     pub fn null_move_unchecked(&self) -> Self {
         let mut result = self.to_owned();
         result._turn = !result.turn();
