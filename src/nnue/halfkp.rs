@@ -167,7 +167,7 @@ impl HalfKPModelReader {
             self.transformer.get_biases().into(),
             self.transformer.get_biases().into(),
         ];
-        let sub_board: SubBoard = SubBoardBuilder::new()
+        let minimum_board: MinimumBoard = MinimumBoardBuilder::new()
             .add_piece(white_king_square, WhiteKing)
             .add_piece(black_king_square, BlackKing)
             .try_into()
@@ -179,22 +179,22 @@ impl HalfKPModelReader {
             },
             transformer: self.transformer.clone(),
             network: self.network.clone(),
-            last_sub_board: sub_board,
+            last_minimum_board: minimum_board,
         }
     }
 
-    pub fn to_model(&self, sub_board: &SubBoard) -> HalfKPModel {
+    pub fn to_model(&self, minimum_board: &MinimumBoard) -> HalfKPModel {
         let mut halfkp_model = self.to_empty_model(
-            sub_board.get_king_square(White),
-            sub_board.get_king_square(Black),
+            minimum_board.get_king_square(White),
+            minimum_board.get_king_square(Black),
         );
-        halfkp_model.update_empty_model(sub_board);
-        halfkp_model.update_last_sub_board(sub_board.clone());
+        halfkp_model.update_empty_model(minimum_board);
+        halfkp_model.update_last_minimum_board(minimum_board.clone());
         halfkp_model
     }
 
     pub fn to_default_model(&self) -> HalfKPModel {
-        self.to_model(&SubBoard::default())
+        self.to_model(&MinimumBoard::default())
     }
 }
 
@@ -212,7 +212,7 @@ pub struct HalfKPModel {
     transformer: SerdeWrapper<Arc<HalfKPFeatureTransformer<AccumulatorDataType>>>,
     network: SerdeWrapper<Arc<HalfKPNetwork>>,
     accumulator: Accumulator,
-    last_sub_board: SubBoard,
+    last_minimum_board: MinimumBoard,
 }
 
 impl HalfKPModel {
@@ -239,17 +239,17 @@ impl HalfKPModel {
     }
 
     #[inline]
-    fn update_empty_model_of_one_side(&mut self, sub_board: &SubBoard, turn: Color) {
-        sub_board
+    fn update_empty_model_of_one_side(&mut self, minimum_board: &MinimumBoard, turn: Color) {
+        minimum_board
             .custom_iter(&ALL_PIECE_TYPES[..5], &[White, Black], BB_ALL)
             .for_each(|(piece, square)| self.activate_non_king_piece(turn, piece, square))
     }
 
     #[inline]
-    fn update_empty_model(&mut self, sub_board: &SubBoard) {
+    fn update_empty_model(&mut self, minimum_board: &MinimumBoard) {
         ALL_COLORS
             .into_iter()
-            .for_each(|turn| self.update_empty_model_of_one_side(sub_board, turn));
+            .for_each(|turn| self.update_empty_model_of_one_side(minimum_board, turn));
     }
 
     #[inline]
@@ -265,41 +265,41 @@ impl HalfKPModel {
     }
 
     #[inline]
-    fn update_last_sub_board(&mut self, sub_board: SubBoard) {
-        self.last_sub_board = sub_board;
+    fn update_last_minimum_board(&mut self, minimum_board: MinimumBoard) {
+        self.last_minimum_board = minimum_board;
     }
 
-    pub fn reset_model(&mut self, sub_board: &SubBoard) {
+    pub fn reset_model(&mut self, minimum_board: &MinimumBoard) {
         self.clear();
         self.accumulator.king_squares_rotated = [
-            sub_board.get_king_square(White),
-            sub_board.get_king_square(Black).rotate(),
+            minimum_board.get_king_square(White),
+            minimum_board.get_king_square(Black).rotate(),
         ]
         .into();
-        self.update_empty_model(sub_board);
-        self.update_last_sub_board(sub_board.clone());
+        self.update_empty_model(minimum_board);
+        self.update_last_minimum_board(minimum_board.clone());
     }
 
-    fn update_king(&mut self, sub_board: &SubBoard, color: Color) {
+    fn update_king(&mut self, minimum_board: &MinimumBoard, color: Color) {
         let new_king_square = if color == White {
-            sub_board.get_king_square(color)
+            minimum_board.get_king_square(color)
         } else {
-            sub_board.get_king_square(color).rotate()
+            minimum_board.get_king_square(color).rotate()
         };
         self.accumulator.king_squares_rotated[color.to_index()] = new_king_square;
         self.clear_one_side(color);
-        self.update_empty_model_of_one_side(sub_board, color);
+        self.update_empty_model_of_one_side(minimum_board, color);
     }
 
-    pub fn update_model(&mut self, sub_board: &SubBoard) {
+    pub fn update_model(&mut self, minimum_board: &MinimumBoard) {
         let mut white_king_updated = false;
         let mut black_king_updated = false;
-        if self.last_sub_board.get_king_square(White) != sub_board.get_king_square(White) {
-            self.update_king(sub_board, White);
+        if self.last_minimum_board.get_king_square(White) != minimum_board.get_king_square(White) {
+            self.update_king(minimum_board, White);
             white_king_updated = true;
         }
-        if self.last_sub_board.get_king_square(Black) != sub_board.get_king_square(Black) {
-            self.update_king(sub_board, Black);
+        if self.last_minimum_board.get_king_square(Black) != minimum_board.get_king_square(Black) {
+            self.update_king(minimum_board, Black);
             black_king_updated = true;
         }
         let mut colors_to_update = Vec::with_capacity(2);
@@ -314,10 +314,10 @@ impl HalfKPModel {
             Added((Piece, Square)),
             Removed((Piece, Square)),
         }
-        let last_sub_board_piece_masks = self.last_sub_board.get_piece_masks().to_owned();
-        let last_sub_board_occupied_cos = [
-            self.last_sub_board.occupied_co(White),
-            self.last_sub_board.occupied_co(Black),
+        let last_minimum_board_piece_masks = self.last_minimum_board.get_piece_masks().to_owned();
+        let last_minimum_board_occupied_cos = [
+            self.last_minimum_board.occupied_co(White),
+            self.last_minimum_board.occupied_co(Black),
         ];
         colors_to_update
             .into_iter()
@@ -326,10 +326,10 @@ impl HalfKPModel {
                     .iter()
                     .cartesian_product(ALL_COLORS)
                     .flat_map(|(&piece_type, color)| {
-                        let prev_occupied = last_sub_board_occupied_cos[color.to_index()]
-                            & last_sub_board_piece_masks[piece_type.to_index()];
+                        let prev_occupied = last_minimum_board_occupied_cos[color.to_index()]
+                            & last_minimum_board_piece_masks[piece_type.to_index()];
                         let new_occupied =
-                            sub_board.occupied_co(color) & sub_board.get_piece_mask(piece_type);
+                            minimum_board.occupied_co(color) & minimum_board.get_piece_mask(piece_type);
                         (!prev_occupied & new_occupied)
                             .map(move |square| {
                                 Change::Added((Piece::new(piece_type, color), square))
@@ -345,7 +345,7 @@ impl HalfKPModel {
                     self.deactivate_non_king_piece(turn, piece, square)
                 }
             });
-        self.update_last_sub_board(sub_board.clone());
+        self.update_last_minimum_board(minimum_board.clone());
     }
 
     pub fn evaluate_current_state_flipped(&self, turn: Color) -> Score {
@@ -387,12 +387,12 @@ impl HalfKPModel {
         }
     }
 
-    pub fn update_model_and_evaluate(&mut self, sub_board: &SubBoard) -> Score {
-        self.update_model(sub_board);
-        self.evaluate_current_state(sub_board.turn())
+    pub fn update_model_and_evaluate(&mut self, minimum_board: &MinimumBoard) -> Score {
+        self.update_model(minimum_board);
+        self.evaluate_current_state(minimum_board.turn())
     }
 
-    pub fn slow_evaluate_from_sub_board(&self, sub_board: &SubBoard) -> Score {
+    pub fn slow_evaluate_from_minimum_board(&self, minimum_board: &MinimumBoard) -> Score {
         let mut model = Self {
             transformer: self.transformer.clone(),
             network: self.network.clone(),
@@ -403,14 +403,14 @@ impl HalfKPModel {
                 ]
                 .into(),
                 king_squares_rotated: [
-                    sub_board.get_king_square(White),
-                    sub_board.get_king_square(Black).rotate(),
+                    minimum_board.get_king_square(White),
+                    minimum_board.get_king_square(Black).rotate(),
                 ]
                 .into(),
             },
-            last_sub_board: sub_board.clone(),
+            last_minimum_board: minimum_board.clone(),
         };
-        model.update_empty_model(sub_board);
-        model.evaluate_current_state(sub_board.turn())
+        model.update_empty_model(minimum_board);
+        model.evaluate_current_state(minimum_board.turn())
     }
 }

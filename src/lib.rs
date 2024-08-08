@@ -40,7 +40,7 @@ pub mod prelude {
         BitBoard, Black, Board, BoardStatus, CacheTable, CacheTableSize, CastleMoveType,
         CastleRights, Color, Depth, Engine, Evaluator, File, GameResult, GoCommand, IoReader, King,
         Knight, Move, MoveWeight, Pawn, Piece, PieceType, Ply, Queen, Rank, RepetitionTable, Rook,
-        Score, SearchInfo, SearchInfoBuilder, Square, SubBoard, SubBoardBuilder, TimecatError,
+        Score, SearchInfo, SearchInfoBuilder, Square, MinimumBoard, MinimumBoardBuilder, TimecatError,
         TranspositionTable, ValidOrNullMove, WeightedMove, White, Zobrist, A1, A2, A3, A4, A5, A6,
         A7, A8, ALL_FILES, ALL_PIECE_TYPES, ALL_RANKS, ALL_SQUARES, B1, B2, B3, B4, B5, B6, B7, B8,
         BB_A1, BB_A2, BB_A3, BB_A4, BB_A5, BB_A6, BB_A7, BB_A8, BB_ALL, BB_B1, BB_B2, BB_B3, BB_B4,

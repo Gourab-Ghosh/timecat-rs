@@ -129,13 +129,13 @@ impl MoveSorter {
         *get_item_unchecked!(self.history_move_scores, piece.to_index(), dest.to_index())
     }
 
-    fn get_least_attackers_move(square: Square, board: &SubBoard) -> Option<Move> {
+    fn get_least_attackers_move(square: Square, board: &MinimumBoard) -> Option<Move> {
         let mut capture_moves = board.generate_legal_moves();
         capture_moves.set_to_bitboard_iterator_mask(square.to_bitboard());
         capture_moves.next() // No need to find least attacker as the moves are already sorted
     }
 
-    fn see(square: Square, board: &SubBoard) -> Score {
+    fn see(square: Square, board: &MinimumBoard) -> Score {
         let least_attackers_move = match Self::get_least_attackers_move(square, board) {
             Some(valid_or_null_move) => valid_or_null_move,
             None => return 0,
@@ -145,7 +145,7 @@ impl MoveSorter {
             .max(0)
     }
 
-    fn see_capture(square: Square, board: &SubBoard) -> Score {
+    fn see_capture(square: Square, board: &MinimumBoard) -> Score {
         let least_attackers_move = match Self::get_least_attackers_move(square, board) {
             Some(valid_or_null_move) => valid_or_null_move,
             None => return 0,
@@ -154,7 +154,7 @@ impl MoveSorter {
         capture_piece.evaluate() - Self::see(square, &board.make_move_new(least_attackers_move))
     }
 
-    fn mvv_lva(move_: Move, board: &SubBoard) -> MoveWeight {
+    fn mvv_lva(move_: Move, board: &MinimumBoard) -> MoveWeight {
         *get_item_unchecked!(
             MVV_LVA,
             board
@@ -240,15 +240,15 @@ impl MoveSorter {
         if history_score != 0 {
             return 400000 + history_score;
         }
-        let move_made_sub_board = board.make_move_new(move_);
+        let move_made_minimum_board = board.make_move_new(move_);
         // check
-        let checkers = move_made_sub_board.get_checkers();
+        let checkers = move_made_minimum_board.get_checkers();
         let moving_piece = board.get_piece_type_at(move_.get_source()).unwrap();
         if !checkers.is_empty() {
             return -700000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
         MAX_MOVES_PER_POSITION as MoveWeight
-            - move_made_sub_board.generate_legal_moves().len() as MoveWeight
+            - move_made_minimum_board.generate_legal_moves().len() as MoveWeight
     }
 
     pub fn get_weighted_moves_sorted(

@@ -10,7 +10,7 @@ pub enum BoardStatus {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq)]
-pub struct SubBoard {
+pub struct MinimumBoard {
     _piece_masks: [BitBoard; NUM_PIECE_TYPES],
     _occupied_co: [BitBoard; NUM_COLORS],
     _occupied: BitBoard,
@@ -27,7 +27,7 @@ pub struct SubBoard {
     _black_material_score: Score,
 }
 
-impl PartialEq for SubBoard {
+impl PartialEq for MinimumBoard {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.transposition_key_components()
@@ -35,7 +35,7 @@ impl PartialEq for SubBoard {
     }
 }
 
-impl SubBoard {
+impl MinimumBoard {
     #[inline]
     pub fn transposition_key_components(
         &self,
@@ -961,7 +961,7 @@ impl SubBoard {
     }
 }
 
-impl SubBoardMethodOverload<Move> for SubBoard {
+impl MinimumBoardMethodOverload<Move> for MinimumBoard {
     #[inline]
     fn parse_san(&self, san: &str) -> Result<Move> {
         Move::from_san(self, san)
@@ -1097,7 +1097,7 @@ impl SubBoardMethodOverload<Move> for SubBoard {
     }
 }
 
-impl SubBoardMethodOverload<ValidOrNullMove> for SubBoard {
+impl MinimumBoardMethodOverload<ValidOrNullMove> for MinimumBoard {
     #[inline]
     fn parse_san(&self, san: &str) -> Result<ValidOrNullMove> {
         ValidOrNullMove::from_san(self, san)
@@ -1122,14 +1122,14 @@ impl SubBoardMethodOverload<ValidOrNullMove> for SubBoard {
     }
 }
 
-impl TryFrom<&SubBoardBuilder> for SubBoard {
+impl TryFrom<&MinimumBoardBuilder> for MinimumBoard {
     type Error = TimecatError;
 
-    fn try_from(sub_board_builder: &SubBoardBuilder) -> Result<Self> {
-        let mut board = SubBoard::new_empty();
+    fn try_from(minimum_board_builder: &MinimumBoardBuilder) -> Result<Self> {
+        let mut board = MinimumBoard::new_empty();
 
         for square in ALL_SQUARES {
-            if let Some(piece) = sub_board_builder[square] {
+            if let Some(piece) = minimum_board_builder[square] {
                 board.xor(
                     piece.get_piece_type(),
                     square.to_bitboard(),
@@ -1138,69 +1138,69 @@ impl TryFrom<&SubBoardBuilder> for SubBoard {
             }
         }
 
-        board._turn = sub_board_builder.get_turn();
+        board._turn = minimum_board_builder.get_turn();
 
-        if let Some(ep) = sub_board_builder.get_en_passant() {
+        if let Some(ep) = minimum_board_builder.get_en_passant() {
             board._turn = !board.turn();
             board.set_ep(ep);
             board._turn = !board.turn();
         }
 
-        board.add_castle_rights(White, sub_board_builder.get_castle_rights(White));
-        board.add_castle_rights(Black, sub_board_builder.get_castle_rights(Black));
+        board.add_castle_rights(White, minimum_board_builder.get_castle_rights(White));
+        board.add_castle_rights(Black, minimum_board_builder.get_castle_rights(Black));
 
-        board._halfmove_clock = sub_board_builder.get_halfmove_clock();
-        board._fullmove_number = sub_board_builder.get_fullmove_number();
+        board._halfmove_clock = minimum_board_builder.get_halfmove_clock();
+        board._fullmove_number = minimum_board_builder.get_fullmove_number();
 
         board.update_pin_and_checkers_info();
 
         if board.is_sane() {
             Ok(board)
         } else {
-            Err(TimecatError::InvalidSubBoard { board })
+            Err(TimecatError::InvalidMinimumBoard { board })
         }
     }
 }
 
-impl TryFrom<SubBoardBuilder> for SubBoard {
+impl TryFrom<MinimumBoardBuilder> for MinimumBoard {
     type Error = TimecatError;
 
-    fn try_from(sub_board_builder: SubBoardBuilder) -> Result<Self> {
-        (&sub_board_builder).try_into()
+    fn try_from(minimum_board_builder: MinimumBoardBuilder) -> Result<Self> {
+        (&minimum_board_builder).try_into()
     }
 }
 
-impl TryFrom<&mut SubBoardBuilder> for SubBoard {
+impl TryFrom<&mut MinimumBoardBuilder> for MinimumBoard {
     type Error = TimecatError;
 
-    fn try_from(sub_board_builder: &mut SubBoardBuilder) -> Result<Self> {
-        (sub_board_builder.to_owned()).try_into()
+    fn try_from(minimum_board_builder: &mut MinimumBoardBuilder) -> Result<Self> {
+        (minimum_board_builder.to_owned()).try_into()
     }
 }
 
-impl FromStr for SubBoard {
+impl FromStr for MinimumBoard {
     type Err = TimecatError;
 
     fn from_str(value: &str) -> Result<Self> {
-        SubBoardBuilder::from_str(value)?.try_into()
+        MinimumBoardBuilder::from_str(value)?.try_into()
     }
 }
 
-impl Default for SubBoard {
+impl Default for MinimumBoard {
     #[inline]
     fn default() -> Self {
         Self::from_str(STARTING_POSITION_FEN).unwrap()
     }
 }
 
-impl fmt::Display for SubBoard {
+impl fmt::Display for MinimumBoard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let fen: SubBoardBuilder = self.into();
+        let fen: MinimumBoardBuilder = self.into();
         write!(f, "{}", fen)
     }
 }
 
-impl Hash for SubBoard {
+impl Hash for MinimumBoard {
     fn hash<H: Hasher>(&self, state: &mut H) {
         state.write_u64(self.get_hash())
     }

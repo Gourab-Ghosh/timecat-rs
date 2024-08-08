@@ -34,8 +34,8 @@ impl GameResult {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Board {
-    sub_board: SubBoard,
-    stack: Vec<(SubBoard, ValidOrNullMove)>,
+    minimum_board: MinimumBoard,
+    stack: Vec<(MinimumBoard, ValidOrNullMove)>,
     starting_fen: String,
     repetition_table: RepetitionTable,
     #[cfg(feature = "extras")]
@@ -44,7 +44,7 @@ pub struct Board {
 
 impl Board {
     pub fn new() -> Self {
-        SubBoard::from_str(STARTING_POSITION_FEN).unwrap().into()
+        MinimumBoard::from_str(STARTING_POSITION_FEN).unwrap().into()
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<()> {
@@ -56,7 +56,7 @@ impl Board {
             self.starting_fen = self.get_fen();
             return Ok(());
         }
-        self.sub_board = SubBoard::from_str(&fen)?;
+        self.minimum_board = MinimumBoard::from_str(&fen)?;
         self.repetition_table.clear();
         self.repetition_table.insert(self.get_hash());
         self.starting_fen = self.get_fen();
@@ -70,8 +70,8 @@ impl Board {
         Ok(board)
     }
 
-    pub fn get_sub_board(&self) -> &SubBoard {
-        &self.sub_board
+    pub fn get_minimum_board(&self) -> &MinimumBoard {
+        &self.minimum_board
     }
 
     #[cfg(feature = "extras")]
@@ -86,7 +86,7 @@ impl Board {
 
     pub fn is_good_fen(fen: &str) -> bool {
         let fen = simplify_fen(fen);
-        if SubBoard::from_str(&fen).is_err() {
+        if MinimumBoard::from_str(&fen).is_err() {
             return false;
         }
         let mut splitted_fen = fen.split(' ');
@@ -108,21 +108,21 @@ impl Board {
     }
 
     pub fn flip_vertical(&mut self) {
-        self.sub_board.flip_vertical();
+        self.minimum_board.flip_vertical();
         self.stack.clear();
         self.repetition_table.clear();
         self.starting_fen = self.get_fen();
     }
 
     pub fn flip_vertical_and_flip_turn(&mut self) {
-        self.sub_board.flip_vertical_and_flip_turn();
+        self.minimum_board.flip_vertical_and_flip_turn();
         self.stack.clear();
         self.repetition_table.clear();
         self.starting_fen = self.get_fen();
     }
 
     pub fn flip_horizontal(&mut self) {
-        self.sub_board.flip_horizontal();
+        self.minimum_board.flip_horizontal();
         self.stack.clear();
         self.repetition_table.clear();
         self.starting_fen = self.get_fen();
@@ -130,7 +130,7 @@ impl Board {
 
     #[inline]
     pub fn to_board_string(&self, use_unicode: bool) -> String {
-        self.sub_board.to_board_string(
+        self.minimum_board.to_board_string(
             self.stack.last().map_or(Default::default(), |(_, m)| *m),
             use_unicode,
         )
@@ -138,7 +138,7 @@ impl Board {
 
     #[inline]
     pub fn to_unicode_string(&self) -> String {
-        self.sub_board
+        self.minimum_board
             .to_unicode_string(self.stack.last().map_or(Default::default(), |(_, m)| *m))
     }
 
@@ -206,9 +206,9 @@ impl Board {
     }
 
     pub fn pop(&mut self) -> ValidOrNullMove {
-        let (sub_board, valid_or_null_move) = self.stack.pop().unwrap();
+        let (minimum_board, valid_or_null_move) = self.stack.pop().unwrap();
         self.repetition_table.remove(self.get_hash());
-        self.sub_board = sub_board;
+        self.minimum_board = minimum_board;
         valid_or_null_move
     }
 
@@ -279,7 +279,7 @@ impl Board {
             self.push(valid_or_null_move)?;
             return Ok("--".to_string());
         }
-        let san = valid_or_null_move.algebraic_without_suffix(self.get_sub_board(), long)?;
+        let san = valid_or_null_move.algebraic_without_suffix(self.get_minimum_board(), long)?;
 
         // Look ahead for check or checkmate.
         self.push(valid_or_null_move)?;
@@ -380,7 +380,7 @@ impl Board {
     #[cfg(feature = "extras")]
     #[inline]
     pub fn evaluate(&mut self) -> Score {
-        self.evaluator.evaluate(&self.sub_board)
+        self.evaluator.evaluate(&self.minimum_board)
     }
 
     #[cfg(feature = "extras")]
@@ -393,10 +393,10 @@ impl Board {
 
 impl BoardMethodOverload<Move> for Board {
     fn push_unchecked(&mut self, move_: Move) {
-        let sub_board_copy = self.sub_board.clone();
-        self.sub_board.make_move(move_);
+        let minimum_board_copy = self.minimum_board.clone();
+        self.minimum_board.make_move(move_);
         self.repetition_table.insert(self.get_hash());
-        self.stack.push((sub_board_copy, move_.into()));
+        self.stack.push((minimum_board_copy, move_.into()));
     }
 
     fn push(&mut self, move_: Move) -> Result<()> {
@@ -413,20 +413,20 @@ impl BoardMethodOverload<Move> for Board {
     #[inline]
     fn gives_repetition(&self, move_: Move) -> bool {
         self.repetition_table
-            .get_repetition(self.sub_board.make_move_new(move_).get_hash())
+            .get_repetition(self.minimum_board.make_move_new(move_).get_hash())
             != 0
     }
 
     #[inline]
     fn gives_threefold_repetition(&self, move_: Move) -> bool {
         self.repetition_table
-            .get_repetition(self.sub_board.make_move_new(move_).get_hash())
+            .get_repetition(self.minimum_board.make_move_new(move_).get_hash())
             == 2
     }
 
     fn gives_claimable_threefold_repetition(&self, move_: Move) -> bool {
         //TODO: check if this is correct
-        let new_board = self.sub_board.make_move_new(move_);
+        let new_board = self.minimum_board.make_move_new(move_);
         new_board.generate_legal_moves().any(|m| {
             let hash = new_board.make_move_new(m).get_hash();
             self.repetition_table.get_repetition(hash) == 2
@@ -436,10 +436,10 @@ impl BoardMethodOverload<Move> for Board {
 
 impl BoardMethodOverload<ValidOrNullMove> for Board {
     fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
-        let sub_board_copy = self.sub_board.clone();
-        self.sub_board.make_move(valid_or_null_move);
+        let minimum_board_copy = self.minimum_board.clone();
+        self.minimum_board.make_move(valid_or_null_move);
         self.repetition_table.insert(self.get_hash());
-        self.stack.push((sub_board_copy, valid_or_null_move));
+        self.stack.push((minimum_board_copy, valid_or_null_move));
     }
 
     fn push(&mut self, valid_or_null_move: ValidOrNullMove) -> Result<()> {
@@ -459,20 +459,20 @@ impl BoardMethodOverload<ValidOrNullMove> for Board {
     #[inline]
     fn gives_repetition(&self, valid_or_null_move: ValidOrNullMove) -> bool {
         self.repetition_table
-            .get_repetition(self.sub_board.make_move_new(valid_or_null_move).get_hash())
+            .get_repetition(self.minimum_board.make_move_new(valid_or_null_move).get_hash())
             != 0
     }
 
     #[inline]
     fn gives_threefold_repetition(&self, valid_or_null_move: ValidOrNullMove) -> bool {
         self.repetition_table
-            .get_repetition(self.sub_board.make_move_new(valid_or_null_move).get_hash())
+            .get_repetition(self.minimum_board.make_move_new(valid_or_null_move).get_hash())
             == 2
     }
 
     fn gives_claimable_threefold_repetition(&self, valid_or_null_move: ValidOrNullMove) -> bool {
         //TODO: check if this is correct
-        let new_board = self.sub_board.make_move_new(valid_or_null_move);
+        let new_board = self.minimum_board.make_move_new(valid_or_null_move);
         new_board.generate_legal_moves().any(|m| {
             let hash = new_board.make_move_new(m).get_hash();
             self.repetition_table.get_repetition(hash) == 2
@@ -500,13 +500,13 @@ impl FromStr for Board {
     }
 }
 
-impl From<SubBoard> for Board {
-    fn from(sub_board: SubBoard) -> Self {
+impl From<MinimumBoard> for Board {
+    fn from(minimum_board: MinimumBoard) -> Self {
         let mut board = Self {
             #[cfg(feature = "extras")]
-            evaluator: Evaluator::new(&sub_board),
-            starting_fen: sub_board.get_fen(),
-            sub_board,
+            evaluator: Evaluator::new(&minimum_board),
+            starting_fen: minimum_board.get_fen(),
+            minimum_board,
             stack: Vec::new(),
             repetition_table: RepetitionTable::new(),
         };
@@ -515,16 +515,16 @@ impl From<SubBoard> for Board {
     }
 }
 
-impl From<&SubBoard> for Board {
-    fn from(sub_board: &SubBoard) -> Self {
-        sub_board.to_owned().into()
+impl From<&MinimumBoard> for Board {
+    fn from(minimum_board: &MinimumBoard) -> Self {
+        minimum_board.to_owned().into()
     }
 }
 
 impl Deref for Board {
-    type Target = SubBoard;
+    type Target = MinimumBoard;
 
     fn deref(&self) -> &Self::Target {
-        &self.sub_board
+        &self.minimum_board
     }
 }

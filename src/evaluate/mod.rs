@@ -18,30 +18,30 @@ pub struct Evaluator {
 }
 
 impl Evaluator {
-    pub fn new(sub_board: &SubBoard) -> Self {
+    pub fn new(minimum_board: &MinimumBoard) -> Self {
         Self {
             #[cfg(feature = "inbuilt_nnue")]
-            inner_evaluator: EvaluatorNNUE::new(sub_board),
+            inner_evaluator: EvaluatorNNUE::new(minimum_board),
             #[cfg(not(feature = "inbuilt_nnue"))]
-            inner_evaluator: EvaluatorNonNNUE::new(sub_board),
+            inner_evaluator: EvaluatorNonNNUE::new(minimum_board),
         }
     }
 
-    pub fn slow_evaluate(sub_board: &SubBoard) -> Score {
+    pub fn slow_evaluate(minimum_board: &MinimumBoard) -> Score {
         #[cfg(feature = "inbuilt_nnue")]
         {
-            EvaluatorNNUE::slow_evaluate(sub_board)
+            EvaluatorNNUE::slow_evaluate(minimum_board)
         }
         #[cfg(not(feature = "inbuilt_nnue"))]
         {
-            EvaluatorNonNNUE::slow_evaluate(sub_board)
+            EvaluatorNonNNUE::slow_evaluate(minimum_board)
         }
     }
 }
 
 impl PositionEvaluation for Evaluator {
-    fn evaluate(&mut self, sub_board: &SubBoard) -> Score {
-        self.inner_evaluator.evaluate(sub_board)
+    fn evaluate(&mut self, minimum_board: &MinimumBoard) -> Score {
+        self.inner_evaluator.evaluate(minimum_board)
     }
 
     fn reset_variables(&mut self) {
@@ -56,8 +56,8 @@ impl PositionEvaluation for Evaluator {
         self.inner_evaluator.print_info()
     }
 
-    fn evaluate_flipped(&mut self, sub_board: &SubBoard) -> Score {
-        self.inner_evaluator.evaluate_flipped(sub_board)
+    fn evaluate_flipped(&mut self, minimum_board: &MinimumBoard) -> Score {
+        self.inner_evaluator.evaluate_flipped(minimum_board)
     }
 
     fn evaluate_checkmate(&mut self, mate_distance: usize) -> Score {

@@ -41,35 +41,35 @@ impl Move {
         self.promotion
     }
 
-    pub fn from_san(sub_board: &SubBoard, san: &str) -> Result<Self> {
+    pub fn from_san(minimum_board: &MinimumBoard, san: &str) -> Result<Self> {
         // TODO: Make the logic better
         let san = san.trim().replace('0', "O");
-        for move_ in sub_board.generate_legal_moves() {
-            if move_.san(sub_board).unwrap() == san {
+        for move_ in minimum_board.generate_legal_moves() {
+            if move_.san(minimum_board).unwrap() == san {
                 return Ok(move_);
             }
         }
         Err(TimecatError::InvalidSanMoveString { s: san.to_string() })
     }
 
-    pub fn from_lan(sub_board: &SubBoard, lan: &str) -> Result<Self> {
+    pub fn from_lan(minimum_board: &MinimumBoard, lan: &str) -> Result<Self> {
         // TODO: Make the logic better
         let lan = lan.trim().replace('0', "O");
         let lan = lan.replace('0', "O");
-        for valid_or_null_move in sub_board.generate_legal_moves() {
-            if valid_or_null_move.lan(sub_board).unwrap() == lan {
+        for valid_or_null_move in minimum_board.generate_legal_moves() {
+            if valid_or_null_move.lan(minimum_board).unwrap() == lan {
                 return Ok(valid_or_null_move);
             }
         }
         Err(TimecatError::InvalidLanMoveString { s: lan.to_string() })
     }
 
-    pub fn algebraic_without_suffix(self, sub_board: &SubBoard, long: bool) -> Result<String> {
+    pub fn algebraic_without_suffix(self, minimum_board: &MinimumBoard, long: bool) -> Result<String> {
         let source = self.get_source();
         let dest = self.get_dest();
 
         // Castling.
-        if sub_board.is_castling(self) {
+        if minimum_board.is_castling(self) {
             return if dest.get_file() < source.get_file() {
                 Ok("O-O-O".to_string())
             } else {
@@ -78,13 +78,13 @@ impl Move {
         }
 
         let piece =
-            sub_board
+            minimum_board
                 .get_piece_type_at(source)
                 .ok_or(TimecatError::InvalidSanOrLanMove {
                     valid_or_null_move: self.into(),
-                    fen: sub_board.get_fen(),
+                    fen: minimum_board.get_fen(),
                 })?;
-        let capture = sub_board.is_capture(self);
+        let capture = minimum_board.is_capture(self);
         let mut san = if piece == Pawn {
             String::new()
         } else {
@@ -98,11 +98,11 @@ impl Move {
             // Relevant candidates: not exactly the current move,
             // but to the same square.
             let mut others = BB_EMPTY;
-            let from_mask = sub_board.get_piece_mask(piece)
-                & sub_board.occupied_co(sub_board.turn())
+            let from_mask = minimum_board.get_piece_mask(piece)
+                & minimum_board.occupied_co(minimum_board.turn())
                 & !source.to_bitboard();
             let to_mask = dest.to_bitboard();
-            for candidate in sub_board.generate_masked_legal_moves(from_mask, to_mask) {
+            for candidate in minimum_board.generate_masked_legal_moves(from_mask, to_mask) {
                 others |= candidate.get_source().to_bitboard();
             }
 
@@ -156,26 +156,26 @@ impl Move {
         Ok(san)
     }
 
-    pub fn algebraic_and_new_sub_board(
+    pub fn algebraic_and_new_minimum_board(
         self,
-        sub_board: &SubBoard,
+        minimum_board: &MinimumBoard,
         long: bool,
-    ) -> Result<(String, SubBoard)> {
-        let san = self.algebraic_without_suffix(sub_board, long)?;
+    ) -> Result<(String, MinimumBoard)> {
+        let san = self.algebraic_without_suffix(minimum_board, long)?;
 
         // Look ahead for check or checkmate.
-        let new_sub_board = sub_board.make_move_new(self);
-        let is_checkmate = new_sub_board.is_checkmate();
+        let new_minimum_board = minimum_board.make_move_new(self);
+        let is_checkmate = new_minimum_board.is_checkmate();
 
         // Add check or checkmate suffix.
         let san = if is_checkmate {
             san + "#"
-        } else if new_sub_board.is_check() {
+        } else if new_minimum_board.is_check() {
             san + "+"
         } else {
             san
         };
-        Ok((san, new_sub_board))
+        Ok((san, new_minimum_board))
     }
 }
 
@@ -264,36 +264,36 @@ impl ValidOrNullMove {
         self.into_inner()?.promotion
     }
 
-    pub fn from_san(sub_board: &SubBoard, san: &str) -> Result<Self> {
+    pub fn from_san(minimum_board: &MinimumBoard, san: &str) -> Result<Self> {
         // TODO: Make the logic better
         let san = san.trim();
         if san == "--" || san == "0000" {
             return Ok(ValidOrNullMove::NullMove);
         }
-        Ok(Move::from_san(sub_board, san)?.into())
+        Ok(Move::from_san(minimum_board, san)?.into())
     }
 
-    pub fn from_lan(sub_board: &SubBoard, lan: &str) -> Result<Self> {
+    pub fn from_lan(minimum_board: &MinimumBoard, lan: &str) -> Result<Self> {
         // TODO: Make the logic better
         let lan = lan.trim();
         if lan == "--" || lan == "0000" {
             return Ok(ValidOrNullMove::NullMove);
         }
-        Ok(Move::from_lan(sub_board, lan)?.into())
+        Ok(Move::from_lan(minimum_board, lan)?.into())
     }
 
-    pub fn algebraic_without_suffix(self, sub_board: &SubBoard, long: bool) -> Result<String> {
-        self.map(|move_| move_.algebraic_without_suffix(sub_board, long))
+    pub fn algebraic_without_suffix(self, minimum_board: &MinimumBoard, long: bool) -> Result<String> {
+        self.map(|move_| move_.algebraic_without_suffix(minimum_board, long))
             .unwrap_or(Ok("--".to_string()))
     }
 
-    pub fn algebraic_and_new_sub_board(
+    pub fn algebraic_and_new_minimum_board(
         self,
-        sub_board: &SubBoard,
+        minimum_board: &MinimumBoard,
         long: bool,
-    ) -> Result<(String, SubBoard)> {
-        self.map(|move_| move_.algebraic_and_new_sub_board(sub_board, long))
-            .unwrap_or(Ok(("--".to_string(), sub_board.null_move()?)))
+    ) -> Result<(String, MinimumBoard)> {
+        self.map(|move_| move_.algebraic_and_new_minimum_board(minimum_board, long))
+            .unwrap_or(Ok(("--".to_string(), minimum_board.null_move()?)))
     }
 }
 
