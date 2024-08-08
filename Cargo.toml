@@ -75,7 +75,7 @@ colored = ["dep:colored"]
 serde = ["dep:serde", "web-time?/serde", "arrayvec/serde"]
 wasm = ["dep:web-time", "dep:gloo"]
 experimental = []
-debug = ["experimental", "colored", "extras"]
+debug = ["experimental", "colored", "extras", "inbuilt_nnue"]
 pyo3 = ["dep:pyo3"]
 
 [[bin]]
