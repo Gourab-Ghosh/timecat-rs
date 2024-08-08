@@ -40,7 +40,7 @@ pub enum CacheTableSize {
 
 impl CacheTableSize {
     pub const ZERO: Self = Self::Exact(0);
-    
+
     pub const fn unwrap(self) -> usize {
         match self {
             Self::Max(size) => size,

@@ -74,3 +74,14 @@ impl Not for Color {
         }
     }
 }
+
+#[cfg(feature = "pyo3")]
+impl<'source> FromPyObject<'source> for Color {
+    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        if ob.extract::<bool>()? {
+            Ok(Self::White)
+        } else {
+            Ok(Self::Black)
+        }
+    }
+}

@@ -239,7 +239,7 @@ impl GoAndPerft {
             });
         };
         let elapsed_time = clock.elapsed();
-        let pv_string = get_pv_string(engine.get_board().get_minimum_board(), response.get_pv());
+        let pv_string = get_pv_string(engine.get_board().get_mini_board(), response.get_pv());
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!();
         }
@@ -258,14 +258,14 @@ impl GoAndPerft {
             println_info(
                 "Best Move",
                 best_move
-                    .stringify_move(engine.get_board().get_minimum_board())
+                    .stringify_move(engine.get_board().get_mini_board())
                     .unwrap(),
             );
         } else {
             let mut move_text = format_info(
                 "bestmove",
                 best_move
-                    .stringify_move(engine.get_board().get_minimum_board())
+                    .stringify_move(engine.get_board().get_mini_board())
                     .unwrap(),
                 false,
             );
@@ -275,7 +275,7 @@ impl GoAndPerft {
                     "ponder",
                     ponder_move
                         .stringify_move(
-                            &engine.get_board().get_minimum_board().make_move_new(best_move),
+                            &engine.get_board().get_mini_board().make_move_new(best_move),
                         )
                         .unwrap(),
                     false,
@@ -386,7 +386,7 @@ impl Pop {
             println_info(
                 "Popped move",
                 last_move
-                    .stringify_move(engine.get_board().get_minimum_board())
+                    .stringify_move(engine.get_board().get_mini_board())
                     .unwrap(),
             );
         }

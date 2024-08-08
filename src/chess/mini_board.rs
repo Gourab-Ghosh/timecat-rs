@@ -10,7 +10,7 @@ pub enum BoardStatus {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq)]
-pub struct MinimumBoard {
+pub struct MiniBoard {
     _piece_masks: [BitBoard; NUM_PIECE_TYPES],
     _occupied_co: [BitBoard; NUM_COLORS],
     _occupied: BitBoard,
@@ -27,7 +27,7 @@ pub struct MinimumBoard {
     _black_material_score: Score,
 }
 
-impl PartialEq for MinimumBoard {
+impl PartialEq for MiniBoard {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.transposition_key_components()
@@ -35,7 +35,7 @@ impl PartialEq for MinimumBoard {
     }
 }
 
-impl MinimumBoard {
+impl MiniBoard {
     #[inline]
     pub fn transposition_key_components(
         &self,
@@ -77,8 +77,8 @@ impl MinimumBoard {
 
     #[inline]
     pub fn status(&self) -> BoardStatus {
-        let moves = self.generate_legal_moves().len();
-        match moves {
+        let num_legal_moves = self.generate_legal_moves().len();
+        match num_legal_moves {
             0 => {
                 if self.get_checkers().is_empty() {
                     BoardStatus::Stalemate
@@ -648,13 +648,19 @@ impl MinimumBoard {
         self._ep_square = self._ep_square.map(|square| square.vertical_mirror());
     }
 
-    pub fn flip_turn(&mut self) {
+    #[inline]
+    pub fn set_turn_unchecked(&mut self, turn: Color) {
+        self._turn = turn;
+    }
+
+    #[inline]
+    pub fn flip_turn_unchecked(&mut self) {
         self._turn = !self._turn;
     }
 
-    pub fn flip_vertical_and_flip_turn(&mut self) {
+    pub fn flip_vertical_and_flip_turn_unchecked(&mut self) {
         self.flip_vertical();
-        self.flip_turn();
+        self.flip_turn_unchecked();
     }
 
     fn update_pin_and_checkers_info(&mut self) {
@@ -965,7 +971,7 @@ impl MinimumBoard {
     }
 }
 
-impl MinimumBoardMethodOverload<Move> for MinimumBoard {
+impl MiniBoardMethodOverload<Move> for MiniBoard {
     #[inline]
     fn parse_san(&self, san: &str) -> Result<Move> {
         Move::from_san(self, san)
@@ -1101,7 +1107,7 @@ impl MinimumBoardMethodOverload<Move> for MinimumBoard {
     }
 }
 
-impl MinimumBoardMethodOverload<ValidOrNullMove> for MinimumBoard {
+impl MiniBoardMethodOverload<ValidOrNullMove> for MiniBoard {
     #[inline]
     fn parse_san(&self, san: &str) -> Result<ValidOrNullMove> {
         ValidOrNullMove::from_san(self, san)
@@ -1126,14 +1132,14 @@ impl MinimumBoardMethodOverload<ValidOrNullMove> for MinimumBoard {
     }
 }
 
-impl TryFrom<&MinimumBoardBuilder> for MinimumBoard {
+impl TryFrom<&MiniBoardBuilder> for MiniBoard {
     type Error = TimecatError;
 
-    fn try_from(minimum_board_builder: &MinimumBoardBuilder) -> Result<Self> {
-        let mut board = MinimumBoard::new_empty();
+    fn try_from(mini_board_builder: &MiniBoardBuilder) -> Result<Self> {
+        let mut board = MiniBoard::new_empty();
 
         for square in ALL_SQUARES {
-            if let Some(piece) = minimum_board_builder[square] {
+            if let Some(piece) = mini_board_builder[square] {
                 board.xor(
                     piece.get_piece_type(),
                     square.to_bitboard(),
@@ -1142,69 +1148,69 @@ impl TryFrom<&MinimumBoardBuilder> for MinimumBoard {
             }
         }
 
-        board._turn = minimum_board_builder.get_turn();
+        board._turn = mini_board_builder.get_turn();
 
-        if let Some(ep) = minimum_board_builder.get_en_passant() {
+        if let Some(ep) = mini_board_builder.get_en_passant() {
             board._turn = !board.turn();
             board.set_ep(ep);
             board._turn = !board.turn();
         }
 
-        board.add_castle_rights(White, minimum_board_builder.get_castle_rights(White));
-        board.add_castle_rights(Black, minimum_board_builder.get_castle_rights(Black));
+        board.add_castle_rights(White, mini_board_builder.get_castle_rights(White));
+        board.add_castle_rights(Black, mini_board_builder.get_castle_rights(Black));
 
-        board._halfmove_clock = minimum_board_builder.get_halfmove_clock();
-        board._fullmove_number = minimum_board_builder.get_fullmove_number();
+        board._halfmove_clock = mini_board_builder.get_halfmove_clock();
+        board._fullmove_number = mini_board_builder.get_fullmove_number();
 
         board.update_pin_and_checkers_info();
 
         if board.is_sane() {
             Ok(board)
         } else {
-            Err(TimecatError::InvalidMinimumBoard { board })
+            Err(TimecatError::InvalidMiniBoard { board })
         }
     }
 }
 
-impl TryFrom<MinimumBoardBuilder> for MinimumBoard {
+impl TryFrom<MiniBoardBuilder> for MiniBoard {
     type Error = TimecatError;
 
-    fn try_from(minimum_board_builder: MinimumBoardBuilder) -> Result<Self> {
-        (&minimum_board_builder).try_into()
+    fn try_from(mini_board_builder: MiniBoardBuilder) -> Result<Self> {
+        (&mini_board_builder).try_into()
     }
 }
 
-impl TryFrom<&mut MinimumBoardBuilder> for MinimumBoard {
+impl TryFrom<&mut MiniBoardBuilder> for MiniBoard {
     type Error = TimecatError;
 
-    fn try_from(minimum_board_builder: &mut MinimumBoardBuilder) -> Result<Self> {
-        (minimum_board_builder.to_owned()).try_into()
+    fn try_from(mini_board_builder: &mut MiniBoardBuilder) -> Result<Self> {
+        (mini_board_builder.to_owned()).try_into()
     }
 }
 
-impl FromStr for MinimumBoard {
+impl FromStr for MiniBoard {
     type Err = TimecatError;
 
     fn from_str(value: &str) -> Result<Self> {
-        MinimumBoardBuilder::from_str(value)?.try_into()
+        MiniBoardBuilder::from_str(value)?.try_into()
     }
 }
 
-impl Default for MinimumBoard {
+impl Default for MiniBoard {
     #[inline]
     fn default() -> Self {
         Self::from_str(STARTING_POSITION_FEN).unwrap()
     }
 }
 
-impl fmt::Display for MinimumBoard {
+impl fmt::Display for MiniBoard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let fen: MinimumBoardBuilder = self.into();
+        let fen: MiniBoardBuilder = self.into();
         write!(f, "{}", fen)
     }
 }
 
-impl Hash for MinimumBoard {
+impl Hash for MiniBoard {
     fn hash<H: Hasher>(&self, state: &mut H) {
         state.write_u64(self.get_hash())
     }

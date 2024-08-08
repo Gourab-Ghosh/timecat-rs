@@ -2,7 +2,7 @@ use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone)]
-pub struct MinimumBoardBuilder {
+pub struct MiniBoardBuilder {
     pieces: SerdeWrapper<[Option<Piece>; 64]>,
     turn: Color,
     castle_rights: SerdeWrapper<[CastleRights; 2]>,
@@ -11,7 +11,7 @@ pub struct MinimumBoardBuilder {
     fullmove_number: NumMoves,
 }
 
-impl MinimumBoardBuilder {
+impl MiniBoardBuilder {
     /// Returns empty board builder with white to move
     pub fn new() -> Self {
         Self {
@@ -32,8 +32,8 @@ impl MinimumBoardBuilder {
         ep_file: Option<File>,
         halfmove_clock: u8,
         fullmove_number: u16,
-    ) -> MinimumBoardBuilder {
-        let mut result = MinimumBoardBuilder {
+    ) -> MiniBoardBuilder {
+        let mut result = MiniBoardBuilder {
             pieces: [None; 64].into(),
             turn,
             castle_rights: [white_castle_rights, black_castle_rights].into(),
@@ -108,7 +108,7 @@ impl MinimumBoardBuilder {
     }
 }
 
-impl Index<Square> for MinimumBoardBuilder {
+impl Index<Square> for MiniBoardBuilder {
     type Output = Option<Piece>;
 
     fn index(&self, index: Square) -> &Self::Output {
@@ -116,13 +116,13 @@ impl Index<Square> for MinimumBoardBuilder {
     }
 }
 
-impl IndexMut<Square> for MinimumBoardBuilder {
+impl IndexMut<Square> for MiniBoardBuilder {
     fn index_mut(&mut self, index: Square) -> &mut Self::Output {
         &mut self.pieces[index.to_index()]
     }
 }
 
-impl fmt::Display for MinimumBoardBuilder {
+impl fmt::Display for MiniBoardBuilder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut count = 0;
         for &rank in ALL_RANKS.iter().rev() {
@@ -186,19 +186,19 @@ impl fmt::Display for MinimumBoardBuilder {
     }
 }
 
-impl Default for MinimumBoardBuilder {
-    fn default() -> MinimumBoardBuilder {
-        MinimumBoardBuilder::from_str(STARTING_POSITION_FEN).unwrap()
+impl Default for MiniBoardBuilder {
+    fn default() -> MiniBoardBuilder {
+        MiniBoardBuilder::from_str(STARTING_POSITION_FEN).unwrap()
     }
 }
 
-impl FromStr for MinimumBoardBuilder {
+impl FromStr for MiniBoardBuilder {
     type Err = TimecatError;
 
     fn from_str(value: &str) -> Result<Self> {
         let mut cur_rank = Rank::Eighth;
         let mut cur_file = File::A;
-        let mut minimum_board_builder = MinimumBoardBuilder::new();
+        let mut mini_board_builder = MiniBoardBuilder::new();
 
         let tokens: Vec<&str> = value.split(' ').collect();
         if tokens.len() < 4 {
@@ -225,62 +225,62 @@ impl FromStr for MinimumBoardBuilder {
                         File::from_index((cur_file.to_index() + (x as usize) - ('0' as usize)) & 7);
                 }
                 'r' => {
-                    minimum_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    mini_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(BlackRook);
                     cur_file = cur_file.wrapping_right();
                 }
                 'R' => {
-                    minimum_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    mini_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(WhiteRook);
                     cur_file = cur_file.wrapping_right();
                 }
                 'n' => {
-                    minimum_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    mini_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(BlackKnight);
                     cur_file = cur_file.wrapping_right();
                 }
                 'N' => {
-                    minimum_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    mini_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(WhiteKnight);
                     cur_file = cur_file.wrapping_right();
                 }
                 'b' => {
-                    minimum_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    mini_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(BlackBishop);
                     cur_file = cur_file.wrapping_right();
                 }
                 'B' => {
-                    minimum_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    mini_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(WhiteBishop);
                     cur_file = cur_file.wrapping_right();
                 }
                 'p' => {
-                    minimum_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    mini_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(BlackPawn);
                     cur_file = cur_file.wrapping_right();
                 }
                 'P' => {
-                    minimum_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    mini_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(WhitePawn);
                     cur_file = cur_file.wrapping_right();
                 }
                 'q' => {
-                    minimum_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    mini_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(BlackQueen);
                     cur_file = cur_file.wrapping_right();
                 }
                 'Q' => {
-                    minimum_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    mini_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(WhiteQueen);
                     cur_file = cur_file.wrapping_right();
                 }
                 'k' => {
-                    minimum_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    mini_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(BlackKing);
                     cur_file = cur_file.wrapping_right();
                 }
                 'K' => {
-                    minimum_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
+                    mini_board_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
                         Some(WhiteKing);
                     cur_file = cur_file.wrapping_right();
                 }
@@ -292,8 +292,8 @@ impl FromStr for MinimumBoardBuilder {
             }
         }
         match side {
-            "w" | "W" => _ = minimum_board_builder.turn(White),
-            "b" | "B" => _ = minimum_board_builder.turn(Black),
+            "w" | "W" => _ = mini_board_builder.turn(White),
+            "b" | "B" => _ = mini_board_builder.turn(Black),
             _ => {
                 return Err(TimecatError::BadFen {
                     fen: value.to_string(),
@@ -302,39 +302,39 @@ impl FromStr for MinimumBoardBuilder {
         }
 
         if castles.contains('K') && castles.contains('Q') {
-            minimum_board_builder.castle_rights[White.to_index()] = CastleRights::Both;
+            mini_board_builder.castle_rights[White.to_index()] = CastleRights::Both;
         } else if castles.contains('K') {
-            minimum_board_builder.castle_rights[White.to_index()] = CastleRights::KingSide;
+            mini_board_builder.castle_rights[White.to_index()] = CastleRights::KingSide;
         } else if castles.contains('Q') {
-            minimum_board_builder.castle_rights[White.to_index()] = CastleRights::QueenSide;
+            mini_board_builder.castle_rights[White.to_index()] = CastleRights::QueenSide;
         } else {
-            minimum_board_builder.castle_rights[White.to_index()] = CastleRights::None;
+            mini_board_builder.castle_rights[White.to_index()] = CastleRights::None;
         }
 
         if castles.contains('k') && castles.contains('q') {
-            minimum_board_builder.castle_rights[Black.to_index()] = CastleRights::Both;
+            mini_board_builder.castle_rights[Black.to_index()] = CastleRights::Both;
         } else if castles.contains('k') {
-            minimum_board_builder.castle_rights[Black.to_index()] = CastleRights::KingSide;
+            mini_board_builder.castle_rights[Black.to_index()] = CastleRights::KingSide;
         } else if castles.contains('q') {
-            minimum_board_builder.castle_rights[Black.to_index()] = CastleRights::QueenSide;
+            mini_board_builder.castle_rights[Black.to_index()] = CastleRights::QueenSide;
         } else {
-            minimum_board_builder.castle_rights[Black.to_index()] = CastleRights::None;
+            mini_board_builder.castle_rights[Black.to_index()] = CastleRights::None;
         }
 
         if let Ok(square) = Square::from_str(ep) {
-            minimum_board_builder.ep_file(Some(square.get_file()));
+            mini_board_builder.ep_file(Some(square.get_file()));
         }
 
-        minimum_board_builder
+        mini_board_builder
             .halfmove_clock(halfmove_clock)
             .fullmove_number(fullmove_number);
 
-        Ok(minimum_board_builder)
+        Ok(mini_board_builder)
     }
 }
 
-impl From<&MinimumBoard> for MinimumBoardBuilder {
-    fn from(board: &MinimumBoard) -> Self {
+impl From<&MiniBoard> for MiniBoardBuilder {
+    fn from(board: &MiniBoard) -> Self {
         let mut pieces = vec![];
         for square in ALL_SQUARES {
             if let Some(piece) = board.get_piece_at(square) {
@@ -342,7 +342,7 @@ impl From<&MinimumBoard> for MinimumBoardBuilder {
             }
         }
 
-        MinimumBoardBuilder::setup(
+        MiniBoardBuilder::setup(
             &pieces,
             board.turn(),
             board.castle_rights(White),
@@ -354,8 +354,8 @@ impl From<&MinimumBoard> for MinimumBoardBuilder {
     }
 }
 
-impl From<MinimumBoard> for MinimumBoardBuilder {
-    fn from(board: MinimumBoard) -> Self {
+impl From<MiniBoard> for MiniBoardBuilder {
+    fn from(board: MiniBoard) -> Self {
         (&board).into()
     }
 }

@@ -53,7 +53,7 @@ impl Default for PVTable {
 #[derive(Clone, Debug)]
 pub struct Searcher<P: PositionEvaluation> {
     id: usize,
-    initial_minimum_board: MinimumBoard,
+    initial_mini_board: MiniBoard,
     board: Board,
     evaluator: P,
     transposition_table: SerdeWrapper<Arc<TranspositionTable>>,
@@ -84,7 +84,7 @@ impl<P: PositionEvaluation> Searcher<P> {
     ) -> Self {
         Self {
             id,
-            initial_minimum_board: board.get_minimum_board().to_owned(),
+            initial_mini_board: board.get_mini_board().to_owned(),
             board,
             evaluator,
             transposition_table: transposition_table.into(),
@@ -114,8 +114,8 @@ impl<P: PositionEvaluation> Searcher<P> {
     }
 
     #[inline]
-    pub fn get_initial_minimum_board(&self) -> &MinimumBoard {
-        &self.initial_minimum_board
+    pub fn get_initial_mini_board(&self) -> &MiniBoard {
+        &self.initial_mini_board
     }
 
     #[inline]
@@ -180,7 +180,7 @@ impl<P: PositionEvaluation> Searcher<P> {
 
     #[inline]
     pub fn get_pv_from_t_table(&self) -> Vec<Move> {
-        extract_pv_from_t_table(&self.initial_minimum_board, &self.transposition_table)
+        extract_pv_from_t_table(&self.initial_mini_board, &self.transposition_table)
             .into_iter()
             .map_into()
             .collect_vec()

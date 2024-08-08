@@ -7,16 +7,16 @@ const CONTROL_CENTER_BONUS: Score = 50;
 pub struct EvaluatorNonNNUE;
 
 impl EvaluatorNonNNUE {
-    pub fn new(_: &MinimumBoard) -> Self {
+    pub fn new(_: &MiniBoard) -> Self {
         Self
     }
 
-    pub fn slow_evaluate(minimum_board: &MinimumBoard) -> Score {
-        Self::new(minimum_board).evaluate(minimum_board)
+    pub fn slow_evaluate(mini_board: &MiniBoard) -> Score {
+        Self::new(mini_board).evaluate(mini_board)
     }
 
-    fn evaluate_raw(minimum_board: &MinimumBoard) -> Score {
-        let material_score = minimum_board.get_material_score();
+    fn evaluate_raw(mini_board: &MiniBoard) -> Score {
+        let material_score = mini_board.get_material_score();
         let mut score = material_score;
 
         // Consider additional heuristics
@@ -27,9 +27,9 @@ impl EvaluatorNonNNUE {
         // let mut piece_activity_score = 0;
         // let mut threat_score = 0;
 
-        for (piece, square) in minimum_board.iter() {
+        for (piece, square) in mini_board.iter() {
             let alpha =
-                minimum_board.get_material_score_abs() as f64 / INITIAL_MATERIAL_SCORE_ABS as f64;
+                mini_board.get_material_score_abs() as f64 / INITIAL_MATERIAL_SCORE_ABS as f64;
             let psqt_score = get_psqt_score(piece, square, alpha);
             score += if piece.get_color() == White {
                 psqt_score
@@ -38,7 +38,7 @@ impl EvaluatorNonNNUE {
             } as Score;
 
             // Calculate mobility (number of legal moves)
-            let mobility = minimum_board
+            let mobility = mini_board
                 .generate_masked_legal_moves(square.to_bitboard(), BB_ALL)
                 .count() as Score;
             mobility_score += if piece.get_color() == White {
@@ -49,7 +49,7 @@ impl EvaluatorNonNNUE {
 
             // Calculate king safety
             if piece.get_piece_type() == King {
-                let king_safety = Self::evaluate_king_safety(minimum_board, square);
+                let king_safety = Self::evaluate_king_safety(mini_board, square);
                 king_safety_score += if piece.get_color() == White {
                     king_safety
                 } else {
@@ -59,7 +59,7 @@ impl EvaluatorNonNNUE {
 
             // // Calculate pawn structure
             // if piece.get_piece_type() == Pawn {
-            //     let pawn_structure = Self::evaluate_pawn_structure(minimum_board, square);
+            //     let pawn_structure = Self::evaluate_pawn_structure(mini_board, square);
             //     pawn_structure_score += if piece.get_color() == White {
             //         pawn_structure
             //     } else {
@@ -77,7 +77,7 @@ impl EvaluatorNonNNUE {
             }
 
             // // Calculate piece activity
-            // let piece_activity = Self::evaluate_piece_activity(minimum_board, piece, square);
+            // let piece_activity = Self::evaluate_piece_activity(mini_board, piece, square);
             // piece_activity_score += if piece.get_color() == White {
             //     piece_activity
             // } else {
@@ -85,7 +85,7 @@ impl EvaluatorNonNNUE {
             // };
 
             // // Calculate threats
-            // let threats = Self::evaluate_threats(minimum_board, piece, square);
+            // let threats = Self::evaluate_threats(mini_board, piece, square);
             // threat_score += if piece.get_color() == White {
             //     threats
             // } else {
@@ -105,8 +105,8 @@ impl EvaluatorNonNNUE {
     }
 
     // Enhanced King Safety
-    fn evaluate_king_safety(minimum_board: &MinimumBoard, king_square: Square) -> Score {
-        let king_color = minimum_board.get_piece_at(king_square).unwrap().get_color();
+    fn evaluate_king_safety(mini_board: &MiniBoard, king_square: Square) -> Score {
+        let king_color = mini_board.get_piece_at(king_square).unwrap().get_color();
         let mut safety_score = 0;
 
         // Evaluate pawn shield (simplified, assuming a standard chessboard)
@@ -123,7 +123,7 @@ impl EvaluatorNonNNUE {
         .collect_vec();
 
         for &shield_square in &pawn_shield_squares {
-            if let Some(pawn) = minimum_board.get_piece_at(shield_square) {
+            if let Some(pawn) = mini_board.get_piece_at(shield_square) {
                 if pawn.get_piece_type() == Pawn && pawn.get_color() == king_color {
                     safety_score += 10; // Example value for a pawn in the shield
                 }
@@ -133,7 +133,7 @@ impl EvaluatorNonNNUE {
         // Penalize open files or no pawn shield
         if pawn_shield_squares
             .iter()
-            .all(|&sq| minimum_board.get_piece_at(sq).is_none())
+            .all(|&sq| mini_board.get_piece_at(sq).is_none())
         {
             safety_score -= 50; // Example penalty for an exposed king
         }
@@ -142,7 +142,7 @@ impl EvaluatorNonNNUE {
         // let enemy_color = !king_color;
         // let nearby_squares = king_square.neighbors();
         // for &square in &nearby_squares {
-        //     if minimum_board.is_square_attacked(square, enemy_color) {
+        //     if mini_board.is_square_attacked(square, enemy_color) {
         //         safety_score -= 20; // Example penalty for each attack on nearby squares
         //     }
         // }
@@ -151,9 +151,9 @@ impl EvaluatorNonNNUE {
     }
 
     // Enhanced Pawn Structure
-    fn evaluate_pawn_structure(minimum_board: &MinimumBoard, pawn_square: Square) -> Score {
+    fn evaluate_pawn_structure(mini_board: &MiniBoard, pawn_square: Square) -> Score {
         let mut structure_score = 0;
-        let pawn = minimum_board.get_piece_at(pawn_square).unwrap();
+        let pawn = mini_board.get_piece_at(pawn_square).unwrap();
         let pawn_color = pawn.get_color();
 
         // Evaluate isolated pawns (no friendly pawns on adjacent files)
@@ -163,7 +163,7 @@ impl EvaluatorNonNNUE {
         let isolated = adjacent_files.iter().flatten().all(|&adj_file| {
             ALL_RANKS.iter().all(|&rank| {
                 let sq = Square::from_rank_and_file(rank, adj_file);
-                minimum_board.get_piece_at(sq).map_or(true, |p| {
+                mini_board.get_piece_at(sq).map_or(true, |p| {
                     p.get_piece_type() != Pawn || p.get_color() != pawn_color
                 })
             })
@@ -178,7 +178,7 @@ impl EvaluatorNonNNUE {
             .iter()
             .filter(|&&rank| {
                 let sq = Square::from_rank_and_file(rank, file);
-                minimum_board.get_piece_at(sq).map_or(false, |p| {
+                mini_board.get_piece_at(sq).map_or(false, |p| {
                     p.get_piece_type() == Pawn && p.get_color() == pawn_color
                 })
             })
@@ -189,7 +189,7 @@ impl EvaluatorNonNNUE {
         }
 
         // Evaluate passed pawns (no opposing pawns blocking or attacking the path to promotion)
-        if minimum_board.is_passed_pawn(pawn_square) {
+        if mini_board.is_passed_pawn(pawn_square) {
             structure_score += 30; // Example bonus for passed pawns
         }
 
@@ -197,7 +197,7 @@ impl EvaluatorNonNNUE {
         // let backward = adjacent_files.iter().flatten().all(|&adj_file| {
         //     (0..pawn_square.get_rank()).all(|rank| {
         //         let sq = Square::from_rank_and_file(rank, adj_file);
-        //         minimum_board.get_piece_at(sq).map_or(true, |p| {
+        //         mini_board.get_piece_at(sq).map_or(true, |p| {
         //             p.get_piece_type() != Pawn || p.get_color() != pawn_color
         //         })
         //     })
@@ -211,20 +211,20 @@ impl EvaluatorNonNNUE {
     }
 
     // Enhanced Piece Activity
-    fn evaluate_piece_activity(minimum_board: &MinimumBoard, _piece: Piece, square: Square) -> Score {
+    fn evaluate_piece_activity(mini_board: &MiniBoard, _piece: Piece, square: Square) -> Score {
         let mut activity_score = 0;
         // let piece_color = piece.get_color();
 
         // // Simplified example: give a bonus for pieces controlling key squares
         // let key_squares = [D4, E4, D5, E5]; // Central squares
         // for &key_square in &key_squares {
-        //     if minimum_board.is_square_attacked(key_square, piece_color) {
+        //     if mini_board.is_square_attacked(key_square, piece_color) {
         //         activity_score += 5; // Example bonus for controlling a key square
         //     }
         // }
 
         // Penalize pieces trapped or blocked by own pawns
-        let piece_mobility = minimum_board
+        let piece_mobility = mini_board
             .generate_masked_legal_moves(square.to_bitboard(), BB_ALL)
             .count() as Score;
         if piece_mobility < 2 {
@@ -235,15 +235,15 @@ impl EvaluatorNonNNUE {
     }
 
     // Evaluate threats
-    fn evaluate_threats(minimum_board: &MinimumBoard, piece: Piece, square: Square) -> Score {
+    fn evaluate_threats(mini_board: &MiniBoard, piece: Piece, square: Square) -> Score {
         let mut threat_score = 0;
         let piece_color = piece.get_color();
 
         // Simplified example: give a bonus for attacking opponent's pieces
-        for move_ in minimum_board
-            .generate_masked_legal_moves(square.to_bitboard(), minimum_board.occupied_co(!piece_color))
+        for move_ in mini_board
+            .generate_masked_legal_moves(square.to_bitboard(), mini_board.occupied_co(!piece_color))
         {
-            threat_score += match minimum_board.get_piece_type_at(move_.get_dest()).unwrap() {
+            threat_score += match mini_board.get_piece_type_at(move_.get_dest()).unwrap() {
                 King => 0,
                 piece_type => piece_type.evaluate(),
             }
@@ -254,12 +254,12 @@ impl EvaluatorNonNNUE {
 }
 
 impl PositionEvaluation for EvaluatorNonNNUE {
-    fn evaluate(&mut self, minimum_board: &MinimumBoard) -> Score {
-        let material_score = minimum_board.get_material_score();
+    fn evaluate(&mut self, mini_board: &MiniBoard) -> Score {
+        let material_score = mini_board.get_material_score();
         let mut score = material_score;
-        for (piece, square) in minimum_board.iter() {
+        for (piece, square) in mini_board.iter() {
             let alpha =
-                minimum_board.get_material_score_abs() as f64 / INITIAL_MATERIAL_SCORE_ABS as f64;
+                mini_board.get_material_score_abs() as f64 / INITIAL_MATERIAL_SCORE_ABS as f64;
             let psqt_score = get_psqt_score(piece, square, alpha);
             score += if piece.get_color() == White {
                 psqt_score
@@ -268,6 +268,6 @@ impl PositionEvaluation for EvaluatorNonNNUE {
             } as Score;
         }
         score
-        // Self::evaluate_raw(minimum_board)
+        // Self::evaluate_raw(mini_board)
     }
 }
