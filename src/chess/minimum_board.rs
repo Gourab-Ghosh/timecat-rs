@@ -292,15 +292,20 @@ impl MinimumBoard {
     }
 
     #[inline]
+    pub fn null_move_unchecked(&self) -> Self {
+        let mut result = self.to_owned();
+        result._turn = !result.turn();
+        result.remove_ep();
+        result._halfmove_clock += 1;
+        result._fullmove_number += 1;
+        result.update_pin_and_checkers_info();
+        result
+    }
+
+    #[inline]
     pub fn null_move(&self) -> Result<Self> {
         if self.get_checkers().is_empty() {
-            let mut result = self.to_owned();
-            result._turn = !result.turn();
-            result.remove_ep();
-            result._halfmove_clock += 1;
-            result._fullmove_number += 1;
-            result.update_pin_and_checkers_info();
-            Ok(result)
+            Ok(self.null_move_unchecked())
         } else {
             Err(TimecatError::NullMoveInCheck {
                 fen: self.get_fen(),
