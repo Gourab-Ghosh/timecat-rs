@@ -24,12 +24,12 @@ pub use all_pieces::*;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
 pub enum PieceType {
-    Pawn,
-    Knight,
-    Bishop,
-    Rook,
-    Queen,
-    King,
+    Pawn = 0,
+    Knight = 1,
+    Bishop = 2,
+    Rook = 3,
+    Queen = 4,
+    King = 5,
 }
 
 impl PieceType {
@@ -44,7 +44,7 @@ impl PieceType {
     }
 
     #[inline]
-    pub fn to_string(self, color: Color) -> String {
+    pub fn to_colored_piece_string(self, color: Color) -> String {
         match color {
             White => format!("{self}").to_uppercase(),
             Black => format!("{self}"),
@@ -70,14 +70,7 @@ impl fmt::Display for PieceType {
         write!(
             f,
             "{}",
-            match self {
-                Pawn => "p",
-                Knight => "n",
-                Bishop => "b",
-                Rook => "r",
-                Queen => "q",
-                King => "k",
-            }
+            get_item_unchecked!(const ["p", "n", "b", "r", "q", "k"], *self as usize),
         )
     }
 }
@@ -134,6 +127,6 @@ impl Piece {
 
 impl fmt::Display for Piece {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.type_.to_string(self.color))
+        write!(f, "{}", self.type_.to_colored_piece_string(self.color))
     }
 }

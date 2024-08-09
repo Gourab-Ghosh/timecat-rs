@@ -88,7 +88,7 @@ impl Move {
         let mut san = if piece == Pawn {
             String::new()
         } else {
-            piece.to_string(White)
+            piece.to_colored_piece_string(White)
         };
 
         if long {
@@ -150,7 +150,7 @@ impl Move {
 
         // Promotion.
         if let Some(promotion) = self.get_promotion() {
-            san += &format!("={}", promotion.to_string(White))
+            san += &format!("={}", promotion.to_colored_piece_string(White))
         }
 
         Ok(san)
