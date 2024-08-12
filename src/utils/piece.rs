@@ -189,7 +189,7 @@ impl FromStr for Piece {
             "R" => Ok(WhiteRook),
             "Q" => Ok(WhiteQueen),
             "K" => Ok(WhiteKing),
-            _ => Err(TimecatError::InvalidPieceTypeString { s: s.to_string() }),
+            _ => Err(TimecatError::InvalidPieceString { s: s.to_string() }),
         }
     }
 }
