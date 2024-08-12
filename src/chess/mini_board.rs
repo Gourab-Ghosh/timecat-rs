@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -969,6 +971,81 @@ impl MiniBoard {
     pub fn iter(&self) -> impl Iterator<Item = (Piece, Square)> + '_ {
         self.custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS, BB_ALL)
     }
+
+    #[cfg(feature = "pyo3")]
+    fn from_py_board<'source>(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        let pieces_masks = [
+            BitBoard::new(ob.getattr("pawns")?.extract()?),
+            BitBoard::new(ob.getattr("knights")?.extract()?),
+            BitBoard::new(ob.getattr("bishops")?.extract()?),
+            BitBoard::new(ob.getattr("rooks")?.extract()?),
+            BitBoard::new(ob.getattr("queens")?.extract()?),
+            BitBoard::new(ob.getattr("kings")?.extract()?),
+        ];
+        let (black_occupied, white_occupied) = {
+            let occupied_co_py_object = ob.getattr("occupied_co")?;
+            (
+                occupied_co_py_object.get_item(0)?.extract::<BitBoard>()?,
+                occupied_co_py_object.get_item(1)?.extract::<BitBoard>()?,
+            )
+        };
+        let (white_castle_rights, black_castle_rights) = {
+            let castling_rights_bb = ob.getattr("castling_rights")?.extract::<BitBoard>()?;
+            const BB_A1_H1: BitBoard = BitBoard::new(BB_A1.get_mask() ^ BB_H1.get_mask());
+            const BB_A8_H8: BitBoard = BitBoard::new(BB_A8.get_mask() ^ BB_H8.get_mask());
+            (
+                match castling_rights_bb & const { White.to_my_backrank() }.to_bitboard() {
+                    BB_EMPTY => CastleRights::None,
+                    BB_H1 => CastleRights::KingSide,
+                    BB_A1 => CastleRights::QueenSide,
+                    BB_A1_H1 => CastleRights::Both,
+                    _ => {
+                        return Err(Pyo3Error::Pyo3ConvertError {
+                            from: ob.to_string(),
+                            to: std::any::type_name::<Self>().to_string(),
+                        }
+                        .into())
+                    }
+                },
+                match castling_rights_bb & const { Black.to_my_backrank() }.to_bitboard() {
+                    BB_EMPTY => CastleRights::None,
+                    BB_H8 => CastleRights::KingSide,
+                    BB_A8 => CastleRights::QueenSide,
+                    BB_A8_H8 => CastleRights::Both,
+                    _ => {
+                        return Err(Pyo3Error::Pyo3ConvertError {
+                            from: ob.to_string(),
+                            to: std::any::type_name::<Self>().to_string(),
+                        }
+                        .into())
+                    }
+                },
+            )
+        };
+        Ok(MiniBoardBuilder::setup(
+            ALL_PIECE_TYPES
+                .iter()
+                .zip(pieces_masks)
+                .flat_map(|(&piece_type, pieces_mask)| {
+                    (pieces_mask & white_occupied)
+                        .map(move |square| (square, Piece::new(piece_type, White)))
+                        .chain(
+                            (pieces_mask & black_occupied)
+                                .map(move |square| (square, Piece::new(piece_type, Black))),
+                        )
+                }),
+            ob.getattr("turn")?.extract()?,
+            white_castle_rights,
+            black_castle_rights,
+            ob.getattr("ep_square")?
+                .extract::<Option<Square>>()
+                .unwrap_or_default()
+                .map(|square| square.get_file()),
+            ob.getattr("halfmove_clock")?.extract().unwrap_or(0),
+            ob.getattr("fullmove_number")?.extract().unwrap_or(1),
+        )
+        .try_into()?)
+    }
 }
 
 impl MiniBoardMethodOverload<Move> for MiniBoard {
@@ -1136,11 +1213,11 @@ impl TryFrom<&MiniBoardBuilder> for MiniBoard {
     type Error = TimecatError;
 
     fn try_from(mini_board_builder: &MiniBoardBuilder) -> Result<Self> {
-        let mut board = MiniBoard::new_empty();
+        let mut mini_board = MiniBoard::new_empty();
 
         for square in ALL_SQUARES {
             if let Some(piece) = mini_board_builder[square] {
-                board.xor(
+                mini_board.xor(
                     piece.get_piece_type(),
                     square.to_bitboard(),
                     piece.get_color(),
@@ -1148,26 +1225,26 @@ impl TryFrom<&MiniBoardBuilder> for MiniBoard {
             }
         }
 
-        board._turn = mini_board_builder.get_turn();
+        mini_board._turn = mini_board_builder.get_turn();
 
         if let Some(ep) = mini_board_builder.get_en_passant() {
-            board._turn = !board.turn();
-            board.set_ep(ep);
-            board._turn = !board.turn();
+            mini_board._turn = !mini_board.turn();
+            mini_board.set_ep(ep);
+            mini_board._turn = !mini_board.turn();
         }
 
-        board.add_castle_rights(White, mini_board_builder.get_castle_rights(White));
-        board.add_castle_rights(Black, mini_board_builder.get_castle_rights(Black));
+        mini_board.add_castle_rights(White, mini_board_builder.get_castle_rights(White));
+        mini_board.add_castle_rights(Black, mini_board_builder.get_castle_rights(Black));
 
-        board._halfmove_clock = mini_board_builder.get_halfmove_clock();
-        board._fullmove_number = mini_board_builder.get_fullmove_number();
+        mini_board._halfmove_clock = mini_board_builder.get_halfmove_clock();
+        mini_board._fullmove_number = mini_board_builder.get_fullmove_number();
 
-        board.update_pin_and_checkers_info();
+        mini_board.update_pin_and_checkers_info();
 
-        if board.is_sane() {
-            Ok(board)
+        if mini_board.is_sane() {
+            Ok(mini_board)
         } else {
-            Err(TimecatError::InvalidMiniBoard { board })
+            Err(TimecatError::InvalidMiniBoard { mini_board })
         }
     }
 }
@@ -1213,5 +1290,24 @@ impl fmt::Display for MiniBoard {
 impl Hash for MiniBoard {
     fn hash<H: Hasher>(&self, state: &mut H) {
         state.write_u64(self.get_hash())
+    }
+}
+
+#[cfg(feature = "pyo3")]
+impl<'source> FromPyObject<'source> for MiniBoard {
+    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        if let Ok(fen) = ob.extract::<&str>() {
+            if let Ok(mini_board) = Self::from_str(fen) {
+                return Ok(mini_board);
+            }
+        }
+        if let Ok(mini_board) = MiniBoard::from_py_board(ob) {
+            return Ok(mini_board);
+        }
+        Err(Pyo3Error::Pyo3ConvertError {
+            from: ob.to_string(),
+            to: std::any::type_name::<Self>().to_string(),
+        }
+        .into())
     }
 }

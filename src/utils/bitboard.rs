@@ -327,3 +327,17 @@ impl fmt::Display for BitBoard {
         write!(f, "{skeleton}")
     }
 }
+
+#[cfg(feature = "pyo3")]
+impl<'source> FromPyObject<'source> for BitBoard {
+    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        if let Ok(int) = ob.extract::<u64>() {
+            return Ok(Self::new(int));
+        }
+        Err(Pyo3Error::Pyo3ConvertError {
+            from: ob.to_string(),
+            to: std::any::type_name::<Self>().to_string(),
+        }
+        .into())
+    }
+}

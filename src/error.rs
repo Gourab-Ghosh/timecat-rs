@@ -1,6 +1,23 @@
 use super::*;
 use TimecatError::*;
 
+#[cfg(feature = "pyo3")]
+pub enum Pyo3Error {
+    #[cfg(feature = "pyo3")]
+    Pyo3ConvertError { from: String, to: String },
+}
+
+#[cfg(feature = "pyo3")]
+impl From<Pyo3Error> for PyErr {
+    fn from(err: Pyo3Error) -> PyErr {
+        match err {
+            Pyo3Error::Pyo3ConvertError { from, to } => pyo3::exceptions::PyTypeError::new_err(
+                format!("Failed to convert {from} into {to}"),
+            ),
+        }
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum TimecatError {
@@ -65,11 +82,14 @@ pub enum TimecatError {
     InvalidSquareString {
         s: String,
     },
+    InvalidPieceTypeString {
+        s: String,
+    },
     InvalidUciMoveString {
         s: String,
     },
     InvalidMiniBoard {
-        board: MiniBoard,
+        mini_board: MiniBoard,
     },
     FeatureNotEnabled {
         s: String,
@@ -117,8 +137,9 @@ impl fmt::Display for TimecatError {
             InvalidRankString { s } => write!(f, "Got invalid rank string {s}! Please try again!"),
             InvalidFileString { s } => write!(f, "Got invalid file string {s}! Please try again!"),
             InvalidSquareString { s } => write!(f, "Got invalid square string {s}! Please try again!"),
+            InvalidPieceTypeString { s } => write!(f, "Got invalid piece type string {s}! Please try again!"),
             InvalidUciMoveString { s } => write!(f, "Invalid uci move string {s}! Please try again!"),
-            InvalidMiniBoard { board } => write!(f, "Invalid sub board generated:\n\n{board:#?}"),
+            InvalidMiniBoard { mini_board } => write!(f, "Invalid sub board generated:\n\n{mini_board:#?}"),
             FeatureNotEnabled { s } => write!(f, "The feature {s:?} is not enabled. Please recompile the chess engine with this feature enabled!"),
             BadNNUEFile => write!(f, "The NNUE file cannot be parsed properly! Try again with a different NNUE file!"),
             CustomError { err_msg } => write!(f, "{err_msg}"),

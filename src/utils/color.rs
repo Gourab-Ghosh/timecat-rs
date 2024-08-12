@@ -78,10 +78,25 @@ impl Not for Color {
 #[cfg(feature = "pyo3")]
 impl<'source> FromPyObject<'source> for Color {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
-        if ob.extract::<bool>()? {
-            Ok(Self::White)
-        } else {
-            Ok(Self::Black)
+        if let Ok(boolean) = ob.extract::<bool>() {
+            return if boolean {
+                Ok(Self::White)
+            } else {
+                Ok(Self::Black)
+            };
         }
+        if let Ok(s) = ob.extract::<&str>() {
+            if s.eq_ignore_ascii_case("white") {
+                return Ok(Self::White);
+            }
+            if s.eq_ignore_ascii_case("black") {
+                return Ok(Self::Black);
+            }
+        }
+        Err(Pyo3Error::Pyo3ConvertError {
+            from: ob.to_string(),
+            to: std::any::type_name::<Self>().to_string(),
+        }
+        .into())
     }
 }

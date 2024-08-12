@@ -247,3 +247,22 @@ impl fmt::Display for Square {
         )
     }
 }
+
+#[cfg(feature = "pyo3")]
+impl<'source> FromPyObject<'source> for Square {
+    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        if let Ok(int) = ob.extract::<u8>() {
+            return Ok(Self::from_int(int));
+        }
+        if let Ok(fen) = ob.extract::<&str>() {
+            if let Ok(mini_board) = Self::from_str(fen) {
+                return Ok(mini_board);
+            }
+        }
+        Err(Pyo3Error::Pyo3ConvertError {
+            from: ob.to_string(),
+            to: std::any::type_name::<Self>().to_string(),
+        }
+        .into())
+    }
+}

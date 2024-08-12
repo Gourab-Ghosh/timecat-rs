@@ -24,8 +24,8 @@ impl MiniBoardBuilder {
         }
     }
 
-    pub fn setup<'a>(
-        pieces: impl IntoIterator<Item = &'a (Square, Piece)>,
+    pub fn setup(
+        pieces: impl IntoIterator<Item = (Square, Piece)>,
         turn: Color,
         white_castle_rights: CastleRights,
         black_castle_rights: CastleRights,
@@ -42,8 +42,8 @@ impl MiniBoardBuilder {
             fullmove_number,
         };
 
-        for piece in pieces {
-            result.pieces[piece.0.to_index()] = Some(piece.1);
+        for (square, piece) in pieces {
+            result.pieces[square.to_index()] = Some(piece);
         }
 
         result
@@ -343,7 +343,7 @@ impl From<&MiniBoard> for MiniBoardBuilder {
         }
 
         MiniBoardBuilder::setup(
-            &pieces,
+            pieces.into_iter(),
             board.turn(),
             board.castle_rights(White),
             board.castle_rights(Black),

@@ -67,6 +67,11 @@ impl File {
     pub const fn to_int(self) -> u8 {
         self as u8
     }
+
+    #[inline]
+    pub fn to_bitboard(self) -> BitBoard {
+        *get_item_unchecked!(BB_FILES, self.to_index())
+    }
 }
 
 impl FromStr for File {

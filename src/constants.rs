@@ -46,12 +46,14 @@ pub mod bitboard_and_square {
         };
 
         (@bb_ranks_and_files $(($file:expr, $rank:expr)),+ $(,)?) => {
-            $(
-                paste!{
+            paste!{
+                $(
                     pub const [<BB_RANK_$rank>]: BitBoard = BitBoard::new(0xff << (($rank - 1) << 3));
                     pub const [<BB_FILE_$file>]: BitBoard = BitBoard::new(0x0101_0101_0101_0101 << ($rank - 1));
-                }
-            )*
+                )*
+                pub const BB_RANKS: [BitBoard; NUM_RANKS] = [$( [<BB_RANK_$rank>] ), *];
+                pub const BB_FILES: [BitBoard; NUM_FILES] = [$( [<BB_FILE_$file>] ), *];
+            }
         };
     }
 

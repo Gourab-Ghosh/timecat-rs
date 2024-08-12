@@ -44,11 +44,13 @@ impl PieceType {
     }
 
     #[inline]
+    pub const fn to_colored_piece(self, color: Color) -> Piece {
+        Piece::new(self, color)
+    }
+
+    #[inline]
     pub fn to_colored_piece_string(self, color: Color) -> String {
-        match color {
-            White => format!("{self}").to_uppercase(),
-            Black => format!("{self}"),
-        }
+        self.to_colored_piece(color).to_string()
     }
 
     #[inline]
@@ -65,6 +67,22 @@ impl PieceType {
     }
 }
 
+impl FromStr for PieceType {
+    type Err = TimecatError;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s.to_lowercase().trim() {
+            "p" => Ok(Pawn),
+            "n" => Ok(Knight),
+            "b" => Ok(Bishop),
+            "r" => Ok(Rook),
+            "q" => Ok(Queen),
+            "k" => Ok(King),
+            _ => Err(TimecatError::InvalidPieceTypeString { s: s.to_string() }),
+        }
+    }
+}
+
 impl fmt::Display for PieceType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
@@ -72,6 +90,27 @@ impl fmt::Display for PieceType {
             "{}",
             get_item_unchecked!(const ["p", "n", "b", "r", "q", "k"], *self as usize),
         )
+    }
+}
+
+#[cfg(feature = "pyo3")]
+impl<'source> FromPyObject<'source> for PieceType {
+    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        if let Ok(piece_type_text) = ob.extract::<&str>() {
+            if let Ok(piece_type) = Self::from_str(piece_type_text) {
+                return Ok(piece_type);
+            }
+        }
+        if let Ok(piece_type_index) = ob.extract::<usize>() {
+            if let Some(&piece_type) = ALL_PIECE_TYPES.get(piece_type_index) {
+                return Ok(piece_type);
+            }
+        }
+        Err(Pyo3Error::Pyo3ConvertError {
+            from: ob.to_string(),
+            to: std::any::type_name::<Self>().to_string(),
+        }
+        .into())
     }
 }
 
@@ -123,10 +162,66 @@ impl Piece {
             -self.get_piece_type().evaluate()
         }
     }
+
+    #[cfg(feature = "pyo3")]
+    fn from_py_piece<'source>(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        Ok(Self::new(
+            ob.getattr("piece_type")?.extract()?,
+            ob.getattr("color")?.extract()?,
+        ))
+    }
+}
+
+impl FromStr for Piece {
+    type Err = TimecatError;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s.trim() {
+            "p" => Ok(BlackPawn),
+            "n" => Ok(BlackKnight),
+            "b" => Ok(BlackBishop),
+            "r" => Ok(BlackRook),
+            "q" => Ok(BlackQueen),
+            "k" => Ok(BlackKing),
+            "P" => Ok(WhitePawn),
+            "N" => Ok(WhiteKnight),
+            "B" => Ok(WhiteBishop),
+            "R" => Ok(WhiteRook),
+            "Q" => Ok(WhiteQueen),
+            "K" => Ok(WhiteKing),
+            _ => Err(TimecatError::InvalidPieceTypeString { s: s.to_string() }),
+        }
+    }
 }
 
 impl fmt::Display for Piece {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.type_.to_colored_piece_string(self.color))
+        write!(
+            f,
+            "{}",
+            match self.get_color() {
+                White => self.get_piece_type().to_string().to_uppercase(),
+                Black => self.get_piece_type().to_string(),
+            }
+        )
+    }
+}
+
+#[cfg(feature = "pyo3")]
+impl<'source> FromPyObject<'source> for Piece {
+    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        if let Ok(piece_text) = ob.extract::<&str>() {
+            if let Ok(piece) = Self::from_str(piece_text) {
+                return Ok(piece);
+            }
+        }
+        if let Ok(piece) = Self::from_py_piece(ob) {
+            return Ok(piece);
+        }
+        Err(Pyo3Error::Pyo3ConvertError {
+            from: ob.to_string(),
+            to: std::any::type_name::<Self>().to_string(),
+        }
+        .into())
     }
 }

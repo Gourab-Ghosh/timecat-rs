@@ -177,6 +177,14 @@ impl Move {
         };
         Ok((san, new_mini_board))
     }
+
+    #[cfg(feature = "pyo3")]
+    fn from_py_move<'source>(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        let source = ob.getattr("from_square")?.extract()?;
+        let dest = ob.getattr("to_square")?.extract()?;
+        let promotion = ob.getattr("promotion")?.extract()?;
+        Ok(Self::new(source, dest, promotion)?)
+    }
 }
 
 impl FromStr for Move {
@@ -212,6 +220,25 @@ impl fmt::Display for Move {
             Some(piece) => write!(f, "{}{}{}", self.source, self.dest, piece),
             None => write!(f, "{}{}", self.source, self.dest),
         }
+    }
+}
+
+#[cfg(feature = "pyo3")]
+impl<'source> FromPyObject<'source> for Move {
+    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        if let Ok(move_text) = ob.extract::<&str>() {
+            if let Ok(move_) = Self::from_str(move_text) {
+                return Ok(move_);
+            }
+        }
+        if let Ok(move_) = Self::from_py_move(ob) {
+            return Ok(move_);
+        }
+        Err(Pyo3Error::Pyo3ConvertError {
+            from: ob.to_string(),
+            to: std::any::type_name::<Self>().to_string(),
+        }
+        .into())
     }
 }
 
@@ -352,6 +379,25 @@ impl Deref for ValidOrNullMove {
 impl DerefMut for ValidOrNullMove {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
+    }
+}
+
+#[cfg(feature = "pyo3")]
+impl<'source> FromPyObject<'source> for ValidOrNullMove {
+    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        if let Ok(move_) = ob.extract::<Move>() {
+            return Ok(move_.into());
+        }
+        if let Ok(move_text) = ob.extract::<&str>() {
+            if let Ok(valid_or_null_move) = Self::from_str(move_text) {
+                return Ok(valid_or_null_move);
+            }
+        }
+        Err(Pyo3Error::Pyo3ConvertError {
+            from: ob.to_string(),
+            to: std::any::type_name::<Self>().to_string(),
+        }
+        .into())
     }
 }
 
