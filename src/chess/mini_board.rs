@@ -983,11 +983,17 @@ impl MiniBoard {
             BitBoard::new(ob.getattr("kings")?.extract()?),
         ];
         let (black_occupied, white_occupied) = {
-            let occupied_co_py_object = ob.getattr("occupied_co")?;
-            (
-                occupied_co_py_object.get_item(0)?.extract::<BitBoard>()?,
-                occupied_co_py_object.get_item(1)?.extract::<BitBoard>()?,
-            )
+            if let Ok(occupied_co_py_object) = ob.getattr("occupied_co") {
+                (
+                    occupied_co_py_object.get_item(0)?.extract::<BitBoard>()?,
+                    occupied_co_py_object.get_item(1)?.extract::<BitBoard>()?,
+                )
+            } else {
+                (
+                    ob.getattr("occupied_b")?.extract::<BitBoard>()?,
+                    ob.getattr("occupied_w")?.extract::<BitBoard>()?,
+                )
+            }
         };
         let (white_castle_rights, black_castle_rights) = {
             let castling_rights_bb = ob.getattr("castling_rights")?.extract::<BitBoard>()?;

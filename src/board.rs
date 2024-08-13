@@ -36,7 +36,6 @@ impl GameResult {
 pub struct Board {
     mini_board: MiniBoard,
     stack: Vec<(MiniBoard, ValidOrNullMove)>,
-    starting_fen: String,
     repetition_table: RepetitionTable,
     #[cfg(feature = "extras")]
     evaluator: Evaluator,
@@ -53,14 +52,11 @@ impl Board {
             return Err(TimecatError::BadFen { fen });
         }
         if fen == self.get_fen() {
-            self.starting_fen = self.get_fen();
             return Ok(());
         }
         self.mini_board = MiniBoard::from_str(&fen)?;
-        self.repetition_table.clear();
-        self.repetition_table.insert(self.get_hash());
-        self.starting_fen = self.get_fen();
         self.stack.clear();
+        self.update_repetition_table();
         Ok(())
     }
 
@@ -110,22 +106,19 @@ impl Board {
     pub fn flip_vertical(&mut self) {
         self.mini_board.flip_vertical();
         self.stack.clear();
-        self.repetition_table.clear();
-        self.starting_fen = self.get_fen();
+        self.update_repetition_table();
     }
 
     pub fn flip_vertical_and_flip_turn_unchecked(&mut self) {
         self.mini_board.flip_vertical_and_flip_turn_unchecked();
         self.stack.clear();
-        self.repetition_table.clear();
-        self.starting_fen = self.get_fen();
+        self.update_repetition_table();
     }
 
     pub fn flip_horizontal(&mut self) {
         self.mini_board.flip_horizontal();
         self.stack.clear();
-        self.repetition_table.clear();
-        self.starting_fen = self.get_fen();
+        self.update_repetition_table();
     }
 
     #[inline]
@@ -156,6 +149,14 @@ impl Board {
     #[inline]
     pub fn get_num_moves(&self) -> NumMoves {
         self.stack.len() as NumMoves
+    }
+
+    pub fn update_repetition_table(&mut self) {
+        self.repetition_table.clear();
+        for (mini_board, _) in &self.stack {
+            self.repetition_table.insert(mini_board.get_hash())
+        }
+        self.repetition_table.insert(self.get_hash())
     }
 
     #[inline]
@@ -334,13 +335,22 @@ impl Board {
         san_string.trim().to_string()
     }
 
+    pub fn get_starting_board_fen(&self) -> String {
+        if let Some((mini_board, _)) = self.stack.get(0) {
+            mini_board.get_fen()
+        } else {
+            self.get_fen()
+        }
+    }
+
     pub fn get_pgn(&self) -> String {
         let mut pgn = String::new();
-        if self.starting_fen != STARTING_POSITION_FEN {
-            pgn += &format!("[FEN \"{}\"]\n", self.starting_fen);
+        let starting_fen = &self.get_starting_board_fen();
+        if starting_fen != STARTING_POSITION_FEN {
+            pgn += &format!("[FEN \"{}\"]\n", starting_fen);
         }
         pgn += &Self::variation_san(
-            &Self::from_fen(&self.starting_fen).unwrap(),
+            &Self::from_fen(starting_fen).unwrap(),
             self.stack
                 .clone()
                 .into_iter()
@@ -505,7 +515,6 @@ impl From<MiniBoard> for Board {
         let mut board = Self {
             #[cfg(feature = "extras")]
             evaluator: Evaluator::new(&mini_board),
-            starting_fen: mini_board.get_fen(),
             mini_board,
             stack: Vec::new(),
             repetition_table: RepetitionTable::new(),
@@ -526,5 +535,39 @@ impl Deref for Board {
 
     fn deref(&self) -> &Self::Target {
         &self.mini_board
+    }
+}
+
+#[cfg(feature = "pyo3")]
+impl<'source> FromPyObject<'source> for Board {
+    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        if let Ok(mini_board) = ob.extract::<MiniBoard>() {
+            let mut board = Board::from(mini_board);
+            if let (Ok(moves_py_object), Ok(states_py_object)) =
+                (ob.getattr("move_stack"), ob.getattr("_stack"))
+            {
+                let states = states_py_object
+                    .extract::<Vec<MiniBoard>>()
+                    .unwrap_or_default();
+                let moves = moves_py_object
+                    .extract::<Vec<ValidOrNullMove>>()
+                    .unwrap_or_default();
+                board.stack = states.into_iter().zip(moves).collect_vec();
+                if !board.stack.windows(2).all(|window| {
+                    let (prev_board, move_) = get_item_unchecked!(window, 0);
+                    let (new_board, _) = get_item_unchecked!(window, 1);
+                    prev_board.make_move_new(*move_) == *new_board
+                }) {
+                    board.stack.clear()
+                }
+                board.update_repetition_table();
+            }
+            return Ok(board);
+        }
+        Err(Pyo3Error::Pyo3ConvertError {
+            from: ob.to_string(),
+            to: std::any::type_name::<Self>().to_string(),
+        }
+        .into())
     }
 }
