@@ -108,6 +108,16 @@ impl MiniBoard {
     }
 
     #[inline]
+    pub fn self_occupied(&self) -> BitBoard {
+        self.occupied_co(self.turn())
+    }
+
+    #[inline]
+    pub fn opponent_occupied(&self) -> BitBoard {
+        self.occupied_co(!self.turn())
+    }
+
+    #[inline]
     pub fn get_black_occupied(&self) -> BitBoard {
         self.occupied_co(Black)
     }
@@ -359,9 +369,7 @@ impl MiniBoard {
                 } else {
                     square_bb <<= 8;
                 }
-                if (self.get_piece_mask(Pawn) & self.occupied_co(!self.turn()) & square_bb)
-                    .is_empty()
-                {
+                if (self.get_piece_mask(Pawn) & self.opponent_occupied() & square_bb).is_empty() {
                     return false;
                 }
             }
@@ -572,7 +580,7 @@ impl MiniBoard {
 
     pub fn is_capture(&self, move_: Move) -> bool {
         let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
-        !(touched & self.occupied_co(!self.turn())).is_empty() || self.is_en_passant(move_)
+        !(touched & self.opponent_occupied()).is_empty() || self.is_en_passant(move_)
     }
 
     fn set_ep(&mut self, square: Square) {
@@ -586,7 +594,7 @@ impl MiniBoard {
         if !(square.get_file().get_adjacent_files_bb()
             & rank.to_bitboard()
             & self.get_piece_mask(Pawn)
-            & self.occupied_co(!self.turn()))
+            & self.opponent_occupied())
         .is_empty()
         {
             self._ep_square = Some(square);
@@ -609,7 +617,7 @@ impl MiniBoard {
     }
 
     pub fn generate_legal_captures(&self) -> MoveGenerator {
-        let mut targets = self.occupied_co(!self.turn());
+        let mut targets = self.opponent_occupied();
         if let Some(ep_square) = self.ep_square() {
             targets ^= ep_square.to_bitboard()
         }
@@ -633,14 +641,13 @@ impl MiniBoard {
             .to_index()
             .abs_diff(move_.get_dest().get_file().to_index());
         rank_diff > 1
-            || (self.get_piece_mask(Rook) & self.occupied_co(self.turn()))
-                .contains(move_.get_dest())
+            || (self.get_piece_mask(Rook) & self.self_occupied()).contains(move_.get_dest())
     }
 
     pub fn is_zeroing(&self, move_: Move) -> bool {
         let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
         !(touched & self.get_piece_mask(Pawn)).is_empty()
-            || !(touched & self.occupied_co(!self.turn())).is_empty()
+            || !(touched & self.opponent_occupied()).is_empty()
     }
 
     pub fn flip_vertical(&mut self) {
@@ -690,9 +697,9 @@ impl MiniBoard {
         self._pinned = BB_EMPTY;
         self._checkers = BB_EMPTY;
 
-        let ksq = (self.get_piece_mask(King) & self.occupied_co(self.turn())).to_square();
+        let ksq = (self.get_piece_mask(King) & self.self_occupied()).to_square();
 
-        let pinners = self.occupied_co(!self.turn())
+        let pinners = self.opponent_occupied()
             & ((ksq.get_bishop_rays_bb()
                 & (self.get_piece_mask(Bishop) | self.get_piece_mask(Queen)))
                 | (ksq.get_rook_rays_bb()
@@ -708,12 +715,12 @@ impl MiniBoard {
         }
 
         self._checkers ^=
-            get_knight_moves(ksq) & self.occupied_co(!self.turn()) & self.get_piece_mask(Knight);
+            get_knight_moves(ksq) & self.opponent_occupied() & self.get_piece_mask(Knight);
 
         self._checkers ^= get_pawn_attacks(
             ksq,
             self.turn(),
-            self.occupied_co(!self.turn()) & self.get_piece_mask(Pawn),
+            self.opponent_occupied() & self.get_piece_mask(Pawn),
         );
     }
 
@@ -725,6 +732,29 @@ impl MiniBoard {
     #[inline]
     pub fn get_checkers(&self) -> BitBoard {
         self._checkers
+    }
+
+    pub fn get_attacked_squares_bb<'a>(
+        &'a self,
+        attacker_piece_types: &'a [PieceType],
+        colors: &'a [Color],
+        mask: BitBoard,
+    ) -> BitBoard {
+        let mut attacked_squares = BB_EMPTY;
+        for (piece, square) in self.custom_iter(attacker_piece_types, colors, mask) {
+            attacked_squares |= match piece.get_piece_type() {
+                Pawn => get_pawn_attacks(square, piece.get_color(), BB_ALL),
+                Knight => get_knight_moves(square),
+                Bishop => get_bishop_moves(square, self.occupied()),
+                Rook => get_rook_moves(square, self.occupied()),
+                Queen => {
+                    get_bishop_moves(square, self.occupied())
+                        | get_rook_moves(square, self.occupied())
+                }
+                King => get_king_moves(square),
+            };
+        }
+        attacked_squares & !self.self_occupied()
     }
 
     /// Checks if the given side attacks the given square.

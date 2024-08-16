@@ -229,7 +229,7 @@ fn test_masked_move_generator() {
             .unwrap();
 
     let attackers = mini_board.get_piece_mask(Knight);
-    let targets = mini_board.occupied_co(!mini_board.turn());
+    let targets = mini_board.opponent_occupied();
     let masked_moves = mini_board.generate_masked_legal_moves(attackers, targets);
 
     let expected = vec![

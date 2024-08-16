@@ -88,11 +88,10 @@ impl PawnMoves {
             ^ source.to_bitboard()
             ^ dest.to_bitboard();
 
-        let ksq = (mini_board.get_piece_mask(King) & mini_board.occupied_co(mini_board.turn()))
-            .to_square();
+        let ksq = (mini_board.get_piece_mask(King) & mini_board.self_occupied()).to_square();
 
         let rooks = (mini_board.get_piece_mask(Rook) ^ mini_board.get_piece_mask(Queen))
-            & mini_board.occupied_co(!mini_board.turn());
+            & mini_board.opponent_occupied();
 
         if !(ksq.get_rook_rays_bb() & rooks).is_empty()
             && !(get_rook_moves(ksq, occupied) & rooks).is_empty()
@@ -101,7 +100,7 @@ impl PawnMoves {
         }
 
         let bishops = (mini_board.get_piece_mask(Bishop) ^ mini_board.get_piece_mask(Queen))
-            & mini_board.occupied_co(!mini_board.turn());
+            & mini_board.opponent_occupied();
 
         if !(ksq.get_bishop_rays_bb() & bishops).is_empty()
             && !(get_bishop_moves(ksq, occupied) & bishops).is_empty()
@@ -310,35 +309,32 @@ impl KingMoves {
     #[inline]
     fn legal_king_move(mini_board: &MiniBoard, dest: Square) -> bool {
         let occupied = mini_board.occupied()
-            ^ (mini_board.get_piece_mask(King) & mini_board.occupied_co(mini_board.turn()))
+            ^ (mini_board.get_piece_mask(King) & mini_board.self_occupied())
             | dest.to_bitboard();
 
         let rooks = (mini_board.get_piece_mask(Rook) ^ mini_board.get_piece_mask(Queen))
-            & mini_board.occupied_co(!mini_board.turn());
+            & mini_board.opponent_occupied();
 
         let mut attackers = get_rook_moves(dest, occupied) & rooks;
 
         let bishops = (mini_board.get_piece_mask(Bishop) ^ mini_board.get_piece_mask(Queen))
-            & mini_board.occupied_co(!mini_board.turn());
+            & mini_board.opponent_occupied();
 
         attackers |= get_bishop_moves(dest, occupied) & bishops;
 
         let knight_rays = get_knight_moves(dest);
 
         // Using ^ because knight square_and_bitboard_array bitboard do not collide with rook and bishop square_and_bitboard_array bitboard
-        attackers ^= knight_rays
-            & mini_board.get_piece_mask(Knight)
-            & mini_board.occupied_co(!mini_board.turn());
+        attackers ^=
+            knight_rays & mini_board.get_piece_mask(Knight) & mini_board.opponent_occupied();
 
         let king_rays = get_king_moves(dest);
-        attackers |= king_rays
-            & mini_board.get_piece_mask(King)
-            & mini_board.occupied_co(!mini_board.turn());
+        attackers |= king_rays & mini_board.get_piece_mask(King) & mini_board.opponent_occupied();
 
         attackers |= get_pawn_attacks(
             dest,
             mini_board.turn(),
-            mini_board.get_piece_mask(Pawn) & mini_board.occupied_co(!mini_board.turn()),
+            mini_board.get_piece_mask(Pawn) & mini_board.opponent_occupied(),
         );
 
         attackers.is_empty()
@@ -457,7 +453,7 @@ impl MoveGenerator {
     #[inline]
     fn enumerate_moves(mini_board: &MiniBoard) -> MoveList {
         let checkers = mini_board.get_checkers();
-        let mask = !mini_board.occupied_co(mini_board.turn());
+        let mask = !mini_board.self_occupied();
         let mut move_list = ArrayVec::new();
 
         if checkers.is_empty() {
@@ -624,7 +620,7 @@ impl MoveGenerator {
     pub fn perft_test_piecewise(mini_board: &MiniBoard, depth: usize) -> usize {
         let mut iterable = mini_board.generate_legal_moves();
 
-        let targets = mini_board.occupied_co(!mini_board.turn());
+        let targets = mini_board.opponent_occupied();
         let mut result: usize = 0;
 
         for &piece_mask in mini_board.get_piece_masks() {

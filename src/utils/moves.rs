@@ -99,7 +99,7 @@ impl Move {
             // but to the same square.
             let mut others = BB_EMPTY;
             let from_mask = mini_board.get_piece_mask(piece)
-                & mini_board.occupied_co(mini_board.turn())
+                & mini_board.self_occupied()
                 & !source.to_bitboard();
             let to_mask = dest.to_bitboard();
             for candidate in mini_board.generate_masked_legal_moves(from_mask, to_mask) {

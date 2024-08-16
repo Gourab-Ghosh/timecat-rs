@@ -131,10 +131,7 @@ impl MoveSorter {
 
     fn get_least_attackers_move(square: Square, mini_board: &MiniBoard) -> Option<Move> {
         mini_board
-            .generate_masked_legal_moves(
-                mini_board.occupied_co(mini_board.turn()),
-                square.to_bitboard(),
-            )
+            .generate_masked_legal_moves(mini_board.self_occupied(), square.to_bitboard())
             .next() // No need to find least attacker as the moves are already sorted
     }
 
@@ -142,7 +139,7 @@ impl MoveSorter {
     //     if mini_board.is_check() {
     //         mini_board
     //             .generate_masked_legal_moves(
-    //                 mini_board.occupied_co(mini_board.turn()),
+    //                 mini_board.self_occupied(),
     //                 square.to_bitboard(),
     //             )
     //             .next() // No need to find least attacker as the moves are already sorted
