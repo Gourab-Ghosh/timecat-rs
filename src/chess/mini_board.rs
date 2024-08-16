@@ -749,7 +749,7 @@ impl MiniBoard {
                 Rook => get_rook_moves(square, self.occupied()),
                 Queen => {
                     get_bishop_moves(square, self.occupied())
-                        | get_rook_moves(square, self.occupied())
+                        ^ get_rook_moves(square, self.occupied())
                 }
                 King => get_king_moves(square),
             };
