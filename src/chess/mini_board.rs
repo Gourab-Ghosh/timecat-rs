@@ -728,7 +728,6 @@ impl MiniBoard {
     }
 
     pub fn get_attackers_mask(&self, square: Square, color: Color) -> BitBoard {
-        // TODO: Check the logic.
         let occupied = self.occupied();
 
         let queens_and_rooks = self.get_piece_mask(Queen) | self.get_piece_mask(Rook);
@@ -741,6 +740,11 @@ impl MiniBoard {
             | (get_king_moves(square) & self.get_piece_mask(King));
 
         attackers & self.occupied_co(color)
+    }
+
+    #[inline]
+    pub fn is_attacked_by(&self, square: Square, color: Color) -> bool {
+        !self.get_attackers_mask(square, color).is_empty()
     }
 
     #[inline]
