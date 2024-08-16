@@ -8635,8 +8635,18 @@ impl Square {
     }
 
     #[inline]
+    pub fn get_rank_bb(self) -> BitBoard {
+        *get_item_unchecked!(BB_RANKS, self.to_index() >> 3)
+    }
+
+    #[inline]
     pub const fn get_file(self) -> File {
         File::from_index(self.to_index() & 7)
+    }
+
+    #[inline]
+    pub fn get_file_bb(self) -> BitBoard {
+        *get_item_unchecked!(BB_FILES, self.to_index() & 7)
     }
 
     #[inline]

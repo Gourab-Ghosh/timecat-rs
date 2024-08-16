@@ -29,7 +29,7 @@ pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
     let result = unsafe {
         _pdep_u64(
             *BMI_MOVES.get_unchecked(index) as u64,
-            get_rook_rays(square).get_mask(),
+            square.get_rook_rays_bb().get_mask(),
         )
     };
     return BitBoard::new(result);
@@ -60,7 +60,7 @@ pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
     let result = unsafe {
         _pdep_u64(
             *BMI_MOVES.get_unchecked(index) as u64,
-            get_bishop_rays(square).get_mask(),
+            square.get_bishop_rays_bb().get_mask(),
         )
     };
     return BitBoard::new(result);

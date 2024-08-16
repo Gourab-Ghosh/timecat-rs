@@ -109,10 +109,10 @@ impl Move {
             // Disambiguate.
             if !others.is_empty() {
                 let (mut row, mut column) = (false, false);
-                if !(others & source.get_rank().to_bitboard()).is_empty() {
+                if !(others & source.get_rank_bb()).is_empty() {
                     column = true;
                 }
-                if !(others & source.get_file().to_bitboard()).is_empty() {
+                if !(others & source.get_file_bb()).is_empty() {
                     row = true;
                 } else {
                     column = true;

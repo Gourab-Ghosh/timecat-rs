@@ -727,13 +727,21 @@ impl MiniBoard {
         self._checkers
     }
 
-    // pub fn get_attackers_mask(&self, square: Square) -> BitBoard {
-    //     let rank_bb = square.get_rank().to_bitboard();
-    //     let file_bb = square.get_file().to_bitboard();
-    //     let rank_pieces = BB_RANK_MASKS[square] & self.occupied;
-    //     let file_pieces = BB_FILE_MASKS[square] & self.occupied;
-    //     let diag_pieces = BB_DIAG_MASKS[square] & self.occupied;
-    // }
+    pub fn get_attackers_mask(&self, square: Square, color: Color) -> BitBoard {
+        // TODO: Check the logic.
+        let occupied = self.occupied();
+
+        let queens_and_rooks = self.get_piece_mask(Queen) | self.get_piece_mask(Rook);
+        let queens_and_bishops = self.get_piece_mask(Queen) | self.get_piece_mask(Bishop);
+
+        let attackers = (get_king_moves(square) & self.get_piece_mask(King))
+            | (get_knight_moves(square) & self.get_piece_mask(Knight))
+            | (get_rook_moves(square, occupied) & queens_and_rooks)
+            | (get_bishop_moves(square, occupied) & queens_and_bishops)
+            | (get_pawn_attacks(square, !color, BB_ALL));
+
+        attackers & self.occupied_co(color)
+    }
 
     #[inline]
     pub fn is_check(&self) -> bool {
