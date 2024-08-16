@@ -39,9 +39,9 @@ pub mod bitboard_and_square {
                 )*
                 pub const ALL_SQUARES: [Square; NUM_SQUARES] = [$( Square::[<$file$rank>] ), *];
                 pub const BB_SQUARES: [BitBoard; NUM_SQUARES] = [$( [<BB_$file$rank>] ), *];
-                pub const SQUARES_VERTICAL_MIRROR: [Square; NUM_SQUARES] = [$( Square::from_int([<$file$rank>].to_int() ^ 7) ), *];
-                pub const SQUARES_HORIZONTAL_MIRROR: [Square; NUM_SQUARES] = [$( Square::from_int([<$file$rank>].to_int() ^ 0x38) ), *];
-                pub const SQUARES_ROTATED: [Square; NUM_SQUARES] = [$( Square::from_int([<$file$rank>].to_int() ^ 0x3f) ), *];
+                pub const SQUARES_VERTICAL_MIRROR: [Square; NUM_SQUARES] = [$( ALL_SQUARES[[<$file$rank>].to_index() ^ 7] ), *];
+                pub const SQUARES_HORIZONTAL_MIRROR: [Square; NUM_SQUARES] = [$( ALL_SQUARES[[<$file$rank>].to_index() ^ 0x38] ), *];
+                pub const SQUARES_ROTATED: [Square; NUM_SQUARES] = [$( ALL_SQUARES[[<$file$rank>].to_index() ^ 0x3f] ), *];
             }
         };
 
