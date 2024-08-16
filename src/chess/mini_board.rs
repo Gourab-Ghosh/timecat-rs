@@ -734,11 +734,11 @@ impl MiniBoard {
         let queens_and_rooks = self.get_piece_mask(Queen) | self.get_piece_mask(Rook);
         let queens_and_bishops = self.get_piece_mask(Queen) | self.get_piece_mask(Bishop);
 
-        let attackers = (get_king_moves(square) & self.get_piece_mask(King))
+        let attackers = (get_pawn_attacks(square, !color, BB_ALL) & self.get_piece_mask(Pawn))
             | (get_knight_moves(square) & self.get_piece_mask(Knight))
-            | (get_rook_moves(square, occupied) & queens_and_rooks)
             | (get_bishop_moves(square, occupied) & queens_and_bishops)
-            | (get_pawn_attacks(square, !color, BB_ALL));
+            | (get_rook_moves(square, occupied) & queens_and_rooks)
+            | (get_king_moves(square) & self.get_piece_mask(King));
 
         attackers & self.occupied_co(color)
     }

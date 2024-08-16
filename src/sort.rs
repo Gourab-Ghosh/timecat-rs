@@ -138,6 +138,38 @@ impl MoveSorter {
             .next() // No need to find least attacker as the moves are already sorted
     }
 
+    // fn get_least_attackers_move(square: Square, mini_board: &MiniBoard) -> Option<Move> {
+    //     if mini_board.is_check() {
+    //         mini_board
+    //             .generate_masked_legal_moves(
+    //                 mini_board.occupied_co(mini_board.turn()),
+    //                 square.to_bitboard(),
+    //             )
+    //             .next() // No need to find least attacker as the moves are already sorted
+    //     } else {
+    //         let attackers_mask = mini_board.get_attackers_mask(square, mini_board.turn());
+    //         for piece_type in ALL_PIECE_TYPES {
+    //             let least_attackers = mini_board.get_piece_mask(piece_type) & attackers_mask;
+    //             if !least_attackers.is_empty() {
+    //                 return Some(
+    //                     Move::new_unchecked(
+    //                         least_attackers.to_square(),
+    //                         square,
+    //                         if piece_type == Pawn
+    //                             && square.get_rank() == mini_board.turn().to_their_backrank()
+    //                         {
+    //                             Some(Queen)
+    //                         } else {
+    //                             None
+    //                         },
+    //                     ),
+    //                 );
+    //             }
+    //         }
+    //         None
+    //     }
+    // }
+
     fn see(square: Square, mini_board: &MiniBoard) -> Score {
         let least_attackers_move = match Self::get_least_attackers_move(square, mini_board) {
             Some(valid_or_null_move) => valid_or_null_move,

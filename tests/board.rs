@@ -57,43 +57,60 @@ test_draws_and_material_related_functions!(
     ],
 );
 
-// #[test]
-// fn test_attackers_mask() -> Result<()> {
-//     let mut board = Board::default();
-//     for fen in [
-//         STARTING_POSITION_FEN,
-//         "r1bqkbnr/pppp1ppp/2n5/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3",
-//         "8/b7/3k4/6b1/8/2K5/5B2/8 w - - 0 1",
-//         "8/8/3k4/1b6/8/2K5/5B2/8 w - - 0 1",
-//         "8/8/3k4/1b6/B7/2K5/5B2/8 w - - 0 1",
-//         "8/b7/3k4/6b1/8/2K3N1/5B2/8 w - - 0 1",
-//         "8/8/3k4/6b1/8/2K3N1/5B2/8 w - - 0 1",
-//         "8/b7/3k4/8/8/2K5/5B2/8 w - - 0 1",
-//         "8/8/3k4/8/8/2K5/5B2/8 w - - 0 1",
-//         "8/8/3k4/2b5/8/2K5/8/8 w - - 0 1",
-//         "8/8/3k2n1/8/8/2K5/Q7/8 w - - 0 1",
-//         "8/8/3k4/8/8/2K2N2/8/8 w - - 0 1",
-//         "Bk3n2/8/P1p1n3/2b5/1B2p3/5p2/1KP3pP/1Q1r4 w - - 2 5",
-//         "q7/2R3K1/5n2/PNR5/3pr3/2P1P2k/1p2p3/5b1B w - - 30 50",
-//         "8/r7/p4K2/1kPp2P1/2p1P1pb/1P1b2p1/3p4/1r6 w - - 22 51",
-//         "5k2/p2P3K/Q7/4p3/3P2bp/2rN4/p1np2qp/8 w - - 11 23",
-//         "4R3/4P2P/5P2/p1p2Bp1/1pP5/2p5/P6B/2k2K1Q w - - 0 1",
-//         "rnbqkbnr/pppp2pp/4p3/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3",
-//         "rnbqkbnr/pp1pppp1/8/1Pp4p/8/8/P1PPPPPP/RNBQKBNR w KQkq c6 0 3",
-//     ] {
-//         board.set_fen(fen)?;
-//         for square in ALL_SQUARES {
-//             let result = board.get_attackers_mask(square, board.turn());
-//             let mut expected = BB_EMPTY;
-//             for move_ in board.generate_masked_legal_moves(BB_ALL, square.to_bitboard()) {
-//                 expected |= move_.get_source().to_bitboard();
-//             }
-//             assert_eq!(expected, result, "Expected\n\n{expected}\n\nfound\n\n{result}\n\nin position\n\n{board}\n\n for square {square}");
-//         }
-//     }
+#[test]
+fn test_attackers_mask() -> Result<()> {
+    let mut board = Board::default();
+    for fen in [
+        STARTING_POSITION_FEN,
+        "r1bqkbnr/pppp1ppp/2n5/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3",
+        "8/b7/3k4/6b1/8/2K5/5B2/8 w - - 0 1",
+        "8/8/3k4/1b6/8/2K5/5B2/8 w - - 0 1",
+        "8/8/3k4/1b6/B7/2K5/5B2/8 w - - 0 1",
+        "8/b7/3k4/6b1/8/2K3N1/5B2/8 w - - 0 1",
+        "8/8/3k4/6b1/8/2K3N1/5B2/8 w - - 0 1",
+        "8/b7/3k4/8/8/2K5/5B2/8 w - - 0 1",
+        "8/8/3k4/8/8/2K5/5B2/8 w - - 0 1",
+        "8/8/3k4/2b5/8/2K5/8/8 w - - 0 1",
+        "8/8/3k2n1/8/8/2K5/Q7/8 w - - 0 1",
+        "8/8/3k4/8/8/2K2N2/8/8 w - - 0 1",
+        "Bk3n2/8/P1p1n3/2b5/1B2p3/5p2/1KP3pP/1Q1r4 w - - 2 5",
+        "q7/2R3K1/5n2/PNR5/3pr3/2P1P2k/1p2p3/5b1B w - - 30 50",
+        "8/r7/p4K2/1kPp2P1/2p1P1pb/1P1b2p1/3p4/1r6 w - - 22 51",
+        "5k2/p2P3K/Q7/4p3/3P2bp/2rN4/p1np2qp/8 w - - 11 23",
+        "4R3/4P2P/5P2/p1p2Bp1/1pP5/2p5/P6B/2k2K1Q w - - 0 1",
+        "rnbqkbnr/pppp2pp/4p3/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3",
+        "rnbqkbnr/pp1pppp1/8/1Pp4p/8/8/P1PPPPPP/RNBQKBNR w KQkq c6 0 3",
+    ] {
+        board.set_fen(fen)?;
+        for square in ALL_SQUARES {
+            let result = board.get_attackers_mask(square, board.turn());
+            let mut expected = BB_EMPTY;
+            for piece_square in ALL_SQUARES {
+                if let Some(piece) = board.get_piece_at(piece_square) {
+                    if piece.get_color() == board.turn()
+                        && match piece.get_piece_type() {
+                            Pawn => get_pawn_attacks(piece_square, board.turn(), BB_ALL),
+                            Knight => get_knight_moves(piece_square),
+                            Bishop => get_bishop_moves(piece_square, board.occupied()),
+                            Rook => get_rook_moves(piece_square, board.occupied()),
+                            Queen => {
+                                get_bishop_moves(piece_square, board.occupied())
+                                    | get_rook_moves(piece_square, board.occupied())
+                            }
+                            King => get_king_moves(piece_square),
+                        }
+                        .contains(square)
+                    {
+                        expected |= piece_square.to_bitboard();
+                    }
+                }
+            }
+            assert_eq!(expected, result, "Expected\n\n{expected}\n\nfound\n\n{result}\n\nin position\n\n{board}\n\n for square {square}");
+        }
+    }
 
-//     Ok(())
-// }
+    Ok(())
+}
 
 macro_rules! test_repetition_and_checkmate {
     ($func:ident, $array:expr,) => {
