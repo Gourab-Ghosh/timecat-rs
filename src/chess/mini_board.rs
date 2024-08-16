@@ -394,7 +394,7 @@ impl MiniBoard {
             // depending on the color
             if castle_rights != CastleRights::None
                 && self.get_piece_mask(King) & self.occupied_co(color)
-                    != get_file_bb(File::E) & get_rank_bb(color.to_my_backrank())
+                    != BB_FILE_E & color.to_my_backrank().to_bitboard()
             {
                 return false;
             }
@@ -517,6 +517,27 @@ impl MiniBoard {
         self.to_string()
     }
 
+    pub fn is_good_fen(fen: &str) -> bool {
+        let fen = simplify_fen(fen);
+        let mut splitted_fen = fen.split(' ');
+        if splitted_fen.nth(4).unwrap_or("0").parse().unwrap_or(-1) < 0
+            || splitted_fen.next().unwrap_or("1").parse().unwrap_or(-1) < 0
+            || splitted_fen.next().is_some()
+        {
+            return false;
+        };
+        Self::from_str(&fen).is_ok()
+    }
+
+    pub fn set_fen(&mut self, fen: &str) -> Result<()> {
+        let fen = simplify_fen(fen);
+        if fen == self.get_fen() {
+            return Ok(());
+        }
+        *self = Self::from_str(&fen)?;
+        Ok(())
+    }
+
     pub fn is_en_passant(&self, move_: Move) -> bool {
         match self.ep_square() {
             Some(ep_square) => {
@@ -544,8 +565,8 @@ impl MiniBoard {
         let file = square.get_file();
         (pawn_mask
             & self.occupied_co(!self_color)
-            & (get_adjacent_files(file) ^ get_file_bb(file))
-            & get_upper_board_mask(square.get_rank(), self_color))
+            & (file.get_adjacent_files_bb() ^ file.to_bitboard())
+            & square.get_rank().get_upper_board_mask(self_color))
         .is_empty()
     }
 
@@ -562,8 +583,8 @@ impl MiniBoard {
         } else {
             rank.wrapping_up()
         };
-        if !(get_adjacent_files(square.get_file())
-            & get_rank_bb(rank)
+        if !(square.get_file().get_adjacent_files_bb()
+            & rank.to_bitboard()
             & self.get_piece_mask(Pawn)
             & self.occupied_co(!self.turn()))
         .is_empty()
@@ -672,11 +693,13 @@ impl MiniBoard {
         let ksq = (self.get_piece_mask(King) & self.occupied_co(self.turn())).to_square();
 
         let pinners = self.occupied_co(!self.turn())
-            & ((get_bishop_rays(ksq) & (self.get_piece_mask(Bishop) | self.get_piece_mask(Queen)))
-                | (get_rook_rays(ksq) & (self.get_piece_mask(Rook) | self.get_piece_mask(Queen))));
+            & ((ksq.get_bishop_rays_bb()
+                & (self.get_piece_mask(Bishop) | self.get_piece_mask(Queen)))
+                | (ksq.get_rook_rays_bb()
+                    & (self.get_piece_mask(Rook) | self.get_piece_mask(Queen))));
 
         for square in pinners {
-            let between = between(square, ksq) & self.occupied();
+            let between = square.between(ksq) & self.occupied();
             if between.is_empty() {
                 self._checkers ^= square.to_bitboard();
             } else if between.popcnt() == 1 {
@@ -703,6 +726,14 @@ impl MiniBoard {
     pub fn get_checkers(&self) -> BitBoard {
         self._checkers
     }
+
+    // pub fn get_attackers_mask(&self, square: Square) -> BitBoard {
+    //     let rank_bb = square.get_rank().to_bitboard();
+    //     let file_bb = square.get_file().to_bitboard();
+    //     let rank_pieces = BB_RANK_MASKS[square] & self.occupied;
+    //     let file_pieces = BB_FILE_MASKS[square] & self.occupied;
+    //     let diag_pieces = BB_DIAG_MASKS[square] & self.occupied;
+    // }
 
     #[inline]
     pub fn is_check(&self) -> bool {
@@ -1171,13 +1202,13 @@ impl MiniBoardMethodOverload<Move> for MiniBoard {
         }
         // now, lets see if we're in check or pinned
         let attackers = result.occupied_co(result.turn())
-            & ((get_bishop_rays(ksq)
+            & ((ksq.get_bishop_rays_bb()
                 & (result.get_piece_mask(Bishop) | result.get_piece_mask(Queen)))
-                | (get_rook_rays(ksq)
+                | (ksq.get_rook_rays_bb()
                     & (result.get_piece_mask(Rook) | result.get_piece_mask(Queen))));
 
         for square in attackers {
-            let between = between(square, ksq) & result.occupied();
+            let between = square.between(ksq) & result.occupied();
             if between.is_empty() {
                 result._checkers ^= square.to_bitboard();
             } else if between.popcnt() == 1 {

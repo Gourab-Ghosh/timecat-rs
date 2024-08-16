@@ -72,6 +72,11 @@ impl File {
     pub fn to_bitboard(self) -> BitBoard {
         *get_item_unchecked!(BB_FILES, self.to_index())
     }
+
+    #[inline]
+    pub fn get_adjacent_files_bb(self) -> BitBoard {
+        *get_item_unchecked!(BB_ADJACENT_FILES, self.to_index())
+    }
 }
 
 impl FromStr for File {

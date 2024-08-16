@@ -18,7 +18,7 @@ trait PieceMoves {
         let checkers = mini_board.get_checkers();
 
         let check_mask = if T::IN_CHECK {
-            between(checkers.to_square(), ksq) ^ checkers
+            checkers.to_square().between(ksq) ^ checkers
         } else {
             BB_ALL
         };
@@ -40,7 +40,7 @@ trait PieceMoves {
         if !T::IN_CHECK {
             for src in pieces & pinned {
                 let square_and_bitboard_array =
-                    Self::pseudo_legals(src, color, occupied, mask) & line(src, ksq);
+                    Self::pseudo_legals(src, color, occupied, mask) & src.line(ksq);
                 if !square_and_bitboard_array.is_empty() {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(
@@ -94,7 +94,7 @@ impl PawnMoves {
         let rooks = (mini_board.get_piece_mask(Rook) ^ mini_board.get_piece_mask(Queen))
             & mini_board.occupied_co(!mini_board.turn());
 
-        if !(get_rook_rays(ksq) & rooks).is_empty()
+        if !(ksq.get_rook_rays_bb() & rooks).is_empty()
             && !(get_rook_moves(ksq, occupied) & rooks).is_empty()
         {
             return false;
@@ -103,7 +103,7 @@ impl PawnMoves {
         let bishops = (mini_board.get_piece_mask(Bishop) ^ mini_board.get_piece_mask(Queen))
             & mini_board.occupied_co(!mini_board.turn());
 
-        if !(get_bishop_rays(ksq) & bishops).is_empty()
+        if !(ksq.get_bishop_rays_bb() & bishops).is_empty()
             && !(get_bishop_moves(ksq, occupied) & bishops).is_empty()
         {
             return false;
@@ -142,7 +142,7 @@ impl PieceMoves for PawnMoves {
         let checkers = mini_board.get_checkers();
 
         let check_mask = if T::IN_CHECK {
-            between(checkers.to_square(), ksq) ^ checkers
+            checkers.to_square().between(ksq) ^ checkers
         } else {
             BB_ALL
         };
@@ -164,7 +164,7 @@ impl PieceMoves for PawnMoves {
         if !T::IN_CHECK {
             for src in pieces & pinned {
                 let square_and_bitboard_array =
-                    Self::pseudo_legals(src, color, occupied, mask) & line(ksq, src);
+                    Self::pseudo_legals(src, color, occupied, mask) & ksq.line(src);
                 if !square_and_bitboard_array.is_empty() {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(
@@ -179,12 +179,12 @@ impl PieceMoves for PawnMoves {
 
         if let Some(dest) = mini_board.ep_square() {
             let dest_rank = dest.get_rank();
-            let rank_bb = get_rank_bb(if dest_rank.to_int() > 3 {
-                dest_rank.wrapping_down()
+            let rank_bb = if dest_rank.to_int() > 3 {
+                dest_rank.wrapping_down().to_bitboard()
             } else {
-                dest_rank.wrapping_up()
-            });
-            let files_bb = get_adjacent_files(dest.get_file());
+                dest_rank.wrapping_up().to_bitboard()
+            };
+            let files_bb = dest.get_file().get_adjacent_files_bb();
             for src in rank_bb & files_bb & pieces {
                 if PawnMoves::legal_ep_move(mini_board, src, dest) {
                     unsafe {
@@ -244,7 +244,7 @@ impl PieceMoves for KnightMoves {
         let checkers = mini_board.get_checkers();
 
         if T::IN_CHECK {
-            let check_mask = between(checkers.to_square(), ksq) ^ checkers;
+            let check_mask = checkers.to_square().between(ksq) ^ checkers;
 
             for src in pieces & !pinned {
                 let square_and_bitboard_array =
@@ -591,7 +591,7 @@ impl MoveGenerator {
                 }
             }
             King => {
-                let bb = between(move_.get_source(), move_.get_dest());
+                let bb = move_.get_source().between(move_.get_dest());
                 if bb.popcnt() == 1 {
                     // castles
                     if !KingMoves::legal_king_move(mini_board, bb.to_square()) {

@@ -74,10 +74,24 @@ pub mod bitboard_and_square {
         (A, 1), (B, 2), (C, 3), (D, 4), (E, 5), (F, 6), (G, 7), (H, 8),
     );
 
+    pub const BB_ADJACENT_FILES: [BitBoard; 8] = [
+        BitBoard::new(144680345676153346),
+        BitBoard::new(361700864190383365),
+        BitBoard::new(723401728380766730),
+        BitBoard::new(1446803456761533460),
+        BitBoard::new(2893606913523066920),
+        BitBoard::new(5787213827046133840),
+        BitBoard::new(11574427654092267680),
+        BitBoard::new(4629771061636907072),
+    ];
+
     pub const BB_CORNERS: BitBoard =
         BitBoard::new(BB_A1.get_mask() ^ BB_H1.get_mask() ^ BB_A8.get_mask() ^ BB_H8.get_mask());
     pub const BB_CENTER: BitBoard =
         BitBoard::new(BB_D4.get_mask() ^ BB_E4.get_mask() ^ BB_D5.get_mask() ^ BB_E5.get_mask());
+    pub const BB_EDGES: BitBoard = BitBoard::new(
+        BB_RANK_1.get_mask() | BB_RANK_8.get_mask() | BB_FILE_A.get_mask() | BB_FILE_H.get_mask(),
+    );
 
     pub const BB_LIGHT_SQUARES: BitBoard = BitBoard::new(0x55aa_55aa_55aa_55aa);
     pub const BB_DARK_SQUARES: BitBoard = BitBoard::new(0xaa55_aa55_aa55_aa55);
@@ -91,29 +105,6 @@ pub mod bitboard_and_square {
 
     pub const CENTER_SQUARES_BB: BitBoard = BitBoard::new(0x0000001818000000);
     pub const PSEUDO_CENTER_SQUARES_BB: BitBoard = BitBoard::new(0x00003C24243C0000);
-
-    pub const UPPER_BOARD_MASK: [[BitBoard; 8]; 2] = [
-        [
-            BitBoard::new(0xffff_ffff_ffff_ff00),
-            BitBoard::new(0xffff_ffff_ffff_0000),
-            BitBoard::new(0xffff_ffff_ff00_0000),
-            BitBoard::new(0xffff_ffff_0000_0000),
-            BitBoard::new(0xffff_ff00_0000_0000),
-            BitBoard::new(0xffff_0000_0000_0000),
-            BitBoard::new(0xff00_0000_0000_0000),
-            BitBoard::new(0x0000_0000_0000_0000),
-        ],
-        [
-            BitBoard::new(0x00ff_ffff_ffff_ffff),
-            BitBoard::new(0x0000_ffff_ffff_ffff),
-            BitBoard::new(0x0000_00ff_ffff_ffff),
-            BitBoard::new(0x0000_0000_ffff_ffff),
-            BitBoard::new(0x0000_0000_00ff_ffff),
-            BitBoard::new(0x0000_0000_0000_ffff),
-            BitBoard::new(0x0000_0000_0000_00ff),
-            BitBoard::new(0x0000_0000_0000_0000),
-        ],
-    ];
 
     pub const BOARD_QUARTER_MASKS: [BitBoard; 4] = [
         BitBoard::new(0x0f0f_0f0f_0000_0000),

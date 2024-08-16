@@ -4,29 +4,18 @@ use std::arch::x86_64::{_pdep_u64, _pext_u64};
 
 include!("magic_gen.rs");
 
-/// Get the rays for a bishop on a particular square.
-#[inline]
-pub fn get_bishop_rays(square: Square) -> BitBoard {
-    *get_item_unchecked!(const RAYS[BISHOP], square.to_index())
-}
-
-/// Get the rays for a rook on a particular square.
-#[inline]
-pub fn get_rook_rays(square: Square) -> BitBoard {
-    *get_item_unchecked!(const RAYS[ROOK], square.to_index())
-}
-
 /// Get the moves for a rook on a particular square, given blockers blocking my movement.
 #[inline]
 #[cfg(not(target_feature = "bmi2"))]
 pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
-    let magic: Magic = *get_item_unchecked!(const MAGIC_NUMBERS[ROOK], square.to_index());
+    let magic: Magic =
+        *get_item_unchecked!(const ROOK_AND_BISHOP_MAGIC_NUMBERS[0], square.to_index());
     *get_item_unchecked!(
         MOVES,
         (magic.offset as usize)
             + (magic.magic_number.wrapping_mul(blockers & magic.mask) >> magic.right_shift)
                 .to_usize(),
-    ) & get_rook_rays(square)
+    ) & square.get_rook_rays_bb()
 }
 
 /// Get the moves for a rook on a particular square, given blockers blocking my movement.
@@ -50,13 +39,14 @@ pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
 #[inline]
 #[cfg(not(target_feature = "bmi2"))]
 pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
-    let magic: Magic = *get_item_unchecked!(const MAGIC_NUMBERS[BISHOP], square.to_index());
+    let magic: Magic =
+        *get_item_unchecked!(const ROOK_AND_BISHOP_MAGIC_NUMBERS[1], square.to_index());
     *get_item_unchecked!(
         MOVES,
         (magic.offset as usize)
             + (magic.magic_number.wrapping_mul(blockers & magic.mask) >> magic.right_shift)
                 .to_usize(),
-    ) & get_bishop_rays(square)
+    ) & square.get_bishop_rays_bb()
 }
 
 /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
@@ -121,37 +111,6 @@ pub fn get_pawn_quiets(square: Square, color: Color, blockers: BitBoard) -> BitB
 #[inline]
 pub fn get_pawn_moves(square: Square, color: Color, blockers: BitBoard) -> BitBoard {
     get_pawn_attacks(square, color, blockers) ^ get_pawn_quiets(square, color, blockers)
-}
-
-/// Get a line (extending to infinity, which in chess is 8 squares), given two squares.
-/// This line does extend past the squares.
-#[inline]
-pub fn line(square1: Square, square2: Square) -> BitBoard {
-    *get_item_unchecked!(LINE, square1.to_index(), square2.to_index())
-}
-
-/// Get a line between these two squares, not including the squares themselves.
-#[inline]
-pub fn between(square1: Square, square2: Square) -> BitBoard {
-    *get_item_unchecked!(BETWEEN, square1.to_index(), square2.to_index())
-}
-
-/// Get a `BitBoard` that represents all the squares on a particular rank.
-#[inline]
-pub fn get_rank_bb(rank: Rank) -> BitBoard {
-    *get_item_unchecked!(RANKS, rank.to_index())
-}
-
-/// Get a `BitBoard` that represents all the squares on a particular file.
-#[inline]
-pub fn get_file_bb(file: File) -> BitBoard {
-    *get_item_unchecked!(FILES, file.to_index())
-}
-
-/// Get a `BitBoard` that represents the squares on the 1 or 2 files next to this file.
-#[inline]
-pub fn get_adjacent_files(file: File) -> BitBoard {
-    *get_item_unchecked!(ADJACENT_FILES, file.to_index())
 }
 
 #[inline]

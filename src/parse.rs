@@ -295,9 +295,6 @@ impl Set {
         if fen == "startpos" {
             return UserCommand::SetFen(STARTING_POSITION_FEN.to_string()).into();
         }
-        if !Board::is_good_fen(&fen) {
-            return Err(BadFen { fen });
-        };
         UserCommand::SetFen(fen).into()
     }
 
@@ -332,11 +329,6 @@ impl Set {
     }
 
     fn set_board_fen(engine: &mut impl ChessEngine, fen: &str) -> Result<()> {
-        if !Board::is_good_fen(fen) {
-            return Err(BadFen {
-                fen: fen.to_string(),
-            });
-        };
         engine.set_fen(fen)?;
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!("{}", engine.get_board());

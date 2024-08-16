@@ -47,14 +47,7 @@ impl Board {
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<()> {
-        let fen = simplify_fen(fen);
-        if !Self::is_good_fen(&fen) {
-            return Err(TimecatError::BadFen { fen });
-        }
-        if fen == self.get_fen() {
-            return Ok(());
-        }
-        self.mini_board = MiniBoard::from_str(&fen)?;
+        self.mini_board.set_fen(fen)?;
         self.stack.clear();
         self.update_repetition_table();
         Ok(())
@@ -78,21 +71,6 @@ impl Board {
     #[cfg(feature = "extras")]
     pub fn get_evaluator_mut(&mut self) -> &mut Evaluator {
         &mut self.evaluator
-    }
-
-    pub fn is_good_fen(fen: &str) -> bool {
-        let fen = simplify_fen(fen);
-        if MiniBoard::from_str(&fen).is_err() {
-            return false;
-        }
-        let mut splitted_fen = fen.split(' ');
-        if splitted_fen.nth(4).unwrap_or("0").parse().unwrap_or(-1) < 0
-            || splitted_fen.next().unwrap_or("1").parse().unwrap_or(-1) < 0
-            || splitted_fen.next().is_some()
-        {
-            return false;
-        };
-        true
     }
 
     pub fn reset(&mut self) {
