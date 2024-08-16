@@ -727,6 +727,10 @@ impl MiniBoard {
         self._checkers
     }
 
+    /// Checks if the given side attacks the given square.
+
+    /// Pinned pieces still count as attackers. Pawns that can be captured
+    /// en passant are **not** considered attacked.
     pub fn get_attackers_mask(&self, square: Square, color: Color) -> BitBoard {
         let occupied = self.occupied();
 
