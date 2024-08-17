@@ -170,7 +170,7 @@ impl Board {
     }
 
     #[inline]
-    pub fn is_other_draw(&self) -> bool {
+    pub(crate) fn is_other_draw(&self) -> bool {
         self.is_fifty_moves() || self.is_threefold_repetition() || self.is_insufficient_material()
     }
 

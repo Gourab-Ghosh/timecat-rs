@@ -734,14 +734,14 @@ impl MiniBoard {
         self._checkers
     }
 
-    pub fn get_attacked_squares_bb<'a>(
+    pub fn get_custom_attacked_squares_bb<'a>(
         &'a self,
         attacker_piece_types: &'a [PieceType],
         colors: &'a [Color],
-        mask: BitBoard,
+        attackers_mask: BitBoard,
     ) -> BitBoard {
         let mut attacked_squares = BB_EMPTY;
-        for (piece, square) in self.custom_iter(attacker_piece_types, colors, mask) {
+        for (piece, square) in self.custom_iter(attacker_piece_types, colors, attackers_mask) {
             attacked_squares |= match piece.get_piece_type() {
                 Pawn => get_pawn_attacks(square, piece.get_color(), BB_ALL),
                 Knight => get_knight_moves(square),
@@ -757,6 +757,11 @@ impl MiniBoard {
         attacked_squares & !self.self_occupied()
     }
 
+    #[inline]
+    pub fn get_attacked_squares_bb<'a>(&self) -> BitBoard {
+        self.get_custom_attacked_squares_bb(&ALL_PIECE_TYPES, &ALL_COLORS, BB_ALL)
+    }
+
     /// Checks if the given side attacks the given square.
 
     /// Pinned pieces still count as attackers. Pawns that can be captured
@@ -764,8 +769,8 @@ impl MiniBoard {
     pub fn get_attackers_mask(&self, square: Square, color: Color) -> BitBoard {
         let occupied = self.occupied();
 
-        let queens_and_rooks = self.get_piece_mask(Queen) | self.get_piece_mask(Rook);
-        let queens_and_bishops = self.get_piece_mask(Queen) | self.get_piece_mask(Bishop);
+        let queens_and_rooks = self.get_piece_mask(Queen) ^ self.get_piece_mask(Rook);
+        let queens_and_bishops = self.get_piece_mask(Queen) ^ self.get_piece_mask(Bishop);
 
         let attackers = (get_pawn_attacks(square, !color, BB_ALL) & self.get_piece_mask(Pawn))
             | (get_knight_moves(square) & self.get_piece_mask(Knight))
@@ -791,6 +796,7 @@ impl MiniBoard {
         self.status() == BoardStatus::Checkmate
     }
 
+    #[inline]
     pub fn piece_symbol_at(&self, square: Square) -> String {
         match self.get_piece_at(square) {
             Some(piece) => piece.to_string(),
