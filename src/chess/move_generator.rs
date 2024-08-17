@@ -623,7 +623,7 @@ impl MoveGenerator {
         let targets = mini_board.opponent_occupied();
         let mut result: usize = 0;
 
-        for &piece_mask in mini_board.get_piece_masks() {
+        for &piece_mask in mini_board.get_all_piece_masks() {
             iterable.set_from_bitboard_iterator_mask(piece_mask);
             if depth == 1 {
                 iterable.set_to_bitboard_iterator_mask(targets);

@@ -62,6 +62,7 @@ fn test_attackers_mask() -> Result<()> {
     let mut board = Board::default();
     for fen in [
         STARTING_POSITION_FEN,
+        "rn1qk1nr/ppp2ppp/8/2bPp3/8/2NP3b/PPP2PPP/R1BQKBNR w KQkq - 1 5",
         "r1bqkbnr/pppp1ppp/2n5/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3",
         "8/b7/3k4/6b1/8/2K5/5B2/8 w - - 0 1",
         "8/8/3k4/1b6/8/2K5/5B2/8 w - - 0 1",

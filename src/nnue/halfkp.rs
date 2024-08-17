@@ -314,7 +314,7 @@ impl HalfKPModel {
             Added((Piece, Square)),
             Removed((Piece, Square)),
         }
-        let last_mini_board_piece_masks = self.last_mini_board.get_piece_masks().to_owned();
+        let last_mini_board_piece_masks = self.last_mini_board.get_all_piece_masks().to_owned();
         let last_mini_board_occupied_cos = [
             self.last_mini_board.occupied_co(White),
             self.last_mini_board.occupied_co(Black),

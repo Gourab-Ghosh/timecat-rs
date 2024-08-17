@@ -129,17 +129,22 @@ impl MiniBoard {
 
     #[inline]
     pub fn get_king_square(&self, color: Color) -> Square {
-        (self.get_piece_mask(King) & self.occupied_co(color)).to_square()
+        self.get_colored_piece_mask(King, color).to_square()
     }
 
     #[inline]
-    pub fn get_piece_masks(&self) -> &[BitBoard] {
+    pub fn get_all_piece_masks(&self) -> &[BitBoard] {
         &self._piece_masks
     }
 
     #[inline]
     pub fn get_piece_mask(&self, piece_type: PieceType) -> BitBoard {
         *get_item_unchecked!(self._piece_masks, piece_type.to_index())
+    }
+
+    #[inline]
+    pub fn get_colored_piece_mask(&self, piece_type: PieceType, color: Color) -> BitBoard {
+        self.get_piece_mask(piece_type) & self.occupied_co(color)
     }
 
     pub fn has_insufficient_material(&self, color: Color) -> bool {
@@ -350,12 +355,12 @@ impl MiniBoard {
         }
 
         // make sure there is exactly one white king
-        if (self.get_piece_mask(King) & self.occupied_co(White)).popcnt() != 1 {
+        if self.get_colored_piece_mask(King, White).popcnt() != 1 {
             return false;
         }
 
         // make sure there is exactly one black king
-        if (self.get_piece_mask(King) & self.occupied_co(Black)).popcnt() != 1 {
+        if self.get_colored_piece_mask(King, Black).popcnt() != 1 {
             return false;
         }
 
@@ -369,7 +374,7 @@ impl MiniBoard {
                 } else {
                     square_bb <<= 8;
                 }
-                if (self.get_piece_mask(Pawn) & self.opponent_occupied() & square_bb).is_empty() {
+                if (self.get_colored_piece_mask(Pawn, !self.turn()) & square_bb).is_empty() {
                     return false;
                 }
             }
@@ -401,7 +406,7 @@ impl MiniBoard {
             // if we have castle rights, make sure we have a king on the (E, {1,8}) square,
             // depending on the color
             if castle_rights != CastleRights::None
-                && self.get_piece_mask(King) & self.occupied_co(color)
+                && self.get_colored_piece_mask(King, color)
                     != BB_FILE_E & color.to_my_backrank().to_bitboard()
             {
                 return false;
@@ -641,7 +646,7 @@ impl MiniBoard {
             .to_index()
             .abs_diff(move_.get_dest().get_file().to_index());
         rank_diff > 1
-            || (self.get_piece_mask(Rook) & self.self_occupied()).contains(move_.get_dest())
+            || self.get_colored_piece_mask(Rook, self.turn()).contains(move_.get_dest())
     }
 
     pub fn is_zeroing(&self, move_: Move) -> bool {
@@ -697,7 +702,7 @@ impl MiniBoard {
         self._pinned = BB_EMPTY;
         self._checkers = BB_EMPTY;
 
-        let ksq = (self.get_piece_mask(King) & self.self_occupied()).to_square();
+        let ksq = self.get_colored_piece_mask(King, self.turn()).to_square();
 
         let pinners = self.opponent_occupied()
             & ((ksq.get_bishop_rays_bb()
@@ -758,7 +763,7 @@ impl MiniBoard {
     }
 
     #[inline]
-    pub fn get_attacked_squares_bb<'a>(&self) -> BitBoard {
+    pub fn get_attacked_squares_bb(&self) -> BitBoard {
         self.get_custom_attacked_squares_bb(&ALL_PIECE_TYPES, &ALL_COLORS, BB_ALL)
     }
 
@@ -1187,7 +1192,7 @@ impl MiniBoardMethodOverload<Move> for MiniBoard {
 
         result.remove_my_castle_rights(CastleRights::square_to_castle_rights(self.turn(), source));
 
-        let opp_king = result.get_piece_mask(King) & result.occupied_co(!result.turn());
+        let opp_king = result.get_colored_piece_mask(King, !result.turn());
 
         let castles = moved == King && (move_bb & get_castle_moves()) == move_bb;
 
