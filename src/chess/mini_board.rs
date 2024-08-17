@@ -201,13 +201,13 @@ impl MiniBoard {
 
     pub fn clean_castling_rights(&self) -> BitBoard {
         let white_castling_rights = match self.castle_rights(White) {
-            CastleRights::Both => BB_A1 ^ BB_H1,
+            CastleRights::Both => const { BitBoard::new(BB_A1.get_mask() ^ BB_H1.get_mask()) },
             CastleRights::KingSide => BB_H1,
             CastleRights::QueenSide => BB_A1,
             CastleRights::None => BB_EMPTY,
         };
         let black_castling_rights = match self.castle_rights(Black) {
-            CastleRights::Both => BB_A8 ^ BB_H8,
+            CastleRights::Both => const { BitBoard::new(BB_A8.get_mask() ^ BB_H8.get_mask()) },
             CastleRights::KingSide => BB_H8,
             CastleRights::QueenSide => BB_A8,
             CastleRights::None => BB_EMPTY,
