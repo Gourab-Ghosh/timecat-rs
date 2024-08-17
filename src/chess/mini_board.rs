@@ -1063,7 +1063,7 @@ impl MiniBoard {
     }
 
     #[cfg(feature = "pyo3")]
-    fn from_py_board<'source>(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+    fn from_py_board(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
         let pieces_masks = [
             BitBoard::new(ob.getattr("pawns")?.extract()?),
             BitBoard::new(ob.getattr("knights")?.extract()?),

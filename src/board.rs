@@ -314,7 +314,7 @@ impl Board {
     }
 
     pub fn get_starting_board_fen(&self) -> String {
-        if let Some((mini_board, _)) = self.stack.get(0) {
+        if let Some((mini_board, _)) = self.stack.first() {
             mini_board.get_fen()
         } else {
             self.get_fen()

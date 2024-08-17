@@ -179,7 +179,7 @@ impl Move {
     }
 
     #[cfg(feature = "pyo3")]
-    fn from_py_move<'source>(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+    fn from_py_move(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
         let source = ob.getattr("from_square")?.extract()?;
         let dest = ob.getattr("to_square")?.extract()?;
         let promotion = ob.getattr("promotion")?.extract()?;

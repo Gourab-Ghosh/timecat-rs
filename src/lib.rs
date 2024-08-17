@@ -3,6 +3,7 @@
 #![allow(dead_code)]
 #![allow(clippy::needless_doctest_main)]
 #![allow(clippy::too_many_arguments)]
+#![allow(clippy::result_large_err)]
 // #![warn(missing_docs)]
 
 pub mod board;

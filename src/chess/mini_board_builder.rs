@@ -343,7 +343,7 @@ impl From<&MiniBoard> for MiniBoardBuilder {
         }
 
         MiniBoardBuilder::setup(
-            pieces.into_iter(),
+            pieces,
             board.turn(),
             board.castle_rights(White),
             board.castle_rights(Black),

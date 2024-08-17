@@ -164,7 +164,7 @@ impl Piece {
     }
 
     #[cfg(feature = "pyo3")]
-    fn from_py_piece<'source>(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+    fn from_py_piece(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
         Ok(Self::new(
             ob.getattr("piece_type")?.extract()?,
             ob.getattr("color")?.extract()?,
