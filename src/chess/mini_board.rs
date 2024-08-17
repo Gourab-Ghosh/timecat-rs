@@ -646,7 +646,9 @@ impl MiniBoard {
             .to_index()
             .abs_diff(move_.get_dest().get_file().to_index());
         rank_diff > 1
-            || self.get_colored_piece_mask(Rook, self.turn()).contains(move_.get_dest())
+            || self
+                .get_colored_piece_mask(Rook, self.turn())
+                .contains(move_.get_dest())
     }
 
     pub fn is_zeroing(&self, move_: Move) -> bool {

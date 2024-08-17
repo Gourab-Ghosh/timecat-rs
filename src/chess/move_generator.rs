@@ -10,10 +10,9 @@ trait PieceMoves {
     {
         let occupied = mini_board.occupied();
         let color = mini_board.turn();
-        let my_pieces = mini_board.occupied_co(color);
         let ksq = mini_board.get_king_square(color);
 
-        let pieces = mini_board.get_piece_mask(Self::into_piece()) & my_pieces;
+        let pieces = mini_board.get_colored_piece_mask(Self::into_piece(), color);
         let pinned = mini_board.pinned();
         let checkers = mini_board.get_checkers();
 
@@ -88,7 +87,7 @@ impl PawnMoves {
             ^ source.to_bitboard()
             ^ dest.to_bitboard();
 
-        let ksq = (mini_board.get_piece_mask(King) & mini_board.self_occupied()).to_square();
+        let ksq = (mini_board.get_colored_piece_mask(King, mini_board.turn())).to_square();
 
         let rooks = (mini_board.get_piece_mask(Rook) ^ mini_board.get_piece_mask(Queen))
             & mini_board.opponent_occupied();
@@ -133,10 +132,9 @@ impl PieceMoves for PawnMoves {
     {
         let occupied = mini_board.occupied();
         let color = mini_board.turn();
-        let my_pieces = mini_board.occupied_co(color);
         let ksq = mini_board.get_king_square(color);
 
-        let pieces = mini_board.get_piece_mask(Self::into_piece()) & my_pieces;
+        let pieces = mini_board.get_colored_piece_mask(Self::into_piece(), color);
         let pinned = mini_board.pinned();
         let checkers = mini_board.get_checkers();
 
@@ -235,10 +233,9 @@ impl PieceMoves for KnightMoves {
     {
         let occupied = mini_board.occupied();
         let color = mini_board.turn();
-        let my_pieces = mini_board.occupied_co(color);
         let ksq = mini_board.get_king_square(color);
 
-        let pieces = mini_board.get_piece_mask(Self::into_piece()) & my_pieces;
+        let pieces = mini_board.get_colored_piece_mask(Self::into_piece(), color);
         let pinned = mini_board.pinned();
         let checkers = mini_board.get_checkers();
 
@@ -309,7 +306,7 @@ impl KingMoves {
     #[inline]
     fn legal_king_move(mini_board: &MiniBoard, dest: Square) -> bool {
         let occupied = mini_board.occupied()
-            ^ (mini_board.get_piece_mask(King) & mini_board.self_occupied())
+            ^ mini_board.get_colored_piece_mask(King, mini_board.turn())
             | dest.to_bitboard();
 
         let rooks = (mini_board.get_piece_mask(Rook) ^ mini_board.get_piece_mask(Queen))
@@ -325,16 +322,15 @@ impl KingMoves {
         let knight_rays = get_knight_moves(dest);
 
         // Using ^ because knight square_and_bitboard_array bitboard do not collide with rook and bishop square_and_bitboard_array bitboard
-        attackers ^=
-            knight_rays & mini_board.get_piece_mask(Knight) & mini_board.opponent_occupied();
+        attackers ^= knight_rays & mini_board.get_colored_piece_mask(Knight, !mini_board.turn());
 
         let king_rays = get_king_moves(dest);
-        attackers |= king_rays & mini_board.get_piece_mask(King) & mini_board.opponent_occupied();
+        attackers |= king_rays & mini_board.get_colored_piece_mask(King, !mini_board.turn());
 
         attackers |= get_pawn_attacks(
             dest,
             mini_board.turn(),
-            mini_board.get_piece_mask(Pawn) & mini_board.opponent_occupied(),
+            mini_board.get_colored_piece_mask(Pawn, !mini_board.turn()),
         );
 
         attackers.is_empty()
