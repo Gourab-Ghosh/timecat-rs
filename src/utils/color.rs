@@ -93,7 +93,7 @@ impl<'source> FromPyObject<'source> for Color {
                 return Ok(Self::Black);
             }
         }
-        Err(Pyo3Error::Pyo3ConvertError {
+        Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),
             to: std::any::type_name::<Self>().to_string(),
         }

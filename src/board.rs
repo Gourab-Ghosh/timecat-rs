@@ -542,7 +542,7 @@ impl<'source> FromPyObject<'source> for Board {
             }
             return Ok(board);
         }
-        Err(Pyo3Error::Pyo3ConvertError {
+        Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),
             to: std::any::type_name::<Self>().to_string(),
         }

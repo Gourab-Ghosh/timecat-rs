@@ -106,7 +106,7 @@ impl<'source> FromPyObject<'source> for PieceType {
                 return Ok(piece_type);
             }
         }
-        Err(Pyo3Error::Pyo3ConvertError {
+        Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),
             to: std::any::type_name::<Self>().to_string(),
         }
@@ -218,7 +218,7 @@ impl<'source> FromPyObject<'source> for Piece {
         if let Ok(piece) = Self::from_py_piece(ob) {
             return Ok(piece);
         }
-        Err(Pyo3Error::Pyo3ConvertError {
+        Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),
             to: std::any::type_name::<Self>().to_string(),
         }

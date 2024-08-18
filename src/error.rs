@@ -4,14 +4,14 @@ use TimecatError::*;
 #[cfg(feature = "pyo3")]
 pub enum Pyo3Error {
     #[cfg(feature = "pyo3")]
-    Pyo3ConvertError { from: String, to: String },
+    Pyo3TypeConversionError { from: String, to: String },
 }
 
 #[cfg(feature = "pyo3")]
 impl From<Pyo3Error> for PyErr {
     fn from(err: Pyo3Error) -> PyErr {
         match err {
-            Pyo3Error::Pyo3ConvertError { from, to } => pyo3::exceptions::PyTypeError::new_err(
+            Pyo3Error::Pyo3TypeConversionError { from, to } => pyo3::exceptions::PyTypeError::new_err(
                 format!("Failed to convert {from} into {to}"),
             ),
         }

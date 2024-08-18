@@ -234,7 +234,7 @@ impl<'source> FromPyObject<'source> for Move {
         if let Ok(move_) = Self::from_py_move(ob) {
             return Ok(move_);
         }
-        Err(Pyo3Error::Pyo3ConvertError {
+        Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),
             to: std::any::type_name::<Self>().to_string(),
         }
@@ -393,7 +393,7 @@ impl<'source> FromPyObject<'source> for ValidOrNullMove {
                 return Ok(valid_or_null_move);
             }
         }
-        Err(Pyo3Error::Pyo3ConvertError {
+        Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),
             to: std::any::type_name::<Self>().to_string(),
         }

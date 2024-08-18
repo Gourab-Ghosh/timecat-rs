@@ -1096,7 +1096,7 @@ impl MiniBoard {
                     BB_A1 => CastleRights::QueenSide,
                     BB_A1_H1 => CastleRights::Both,
                     _ => {
-                        return Err(Pyo3Error::Pyo3ConvertError {
+                        return Err(Pyo3Error::Pyo3TypeConversionError {
                             from: ob.to_string(),
                             to: std::any::type_name::<Self>().to_string(),
                         }
@@ -1109,7 +1109,7 @@ impl MiniBoard {
                     BB_A8 => CastleRights::QueenSide,
                     BB_A8_H8 => CastleRights::Both,
                     _ => {
-                        return Err(Pyo3Error::Pyo3ConvertError {
+                        return Err(Pyo3Error::Pyo3TypeConversionError {
                             from: ob.to_string(),
                             to: std::any::type_name::<Self>().to_string(),
                         }
@@ -1400,7 +1400,7 @@ impl<'source> FromPyObject<'source> for MiniBoard {
         if let Ok(mini_board) = MiniBoard::from_py_board(ob) {
             return Ok(mini_board);
         }
-        Err(Pyo3Error::Pyo3ConvertError {
+        Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),
             to: std::any::type_name::<Self>().to_string(),
         }

@@ -8877,7 +8877,7 @@ impl<'source> FromPyObject<'source> for Square {
                 return Ok(mini_board);
             }
         }
-        Err(Pyo3Error::Pyo3ConvertError {
+        Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),
             to: std::any::type_name::<Self>().to_string(),
         }

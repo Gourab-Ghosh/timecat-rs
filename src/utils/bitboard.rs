@@ -334,7 +334,7 @@ impl<'source> FromPyObject<'source> for BitBoard {
         if let Ok(int) = ob.extract::<u64>() {
             return Ok(Self::new(int));
         }
-        Err(Pyo3Error::Pyo3ConvertError {
+        Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),
             to: std::any::type_name::<Self>().to_string(),
         }
