@@ -180,7 +180,7 @@ Default features include `inbuilt_nnue` and `colored`.
 - [ ] Organize the Polyglot Table codes to make it usable.
 - [ ] Organize the pgn related codes to make it usable.
 - [ ] Implement xboard feature.
-- [ ] Add svg feature like the python package chess for better visualization.
+- [ ] Add svg feature like the python library `chess` for better visualization.
 
 ## License
 Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](https://github.com/Gourab-Ghosh/timecat-rs/blob/master/LICENSE). You are free to use, modify, and distribute it under the same license.
