@@ -840,14 +840,18 @@ impl MiniBoard {
         color: impl Into<Option<Color>>,
     ) -> Option<Square> {
         let color = color.into();
-        ALL_PIECE_TYPES.into_iter().filter_map(|piece_type| {
-            let attackers = self.get_attackers_mask_by_piece_type(target_square, piece_type, color);
-            if attackers.is_empty() {
-                None
-            } else {
-                Some(attackers.to_square())
-            }
-        }).next()
+        ALL_PIECE_TYPES
+            .into_iter()
+            .filter_map(|piece_type| {
+                let attackers =
+                    self.get_attackers_mask_by_piece_type(target_square, piece_type, color);
+                if attackers.is_empty() {
+                    None
+                } else {
+                    Some(attackers.to_square())
+                }
+            })
+            .next()
     }
 
     #[inline]
