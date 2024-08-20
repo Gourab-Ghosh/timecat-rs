@@ -11,9 +11,11 @@ pub enum Pyo3Error {
 impl From<Pyo3Error> for PyErr {
     fn from(err: Pyo3Error) -> PyErr {
         match err {
-            Pyo3Error::Pyo3TypeConversionError { from, to } => pyo3::exceptions::PyTypeError::new_err(
-                format!("Failed to convert {from} into {to}"),
-            ),
+            Pyo3Error::Pyo3TypeConversionError { from, to } => {
+                pyo3::exceptions::PyTypeError::new_err(format!(
+                    "Failed to convert {from} into {to}"
+                ))
+            }
         }
     }
 }

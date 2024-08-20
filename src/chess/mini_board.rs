@@ -769,28 +769,85 @@ impl MiniBoard {
         self.get_custom_attacked_squares_bb(&ALL_PIECE_TYPES, &ALL_COLORS, BB_ALL)
     }
 
-    /// Checks if the given side attacks the given square.
-
-    /// Pinned pieces still count as attackers. Pawns that can be captured
-    /// en passant are **not** considered attacked.
-    pub fn get_attackers_mask(&self, square: Square, color: Color) -> BitBoard {
+    pub fn get_attackers_mask(
+        &self,
+        target_square: Square,
+        color: impl Into<Option<Color>>,
+    ) -> BitBoard {
+        let color = color.into();
         let occupied = self.occupied();
 
-        let queens_and_rooks = self.get_piece_mask(Queen) ^ self.get_piece_mask(Rook);
-        let queens_and_bishops = self.get_piece_mask(Queen) ^ self.get_piece_mask(Bishop);
+        let queens_and_bishops = self.get_piece_mask(Bishop) ^ self.get_piece_mask(Queen);
+        let queens_and_rooks = self.get_piece_mask(Rook) ^ self.get_piece_mask(Queen);
 
-        let attackers = (get_pawn_attacks(square, !color, BB_ALL) & self.get_piece_mask(Pawn))
-            | (get_knight_moves(square) & self.get_piece_mask(Knight))
-            | (get_bishop_moves(square, occupied) & queens_and_bishops)
-            | (get_rook_moves(square, occupied) & queens_and_rooks)
-            | (get_king_moves(square) & self.get_piece_mask(King));
+        let pawn_attacks = match color {
+            Some(color) => get_pawn_attacks(target_square, !color, BB_ALL),
+            None => {
+                get_pawn_attacks(target_square, White, BB_ALL)
+                    ^ get_pawn_attacks(target_square, Black, BB_ALL)
+            }
+        } & self.get_piece_mask(Pawn);
 
-        attackers & self.occupied_co(color)
+        // TODO: Scope for improvement?
+        let sliding_attackers = (get_bishop_moves(target_square, occupied) & queens_and_bishops)
+            | (get_rook_moves(target_square, occupied) & queens_and_rooks);
+        let non_sliding_attackers = pawn_attacks
+            ^ (get_knight_moves(target_square) & self.get_piece_mask(Knight))
+            ^ (get_king_moves(target_square) & self.get_piece_mask(King));
+
+        let attackers = sliding_attackers ^ non_sliding_attackers;
+
+        color.map_or(attackers, |color| attackers & self.occupied_co(color))
     }
 
     #[inline]
     pub fn is_attacked_by(&self, square: Square, color: Color) -> bool {
         !self.get_attackers_mask(square, color).is_empty()
+    }
+
+    pub fn get_attackers_mask_by_piece_type(
+        &self,
+        target_square: Square,
+        piece_type: PieceType,
+        color: impl Into<Option<Color>>,
+    ) -> BitBoard {
+        let occupied = self.occupied();
+        let color = color.into();
+
+        let attackers = match piece_type {
+            Pawn => match color {
+                Some(color) => get_pawn_attacks(target_square, !color, BB_ALL),
+                None => {
+                    get_pawn_attacks(target_square, White, BB_ALL)
+                        ^ get_pawn_attacks(target_square, Black, BB_ALL)
+                }
+            },
+            Knight => get_knight_moves(target_square),
+            Bishop => get_bishop_moves(target_square, occupied),
+            Rook => get_rook_moves(target_square, occupied),
+            Queen => {
+                get_bishop_moves(target_square, occupied) ^ get_rook_moves(target_square, occupied)
+            }
+            King => get_king_moves(target_square),
+        } & self.get_piece_mask(piece_type);
+
+        color.map_or(attackers, |color| attackers & self.occupied_co(color))
+    }
+
+    pub fn get_least_attackers_square(
+        &self,
+        target_square: Square,
+        color: impl Into<Option<Color>>,
+    ) -> Option<Square> {
+        let color = color.into();
+        ALL_PIECE_TYPES.into_iter().filter_map(|piece_type| {
+            let attackers = self.get_attackers_mask_by_piece_type(target_square, piece_type, color);
+            if attackers.is_empty() {
+                None
+            } else {
+                Some(attackers.to_square())
+            }
+        }).next()
     }
 
     #[inline]
