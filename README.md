@@ -187,3 +187,10 @@ Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](https://github.co
 
 ## Contributing
 Feel free to fork the repository, make improvements, and submit pull requests. You can also report issues or suggest features through the GitHub issue tracker.
+
+## Support the developer
+
+If you like Timecat, please consider a little donation.
+
+[![GitHub Link](https://img.shields.io/badge/GitHub-black?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/Gourab-Ghosh)
+[![PayPal Link](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.me/gg8576)
