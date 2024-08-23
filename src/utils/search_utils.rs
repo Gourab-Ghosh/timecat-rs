@@ -295,11 +295,11 @@ impl SearchInfo {
             if let Some(current_depth) = self.current_depth { current_depth.to_string() } else { "None".to_string() },
             alpha.stringify(),
             beta.stringify(),
-                if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-                    self.get_score()
-                } else {
-                    self.get_score_flipped()
-                }.stringify(),
+            if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
+                self.get_score()
+            } else {
+                self.get_score_flipped()
+            }.stringify(),
             self.get_time_elapsed().stringify(),
         );
         println_wasm!("{}", warning_message.colorize(WARNING_MESSAGE_STYLE));

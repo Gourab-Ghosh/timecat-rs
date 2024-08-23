@@ -241,19 +241,23 @@ impl GoAndPerft {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!();
         }
-        if let Some(score) = response.get_score() {
-            println_info("Score", score.stringify());
-        }
+        println_info("Score", response.get_score().stringify());
         println_info("PV Line", pv_string);
         println_info("Time", elapsed_time.stringify());
-        if let Some(position_count) = response.get_num_nodes_searched() {
-            let nps = format!(
-                "{} Nodes/sec",
-                (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
-            );
-            println_info("Position Count", position_count);
-            println_info("Speed", nps);
-        }
+        let position_count = response.get_num_nodes_searched();
+        let nps = format!(
+            "{} Nodes/sec",
+            position_count.map_or(STRINGIFY_NONE.to_string(), |position_count| {
+                ((position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()).to_string()
+            })
+        );
+        println_info(
+            "Position Count",
+            position_count.map_or(STRINGIFY_NONE.to_string(), |position_count| {
+                position_count.to_string()
+            }),
+        );
+        println_info("Speed", nps);
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_info(
                 "Best Move",

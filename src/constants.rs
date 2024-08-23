@@ -11,7 +11,6 @@ pub mod types {
 
     pub type Ply = usize;
     pub type Depth = i8;
-    pub type Score = i16;
     pub type MoveWeight = i32;
     pub type NumMoves = u16;
     pub type Spin = u128;
@@ -128,7 +127,7 @@ pub mod fen {
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 }
 
-pub mod print_style {
+pub mod strings {
     use super::*;
 
     #[cfg(feature = "colored")]
@@ -161,6 +160,8 @@ pub mod print_style {
     generate_constants!(ERROR_MESSAGE_STYLE, [red, bold]);
     generate_constants!(LAST_MOVE_HIGHLIGHT_STYLE, [on_bright_black]);
     generate_constants!(WARNING_MESSAGE_STYLE, [bright_yellow, bold]);
+
+    pub const STRINGIFY_NONE: &str = "UNKNOWN";
 }
 
 pub mod evaluate {

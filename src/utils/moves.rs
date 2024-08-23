@@ -452,3 +452,9 @@ impl WeightedMove {
         Self { move_, weight }
     }
 }
+
+impl fmt::Display for WeightedMove {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {})", self.move_, self.weight)
+    }
+}

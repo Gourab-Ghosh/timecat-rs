@@ -75,6 +75,16 @@ impl Not for Color {
     }
 }
 
+impl fmt::Display for Color {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            get_item_unchecked!(const ["White", "Black"], self.to_index())
+        )
+    }
+}
+
 #[cfg(feature = "pyo3")]
 impl<'source> FromPyObject<'source> for Color {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {

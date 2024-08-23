@@ -116,7 +116,7 @@ impl TimecatError {
 impl fmt::Display for TimecatError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            UnknownCommand => write!(f, "{}", UnknownCommand.stringify()),
+            UnknownCommand => write!(f, "{}", UnknownCommand.stringify_with_optional_raw_input(None)),
             NoInput => write!(f, "No input! Please try again!"),
             NotImplemented => write!(f, "Sorry, this command is not implemented yet :("),
             EngineNotRunning => write!(f, "Engine is not running! Please try again!"),
@@ -177,15 +177,15 @@ impl TimecatError {
     }
 }
 
-impl Stringify for TimecatError {
-    fn stringify(&self) -> String {
+impl StringifyError for TimecatError {
+    fn stringify_error(&self) -> String {
         self.stringify_with_optional_raw_input(None)
     }
 }
 
 impl From<TimecatError> for String {
     fn from(error: TimecatError) -> Self {
-        error.stringify()
+        error.stringify_error()
     }
 }
 

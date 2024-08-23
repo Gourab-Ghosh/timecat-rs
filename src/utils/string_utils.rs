@@ -144,91 +144,9 @@ impl StringifyMove for Option<Move> {
     }
 }
 
-impl Stringify for u64 {
-    fn stringify(&self) -> String {
+impl StringifyHash for u64 {
+    fn stringify_hash(&self) -> String {
         format!("{:x}", self).to_uppercase()
-    }
-}
-
-impl Stringify for BitBoard {
-    fn stringify(&self) -> String {
-        let mut checkers_string = String::new();
-        for square in *self {
-            checkers_string += &(square.to_string() + " ");
-        }
-        checkers_string.trim().to_uppercase()
-    }
-}
-
-impl Stringify for Move {
-    fn stringify(&self) -> String {
-        self.uci()
-    }
-}
-
-impl Stringify for WeightedMove {
-    fn stringify(&self) -> String {
-        format!("({}, {})", self.move_.stringify(), self.weight)
-    }
-}
-
-impl<T: Stringify> Stringify for Option<T> {
-    fn stringify(&self) -> String {
-        match self {
-            Some(t) => format!("Some({})", t.stringify()),
-            None => String::from("None"),
-        }
-    }
-}
-
-impl<T: Stringify, E: Error> Stringify for std::result::Result<T, E> {
-    fn stringify(&self) -> String {
-        match self {
-            Ok(t) => format!("Ok({})", t.stringify()),
-            Err(e) => format!("Err({})", e),
-        }
-    }
-}
-
-impl<T: Stringify> Stringify for [T] {
-    fn stringify(&self) -> String {
-        format!("[{}]", self.iter().map(|t| t.stringify()).join(", "))
-    }
-}
-
-impl<T: Stringify> Stringify for Vec<T> {
-    fn stringify(&self) -> String {
-        self.as_slice().stringify()
-    }
-}
-
-impl Stringify for CacheTableSize {
-    fn stringify(&self) -> String {
-        format!("{self}")
-    }
-}
-
-impl Stringify for PieceType {
-    fn stringify(&self) -> String {
-        match self {
-            Pawn => "Pawn",
-            Knight => "Knight",
-            Bishop => "Bishop",
-            Rook => "Rook",
-            Queen => "Queen",
-            King => "King",
-        }
-        .to_string()
-    }
-}
-
-impl Stringify for Color {
-    fn stringify(&self) -> String {
-        match self {
-            White => "White",
-            Black => "Black",
-        }
-        .to_string()
     }
 }
 
@@ -267,5 +185,41 @@ impl Stringify for Duration {
             string += "s";
         }
         string
+    }
+}
+
+// impl<T: ToString> Stringify for T {
+//     fn stringify(&self) -> String {
+//         self.to_string()
+//     }
+// }
+
+impl<T: Stringify> Stringify for Option<T> {
+    fn stringify(&self) -> String {
+        match self {
+            Some(t) => t.stringify(),
+            None => String::from(STRINGIFY_NONE),
+        }
+    }
+}
+
+impl<T: Stringify, E: Error> Stringify for std::result::Result<T, E> {
+    fn stringify(&self) -> String {
+        match self {
+            Ok(t) => format!("Ok({})", t.stringify()),
+            Err(e) => format!("Err({})", e),
+        }
+    }
+}
+
+impl<T: Stringify> Stringify for [T] {
+    fn stringify(&self) -> String {
+        format!("[{}]", self.iter().map(|t| t.stringify()).join(", "))
+    }
+}
+
+impl<T: Stringify> Stringify for Vec<T> {
+    fn stringify(&self) -> String {
+        self.as_slice().stringify()
     }
 }

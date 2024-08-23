@@ -47,7 +47,7 @@ impl RepetitionTable {
         let count_entry = self.count_map.get_mut(&key).unwrap_or_else(|| {
             panic!(
                 "Tried to remove the key {} that doesn't exist!",
-                key.stringify()
+                key.stringify_hash()
             )
         });
         if *count_entry == 1 {

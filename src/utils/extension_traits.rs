@@ -38,10 +38,6 @@ pub trait ClippedRelu<InputType, OutputType, const N: usize> {
     );
 }
 
-pub trait Stringify {
-    fn stringify(&self) -> String;
-}
-
 pub trait StringifyScore {
     fn stringify_score(self) -> String;
     fn stringify_score_uci(self) -> String;
@@ -65,6 +61,18 @@ pub trait StringifyMove {
     {
         self.algebraic(mini_board, true)
     }
+}
+
+pub trait StringifyHash {
+    fn stringify_hash(&self) -> String;
+}
+
+pub trait StringifyError {
+    fn stringify_error(&self) -> String;
+}
+
+pub trait Stringify {
+    fn stringify(&self) -> String;
 }
 
 // TODO: Try to remove static lifetime from the trait

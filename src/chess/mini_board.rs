@@ -72,8 +72,8 @@ impl MiniBoard {
             _ep_square: None,
             _halfmove_clock: 0,
             _fullmove_number: 1,
-            _white_material_score: 0,
-            _black_material_score: 0,
+            _white_material_score: Score::ZERO,
+            _black_material_score: Score::ZERO,
         }
     }
 
@@ -919,10 +919,10 @@ impl MiniBoard {
             &[
                 String::new(),
                 format_info("Fen", self.get_fen(), true),
-                format_info("Transposition Key", self.get_hash().stringify(), true),
+                format_info("Transposition Key", self.get_hash().stringify_hash(), true),
                 format_info(
                     "Checkers",
-                    checkers.stringify().colorize(CHECKERS_STYLE),
+                    checkers.into_iter().join(" ").colorize(CHECKERS_STYLE),
                     true,
                 ),
             ]

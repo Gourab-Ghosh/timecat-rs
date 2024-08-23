@@ -96,7 +96,7 @@ impl<T: ChessEngine> Timecat<T> {
             user_command
                 .run_command(&mut self.engine, &self.uci_state_manager)
                 .unwrap_or_else(|error| {
-                    println_wasm!("{}", error.stringify().colorize(ERROR_MESSAGE_STYLE))
+                    println_wasm!("{}", error.stringify_error().colorize(ERROR_MESSAGE_STYLE))
                 });
         }
         if self.engine.terminate() {
