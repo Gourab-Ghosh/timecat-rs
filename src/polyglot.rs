@@ -640,9 +640,9 @@ pub fn test_polyglot(book_path: &str) -> Result<()> {
     let board = Board::from_fen(STARTING_POSITION_FEN)?;
     let book = array_implementation::PolyglotBookReader::read_book_from_file(book_path)?;
     let moves1 = book.get_all_weighed_moves(&board);
-    // println_wasm!("{}", moves1.stringify());
+    println_wasm!("{}", moves1.stringify());
     let moves2 = search_all_moves_from_file(book_path, &board)?;
-    // println_wasm!("{}", moves2.stringify());
+    println_wasm!("{}", moves2.stringify());
     assert_eq!(moves1, moves2);
     Ok(())
 }

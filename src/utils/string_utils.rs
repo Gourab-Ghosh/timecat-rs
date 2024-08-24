@@ -56,7 +56,7 @@ impl<T: ToString> CustomColorize for T {
 }
 
 impl StringifyScore for Score {
-    fn stringify_score(self) -> String {
+    fn stringify_score_console(self) -> String {
         if self == INFINITY {
             return "INFINITY".to_string();
         }
@@ -92,15 +92,28 @@ impl StringifyScore for Score {
         }
         format!("cp {}", (self as i32 * 100) / PAWN_VALUE as i32)
     }
-}
 
-impl Stringify for Score {
-    fn stringify(&self) -> String {
+    #[inline]
+    fn stringify_score(self) -> String {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-            self.stringify_score()
+            self.stringify_score_console()
         } else {
             self.stringify_score_uci()
         }
+    }
+}
+
+impl Stringify for Score {
+    #[inline]
+    fn stringify(&self) -> String {
+        self.stringify_score()
+    }
+}
+
+impl Stringify for TimecatError {
+    #[inline]
+    fn stringify(&self) -> String {
+        self.stringify_with_optional_raw_input(None)
     }
 }
 
@@ -188,11 +201,19 @@ impl Stringify for Duration {
     }
 }
 
-// impl<T: ToString> Stringify for T {
-//     fn stringify(&self) -> String {
-//         self.to_string()
-//     }
-// }
+macro_rules! implement_stringify {
+    ($($type:ty),+ $(,)?) => {
+        $(
+            impl Stringify for $type {
+                fn stringify(&self) -> String {
+                    self.to_string()
+                }
+            }
+        )*
+    };
+}
+
+implement_stringify!(Move, ValidOrNullMove, WeightedMove, Color, PieceType, Piece);
 
 impl<T: Stringify> Stringify for Option<T> {
     fn stringify(&self) -> String {

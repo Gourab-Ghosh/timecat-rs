@@ -72,8 +72,8 @@ impl MiniBoard {
             _ep_square: None,
             _halfmove_clock: 0,
             _fullmove_number: 1,
-            _white_material_score: Score::ZERO,
-            _black_material_score: Score::ZERO,
+            _white_material_score: 0,
+            _black_material_score: 0,
         }
     }
 

@@ -177,15 +177,9 @@ impl TimecatError {
     }
 }
 
-impl StringifyError for TimecatError {
-    fn stringify_error(&self) -> String {
-        self.stringify_with_optional_raw_input(None)
-    }
-}
-
 impl From<TimecatError> for String {
     fn from(error: TimecatError) -> Self {
-        error.stringify_error()
+        error.stringify()
     }
 }
 

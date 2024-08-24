@@ -39,8 +39,9 @@ pub trait ClippedRelu<InputType, OutputType, const N: usize> {
 }
 
 pub trait StringifyScore {
-    fn stringify_score(self) -> String;
+    fn stringify_score_console(self) -> String;
     fn stringify_score_uci(self) -> String;
+    fn stringify_score(self) -> String;
 }
 
 pub trait StringifyMove {
@@ -65,10 +66,6 @@ pub trait StringifyMove {
 
 pub trait StringifyHash {
     fn stringify_hash(&self) -> String;
-}
-
-pub trait StringifyError {
-    fn stringify_error(&self) -> String;
 }
 
 pub trait Stringify {
