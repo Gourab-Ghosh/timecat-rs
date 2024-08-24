@@ -422,19 +422,11 @@ impl<P: PositionEvaluation> Searcher<P> {
             return Some(draw_score);
         }
         if self.properties.use_mate_distance_pruning() {
-            // // mate distance pruning
-            // alpha = alpha.max(-mate_score);
-            // beta = beta.min(mate_score - 1);
-            // if alpha >= beta {
-            //     return Some(alpha);
-            // }
-
             // mate distance pruning
-            if mate_score < beta {
-                beta = mate_score;
-                if alpha >= mate_score {
-                    return Some(mate_score);
-                }
+            alpha = alpha.max(-mate_score);
+            beta = beta.min(mate_score - 1);
+            if alpha >= beta {
+                return Some(alpha);
             }
         }
         let checkers = self.board.get_checkers();
@@ -725,13 +717,13 @@ impl<P: PositionEvaluation> Searcher<P> {
                     Some(&mut controller),
                     verbose,
                 )
-                .unwrap_or(self.score);
+                .unwrap_or(last_score);
             let search_info = self.get_search_info();
             if verbose && self.is_main_threaded() {
                 search_info.print_info();
             }
-            self.is_outside_aspiration_window = self.score <= alpha || self.score >= beta;
             controller.on_each_search_completion(self);
+            self.is_outside_aspiration_window = self.score <= alpha || self.score >= beta;
             if self.is_outside_aspiration_window {
                 if verbose && self.is_main_threaded() {
                     search_info.print_warning_message(alpha, beta);

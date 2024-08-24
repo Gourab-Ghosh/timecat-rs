@@ -105,6 +105,7 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170")?; // check for saving mate score
     // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12")?; // weird results in 3 secs in my pc
     // engine.set_fen("6k1/p2b1ppp/3r4/6q1/1p2Pb2/1N1B3P/PP2QPP1/4R1K1 w - - 1 33")?; // Missed tactics in 3 sec move
+    engine.set_fen("8/6K1/4k3/8/8/2Q5/2B5/8 w - - 1 67")?; // Missed mate in 3
     // parse_command(engine, "go movetime 3000");
     parse_command(engine, "go depth 15");
 
