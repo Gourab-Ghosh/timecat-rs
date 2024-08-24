@@ -192,6 +192,6 @@ Feel free to fork the repository, make improvements, and submit pull requests. Y
 
 If you like Timecat, please consider a little donation.
 
-<!-- [![Google Pay Link](https://img.shields.io/badge/Google-pay-brightgreen?logo=googlepay&logoSize=auto)](https://www.paypal.me/gg8576) <br> -->
-[![GitHub Link](https://img.shields.io/badge/GitHub-24292e?logo=github&logoColor=white&logoSize=auto)](https://github.com/sponsors/Gourab-Ghosh) <br>
-[![PayPal Link](https://img.shields.io/badge/PayPal-00457C?logo=paypal&logoColor=white&logoSize=auto)](https://www.paypal.me/gg8576) <br>
+<!-- [![Google Pay Link](https://img.shields.io/badge/Google-pay-brightgreen?logo=googlepay&logoSize=auto)](https://www.paypal.me/gg8576) -->
+[![GitHub Link](https://img.shields.io/badge/GitHub-24292e?logo=github&logoColor=white&logoSize=auto)](https://github.com/sponsors/Gourab-Ghosh)
+[![PayPal Link](https://img.shields.io/badge/PayPal-00457C?logo=paypal&logoColor=white&logoSize=auto)](https://www.paypal.me/gg8576)
