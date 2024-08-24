@@ -330,7 +330,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         }
         if self.board.is_game_over() {
             return if self.board.is_checkmate() {
-                Some(-self.evaluator.evaluate_checkmate(0))
+                Some(-self.evaluator.evaluate_checkmate_in(0))
             } else {
                 Some(self.evaluator.evaluate_draw())
             };
@@ -416,7 +416,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         mut controller: Option<&mut impl SearchControl<Self>>,
     ) -> Option<Score> {
         self.pv_table.set_length(self.ply, self.ply);
-        let mate_score = self.evaluator.evaluate_checkmate(self.ply);
+        let mate_score = self.evaluator.evaluate_checkmate_in(self.ply as Score);
         let draw_score = self.evaluator.evaluate_draw();
         if self.board.is_other_draw() {
             return Some(draw_score);

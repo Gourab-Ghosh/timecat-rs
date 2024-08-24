@@ -60,8 +60,8 @@ impl PositionEvaluation for Evaluator {
         self.inner_evaluator.evaluate_flipped(mini_board)
     }
 
-    fn evaluate_checkmate(&mut self, mate_distance: usize) -> Score {
-        self.inner_evaluator.evaluate_checkmate(mate_distance)
+    fn evaluate_checkmate_in(&mut self, mate_distance: Score) -> Score {
+        self.inner_evaluator.evaluate_checkmate_in(mate_distance)
     }
 }
 

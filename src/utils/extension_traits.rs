@@ -111,8 +111,13 @@ pub trait PositionEvaluation: Clone + Send + 'static {
     }
 
     #[inline]
-    fn evaluate_checkmate(&mut self, mate_distance: usize) -> Score {
-        CHECKMATE_SCORE - mate_distance as Score
+    fn evaluate_checkmate_in(&mut self, mate_distance: Score) -> Score {
+        CHECKMATE_SCORE - mate_distance
+    }
+
+    #[inline]
+    fn evaluate_checkmated_in(&mut self, mate_distance: Score) -> Score {
+        -self.evaluate_checkmate_in(mate_distance)
     }
 
     #[inline]
