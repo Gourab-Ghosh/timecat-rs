@@ -184,8 +184,7 @@ impl MoveSorter {
             None => return 0,
         };
         let capture_piece = position.get_piece_type_at(square).unwrap_or(Pawn);
-        capture_piece.evaluate()
-            - Self::see(square, &position.make_move_new(least_attackers_move))
+        capture_piece.evaluate() - Self::see(square, &position.make_move_new(least_attackers_move))
     }
 
     fn mvv_lva(move_: Move, position: &BoardPosition) -> MoveWeight {

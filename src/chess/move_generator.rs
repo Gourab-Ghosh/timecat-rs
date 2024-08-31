@@ -305,8 +305,7 @@ impl PieceMoves for QueenMoves {
 impl KingMoves {
     #[inline]
     fn legal_king_move(position: &BoardPosition, dest: Square) -> bool {
-        let occupied = position.occupied()
-            ^ position.get_colored_piece_mask(King, position.turn())
+        let occupied = position.occupied() ^ position.get_colored_piece_mask(King, position.turn())
             | dest.to_bitboard();
 
         let rooks = (position.get_piece_mask(Rook) ^ position.get_piece_mask(Queen))

@@ -29,9 +29,7 @@ pub fn get_pv_as_algebraic(position: &BoardPosition, pv: &[Move], long: bool) ->
     let mut pv_string = String::new();
     for &move_ in pv {
         pv_string += &(if position.is_legal(move_) {
-            let (san, new_position) = move_
-                .algebraic_and_new_position(&position, long)
-                .unwrap();
+            let (san, new_position) = move_.algebraic_and_new_position(&position, long).unwrap();
             position = new_position;
             san
         } else {

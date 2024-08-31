@@ -43,7 +43,9 @@ pub struct Board {
 
 impl Board {
     pub fn new() -> Self {
-        BoardPosition::from_str(STARTING_POSITION_FEN).unwrap().into()
+        BoardPosition::from_str(STARTING_POSITION_FEN)
+            .unwrap()
+            .into()
     }
 
     pub fn set_fen(&mut self, fen: &str) -> Result<()> {

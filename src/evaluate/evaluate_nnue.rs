@@ -228,9 +228,7 @@ impl EvaluatorNNUE {
         if let Some(score) = self.score_cache.get(hash) {
             return score;
         }
-        let score = Self::evaluate_raw(position, || {
-            self.model.update_model_and_evaluate(position)
-        });
+        let score = Self::evaluate_raw(position, || self.model.update_model_and_evaluate(position));
         self.score_cache.add(hash, score);
         score
     }

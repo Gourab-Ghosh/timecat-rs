@@ -98,9 +98,8 @@ impl Move {
             // Relevant candidates: not exactly the current move,
             // but to the same square.
             let mut others = BB_EMPTY;
-            let from_mask = position.get_piece_mask(piece)
-                & position.self_occupied()
-                & !source.to_bitboard();
+            let from_mask =
+                position.get_piece_mask(piece) & position.self_occupied() & !source.to_bitboard();
             let to_mask = dest.to_bitboard();
             for candidate in position.generate_masked_legal_moves(from_mask, to_mask) {
                 others |= candidate.get_source().to_bitboard();

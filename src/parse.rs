@@ -278,9 +278,7 @@ impl GoAndPerft {
                 move_text += &format_info(
                     "ponder",
                     ponder_move
-                        .stringify_move(
-                            &engine.get_board().get_position().make_move_new(best_move),
-                        )
+                        .stringify_move(&engine.get_board().get_position().make_move_new(best_move))
                         .unwrap(),
                     false,
                 );

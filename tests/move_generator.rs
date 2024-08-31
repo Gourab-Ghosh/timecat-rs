@@ -224,9 +224,10 @@ fn move_of(m: &str) -> Move {
 
 #[test]
 fn test_masked_move_generator() {
-    let position =
-        BoardPosition::from_str("r1bqkb1r/pp3ppp/5n2/2ppn1N1/4pP2/1BN1P3/PPPP2PP/R1BQ1RK1 w kq - 0 9")
-            .unwrap();
+    let position = BoardPosition::from_str(
+        "r1bqkb1r/pp3ppp/5n2/2ppn1N1/4pP2/1BN1P3/PPPP2PP/R1BQ1RK1 w kq - 0 9",
+    )
+    .unwrap();
 
     let attackers = position.get_piece_mask(Knight);
     let targets = position.opponent_occupied();
