@@ -135,6 +135,55 @@ const ROOK_RAYS: [BitBoard; NUM_SQUARES] = [
     BitBoard::new(9187484529235886208),
 ];
 
+// const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
+//     const fn calculate_between(square1: Square, square2: Square) -> BitBoard {
+//         // if square1.to_index() == square2.to_index() {
+//         //     return BB_EMPTY;
+//         // }
+//         // // if square1.get_rank().to_index().abs_diff(square2.get_rank().to_index()) == square1.get_file().to_index().abs_diff(square2.get_file().to_index()) {
+//         // //     let rank_before = square_before.get_rank()
+//         // // }
+//         // let (square_before, square_after) = if square1.to_index() < square2.to_index() {
+//         //     (square1, square2)
+//         // } else {
+//         //     (square2, square1)
+//         // };
+//         // if square_before.get_file().to_index() == square_after.get_file().to_index() {
+//         //     let mut square_down = square_before;
+//         //     let mut bb = 0;
+//         //     while let Some(square) = square_down.up() {
+//         //         if square.to_index() == square_after.to_index() {
+//         //             return BitBoard::new(bb);
+//         //         }
+//         //         bb = bb | BB_SQUARES[square.to_index()].into_inner();
+//         //         square_down = square;
+//         //     }
+//         //     return BB_EMPTY;
+//         // }
+//         // BB_EMPTY
+
+//         let square1_rank = square1.get_rank();
+//         let square1_file = square1.get_file();
+//         let square2_rank = square2.get_rank();
+//         let square2_file = square2.get_file();
+
+//         let curr_square = square1;
+//         let rank_ordering = square1_rank.to_index().cmp(&square1_rank.to_index());
+//         let file_ordering = square1_file.to_index().cmp(&square1_file.to_index());
+//     }
+//     let mut array = [[BB_EMPTY; NUM_SQUARES]; NUM_SQUARES];
+//     let mut i = 0;
+//     while i < NUM_SQUARES {
+//         let mut j = 0;
+//         while j < NUM_SQUARES {
+//             array[i][j] = calculate_between(Square::from_index(i), Square::from_index(j));
+//             j += 1;
+//         }
+//         i += 1;
+//     }
+//     array
+// };
+
 const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = [
     [
         BitBoard::new(0),
@@ -4361,6 +4410,7 @@ const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = [
         BitBoard::new(0),
     ],
 ];
+
 const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = [
     [
         BitBoard::new(0),
@@ -8659,9 +8709,45 @@ impl Square {
     }
 
     #[inline]
+    pub const fn up_left(self) -> Option<Square> {
+        if let Some(square) = self.up() {
+            square.left()
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub const fn up_right(self) -> Option<Square> {
+        if let Some(square) = self.up() {
+            square.right()
+        } else {
+            None
+        }
+    }
+
+    #[inline]
     pub const fn down(self) -> Option<Square> {
         if let Some(rank) = self.get_rank().down() {
             Some(Square::from_rank_and_file(rank, self.get_file()))
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub const fn down_left(self) -> Option<Square> {
+        if let Some(square) = self.down() {
+            square.left()
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub const fn down_right(self) -> Option<Square> {
+        if let Some(square) = self.down() {
+            square.right()
         } else {
             None
         }
