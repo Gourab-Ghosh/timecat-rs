@@ -18,30 +18,30 @@ pub struct Evaluator {
 }
 
 impl Evaluator {
-    pub fn new(mini_board: &MiniBoard) -> Self {
+    pub fn new(position: &BoardPosition) -> Self {
         Self {
             #[cfg(feature = "inbuilt_nnue")]
-            inner_evaluator: EvaluatorNNUE::new(mini_board),
+            inner_evaluator: EvaluatorNNUE::new(position),
             #[cfg(not(feature = "inbuilt_nnue"))]
-            inner_evaluator: EvaluatorNonNNUE::new(mini_board),
+            inner_evaluator: EvaluatorNonNNUE::new(position),
         }
     }
 
-    pub fn slow_evaluate(mini_board: &MiniBoard) -> Score {
+    pub fn slow_evaluate(position: &BoardPosition) -> Score {
         #[cfg(feature = "inbuilt_nnue")]
         {
-            EvaluatorNNUE::slow_evaluate(mini_board)
+            EvaluatorNNUE::slow_evaluate(position)
         }
         #[cfg(not(feature = "inbuilt_nnue"))]
         {
-            EvaluatorNonNNUE::slow_evaluate(mini_board)
+            EvaluatorNonNNUE::slow_evaluate(position)
         }
     }
 }
 
 impl PositionEvaluation for Evaluator {
-    fn evaluate(&mut self, mini_board: &MiniBoard) -> Score {
-        self.inner_evaluator.evaluate(mini_board)
+    fn evaluate(&mut self, position: &BoardPosition) -> Score {
+        self.inner_evaluator.evaluate(position)
     }
 
     fn reset_variables(&mut self) {
@@ -56,8 +56,8 @@ impl PositionEvaluation for Evaluator {
         self.inner_evaluator.print_info()
     }
 
-    fn evaluate_flipped(&mut self, mini_board: &MiniBoard) -> Score {
-        self.inner_evaluator.evaluate_flipped(mini_board)
+    fn evaluate_flipped(&mut self, position: &BoardPosition) -> Score {
+        self.inner_evaluator.evaluate_flipped(position)
     }
 
     fn evaluate_checkmate_in(&mut self, mate_distance: Score) -> Score {

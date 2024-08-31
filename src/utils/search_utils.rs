@@ -51,7 +51,7 @@ impl GoCommand {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Default)]
 pub struct SearchInfoBuilder {
-    mini_board: MiniBoard,
+    position: BoardPosition,
     current_depth: Option<Depth>,
     seldepth: Option<Ply>,
     score: Option<Score>,
@@ -65,16 +65,16 @@ pub struct SearchInfoBuilder {
 }
 
 impl SearchInfoBuilder {
-    pub fn new(mini_board: MiniBoard, pv: Vec<Move>) -> Self {
+    pub fn new(position: BoardPosition, pv: Vec<Move>) -> Self {
         Self {
-            mini_board,
+            position,
             pv,
             ..Default::default()
         }
     }
 
-    pub fn set_mini_board(mut self, mini_board: MiniBoard) -> Self {
-        self.mini_board = mini_board;
+    pub fn set_position(mut self, position: BoardPosition) -> Self {
+        self.position = position;
         self
     }
 
@@ -130,7 +130,7 @@ impl SearchInfoBuilder {
 
     pub fn build(self) -> SearchInfo {
         SearchInfo {
-            mini_board: self.mini_board,
+            position: self.position,
             current_depth: self.current_depth,
             seldepth: self.seldepth,
             score: self.score,
@@ -148,7 +148,7 @@ impl SearchInfoBuilder {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct SearchInfo {
-    mini_board: MiniBoard,
+    position: BoardPosition,
     current_depth: Option<Depth>,
     seldepth: Option<Ply>,
     score: Option<Score>,
@@ -163,7 +163,7 @@ pub struct SearchInfo {
 
 impl SearchInfo {
     pub fn new(
-        mini_board: MiniBoard,
+        position: BoardPosition,
         current_depth: Option<Depth>,
         seldepth: Option<Ply>,
         score: Option<Score>,
@@ -176,7 +176,7 @@ impl SearchInfo {
         pv: Vec<Move>,
     ) -> Self {
         Self {
-            mini_board,
+            position,
             current_depth,
             seldepth,
             score,
@@ -237,7 +237,7 @@ impl SearchInfo {
 
     #[inline]
     pub fn get_score_flipped(&self) -> Option<Score> {
-        Some(self.mini_board.score_flipped(self.get_score()?))
+        Some(self.position.score_flipped(self.get_score()?))
     }
 
     #[inline]
@@ -280,15 +280,15 @@ impl SearchInfo {
                 "time",
                 self.get_time_elapsed().map(|duration| duration.stringify()),
             ),
-            Self::format_info("pv", Some(get_pv_string(&self.mini_board, &self.pv))),
+            Self::format_info("pv", Some(get_pv_string(&self.position, &self.pv))),
         ];
         println_wasm!("{}", outputs.into_iter().flatten().join(" "));
     }
 
     pub fn print_warning_message(&self, mut alpha: Score, mut beta: Score) {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-            alpha = self.mini_board.score_flipped(alpha);
-            beta = self.mini_board.score_flipped(beta);
+            alpha = self.position.score_flipped(alpha);
+            beta = self.position.score_flipped(beta);
         }
         let warning_message = format!(
             "info string resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {}, beta {} and score {} with time {}",
@@ -318,7 +318,7 @@ impl<P: PositionEvaluation> From<&Searcher<P>> for SearchInfo {
         #[cfg(not(feature = "extras"))]
         let (hash_full, overwrites, collisions, zero_hit) = (None, None, None, None);
         let mut search_info = Self {
-            mini_board: searcher.get_initial_mini_board().to_owned(),
+            position: searcher.get_initial_position().to_owned(),
             current_depth: Some(searcher.get_depth_completed().saturating_add(1)),
             seldepth: Some(searcher.get_selective_depth()),
             score: Some(searcher.get_score()),
@@ -332,7 +332,7 @@ impl<P: PositionEvaluation> From<&Searcher<P>> for SearchInfo {
         };
         search_info.score = search_info
             .score
-            .map(|score| search_info.mini_board.score_flipped(score));
+            .map(|score| search_info.position.score_flipped(score));
         search_info
     }
 }

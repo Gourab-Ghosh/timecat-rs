@@ -112,48 +112,48 @@ impl MoveSorter {
         get_item_unchecked!(self.killer_moves, ply).contains(&Some(move_))
     }
 
-    pub fn add_history_move(&mut self, history_move: Move, mini_board: &MiniBoard, depth: Depth) {
+    pub fn add_history_move(&mut self, history_move: Move, position: &BoardPosition, depth: Depth) {
         let depth = (depth as MoveWeight).pow(2);
         let src = history_move.get_source();
         let dest = history_move.get_dest();
-        let piece = mini_board.get_piece_at(src).unwrap();
+        let piece = position.get_piece_at(src).unwrap();
         *get_item_unchecked_mut!(self.history_move_scores, piece.to_index(), dest.to_index()) +=
             depth;
     }
 
     #[inline]
-    pub fn get_history_score(&self, history_move: Move, mini_board: &MiniBoard) -> MoveWeight {
+    pub fn get_history_score(&self, history_move: Move, position: &BoardPosition) -> MoveWeight {
         let src = history_move.get_source();
         let dest = history_move.get_dest();
-        let piece = mini_board.get_piece_at(src).unwrap();
+        let piece = position.get_piece_at(src).unwrap();
         *get_item_unchecked!(self.history_move_scores, piece.to_index(), dest.to_index())
     }
 
-    fn get_least_attackers_move(square: Square, mini_board: &MiniBoard) -> Option<Move> {
-        mini_board
-            .generate_masked_legal_moves(mini_board.self_occupied(), square.to_bitboard())
+    fn get_least_attackers_move(square: Square, position: &BoardPosition) -> Option<Move> {
+        position
+            .generate_masked_legal_moves(position.self_occupied(), square.to_bitboard())
             .next() // No need to find least attacker as the moves are already sorted
     }
 
-    // fn get_least_attackers_move(square: Square, mini_board: &MiniBoard) -> Option<Move> {
-    //     if mini_board.is_check() {
-    //         mini_board
+    // fn get_least_attackers_move(square: Square, position: &BoardPosition) -> Option<Move> {
+    //     if position.is_check() {
+    //         position
     //             .generate_masked_legal_moves(
-    //                 mini_board.self_occupied(),
+    //                 position.self_occupied(),
     //                 square.to_bitboard(),
     //             )
     //             .next() // No need to find least attacker as the moves are already sorted
     //     } else {
-    //         let attackers_mask = mini_board.get_attackers_mask(square, mini_board.turn());
+    //         let attackers_mask = position.get_attackers_mask(square, position.turn());
     //         for piece_type in ALL_PIECE_TYPES {
-    //             let least_attackers = mini_board.get_piece_mask(piece_type) & attackers_mask;
+    //             let least_attackers = position.get_piece_mask(piece_type) & attackers_mask;
     //             if !least_attackers.is_empty() {
     //                 return Some(
     //                     Move::new_unchecked(
     //                         least_attackers.to_square(),
     //                         square,
     //                         if piece_type == Pawn
-    //                             && square.get_rank() == mini_board.turn().to_their_backrank()
+    //                             && square.get_rank() == position.turn().to_their_backrank()
     //                         {
     //                             Some(Queen)
     //                         } else {
@@ -167,35 +167,35 @@ impl MoveSorter {
     //     }
     // }
 
-    fn see(square: Square, mini_board: &MiniBoard) -> Score {
-        let least_attackers_move = match Self::get_least_attackers_move(square, mini_board) {
+    fn see(square: Square, position: &BoardPosition) -> Score {
+        let least_attackers_move = match Self::get_least_attackers_move(square, position) {
             Some(valid_or_null_move) => valid_or_null_move,
             None => return 0,
         };
-        let capture_piece = mini_board.get_piece_type_at(square).unwrap_or(Pawn);
+        let capture_piece = position.get_piece_type_at(square).unwrap_or(Pawn);
         (capture_piece.evaluate()
-            - Self::see(square, &mini_board.make_move_new(least_attackers_move)))
+            - Self::see(square, &position.make_move_new(least_attackers_move)))
         .max(0)
     }
 
-    fn see_capture(square: Square, mini_board: &MiniBoard) -> Score {
-        let least_attackers_move = match Self::get_least_attackers_move(square, mini_board) {
+    fn see_capture(square: Square, position: &BoardPosition) -> Score {
+        let least_attackers_move = match Self::get_least_attackers_move(square, position) {
             Some(valid_or_null_move) => valid_or_null_move,
             None => return 0,
         };
-        let capture_piece = mini_board.get_piece_type_at(square).unwrap_or(Pawn);
+        let capture_piece = position.get_piece_type_at(square).unwrap_or(Pawn);
         capture_piece.evaluate()
-            - Self::see(square, &mini_board.make_move_new(least_attackers_move))
+            - Self::see(square, &position.make_move_new(least_attackers_move))
     }
 
-    fn mvv_lva(move_: Move, mini_board: &MiniBoard) -> MoveWeight {
+    fn mvv_lva(move_: Move, position: &BoardPosition) -> MoveWeight {
         *get_item_unchecked!(
             MVV_LVA,
-            mini_board
+            position
                 .get_piece_type_at(move_.get_source())
                 .unwrap()
                 .to_index(),
-            mini_board
+            position
                 .get_piece_type_at(move_.get_dest())
                 .unwrap_or(Pawn)
                 .to_index()
@@ -203,22 +203,22 @@ impl MoveSorter {
     }
 
     #[inline]
-    fn score_capture(move_: Move, best_move: Option<Move>, mini_board: &MiniBoard) -> MoveWeight {
+    fn score_capture(move_: Move, best_move: Option<Move>, position: &BoardPosition) -> MoveWeight {
         if Some(move_) == best_move {
             return 10000;
         }
-        Self::see_capture(move_.get_dest(), mini_board) as MoveWeight
+        Self::see_capture(move_.get_dest(), position) as MoveWeight
     }
 
     fn score_easily_winning_position_moves(
-        mini_board: &MiniBoard,
+        position: &BoardPosition,
         source: Square,
         dest: Square,
     ) -> Option<MoveWeight> {
-        let moving_piece = mini_board.get_piece_type_at(source).unwrap();
+        let moving_piece = position.get_piece_type_at(source).unwrap();
         if moving_piece != Pawn {
-            let losing_color = !mini_board.get_winning_side().unwrap_or(White);
-            let losing_king_square = mini_board.get_king_square(losing_color);
+            let losing_color = !position.get_winning_side().unwrap_or(White);
+            let losing_king_square = position.get_king_square(losing_color);
             if losing_king_square == source {
                 return Some(-100 * source.distance(Square::E4) as MoveWeight);
             }
@@ -243,7 +243,7 @@ impl MoveSorter {
     fn score_move(
         &mut self,
         move_: Move,
-        mini_board: &MiniBoard,
+        position: &BoardPosition,
         ply: Ply,
         best_move: Option<Move>,
         pv_move: Option<Move>,
@@ -257,8 +257,8 @@ impl MoveSorter {
         if best_move == Some(move_) {
             return 800000;
         }
-        if mini_board.is_capture(move_) {
-            return 600000 + Self::score_capture(move_, None, mini_board);
+        if position.is_capture(move_) {
+            return 600000 + Self::score_capture(move_, None, position);
         }
         for (idx, &stored_move) in get_item_unchecked!(self.killer_moves, ply)
             .iter()
@@ -269,33 +269,33 @@ impl MoveSorter {
             }
         }
         // history
-        let history_score = self.get_history_score(move_, mini_board);
+        let history_score = self.get_history_score(move_, position);
         if history_score != 0 {
             return 400000 + history_score;
         }
-        let move_made_mini_board = mini_board.make_move_new(move_);
+        let move_made_position = position.make_move_new(move_);
         // check
-        let checkers = move_made_mini_board.get_checkers();
-        let moving_piece = mini_board.get_piece_type_at(move_.get_source()).unwrap();
+        let checkers = move_made_position.get_checkers();
+        let moving_piece = position.get_piece_type_at(move_.get_source()).unwrap();
         if !checkers.is_empty() {
             return -700000 + 10 * checkers.popcnt() as MoveWeight - moving_piece as MoveWeight;
         }
         MAX_MOVES_PER_POSITION as MoveWeight
-            - move_made_mini_board.generate_legal_moves().len() as MoveWeight
+            - move_made_position.generate_legal_moves().len() as MoveWeight
     }
 
     pub fn get_weighted_moves_sorted(
         &mut self,
-        mini_board: &MiniBoard,
+        position: &BoardPosition,
         transposition_table: &TranspositionTable,
         ply: Ply,
         mut best_move: Option<Move>,
         pv_move: Option<Move>,
     ) -> WeightedMoveListSorter {
         if best_move.is_none() {
-            best_move = transposition_table.read_best_move(mini_board.get_hash());
+            best_move = transposition_table.read_best_move(position.get_hash());
         }
-        let moves_vec = Vec::from_iter(mini_board.generate_legal_moves());
+        let moves_vec = Vec::from_iter(position.generate_legal_moves());
         if self.follow_pv {
             self.follow_pv = false;
             if let Some(valid_or_null_move) = pv_move {
@@ -315,22 +315,22 @@ impl MoveSorter {
         WeightedMoveListSorter::from_iter(moves_vec.into_iter().enumerate().map(|(idx, m)| {
             WeightedMove::new(
                 m,
-                (self.score_move(m, mini_board, ply, best_move, pv_move) << 10) - idx as MoveWeight,
+                (self.score_move(m, position, ply, best_move, pv_move) << 10) - idx as MoveWeight,
             )
         }))
     }
 
     pub fn get_weighted_capture_moves_sorted(
         &self,
-        mini_board: &MiniBoard,
+        position: &BoardPosition,
         transposition_table: &TranspositionTable,
     ) -> WeightedMoveListSorter {
-        let best_move = transposition_table.read_best_move(mini_board.get_hash());
-        WeightedMoveListSorter::from_iter(mini_board.generate_legal_captures().enumerate().map(
+        let best_move = transposition_table.read_best_move(position.get_hash());
+        WeightedMoveListSorter::from_iter(position.generate_legal_captures().enumerate().map(
             |(idx, m)| {
                 WeightedMove::new(
                     m,
-                    1000 * Self::score_capture(m, best_move, mini_board)
+                    1000 * Self::score_capture(m, best_move, position)
                         + MAX_MOVES_PER_POSITION as MoveWeight
                         - idx as MoveWeight,
                 )

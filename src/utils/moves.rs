@@ -41,35 +41,35 @@ impl Move {
         self.promotion
     }
 
-    pub fn from_san(mini_board: &MiniBoard, san: &str) -> Result<Self> {
+    pub fn from_san(position: &BoardPosition, san: &str) -> Result<Self> {
         // TODO: Make the logic better
         let san = san.trim().replace('0', "O");
-        for move_ in mini_board.generate_legal_moves() {
-            if move_.san(mini_board).unwrap() == san {
+        for move_ in position.generate_legal_moves() {
+            if move_.san(position).unwrap() == san {
                 return Ok(move_);
             }
         }
         Err(TimecatError::InvalidSanMoveString { s: san.to_string() })
     }
 
-    pub fn from_lan(mini_board: &MiniBoard, lan: &str) -> Result<Self> {
+    pub fn from_lan(position: &BoardPosition, lan: &str) -> Result<Self> {
         // TODO: Make the logic better
         let lan = lan.trim().replace('0', "O");
         let lan = lan.replace('0', "O");
-        for valid_or_null_move in mini_board.generate_legal_moves() {
-            if valid_or_null_move.lan(mini_board).unwrap() == lan {
+        for valid_or_null_move in position.generate_legal_moves() {
+            if valid_or_null_move.lan(position).unwrap() == lan {
                 return Ok(valid_or_null_move);
             }
         }
         Err(TimecatError::InvalidLanMoveString { s: lan.to_string() })
     }
 
-    pub fn algebraic_without_suffix(self, mini_board: &MiniBoard, long: bool) -> Result<String> {
+    pub fn algebraic_without_suffix(self, position: &BoardPosition, long: bool) -> Result<String> {
         let source = self.get_source();
         let dest = self.get_dest();
 
         // Castling.
-        if mini_board.is_castling(self) {
+        if position.is_castling(self) {
             return if dest.get_file() < source.get_file() {
                 Ok("O-O-O".to_string())
             } else {
@@ -78,13 +78,13 @@ impl Move {
         }
 
         let piece =
-            mini_board
+            position
                 .get_piece_type_at(source)
                 .ok_or(TimecatError::InvalidSanOrLanMove {
                     valid_or_null_move: self.into(),
-                    fen: mini_board.get_fen(),
+                    fen: position.get_fen(),
                 })?;
-        let capture = mini_board.is_capture(self);
+        let capture = position.is_capture(self);
         let mut san = if piece == Pawn {
             String::new()
         } else {
@@ -98,11 +98,11 @@ impl Move {
             // Relevant candidates: not exactly the current move,
             // but to the same square.
             let mut others = BB_EMPTY;
-            let from_mask = mini_board.get_piece_mask(piece)
-                & mini_board.self_occupied()
+            let from_mask = position.get_piece_mask(piece)
+                & position.self_occupied()
                 & !source.to_bitboard();
             let to_mask = dest.to_bitboard();
-            for candidate in mini_board.generate_masked_legal_moves(from_mask, to_mask) {
+            for candidate in position.generate_masked_legal_moves(from_mask, to_mask) {
                 others |= candidate.get_source().to_bitboard();
             }
 
@@ -156,26 +156,26 @@ impl Move {
         Ok(san)
     }
 
-    pub fn algebraic_and_new_mini_board(
+    pub fn algebraic_and_new_position(
         self,
-        mini_board: &MiniBoard,
+        position: &BoardPosition,
         long: bool,
-    ) -> Result<(String, MiniBoard)> {
-        let san = self.algebraic_without_suffix(mini_board, long)?;
+    ) -> Result<(String, BoardPosition)> {
+        let san = self.algebraic_without_suffix(position, long)?;
 
         // Look ahead for check or checkmate.
-        let new_mini_board = mini_board.make_move_new(self);
-        let is_checkmate = new_mini_board.is_checkmate();
+        let new_position = position.make_move_new(self);
+        let is_checkmate = new_position.is_checkmate();
 
         // Add check or checkmate suffix.
         let san = if is_checkmate {
             san + "#"
-        } else if new_mini_board.is_check() {
+        } else if new_position.is_check() {
             san + "+"
         } else {
             san
         };
-        Ok((san, new_mini_board))
+        Ok((san, new_position))
     }
 
     #[cfg(feature = "pyo3")]
@@ -291,36 +291,36 @@ impl ValidOrNullMove {
         self.into_inner()?.promotion
     }
 
-    pub fn from_san(mini_board: &MiniBoard, san: &str) -> Result<Self> {
+    pub fn from_san(position: &BoardPosition, san: &str) -> Result<Self> {
         // TODO: Make the logic better
         let san = san.trim();
         if san == "--" || san == "0000" {
             return Ok(ValidOrNullMove::NullMove);
         }
-        Ok(Move::from_san(mini_board, san)?.into())
+        Ok(Move::from_san(position, san)?.into())
     }
 
-    pub fn from_lan(mini_board: &MiniBoard, lan: &str) -> Result<Self> {
+    pub fn from_lan(position: &BoardPosition, lan: &str) -> Result<Self> {
         // TODO: Make the logic better
         let lan = lan.trim();
         if lan == "--" || lan == "0000" {
             return Ok(ValidOrNullMove::NullMove);
         }
-        Ok(Move::from_lan(mini_board, lan)?.into())
+        Ok(Move::from_lan(position, lan)?.into())
     }
 
-    pub fn algebraic_without_suffix(self, mini_board: &MiniBoard, long: bool) -> Result<String> {
-        self.map(|move_| move_.algebraic_without_suffix(mini_board, long))
+    pub fn algebraic_without_suffix(self, position: &BoardPosition, long: bool) -> Result<String> {
+        self.map(|move_| move_.algebraic_without_suffix(position, long))
             .unwrap_or(Ok("--".to_string()))
     }
 
-    pub fn algebraic_and_new_mini_board(
+    pub fn algebraic_and_new_position(
         self,
-        mini_board: &MiniBoard,
+        position: &BoardPosition,
         long: bool,
-    ) -> Result<(String, MiniBoard)> {
-        self.map(|move_| move_.algebraic_and_new_mini_board(mini_board, long))
-            .unwrap_or(Ok(("--".to_string(), mini_board.null_move()?)))
+    ) -> Result<(String, BoardPosition)> {
+        self.map(|move_| move_.algebraic_and_new_position(position, long))
+            .unwrap_or(Ok(("--".to_string(), position.null_move()?)))
     }
 }
 

@@ -2,13 +2,13 @@ use std::collections::HashSet;
 use timecat::*;
 
 fn move_generator_perft_test(fen: &str, depth: usize, expected_result: usize) {
-    let mini_board = MiniBoard::from_str(fen).unwrap();
-    let result = MoveGenerator::perft_test(&mini_board, depth);
+    let position = BoardPosition::from_str(fen).unwrap();
+    let result = MoveGenerator::perft_test(&position, depth);
     assert_eq!(
         result, expected_result,
         "Expected result {expected_result} but got {result} in position {fen}"
     );
-    let result = MoveGenerator::perft_test_piecewise(&mini_board, depth);
+    let result = MoveGenerator::perft_test_piecewise(&position, depth);
     assert_eq!(
         result, expected_result,
         "Expected result {expected_result} but got {result} in position {fen}"
@@ -193,13 +193,13 @@ generate_move_generator_functions!(
 
 #[test]
 fn move_generator_issue_15() {
-    let mini_board = MiniBoardBuilder::from_str(
+    let position = BoardPositionBuilder::from_str(
         "rnbqkbnr/ppp2pp1/4p3/3N4/3PpPp1/8/PPP3PP/R1B1KBNR b KQkq f3 0 1",
     )
     .unwrap()
     .try_into()
     .unwrap();
-    let _ = MoveGenerator::new_legal(&mini_board);
+    let _ = MoveGenerator::new_legal(&position);
 }
 
 fn move_of(m: &str) -> Move {
@@ -224,13 +224,13 @@ fn move_of(m: &str) -> Move {
 
 #[test]
 fn test_masked_move_generator() {
-    let mini_board =
-        MiniBoard::from_str("r1bqkb1r/pp3ppp/5n2/2ppn1N1/4pP2/1BN1P3/PPPP2PP/R1BQ1RK1 w kq - 0 9")
+    let position =
+        BoardPosition::from_str("r1bqkb1r/pp3ppp/5n2/2ppn1N1/4pP2/1BN1P3/PPPP2PP/R1BQ1RK1 w kq - 0 9")
             .unwrap();
 
-    let attackers = mini_board.get_piece_mask(Knight);
-    let targets = mini_board.opponent_occupied();
-    let masked_moves = mini_board.generate_masked_legal_moves(attackers, targets);
+    let attackers = position.get_piece_mask(Knight);
+    let targets = position.opponent_occupied();
+    let masked_moves = position.generate_masked_legal_moves(attackers, targets);
 
     let expected = vec![
         move_of("g5e4"),

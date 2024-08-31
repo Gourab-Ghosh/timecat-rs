@@ -27,24 +27,24 @@ impl EvaluatorNNUE {
     }
 
     #[cfg(feature = "inbuilt_nnue")]
-    pub fn new(mini_board: &MiniBoard) -> Self {
-        Self::from_model(HALFKP_MODEL_READER.to_model(mini_board))
+    pub fn new(position: &BoardPosition) -> Self {
+        Self::from_model(HALFKP_MODEL_READER.to_model(position))
     }
 
-    pub fn from_nnue_bytes(nnue_bytes: &[u8], mini_board: &MiniBoard) -> Result<Self> {
+    pub fn from_nnue_bytes(nnue_bytes: &[u8], position: &BoardPosition) -> Result<Self> {
         let mut reader = std::io::Cursor::new(nnue_bytes);
         let model = HalfKPModelReader::read(&mut reader)
             .map_err(|_| TimecatError::BadNNUEFile)?
-            .to_model(mini_board);
+            .to_model(position);
         Ok(Self::from_model(model))
     }
 
-    pub fn from_nnue_path(path: &str, mini_board: &MiniBoard) -> Result<Self> {
+    pub fn from_nnue_path(path: &str, position: &BoardPosition) -> Result<Self> {
         let file = std::fs::File::open(path)?;
         let mut reader = BufReader::new(file);
         let model = HalfKPModelReader::read(&mut reader)
             .map_err(|_| TimecatError::BadNNUEFile)?
-            .to_model(mini_board);
+            .to_model(position);
         Ok(Self::from_model(model))
     }
 
@@ -59,16 +59,16 @@ impl EvaluatorNNUE {
     }
 
     fn force_opponent_king_to_corner(
-        mini_board: &MiniBoard,
+        position: &BoardPosition,
         winning_side: Color,
         is_bishop_knight_endgame: bool,
     ) -> Score {
-        let winning_side_king_square = mini_board.get_king_square(winning_side);
-        let losing_side_king_square = mini_board.get_king_square(!winning_side);
+        let winning_side_king_square = position.get_king_square(winning_side);
+        let losing_side_king_square = position.get_king_square(!winning_side);
         let mut probable_least_distant_corner = None;
         if is_bishop_knight_endgame {
             let is_light_squared_bishop =
-                !(mini_board.get_piece_mask(Bishop) & BB_LIGHT_SQUARES).is_empty();
+                !(position.get_piece_mask(Bishop) & BB_LIGHT_SQUARES).is_empty();
             let least_distant_corners = if is_light_squared_bishop {
                 [Square::A8, Square::H1]
             } else {
@@ -106,7 +106,7 @@ impl EvaluatorNNUE {
                 .abs_diff(least_distant_corner.get_file().to_index()) as Score;
         let losing_king_corner_score =
             losing_king_rank_distance_score.pow(2) + losing_king_file_distance_score.pow(2);
-        let losing_king_opponent_pieces_score = mini_board
+        let losing_king_opponent_pieces_score = position
             .occupied_co(winning_side)
             .map(|square| 7 - square.distance(losing_side_king_square))
             .sum::<u8>() as Score;
@@ -114,12 +114,12 @@ impl EvaluatorNNUE {
             + losing_king_opponent_pieces_score
     }
 
-    fn force_passed_pawn_push(mini_board: &MiniBoard) -> Score {
-        todo!("force_passed_pawn_push {}", mini_board)
+    fn force_passed_pawn_push(position: &BoardPosition) -> Score {
+        todo!("force_passed_pawn_push {}", position)
     }
 
-    fn king_corner_forcing_evaluation(mini_board: &MiniBoard, material_score: Score) -> Score {
-        let is_bishop_knight_endgame = mini_board.get_num_pieces() == 4
+    fn king_corner_forcing_evaluation(position: &BoardPosition, material_score: Score) -> Score {
+        let is_bishop_knight_endgame = position.get_num_pieces() == 4
             && material_score.abs() == const { Knight.evaluate() + Bishop.evaluate() };
         let winning_side = if material_score.is_positive() {
             White
@@ -128,29 +128,29 @@ impl EvaluatorNNUE {
         };
         let signum = material_score.signum();
         let king_forcing_score =
-            Self::force_opponent_king_to_corner(mini_board, winning_side, is_bishop_knight_endgame);
+            Self::force_opponent_king_to_corner(position, winning_side, is_bishop_knight_endgame);
         (50 * PAWN_VALUE + king_forcing_score / 2) * signum + 2 * material_score
     }
 
-    pub fn is_easily_winning_position(mini_board: &MiniBoard, material_score: Score) -> bool {
+    pub fn is_easily_winning_position(position: &BoardPosition, material_score: Score) -> bool {
         if material_score.abs() > const { PAWN_VALUE + Bishop.evaluate() } {
-            let white_occupied = mini_board.occupied_co(White);
-            let black_occupied = mini_board.occupied_co(Black);
+            let white_occupied = position.occupied_co(White);
+            let black_occupied = position.occupied_co(Black);
             let num_white_pieces = white_occupied.popcnt();
             let num_black_pieces = black_occupied.popcnt();
             let num_pieces = num_white_pieces + num_black_pieces;
             if num_pieces < 5 {
                 if num_white_pieces == 2 && num_black_pieces == 2 {
-                    let non_king_white_piece = mini_board
+                    let non_king_white_piece = position
                         .get_piece_type_at(
-                            (white_occupied & !mini_board.get_piece_mask(King))
+                            (white_occupied & !position.get_piece_mask(King))
                                 .next()
                                 .unwrap(),
                         )
                         .unwrap();
-                    let non_king_black_piece = mini_board
+                    let non_king_black_piece = position
                         .get_piece_type_at(
-                            (black_occupied & !mini_board.get_piece_mask(King))
+                            (black_occupied & !position.get_piece_mask(King))
                                 .next()
                                 .unwrap(),
                         )
@@ -167,8 +167,8 @@ impl EvaluatorNNUE {
                 {
                     if num_pieces == 3 {
                         let non_king_pieces: (PieceType, PieceType) = (bb
-                            & !mini_board.get_piece_mask(King))
-                        .map(|s| mini_board.get_piece_type_at(s).unwrap())
+                            & !position.get_piece_mask(King))
+                        .map(|s| position.get_piece_type_at(s).unwrap())
                         .collect_tuple()
                         .unwrap();
                         if non_king_pieces == (Knight, Knight) {
@@ -185,14 +185,14 @@ impl EvaluatorNNUE {
         false
     }
 
-    fn evaluate_raw(mini_board: &MiniBoard, mut nnue_eval_func: impl FnMut() -> Score) -> Score {
-        let knights_mask = mini_board.get_piece_mask(Knight);
-        if mini_board.get_non_king_pieces_mask() == knights_mask && knights_mask.popcnt() < 3 {
+    fn evaluate_raw(position: &BoardPosition, mut nnue_eval_func: impl FnMut() -> Score) -> Score {
+        let knights_mask = position.get_piece_mask(Knight);
+        if position.get_non_king_pieces_mask() == knights_mask && knights_mask.popcnt() < 3 {
             return 0;
         }
-        let material_score = mini_board.get_material_score();
-        if Self::is_easily_winning_position(mini_board, material_score) {
-            return Self::king_corner_forcing_evaluation(mini_board, material_score);
+        let material_score = position.get_material_score();
+        if Self::is_easily_winning_position(position, material_score) {
+            return Self::king_corner_forcing_evaluation(position, material_score);
         }
         let mut nnue_eval = nnue_eval_func();
         if nnue_eval.abs() > WINNING_SCORE_THRESHOLD {
@@ -215,7 +215,7 @@ impl EvaluatorNNUE {
                     5.0 * multiplier,
                     MAX_MATERIAL_SCORE,
                     0,
-                    mini_board.get_masked_material_score_abs(mini_board.occupied_co(losing_side))
+                    position.get_masked_material_score_abs(position.occupied_co(losing_side))
                 )
                 .round() as Score
                 * PAWN_VALUE;
@@ -223,13 +223,13 @@ impl EvaluatorNNUE {
         nnue_eval
     }
 
-    fn hashed_evaluate(&mut self, mini_board: &MiniBoard) -> Score {
-        let hash = mini_board.get_hash();
+    fn hashed_evaluate(&mut self, position: &BoardPosition) -> Score {
+        let hash = position.get_hash();
         if let Some(score) = self.score_cache.get(hash) {
             return score;
         }
-        let score = Self::evaluate_raw(mini_board, || {
-            self.model.update_model_and_evaluate(mini_board)
+        let score = Self::evaluate_raw(position, || {
+            self.model.update_model_and_evaluate(position)
         });
         self.score_cache.add(hash, score);
         score
@@ -237,16 +237,16 @@ impl EvaluatorNNUE {
 
     #[cfg(feature = "inbuilt_nnue")]
     #[inline]
-    pub fn slow_evaluate_nnue_raw(mini_board: &MiniBoard) -> Score {
+    pub fn slow_evaluate_nnue_raw(position: &BoardPosition) -> Score {
         HALFKP_MODEL_READER
-            .to_model(mini_board)
-            .evaluate_current_state(mini_board.turn())
+            .to_model(position)
+            .evaluate_current_state(position.turn())
     }
 
     #[cfg(feature = "inbuilt_nnue")]
     #[inline]
-    pub fn slow_evaluate(mini_board: &MiniBoard) -> Score {
-        Self::evaluate_raw(mini_board, || Self::slow_evaluate_nnue_raw(mini_board))
+    pub fn slow_evaluate(position: &BoardPosition) -> Score {
+        Self::evaluate_raw(position, || Self::slow_evaluate_nnue_raw(position))
     }
 
     #[inline]
@@ -257,8 +257,8 @@ impl EvaluatorNNUE {
 
 impl PositionEvaluation for EvaluatorNNUE {
     #[inline]
-    fn evaluate(&mut self, mini_board: &MiniBoard) -> Score {
-        self.hashed_evaluate(mini_board)
+    fn evaluate(&mut self, position: &BoardPosition) -> Score {
+        self.hashed_evaluate(position)
     }
 
     #[inline]
@@ -284,6 +284,6 @@ impl PositionEvaluation for EvaluatorNNUE {
 #[cfg(feature = "inbuilt_nnue")]
 impl Default for EvaluatorNNUE {
     fn default() -> Self {
-        Self::new(&MiniBoard::default())
+        Self::new(&BoardPosition::default())
     }
 }

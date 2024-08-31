@@ -122,12 +122,12 @@ impl StringifyMove for Move {
         self.to_string()
     }
 
-    fn algebraic(self, mini_board: &MiniBoard, long: bool) -> Result<String> {
-        Ok(self.algebraic_and_new_mini_board(mini_board, long)?.0)
+    fn algebraic(self, position: &BoardPosition, long: bool) -> Result<String> {
+        Ok(self.algebraic_and_new_position(position, long)?.0)
     }
 
-    fn stringify_move(self, mini_board: &MiniBoard) -> Result<String> {
-        Some(self).stringify_move(mini_board)
+    fn stringify_move(self, position: &BoardPosition) -> Result<String> {
+        Some(self).stringify_move(position)
     }
 }
 
@@ -139,17 +139,17 @@ impl StringifyMove for Option<Move> {
         }
     }
 
-    fn algebraic(self, mini_board: &MiniBoard, long: bool) -> Result<String> {
+    fn algebraic(self, position: &BoardPosition, long: bool) -> Result<String> {
         match self {
-            Some(valid_or_null_move) => valid_or_null_move.algebraic(mini_board, long),
+            Some(valid_or_null_move) => valid_or_null_move.algebraic(position, long),
             None => Ok("--".to_string()),
         }
     }
 
-    fn stringify_move(self, mini_board: &MiniBoard) -> Result<String> {
+    fn stringify_move(self, position: &BoardPosition) -> Result<String> {
         match GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             true => self.algebraic(
-                mini_board,
+                position,
                 GLOBAL_TIMECAT_STATE.use_long_algebraic_notation(),
             ),
             false => Ok(self.uci()),

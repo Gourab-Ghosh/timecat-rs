@@ -8873,8 +8873,8 @@ impl<'source> FromPyObject<'source> for Square {
             return Ok(Self::from_int(int));
         }
         if let Ok(fen) = ob.extract::<&str>() {
-            if let Ok(mini_board) = Self::from_str(fen) {
-                return Ok(mini_board);
+            if let Ok(position) = Self::from_str(fen) {
+                return Ok(position);
             }
         }
         Err(Pyo3Error::Pyo3TypeConversionError {

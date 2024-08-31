@@ -11,12 +11,12 @@ mod model_update_test {
         }
         for valid_or_null_move in board.generate_legal_moves() {
             board.push_unchecked(valid_or_null_move);
-            let mini_board = board.get_mini_board().to_owned();
+            let position = board.get_position().to_owned();
             if board
                 .get_evaluator_mut()
                 .get_model_mut()
-                .update_model_and_evaluate(&mini_board)
-                != EvaluatorNNUE::slow_evaluate_nnue_raw(&mini_board)
+                .update_model_and_evaluate(&position)
+                != EvaluatorNNUE::slow_evaluate_nnue_raw(&position)
             {
                 return Err(board.get_all_stack_moves());
             }

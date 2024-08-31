@@ -46,21 +46,21 @@ pub trait StringifyScore {
 
 pub trait StringifyMove {
     fn uci(self) -> String;
-    fn algebraic(self, mini_board: &MiniBoard, long: bool) -> Result<String>;
-    fn stringify_move(self, mini_board: &MiniBoard) -> Result<String>;
+    fn algebraic(self, position: &BoardPosition, long: bool) -> Result<String>;
+    fn stringify_move(self, position: &BoardPosition) -> Result<String>;
 
-    fn san(self, mini_board: &MiniBoard) -> Result<String>
+    fn san(self, position: &BoardPosition) -> Result<String>
     where
         Self: Sized,
     {
-        self.algebraic(mini_board, false)
+        self.algebraic(position, false)
     }
 
-    fn lan(self, mini_board: &MiniBoard) -> Result<String>
+    fn lan(self, position: &BoardPosition) -> Result<String>
     where
         Self: Sized,
     {
-        self.algebraic(mini_board, true)
+        self.algebraic(position, true)
     }
 }
 
@@ -91,7 +91,7 @@ pub trait SearchControl<Searcher>: Clone + Send + 'static {
 
 // TODO: Try to remove static lifetime from the trait
 pub trait PositionEvaluation: Clone + Send + 'static {
-    fn evaluate(&mut self, mini_board: &MiniBoard) -> Score;
+    fn evaluate(&mut self, position: &BoardPosition) -> Score;
 
     #[inline]
     fn reset_variables(&mut self) {}
@@ -103,8 +103,8 @@ pub trait PositionEvaluation: Clone + Send + 'static {
     fn print_info(&self) {}
 
     #[inline]
-    fn evaluate_flipped(&mut self, mini_board: &MiniBoard) -> Score {
-        mini_board.score_flipped(self.evaluate(mini_board))
+    fn evaluate_flipped(&mut self, position: &BoardPosition) -> Score {
+        position.score_flipped(self.evaluate(position))
     }
 
     #[inline]
@@ -167,7 +167,7 @@ pub trait ChessEngine {
     }
 }
 
-pub trait MiniBoardMethodOverload<T> {
+pub trait BoardPositionMethodOverload<T> {
     fn parse_san(&self, _: &str) -> Result<T>;
     fn parse_lan(&self, _: &str) -> Result<T>;
     fn parse_uci(&self, _: &str) -> Result<T>;

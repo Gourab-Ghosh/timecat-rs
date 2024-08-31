@@ -12,7 +12,7 @@ pub enum BoardStatus {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq)]
-pub struct MiniBoard {
+pub struct BoardPosition {
     _piece_masks: [BitBoard; NUM_PIECE_TYPES],
     _occupied_co: [BitBoard; NUM_COLORS],
     _occupied: BitBoard,
@@ -29,7 +29,7 @@ pub struct MiniBoard {
     _black_material_score: Score,
 }
 
-impl PartialEq for MiniBoard {
+impl PartialEq for BoardPosition {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.transposition_key_components()
@@ -37,7 +37,7 @@ impl PartialEq for MiniBoard {
     }
 }
 
-impl MiniBoard {
+impl BoardPosition {
     #[inline]
     pub fn transposition_key_components(
         &self,
@@ -1179,7 +1179,7 @@ impl MiniBoard {
                 },
             )
         };
-        Ok(MiniBoardBuilder::setup(
+        Ok(BoardPositionBuilder::setup(
             ALL_PIECE_TYPES
                 .iter()
                 .zip(pieces_masks)
@@ -1205,7 +1205,7 @@ impl MiniBoard {
     }
 }
 
-impl MiniBoardMethodOverload<Move> for MiniBoard {
+impl BoardPositionMethodOverload<Move> for BoardPosition {
     #[inline]
     fn parse_san(&self, san: &str) -> Result<Move> {
         Move::from_san(self, san)
@@ -1341,7 +1341,7 @@ impl MiniBoardMethodOverload<Move> for MiniBoard {
     }
 }
 
-impl MiniBoardMethodOverload<ValidOrNullMove> for MiniBoard {
+impl BoardPositionMethodOverload<ValidOrNullMove> for BoardPosition {
     #[inline]
     fn parse_san(&self, san: &str) -> Result<ValidOrNullMove> {
         ValidOrNullMove::from_san(self, san)
@@ -1366,15 +1366,15 @@ impl MiniBoardMethodOverload<ValidOrNullMove> for MiniBoard {
     }
 }
 
-impl TryFrom<&MiniBoardBuilder> for MiniBoard {
+impl TryFrom<&BoardPositionBuilder> for BoardPosition {
     type Error = TimecatError;
 
-    fn try_from(mini_board_builder: &MiniBoardBuilder) -> Result<Self> {
-        let mut mini_board = MiniBoard::new_empty();
+    fn try_from(position_builder: &BoardPositionBuilder) -> Result<Self> {
+        let mut position = BoardPosition::new_empty();
 
         for square in ALL_SQUARES {
-            if let Some(piece) = mini_board_builder[square] {
-                mini_board.xor(
+            if let Some(piece) = position_builder[square] {
+                position.xor(
                     piece.get_piece_type(),
                     square.to_bitboard(),
                     piece.get_color(),
@@ -1382,84 +1382,84 @@ impl TryFrom<&MiniBoardBuilder> for MiniBoard {
             }
         }
 
-        mini_board._turn = mini_board_builder.get_turn();
+        position._turn = position_builder.get_turn();
 
-        if let Some(ep) = mini_board_builder.get_en_passant() {
-            mini_board._turn = !mini_board.turn();
-            mini_board.set_ep(ep);
-            mini_board._turn = !mini_board.turn();
+        if let Some(ep) = position_builder.get_en_passant() {
+            position._turn = !position.turn();
+            position.set_ep(ep);
+            position._turn = !position.turn();
         }
 
-        mini_board.add_castle_rights(White, mini_board_builder.get_castle_rights(White));
-        mini_board.add_castle_rights(Black, mini_board_builder.get_castle_rights(Black));
+        position.add_castle_rights(White, position_builder.get_castle_rights(White));
+        position.add_castle_rights(Black, position_builder.get_castle_rights(Black));
 
-        mini_board._halfmove_clock = mini_board_builder.get_halfmove_clock();
-        mini_board._fullmove_number = mini_board_builder.get_fullmove_number();
+        position._halfmove_clock = position_builder.get_halfmove_clock();
+        position._fullmove_number = position_builder.get_fullmove_number();
 
-        mini_board.update_pin_and_checkers_info();
+        position.update_pin_and_checkers_info();
 
-        if mini_board.is_sane() {
-            Ok(mini_board)
+        if position.is_sane() {
+            Ok(position)
         } else {
-            Err(TimecatError::InvalidMiniBoard { mini_board })
+            Err(TimecatError::InvalidBoardPosition { position })
         }
     }
 }
 
-impl TryFrom<MiniBoardBuilder> for MiniBoard {
+impl TryFrom<BoardPositionBuilder> for BoardPosition {
     type Error = TimecatError;
 
-    fn try_from(mini_board_builder: MiniBoardBuilder) -> Result<Self> {
-        (&mini_board_builder).try_into()
+    fn try_from(position_builder: BoardPositionBuilder) -> Result<Self> {
+        (&position_builder).try_into()
     }
 }
 
-impl TryFrom<&mut MiniBoardBuilder> for MiniBoard {
+impl TryFrom<&mut BoardPositionBuilder> for BoardPosition {
     type Error = TimecatError;
 
-    fn try_from(mini_board_builder: &mut MiniBoardBuilder) -> Result<Self> {
-        (mini_board_builder.to_owned()).try_into()
+    fn try_from(position_builder: &mut BoardPositionBuilder) -> Result<Self> {
+        (position_builder.to_owned()).try_into()
     }
 }
 
-impl FromStr for MiniBoard {
+impl FromStr for BoardPosition {
     type Err = TimecatError;
 
     fn from_str(value: &str) -> Result<Self> {
-        MiniBoardBuilder::from_str(value)?.try_into()
+        BoardPositionBuilder::from_str(value)?.try_into()
     }
 }
 
-impl Default for MiniBoard {
+impl Default for BoardPosition {
     #[inline]
     fn default() -> Self {
         Self::from_str(STARTING_POSITION_FEN).unwrap()
     }
 }
 
-impl fmt::Display for MiniBoard {
+impl fmt::Display for BoardPosition {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let fen: MiniBoardBuilder = self.into();
+        let fen: BoardPositionBuilder = self.into();
         write!(f, "{}", fen)
     }
 }
 
-impl Hash for MiniBoard {
+impl Hash for BoardPosition {
     fn hash<H: Hasher>(&self, state: &mut H) {
         state.write_u64(self.get_hash())
     }
 }
 
 #[cfg(feature = "pyo3")]
-impl<'source> FromPyObject<'source> for MiniBoard {
+impl<'source> FromPyObject<'source> for BoardPosition {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(fen) = ob.extract::<&str>() {
-            if let Ok(mini_board) = Self::from_str(fen) {
-                return Ok(mini_board);
+            if let Ok(position) = Self::from_str(fen) {
+                return Ok(position);
             }
         }
-        if let Ok(mini_board) = MiniBoard::from_py_board(ob) {
-            return Ok(mini_board);
+        if let Ok(position) = BoardPosition::from_py_board(ob) {
+            return Ok(position);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),

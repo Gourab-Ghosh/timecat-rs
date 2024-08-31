@@ -167,7 +167,7 @@ impl HalfKPModelReader {
             self.transformer.get_biases().into(),
             self.transformer.get_biases().into(),
         ];
-        let mini_board: MiniBoard = MiniBoardBuilder::new()
+        let position: BoardPosition = BoardPositionBuilder::new()
             .add_piece(white_king_square, WhiteKing)
             .add_piece(black_king_square, BlackKing)
             .try_into()
@@ -179,22 +179,22 @@ impl HalfKPModelReader {
             },
             transformer: self.transformer.clone(),
             network: self.network.clone(),
-            last_mini_board: mini_board,
+            last_position: position,
         }
     }
 
-    pub fn to_model(&self, mini_board: &MiniBoard) -> HalfKPModel {
+    pub fn to_model(&self, position: &BoardPosition) -> HalfKPModel {
         let mut halfkp_model = self.to_empty_model(
-            mini_board.get_king_square(White),
-            mini_board.get_king_square(Black),
+            position.get_king_square(White),
+            position.get_king_square(Black),
         );
-        halfkp_model.update_empty_model(mini_board);
-        halfkp_model.update_last_mini_board(mini_board.clone());
+        halfkp_model.update_empty_model(position);
+        halfkp_model.update_last_position(position.clone());
         halfkp_model
     }
 
     pub fn to_default_model(&self) -> HalfKPModel {
-        self.to_model(&MiniBoard::default())
+        self.to_model(&BoardPosition::default())
     }
 }
 
@@ -212,7 +212,7 @@ pub struct HalfKPModel {
     transformer: SerdeWrapper<Arc<HalfKPFeatureTransformer<AccumulatorDataType>>>,
     network: SerdeWrapper<Arc<HalfKPNetwork>>,
     accumulator: Accumulator,
-    last_mini_board: MiniBoard,
+    last_position: BoardPosition,
 }
 
 impl HalfKPModel {
@@ -239,17 +239,17 @@ impl HalfKPModel {
     }
 
     #[inline]
-    fn update_empty_model_of_one_side(&mut self, mini_board: &MiniBoard, turn: Color) {
-        mini_board
+    fn update_empty_model_of_one_side(&mut self, position: &BoardPosition, turn: Color) {
+        position
             .custom_iter(&ALL_PIECE_TYPES[..5], &[White, Black], BB_ALL)
             .for_each(|(piece, square)| self.activate_non_king_piece(turn, piece, square))
     }
 
     #[inline]
-    fn update_empty_model(&mut self, mini_board: &MiniBoard) {
+    fn update_empty_model(&mut self, position: &BoardPosition) {
         ALL_COLORS
             .into_iter()
-            .for_each(|turn| self.update_empty_model_of_one_side(mini_board, turn));
+            .for_each(|turn| self.update_empty_model_of_one_side(position, turn));
     }
 
     #[inline]
@@ -265,41 +265,41 @@ impl HalfKPModel {
     }
 
     #[inline]
-    fn update_last_mini_board(&mut self, mini_board: MiniBoard) {
-        self.last_mini_board = mini_board;
+    fn update_last_position(&mut self, position: BoardPosition) {
+        self.last_position = position;
     }
 
-    pub fn reset_model(&mut self, mini_board: &MiniBoard) {
+    pub fn reset_model(&mut self, position: &BoardPosition) {
         self.clear();
         self.accumulator.king_squares_rotated = [
-            mini_board.get_king_square(White),
-            mini_board.get_king_square(Black).rotate(),
+            position.get_king_square(White),
+            position.get_king_square(Black).rotate(),
         ]
         .into();
-        self.update_empty_model(mini_board);
-        self.update_last_mini_board(mini_board.clone());
+        self.update_empty_model(position);
+        self.update_last_position(position.clone());
     }
 
-    fn update_king(&mut self, mini_board: &MiniBoard, color: Color) {
+    fn update_king(&mut self, position: &BoardPosition, color: Color) {
         let new_king_square = if color == White {
-            mini_board.get_king_square(color)
+            position.get_king_square(color)
         } else {
-            mini_board.get_king_square(color).rotate()
+            position.get_king_square(color).rotate()
         };
         self.accumulator.king_squares_rotated[color.to_index()] = new_king_square;
         self.clear_one_side(color);
-        self.update_empty_model_of_one_side(mini_board, color);
+        self.update_empty_model_of_one_side(position, color);
     }
 
-    pub fn update_model(&mut self, mini_board: &MiniBoard) {
+    pub fn update_model(&mut self, position: &BoardPosition) {
         let mut white_king_updated = false;
         let mut black_king_updated = false;
-        if self.last_mini_board.get_king_square(White) != mini_board.get_king_square(White) {
-            self.update_king(mini_board, White);
+        if self.last_position.get_king_square(White) != position.get_king_square(White) {
+            self.update_king(position, White);
             white_king_updated = true;
         }
-        if self.last_mini_board.get_king_square(Black) != mini_board.get_king_square(Black) {
-            self.update_king(mini_board, Black);
+        if self.last_position.get_king_square(Black) != position.get_king_square(Black) {
+            self.update_king(position, Black);
             black_king_updated = true;
         }
         let mut colors_to_update = Vec::with_capacity(2);
@@ -314,10 +314,10 @@ impl HalfKPModel {
             Added((Piece, Square)),
             Removed((Piece, Square)),
         }
-        let last_mini_board_piece_masks = self.last_mini_board.get_all_piece_masks().to_owned();
-        let last_mini_board_occupied_cos = [
-            self.last_mini_board.occupied_co(White),
-            self.last_mini_board.occupied_co(Black),
+        let last_position_piece_masks = self.last_position.get_all_piece_masks().to_owned();
+        let last_position_occupied_cos = [
+            self.last_position.occupied_co(White),
+            self.last_position.occupied_co(Black),
         ];
         colors_to_update
             .into_iter()
@@ -326,10 +326,10 @@ impl HalfKPModel {
                     .iter()
                     .cartesian_product(ALL_COLORS)
                     .flat_map(|(&piece_type, color)| {
-                        let prev_occupied = last_mini_board_occupied_cos[color.to_index()]
-                            & last_mini_board_piece_masks[piece_type.to_index()];
+                        let prev_occupied = last_position_occupied_cos[color.to_index()]
+                            & last_position_piece_masks[piece_type.to_index()];
                         let new_occupied =
-                            mini_board.occupied_co(color) & mini_board.get_piece_mask(piece_type);
+                            position.occupied_co(color) & position.get_piece_mask(piece_type);
                         (!prev_occupied & new_occupied)
                             .map(move |square| {
                                 Change::Added((Piece::new(piece_type, color), square))
@@ -345,7 +345,7 @@ impl HalfKPModel {
                     self.deactivate_non_king_piece(turn, piece, square)
                 }
             });
-        self.update_last_mini_board(mini_board.clone());
+        self.update_last_position(position.clone());
     }
 
     pub fn evaluate_current_state_flipped(&self, turn: Color) -> Score {
@@ -387,12 +387,12 @@ impl HalfKPModel {
         }
     }
 
-    pub fn update_model_and_evaluate(&mut self, mini_board: &MiniBoard) -> Score {
-        self.update_model(mini_board);
-        self.evaluate_current_state(mini_board.turn())
+    pub fn update_model_and_evaluate(&mut self, position: &BoardPosition) -> Score {
+        self.update_model(position);
+        self.evaluate_current_state(position.turn())
     }
 
-    pub fn slow_evaluate_from_mini_board(&self, mini_board: &MiniBoard) -> Score {
+    pub fn slow_evaluate_from_position(&self, position: &BoardPosition) -> Score {
         let mut model = Self {
             transformer: self.transformer.clone(),
             network: self.network.clone(),
@@ -403,14 +403,14 @@ impl HalfKPModel {
                 ]
                 .into(),
                 king_squares_rotated: [
-                    mini_board.get_king_square(White),
-                    mini_board.get_king_square(Black).rotate(),
+                    position.get_king_square(White),
+                    position.get_king_square(Black).rotate(),
                 ]
                 .into(),
             },
-            last_mini_board: mini_board.clone(),
+            last_position: position.clone(),
         };
-        model.update_empty_model(mini_board);
-        model.evaluate_current_state(mini_board.turn())
+        model.update_empty_model(position);
+        model.evaluate_current_state(position.turn())
     }
 }
