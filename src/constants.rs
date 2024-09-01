@@ -28,7 +28,7 @@ pub mod bitboard_and_square {
     use File::*;
 
     pub const BB_EMPTY: BitBoard = BitBoard::new(0);
-    pub const BB_ALL: BitBoard = BitBoard::new(0xffff_ffff_ffff_ffff);
+    pub const BB_ALL: BitBoard = BitBoard::new(0xFFFFFFFFFFFFFFFF);
     pub const NUM_SQUARES: usize = 64;
 
     macro_rules! generate_bitboard_and_square_constants {
@@ -98,10 +98,10 @@ pub mod bitboard_and_square {
 
     pub const BB_BACKRANKS: BitBoard = BitBoard::new(BB_RANK_1.get_mask() ^ BB_RANK_8.get_mask());
 
-    pub const BB_UPPER_HALF_BOARD: BitBoard = BitBoard::new(0xffffffff00000000);
-    pub const BB_LOWER_HALF_BOARD: BitBoard = BitBoard::new(0x00000000ffffffff);
-    pub const BB_LEFT_HALF_BOARD: BitBoard = BitBoard::new(0xf0f0f0f0f0f0f0f0);
-    pub const BB_RIGHT_HALF_BOARD: BitBoard = BitBoard::new(0x0f0f0f0f0f0f0f0f);
+    pub const BB_UPPER_HALF_BOARD: BitBoard = BitBoard::new(0xFFFFFFFF00000000);
+    pub const BB_LOWER_HALF_BOARD: BitBoard = BitBoard::new(0x00000000FFFFFFFF);
+    pub const BB_LEFT_HALF_BOARD: BitBoard = BitBoard::new(0xF0F0F0F0F0F0F0F0);
+    pub const BB_RIGHT_HALF_BOARD: BitBoard = BitBoard::new(0x0F0F0F0F0F0F0F0F);
 
     pub const CENTER_SQUARES_BB: BitBoard = BitBoard::new(0x0000001818000000);
     pub const PSEUDO_CENTER_SQUARES_BB: BitBoard = BitBoard::new(0x00003C24243C0000);
@@ -112,6 +112,9 @@ pub mod bitboard_and_square {
         BitBoard::new(0x0000_0000_0f0f_0f0f),
         BitBoard::new(0x0000_0000_f0f0_f0f0),
     ];
+
+    pub const DIAGONAL_RAY: BitBoard = BitBoard::new(0x8040201008040201);
+    pub const ANTI_DIAGONAL_RAY: BitBoard = DIAGONAL_RAY.flip_horizontal();
 }
 
 pub mod board {

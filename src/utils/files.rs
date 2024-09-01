@@ -49,13 +49,21 @@ impl File {
     }
 
     #[inline]
-    pub fn wrapping_left(self) -> Self {
-        self.left().unwrap_or(Self::H)
+    pub const fn wrapping_left(self) -> Self {
+        if let Some(file) = self.left() {
+            file
+        } else {
+            Self::H
+        }
     }
 
     #[inline]
-    pub fn wrapping_right(self) -> Self {
-        self.right().unwrap_or(Self::A)
+    pub const fn wrapping_right(self) -> Self {
+        if let Some(file) = self.right() {
+            file
+        } else {
+            Self::A
+        }
     }
 
     #[inline]

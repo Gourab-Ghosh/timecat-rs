@@ -72,13 +72,21 @@ impl Rank {
     }
 
     #[inline]
-    pub fn wrapping_up(self) -> Self {
-        self.up().unwrap_or(Self::First)
+    pub const fn wrapping_up(self) -> Self {
+        if let Some(rank) = self.up() {
+            rank
+        } else {
+            Self::First
+        }
     }
 
     #[inline]
-    pub fn wrapping_down(self) -> Self {
-        self.down().unwrap_or(Self::Eighth)
+    pub const fn wrapping_down(self) -> Self {
+        if let Some(rank) = self.down() {
+            rank
+        } else {
+            Self::Eighth
+        }
     }
 
     #[inline]
