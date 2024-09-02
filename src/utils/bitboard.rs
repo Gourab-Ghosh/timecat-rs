@@ -100,7 +100,7 @@ impl BitBoard {
 
     #[inline]
     pub const fn shift_up(self) -> Self {
-        Self((self.0 & !BB_RANK_8.0) >> 8)
+        Self((self.0 & !BB_RANK_8.0) << 8)
     }
 
     #[inline]
