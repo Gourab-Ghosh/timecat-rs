@@ -215,7 +215,7 @@ impl EvaluatorNNUE {
                     5.0 * multiplier,
                     MAX_MATERIAL_SCORE,
                     0,
-                    position.get_masked_material_score_abs(position.occupied_co(losing_side))
+                    position.into_innered_material_score_abs(position.occupied_co(losing_side))
                 )
                 .round() as Score
                 * PAWN_VALUE;

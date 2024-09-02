@@ -163,7 +163,7 @@ impl<T: Copy + PartialEq> CacheTable<T> {
     }
 
     #[inline]
-    const fn get_mask(table: &[Option<CacheTableEntry<T>>]) -> usize {
+    const fn into_inner(table: &[Option<CacheTableEntry<T>>]) -> usize {
         if Self::is_safe_to_do_bitwise_and(table.len()) {
             table.len() - 1
         } else {
@@ -173,7 +173,7 @@ impl<T: Copy + PartialEq> CacheTable<T> {
 
     #[inline]
     fn reset_mask(&self, table: &[Option<CacheTableEntry<T>>]) {
-        self.mask.store(Self::get_mask(table), MEMORY_ORDERING);
+        self.mask.store(Self::into_inner(table), MEMORY_ORDERING);
         self.is_safe_to_do_bitwise_and.store(
             Self::is_safe_to_do_bitwise_and(table.len()),
             MEMORY_ORDERING,

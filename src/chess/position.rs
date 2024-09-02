@@ -201,13 +201,13 @@ impl BoardPosition {
 
     pub fn clean_castling_rights(&self) -> BitBoard {
         let white_castling_rights = match self.castle_rights(White) {
-            CastleRights::Both => const { BitBoard::new(BB_A1.get_mask() ^ BB_H1.get_mask()) },
+            CastleRights::Both => const { BitBoard::new(BB_A1.into_inner() ^ BB_H1.into_inner()) },
             CastleRights::KingSide => BB_H1,
             CastleRights::QueenSide => BB_A1,
             CastleRights::None => BB_EMPTY,
         };
         let black_castling_rights = match self.castle_rights(Black) {
-            CastleRights::Both => const { BitBoard::new(BB_A8.get_mask() ^ BB_H8.get_mask()) },
+            CastleRights::Both => const { BitBoard::new(BB_A8.into_inner() ^ BB_H8.into_inner()) },
             CastleRights::KingSide => BB_H8,
             CastleRights::QueenSide => BB_A8,
             CastleRights::None => BB_EMPTY,
@@ -275,7 +275,7 @@ impl BoardPosition {
         }
         if piece_type != King {
             let score_change =
-                if colored_piece_mask.get_mask() > colored_piece_mask_before.get_mask() {
+                if colored_piece_mask.into_inner() > colored_piece_mask_before.into_inner() {
                     piece_type.evaluate()
                 } else {
                     -piece_type.evaluate()
@@ -1074,7 +1074,7 @@ impl BoardPosition {
     }
 
     #[inline]
-    pub fn get_masked_material_score_abs(&self, mask: BitBoard) -> Score {
+    pub fn into_innered_material_score_abs(&self, mask: BitBoard) -> Score {
         get_item_unchecked!(ALL_PIECE_TYPES, ..5)
             .iter()
             .map(|&piece| piece.evaluate() * (self.get_piece_mask(piece) & mask).popcnt() as Score)
@@ -1148,8 +1148,8 @@ impl BoardPosition {
         };
         let (white_castle_rights, black_castle_rights) = {
             let castling_rights_bb = ob.getattr("castling_rights")?.extract::<BitBoard>()?;
-            const BB_A1_H1: BitBoard = BitBoard::new(BB_A1.get_mask() ^ BB_H1.get_mask());
-            const BB_A8_H8: BitBoard = BitBoard::new(BB_A8.get_mask() ^ BB_H8.get_mask());
+            const BB_A1_H1: BitBoard = BitBoard::new(BB_A1.into_inner() ^ BB_H1.into_inner());
+            const BB_A8_H8: BitBoard = BitBoard::new(BB_A8.into_inner() ^ BB_H8.into_inner());
             (
                 match castling_rights_bb & const { White.to_my_backrank() }.to_bitboard() {
                     BB_EMPTY => CastleRights::None,

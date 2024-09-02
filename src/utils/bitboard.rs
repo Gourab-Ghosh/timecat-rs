@@ -12,11 +12,6 @@ impl BitBoard {
     }
 
     #[inline]
-    pub const fn get_mask(self) -> u64 {
-        self.0
-    }
-
-    #[inline]
     pub fn set_mask(&mut self, mask: u64) {
         self.0 = mask;
     }

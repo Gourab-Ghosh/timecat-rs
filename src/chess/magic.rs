@@ -12,7 +12,7 @@ pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
         *get_item_unchecked!(const ROOK_AND_BISHOP_MAGIC_NUMBERS[0], square.to_index());
     *get_item_unchecked!(
         MOVES,
-        (magic.offset as usize)
+        magic.offset
             + (magic.magic_number.wrapping_mul(blockers & magic.mask) >> magic.right_shift)
                 .to_usize(),
     ) & square.get_rook_rays_bb()
@@ -24,12 +24,12 @@ pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
 pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
     let bmi2_magic = *get_item_unchecked!(ROOK_BMI_MASK, square.to_index());
     let index =
-        unsafe { _pext_u64(blockers.get_mask(), bmi2_magic.blockers_mask.get_mask()) as usize }
-            + (bmi2_magic.offset as usize);
+        unsafe { _pext_u64(blockers.into_inner(), bmi2_magic.blockers_mask.into_inner()) } as usize
+            + bmi2_magic.offset;
     let result = unsafe {
         _pdep_u64(
             *BMI_MOVES.get_unchecked(index) as u64,
-            square.get_rook_rays_bb().get_mask(),
+            square.get_rook_rays_bb().into_inner(),
         )
     };
     return BitBoard::new(result);
@@ -43,7 +43,7 @@ pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
         *get_item_unchecked!(const ROOK_AND_BISHOP_MAGIC_NUMBERS[1], square.to_index());
     *get_item_unchecked!(
         MOVES,
-        (magic.offset as usize)
+        magic.offset
             + (magic.magic_number.wrapping_mul(blockers & magic.mask) >> magic.right_shift)
                 .to_usize(),
     ) & square.get_bishop_rays_bb()
@@ -55,12 +55,12 @@ pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
 pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
     let bmi2_magic = *get_item_unchecked!(BISHOP_BMI_MASK, square.to_index());
     let index =
-        unsafe { _pext_u64(blockers.get_mask(), bmi2_magic.blockers_mask.get_mask()) as usize }
-            + (bmi2_magic.offset as usize);
+        unsafe { _pext_u64(blockers.into_inner(), bmi2_magic.blockers_mask.into_inner()) } as usize
+            + bmi2_magic.offset;
     let result = unsafe {
         _pdep_u64(
             *BMI_MOVES.get_unchecked(index) as u64,
-            square.get_bishop_rays_bb().get_mask(),
+            square.get_bishop_rays_bb().into_inner(),
         )
     };
     return BitBoard::new(result);
