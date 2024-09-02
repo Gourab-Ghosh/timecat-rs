@@ -85,18 +85,24 @@ pub mod bitboard_and_square {
         BitBoard::new(4629771061636907072),
     ];
 
-    pub const BB_CORNERS: BitBoard =
-        BitBoard::new(BB_A1.into_inner() ^ BB_H1.into_inner() ^ BB_A8.into_inner() ^ BB_H8.into_inner());
-    pub const BB_CENTER: BitBoard =
-        BitBoard::new(BB_D4.into_inner() ^ BB_E4.into_inner() ^ BB_D5.into_inner() ^ BB_E5.into_inner());
+    pub const BB_CORNERS: BitBoard = BitBoard::new(
+        BB_A1.into_inner() ^ BB_H1.into_inner() ^ BB_A8.into_inner() ^ BB_H8.into_inner(),
+    );
+    pub const BB_CENTER: BitBoard = BitBoard::new(
+        BB_D4.into_inner() ^ BB_E4.into_inner() ^ BB_D5.into_inner() ^ BB_E5.into_inner(),
+    );
     pub const BB_EDGES: BitBoard = BitBoard::new(
-        BB_RANK_1.into_inner() | BB_RANK_8.into_inner() | BB_FILE_A.into_inner() | BB_FILE_H.into_inner(),
+        BB_RANK_1.into_inner()
+            | BB_RANK_8.into_inner()
+            | BB_FILE_A.into_inner()
+            | BB_FILE_H.into_inner(),
     );
 
     pub const BB_LIGHT_SQUARES: BitBoard = BitBoard::new(0x55aa_55aa_55aa_55aa);
     pub const BB_DARK_SQUARES: BitBoard = BitBoard::new(0xaa55_aa55_aa55_aa55);
 
-    pub const BB_BACKRANKS: BitBoard = BitBoard::new(BB_RANK_1.into_inner() ^ BB_RANK_8.into_inner());
+    pub const BB_BACKRANKS: BitBoard =
+        BitBoard::new(BB_RANK_1.into_inner() ^ BB_RANK_8.into_inner());
 
     pub const BB_UPPER_HALF_BOARD: BitBoard = BitBoard::new(0xFFFFFFFF00000000);
     pub const BB_LOWER_HALF_BOARD: BitBoard = BitBoard::new(0x00000000FFFFFFFF);

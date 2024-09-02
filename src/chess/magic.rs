@@ -23,9 +23,9 @@ pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
 #[cfg(target_feature = "bmi2")]
 pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
     let bmi2_magic = *get_item_unchecked!(ROOK_BMI_MASK, square.to_index());
-    let index =
-        unsafe { _pext_u64(blockers.into_inner(), bmi2_magic.blockers_mask.into_inner()) } as usize
-            + bmi2_magic.offset;
+    let index = unsafe { _pext_u64(blockers.into_inner(), bmi2_magic.blockers_mask.into_inner()) }
+        as usize
+        + bmi2_magic.offset;
     let result = unsafe {
         _pdep_u64(
             *BMI_MOVES.get_unchecked(index) as u64,
@@ -54,9 +54,9 @@ pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
 #[cfg(target_feature = "bmi2")]
 pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
     let bmi2_magic = *get_item_unchecked!(BISHOP_BMI_MASK, square.to_index());
-    let index =
-        unsafe { _pext_u64(blockers.into_inner(), bmi2_magic.blockers_mask.into_inner()) } as usize
-            + bmi2_magic.offset;
+    let index = unsafe { _pext_u64(blockers.into_inner(), bmi2_magic.blockers_mask.into_inner()) }
+        as usize
+        + bmi2_magic.offset;
     let result = unsafe {
         _pdep_u64(
             *BMI_MOVES.get_unchecked(index) as u64,
