@@ -67,12 +67,6 @@ pub fn get_queen_moves(square: Square, blockers: BitBoard) -> BitBoard {
     get_rook_moves(square, blockers) ^ get_bishop_moves(square, blockers)
 }
 
-/// Get the knight moves for a particular square.
-#[inline]
-pub fn get_knight_moves(square: Square) -> BitBoard {
-    *get_item_unchecked!(KNIGHT_MOVES, square.to_index())
-}
-
 /// Get the pawn capture move for a particular square, given the pawn's color and the potential
 /// victims
 #[inline]

@@ -722,7 +722,7 @@ impl BoardPosition {
         }
 
         self._checkers ^=
-            get_knight_moves(ksq) & self.opponent_occupied() & self.get_piece_mask(Knight);
+            ksq.get_knight_moves() & self.opponent_occupied() & self.get_piece_mask(Knight);
 
         self._checkers ^= get_pawn_attacks(
             ksq,
@@ -751,7 +751,7 @@ impl BoardPosition {
         for (piece, square) in self.custom_iter(attacker_piece_types, colors, attackers_mask) {
             attacked_squares |= match piece.get_piece_type() {
                 Pawn => get_pawn_attacks(square, piece.get_color(), BB_ALL),
-                Knight => get_knight_moves(square),
+                Knight => square.get_knight_moves(),
                 Bishop => get_bishop_moves(square, self.occupied()),
                 Rook => get_rook_moves(square, self.occupied()),
                 Queen => {
@@ -792,7 +792,7 @@ impl BoardPosition {
         let sliding_attackers = (get_bishop_moves(target_square, occupied) & queens_and_bishops)
             | (get_rook_moves(target_square, occupied) & queens_and_rooks);
         let non_sliding_attackers = pawn_attacks
-            ^ (get_knight_moves(target_square) & self.get_piece_mask(Knight))
+            ^ (target_square.get_knight_moves() & self.get_piece_mask(Knight))
             ^ (target_square.get_king_moves() & self.get_piece_mask(King));
 
         let attackers = sliding_attackers ^ non_sliding_attackers;
@@ -822,7 +822,7 @@ impl BoardPosition {
                         ^ get_pawn_attacks(target_square, Black, BB_ALL)
                 }
             },
-            Knight => get_knight_moves(target_square),
+            Knight => target_square.get_knight_moves(),
             Bishop => get_bishop_moves(target_square, occupied),
             Rook => get_rook_moves(target_square, occupied),
             Queen => {
@@ -1262,12 +1262,12 @@ impl BoardPositionMethodOverload<Move> for BoardPosition {
         let ksq = opp_king.to_square();
 
         if moved == Knight {
-            result._checkers ^= get_knight_moves(ksq) & dest_bb;
+            result._checkers ^= ksq.get_knight_moves() & dest_bb;
         } else if moved == Pawn {
             if let Some(Knight) = move_.get_promotion() {
                 result.xor(Pawn, dest_bb, self.turn());
                 result.xor(Knight, dest_bb, self.turn());
-                result._checkers ^= get_knight_moves(ksq) & dest_bb;
+                result._checkers ^= ksq.get_knight_moves() & dest_bb;
             } else if let Some(promotion) = move_.get_promotion() {
                 result.xor(Pawn, dest_bb, self.turn());
                 result.xor(promotion, dest_bb, self.turn());

@@ -223,7 +223,7 @@ impl PieceMoves for KnightMoves {
 
     #[inline]
     fn pseudo_legals(src: Square, _color: Color, _occupied: BitBoard, mask: BitBoard) -> BitBoard {
-        get_knight_moves(src) & mask
+        src.get_knight_moves() & mask
     }
 
     #[inline]
@@ -318,7 +318,7 @@ impl KingMoves {
 
         attackers |= get_bishop_moves(dest, occupied) & bishops;
 
-        let knight_rays = get_knight_moves(dest);
+        let knight_rays = dest.get_knight_moves();
 
         // Using ^ because knight square_and_bitboard_array bitboard do not collide with rook and bishop square_and_bitboard_array bitboard
         attackers ^= knight_rays & position.get_colored_piece_mask(Knight, !position.turn());

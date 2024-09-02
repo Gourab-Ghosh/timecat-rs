@@ -91,7 +91,7 @@ fn test_attackers_mask() -> Result<()> {
                     if piece.get_color() == board.turn()
                         && match piece.get_piece_type() {
                             Pawn => get_pawn_attacks(piece_square, board.turn(), BB_ALL),
-                            Knight => get_knight_moves(piece_square),
+                            Knight => piece_square.get_knight_moves(),
                             Bishop => get_bishop_moves(piece_square, board.occupied()),
                             Rook => get_rook_moves(piece_square, board.occupied()),
                             Queen => {

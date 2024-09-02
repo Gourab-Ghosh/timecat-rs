@@ -1,36 +1,43 @@
 use super::*;
 pub use Square::*;
 
+#[rustfmt::skip]
 const KING_MOVES: [BitBoard; 64] = {
-    const fn calculate_king_moves(square: Square) -> BitBoard {
-        let neighbourhood = [
-            square.up(),
-            square.down(),
-            square.left(),
-            square.right(),
-            square.up_left(),
-            square.up_right(),
-            square.down_left(),
-            square.down_right(),
-        ];
-
-        let mut bb = 0;
-        let mut index = 0;
-
-        while index < 8 {
-            if let Some(square) = neighbourhood[index] {
-                bb ^= BB_SQUARES[square.to_index()].into_inner();
-            }
-            index += 1;
-        }
-
-        BitBoard::new(bb)
-    }
-
     let mut array = [BB_EMPTY; NUM_SQUARES];
     let mut index = 0;
     while index < NUM_SQUARES {
-        array[index] = calculate_king_moves(Square::from_index(index));
+        let square_bb = BB_SQUARES[index];
+        let mut bb = 0;
+        bb ^= square_bb.shift_up().into_inner();
+        bb ^= square_bb.shift_down().into_inner();
+        bb ^= square_bb.shift_left().into_inner();
+        bb ^= square_bb.shift_right().into_inner();
+        bb ^= square_bb.shift_up().shift_left().into_inner();
+        bb ^= square_bb.shift_up().shift_right().into_inner();
+        bb ^= square_bb.shift_down().shift_left().into_inner();
+        bb ^= square_bb.shift_down().shift_right().into_inner();
+        array[index] = BitBoard::new(bb);
+        index += 1;
+    }
+    array
+};
+
+#[rustfmt::skip]
+const KNIGHT_MOVES: [BitBoard; 64] = {
+    let mut array = [BB_EMPTY; NUM_SQUARES];
+    let mut index = 0;
+    while index < NUM_SQUARES {
+        let square_bb = BB_SQUARES[index];
+        let mut bb = 0;
+        bb ^= square_bb.shift_up().shift_up().shift_left().into_inner();
+        bb ^= square_bb.shift_up().shift_up().shift_right().into_inner();
+        bb ^= square_bb.shift_down().shift_down().shift_left().into_inner();
+        bb ^= square_bb.shift_down().shift_down().shift_right().into_inner();
+        bb ^= square_bb.shift_left().shift_left().shift_up().into_inner();
+        bb ^= square_bb.shift_left().shift_left().shift_down().into_inner();
+        bb ^= square_bb.shift_right().shift_right().shift_up().into_inner();
+        bb ^= square_bb.shift_right().shift_right().shift_down().into_inner();
+        array[index] = BitBoard::new(bb);
         index += 1;
     }
     array
@@ -74,8 +81,8 @@ const BISHOP_ANTI_DIAGONAL_RAYS: [BitBoard; NUM_SQUARES] = {
     let mut array = [BB_EMPTY; NUM_SQUARES];
     let mut index = 0;
     while index < NUM_SQUARES {
-        array[index] =
-            BISHOP_DIAGONAL_RAYS[SQUARES_VERTICAL_MIRROR[index].to_index()].flip_horizontal();
+        array[SQUARES_VERTICAL_MIRROR[index].to_index()] =
+            BISHOP_DIAGONAL_RAYS[index].flip_horizontal();
         index += 1;
     }
     array
@@ -139,12 +146,12 @@ const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
         let file_ordering = cmp(square1_file.to_int(), square2_file.to_int());
 
         let mut bb = 0;
-        let mut square_iter = square1;
+        let mut current_square = square1;
         loop {
             let mut next_square = match rank_ordering {
-                Ordering::Less => square_iter.wrapping_up(),
-                Ordering::Equal => square_iter,
-                Ordering::Greater => square_iter.wrapping_down(),
+                Ordering::Less => current_square.wrapping_up(),
+                Ordering::Equal => current_square,
+                Ordering::Greater => current_square.wrapping_down(),
             };
             next_square = match file_ordering {
                 Ordering::Less => next_square.wrapping_right(),
@@ -155,7 +162,7 @@ const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
                 return BitBoard::new(bb);
             }
             bb ^= BB_SQUARES[next_square.to_index()].into_inner();
-            square_iter = next_square;
+            current_square = next_square;
         }
     }
 
@@ -163,8 +170,9 @@ const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
     let mut i = 0;
     while i < NUM_SQUARES {
         let mut j = 0;
-        while j < NUM_SQUARES {
+        while j < i {
             array[i][j] = calculate_between(Square::from_index(i), Square::from_index(j));
+            array[j][i] = array[i][j];
             j += 1;
         }
         i += 1;
@@ -174,8 +182,9 @@ const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
 
 const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
     const fn calculate_line(square1: Square, square2: Square) -> BitBoard {
+        #[cfg(debug_assertions)]
         if square1.to_int() == square2.to_int() {
-            return BB_EMPTY;
+            unreachable!();
         }
         let square2_bb = BB_SQUARES[square2.to_index()];
         let mut possible_line = BB_RANKS[square1.get_rank().to_index()];
@@ -201,8 +210,9 @@ const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
     let mut i = 0;
     while i < NUM_SQUARES {
         let mut j = 0;
-        while j < NUM_SQUARES {
+        while j < i {
             array[i][j] = calculate_line(Square::from_index(i), Square::from_index(j));
+            array[j][i] = array[i][j];
             j += 1;
         }
         i += 1;
@@ -501,6 +511,12 @@ impl Square {
     #[inline]
     pub fn get_king_moves(self) -> BitBoard {
         *get_item_unchecked!(KING_MOVES, self.to_index())
+    }
+
+    /// Get the knight moves for a particular square.
+    #[inline]
+    pub fn get_knight_moves(self) -> BitBoard {
+        *get_item_unchecked!(KNIGHT_MOVES, self.to_index())
     }
 }
 
