@@ -39,7 +39,8 @@ const BISHOP_ANTI_DIAGONAL_RAYS: [BitBoard; NUM_SQUARES] = {
     let mut array = [BB_EMPTY; NUM_SQUARES];
     let mut index = 0;
     while index < NUM_SQUARES {
-        array[index] = BISHOP_DIAGONAL_RAYS[SQUARES_VERTICAL_MIRROR[index].to_index()].flip_horizontal();
+        array[index] =
+            BISHOP_DIAGONAL_RAYS[SQUARES_VERTICAL_MIRROR[index].to_index()].flip_horizontal();
         index += 1;
     }
     array
@@ -49,7 +50,10 @@ const BISHOP_RAYS: [BitBoard; NUM_SQUARES] = {
     let mut array = [BB_EMPTY; NUM_SQUARES];
     let mut index = 0;
     while index < NUM_SQUARES {
-        array[index] = BitBoard::new(BISHOP_DIAGONAL_RAYS[index].into_inner() ^ BISHOP_ANTI_DIAGONAL_RAYS[index].into_inner());
+        array[index] = BitBoard::new(
+            BISHOP_DIAGONAL_RAYS[index].into_inner()
+                ^ BISHOP_ANTI_DIAGONAL_RAYS[index].into_inner(),
+        );
         index += 1;
     }
     array
@@ -157,7 +161,7 @@ const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
         }
         BB_EMPTY
     }
-    
+
     let mut array = [[BB_EMPTY; NUM_SQUARES]; NUM_SQUARES];
     let mut i = 0;
     while i < NUM_SQUARES {
