@@ -34,10 +34,10 @@ pub mod utils;
 pub mod prelude {
     use super::*;
     pub use super::{
-        get_bishop_moves, get_castle_moves, get_king_moves, get_knight_moves, get_pawn_attacks,
-        get_pawn_moves, get_pawn_quiets, get_pv_as_san, get_pv_as_uci, get_pv_string,
-        get_queen_moves, get_rook_moves, is_checkmate, self_play, simplify_fen, Bishop, BitBoard,
-        Black, Board, BoardPosition, BoardPositionBuilder, BoardStatus, CacheTable, CacheTableSize,
+        get_bishop_moves, get_castle_moves, get_knight_moves, get_pawn_attacks, get_pawn_moves,
+        get_pawn_quiets, get_pv_as_san, get_pv_as_uci, get_pv_string, get_queen_moves,
+        get_rook_moves, is_checkmate, self_play, simplify_fen, Bishop, BitBoard, Black, Board,
+        BoardPosition, BoardPositionBuilder, BoardStatus, CacheTable, CacheTableSize,
         CastleMoveType, CastleRights, Color, Depth, Engine, Evaluator, File, GameResult, GoCommand,
         IoReader, King, Knight, Move, MoveWeight, Pawn, Piece, PieceType, Ply, Queen, Rank,
         RepetitionTable, Rook, Score, SearchInfo, SearchInfoBuilder, Square, TimecatError,

@@ -414,7 +414,7 @@ impl BoardPosition {
         }
 
         // we must make sure the kings aren't touching
-        if !(get_king_moves(self.get_king_square(White)) & self.get_piece_mask(King)).is_empty() {
+        if !(self.get_king_square(White).get_king_moves() & self.get_piece_mask(King)).is_empty() {
             return false;
         }
 
@@ -758,7 +758,7 @@ impl BoardPosition {
                     get_bishop_moves(square, self.occupied())
                         ^ get_rook_moves(square, self.occupied())
                 }
-                King => get_king_moves(square),
+                King => square.get_king_moves(),
             };
         }
         attacked_squares & !self.self_occupied()
@@ -793,7 +793,7 @@ impl BoardPosition {
             | (get_rook_moves(target_square, occupied) & queens_and_rooks);
         let non_sliding_attackers = pawn_attacks
             ^ (get_knight_moves(target_square) & self.get_piece_mask(Knight))
-            ^ (get_king_moves(target_square) & self.get_piece_mask(King));
+            ^ (target_square.get_king_moves() & self.get_piece_mask(King));
 
         let attackers = sliding_attackers ^ non_sliding_attackers;
 
@@ -828,7 +828,7 @@ impl BoardPosition {
             Queen => {
                 get_bishop_moves(target_square, occupied) ^ get_rook_moves(target_square, occupied)
             }
-            King => get_king_moves(target_square),
+            King => target_square.get_king_moves(),
         } & self.get_piece_mask(piece_type);
 
         color.map_or(attackers, |color| attackers & self.occupied_co(color))

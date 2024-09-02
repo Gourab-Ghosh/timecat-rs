@@ -1,6 +1,41 @@
 use super::*;
 pub use Square::*;
 
+const KING_MOVES: [BitBoard; 64] = {
+    const fn calculate_king_moves(square: Square) -> BitBoard {
+        let neighbourhood = [
+            square.up(),
+            square.down(),
+            square.left(),
+            square.right(),
+            square.up_left(),
+            square.up_right(),
+            square.down_left(),
+            square.down_right(),
+        ];
+
+        let mut bb = 0;
+        let mut index = 0;
+
+        while index < 8 {
+            if let Some(square) = neighbourhood[index] {
+                bb ^= BB_SQUARES[square.to_index()].into_inner();
+            }
+            index += 1;
+        }
+
+        BitBoard::new(bb)
+    }
+
+    let mut array = [BB_EMPTY; NUM_SQUARES];
+    let mut index = 0;
+    while index < NUM_SQUARES {
+        array[index] = calculate_king_moves(Square::from_index(index));
+        index += 1;
+    }
+    array
+};
+
 const BISHOP_DIAGONAL_RAYS: [BitBoard; NUM_SQUARES] = {
     const fn calculate_diagonal_rays(square: Square) -> BitBoard {
         let square_rank_index = square.get_rank().to_index() as u32;
@@ -460,6 +495,12 @@ impl Square {
     #[inline]
     pub fn get_rook_rays_bb(self) -> BitBoard {
         *get_item_unchecked!(ROOK_RAYS, self.to_index())
+    }
+
+    /// Get the king moves for a particular square.
+    #[inline]
+    pub fn get_king_moves(self) -> BitBoard {
+        *get_item_unchecked!(KING_MOVES, self.to_index())
     }
 }
 

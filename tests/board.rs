@@ -98,7 +98,7 @@ fn test_attackers_mask() -> Result<()> {
                                 get_bishop_moves(piece_square, board.occupied())
                                     | get_rook_moves(piece_square, board.occupied())
                             }
-                            King => get_king_moves(piece_square),
+                            King => piece_square.get_king_moves(),
                         }
                         .contains(square)
                     {

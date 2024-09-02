@@ -43,6 +43,15 @@ panic = "abort"
 # rustflags = ["-C", "target-cpu=native"]
 # strip = true
 
+[profile.release.package."*"]
+inherits = "release"
+
+[profile.test]
+inherits = "dev"
+
+[profile.bench]
+inherits = "release"
+
 [dependencies]
 arrayvec = "0"
 binread = { version = "2", features = ["const_generics"], optional = true}
