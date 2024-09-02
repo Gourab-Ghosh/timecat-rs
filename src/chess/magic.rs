@@ -5,7 +5,6 @@ use std::arch::x86_64::{_pdep_u64, _pext_u64};
 include!("magic_gen.rs");
 
 /// Get the moves for a rook on a particular square, given blockers blocking my movement.
-#[inline]
 #[cfg(not(target_feature = "bmi2"))]
 pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
     let magic: Magic =
@@ -19,7 +18,6 @@ pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
 }
 
 /// Get the moves for a rook on a particular square, given blockers blocking my movement.
-#[inline]
 #[cfg(target_feature = "bmi2")]
 pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
     let bmi2_magic = *get_item_unchecked!(ROOK_BMI_MASK, square.to_index());
@@ -36,7 +34,6 @@ pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
 }
 
 /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
-#[inline]
 #[cfg(not(target_feature = "bmi2"))]
 pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
     let magic: Magic =
@@ -50,7 +47,6 @@ pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
 }
 
 /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
-#[inline]
 #[cfg(target_feature = "bmi2")]
 pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
     let bmi2_magic = *get_item_unchecked!(BISHOP_BMI_MASK, square.to_index());
