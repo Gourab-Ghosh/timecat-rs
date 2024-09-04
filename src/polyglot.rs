@@ -356,6 +356,7 @@ pub mod array_implementation {
         }
     }
 
+    #[derive(Debug)]
     pub struct PolyglotBookReader;
 
     impl PolyglotBookReader {
@@ -504,6 +505,7 @@ pub mod map_implementation {
         }
     }
 
+    #[derive(Debug)]
     pub struct PolyglotBookReader;
 
     impl PolyglotBookReader {

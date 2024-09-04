@@ -2,6 +2,7 @@ use super::*;
 use TimecatError::*;
 
 #[cfg(feature = "pyo3")]
+#[derive(Debug)]
 pub enum Pyo3Error {
     #[cfg(feature = "pyo3")]
     Pyo3TypeConversionError { from: String, to: String },

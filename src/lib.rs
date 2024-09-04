@@ -4,6 +4,7 @@
 #![allow(clippy::needless_doctest_main)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::result_large_err)]
+// #![deny(missing_debug_implementations)]
 // #![warn(missing_docs)]
 
 pub mod board;
