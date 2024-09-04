@@ -240,9 +240,10 @@ impl EvaluatorNonNNUE {
         let piece_color = piece.get_color();
 
         // Simplified example: give a bonus for attacking opponent's pieces
-        for move_ in position
-            .generate_masked_legal_moves(square.to_bitboard(), position.occupied_co(!piece_color))
-        {
+        for move_ in position.generate_masked_legal_moves(
+            square.to_bitboard(),
+            position.occupied_color(!piece_color),
+        ) {
             threat_score += match position.get_piece_type_at(move_.get_dest()).unwrap() {
                 King => 0,
                 piece_type => piece_type.evaluate(),

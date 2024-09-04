@@ -107,7 +107,7 @@ impl EvaluatorNNUE {
         let losing_king_corner_score =
             losing_king_rank_distance_score.pow(2) + losing_king_file_distance_score.pow(2);
         let losing_king_opponent_pieces_score = position
-            .occupied_co(winning_side)
+            .occupied_color(winning_side)
             .map(|square| 7 - square.distance(losing_side_king_square))
             .sum::<u8>() as Score;
         10 * (10 * king_distance_score + 2 * losing_king_corner_score)
@@ -134,8 +134,8 @@ impl EvaluatorNNUE {
 
     pub fn is_easily_winning_position(position: &BoardPosition, material_score: Score) -> bool {
         if material_score.abs() > const { PAWN_VALUE + Bishop.evaluate() } {
-            let white_occupied = position.occupied_co(White);
-            let black_occupied = position.occupied_co(Black);
+            let white_occupied = position.occupied_color(White);
+            let black_occupied = position.occupied_color(Black);
             let num_white_pieces = white_occupied.popcnt();
             let num_black_pieces = black_occupied.popcnt();
             let num_pieces = num_white_pieces + num_black_pieces;
@@ -215,7 +215,7 @@ impl EvaluatorNNUE {
                     5.0 * multiplier,
                     MAX_MATERIAL_SCORE,
                     0,
-                    position.into_innered_material_score_abs(position.occupied_co(losing_side))
+                    position.get_masked_material_score_abs(position.occupied_color(losing_side))
                 )
                 .round() as Score
                 * PAWN_VALUE;

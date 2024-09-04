@@ -315,9 +315,9 @@ impl HalfKPModel {
             Removed((Piece, Square)),
         }
         let last_position_piece_masks = self.last_position.get_all_piece_masks().to_owned();
-        let last_position_occupied_cos = [
-            self.last_position.occupied_co(White),
-            self.last_position.occupied_co(Black),
+        let last_position_occupied_colors = [
+            self.last_position.occupied_color(White),
+            self.last_position.occupied_color(Black),
         ];
         colors_to_update
             .into_iter()
@@ -326,10 +326,10 @@ impl HalfKPModel {
                     .iter()
                     .cartesian_product(ALL_COLORS)
                     .flat_map(|(&piece_type, color)| {
-                        let prev_occupied = last_position_occupied_cos[color.to_index()]
+                        let prev_occupied = last_position_occupied_colors[color.to_index()]
                             & last_position_piece_masks[piece_type.to_index()];
                         let new_occupied =
-                            position.occupied_co(color) & position.get_piece_mask(piece_type);
+                            position.occupied_color(color) & position.get_piece_mask(piece_type);
                         (!prev_occupied & new_occupied)
                             .map(move |square| {
                                 Change::Added((Piece::new(piece_type, color), square))

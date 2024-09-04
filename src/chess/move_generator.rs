@@ -472,7 +472,7 @@ impl MoveGenerator {
 
     pub fn has_legal_moves(position: &BoardPosition) -> bool {
         let checkers = position.get_checkers();
-        let mask = !position.occupied_co(position.turn());
+        let mask = !position.occupied_color(position.turn());
         let mut move_list = ArrayVec::new();
 
         let legal_functions = if checkers == BB_EMPTY {

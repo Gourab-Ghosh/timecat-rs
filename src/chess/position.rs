@@ -14,7 +14,7 @@ pub enum BoardStatus {
 #[derive(Clone, Debug, Eq)]
 pub struct BoardPosition {
     _piece_masks: [BitBoard; NUM_PIECE_TYPES],
-    _occupied_co: [BitBoard; NUM_COLORS],
+    _occupied_color: [BitBoard; NUM_COLORS],
     _occupied: BitBoard,
     _turn: Color,
     _castle_rights: [CastleRights; NUM_COLORS],
@@ -50,7 +50,7 @@ impl BoardPosition {
     ) {
         (
             self._piece_masks,
-            self._occupied_co,
+            self._occupied_color,
             self.turn(),
             self._castle_rights,
             self.ep_square(),
@@ -61,7 +61,7 @@ impl BoardPosition {
     fn new_empty() -> Self {
         Self {
             _piece_masks: [BB_EMPTY; NUM_PIECE_TYPES],
-            _occupied_co: [BB_EMPTY; NUM_COLORS],
+            _occupied_color: [BB_EMPTY; NUM_COLORS],
             _occupied: BB_EMPTY,
             _turn: White,
             _castle_rights: [CastleRights::None; NUM_COLORS],
@@ -104,28 +104,28 @@ impl BoardPosition {
     }
 
     #[inline]
-    pub fn occupied_co(&self, color: Color) -> BitBoard {
-        *get_item_unchecked!(self._occupied_co, color.to_index())
+    pub fn occupied_color(&self, color: Color) -> BitBoard {
+        *get_item_unchecked!(self._occupied_color, color.to_index())
     }
 
     #[inline]
     pub fn self_occupied(&self) -> BitBoard {
-        self.occupied_co(self.turn())
+        self.occupied_color(self.turn())
     }
 
     #[inline]
     pub fn opponent_occupied(&self) -> BitBoard {
-        self.occupied_co(!self.turn())
+        self.occupied_color(!self.turn())
     }
 
     #[inline]
     pub fn get_black_occupied(&self) -> BitBoard {
-        self.occupied_co(Black)
+        self.occupied_color(Black)
     }
 
     #[inline]
     pub fn get_white_occupied(&self) -> BitBoard {
-        self.occupied_co(White)
+        self.occupied_color(White)
     }
 
     #[inline]
@@ -145,11 +145,11 @@ impl BoardPosition {
 
     #[inline]
     pub fn get_colored_piece_mask(&self, piece_type: PieceType, color: Color) -> BitBoard {
-        self.get_piece_mask(piece_type) & self.occupied_co(color)
+        self.get_piece_mask(piece_type) & self.occupied_color(color)
     }
 
     pub fn has_insufficient_material(&self, color: Color) -> bool {
-        let occupied = self.occupied_co(color);
+        let occupied = self.occupied_color(color);
         match occupied.popcnt() {
             1 => true,
             2 => ((self.get_piece_mask(Rook)
@@ -278,7 +278,7 @@ impl BoardPosition {
 
     fn xor(&mut self, piece_type: PieceType, bb: BitBoard, color: Color) {
         *get_item_unchecked_mut!(self._piece_masks, piece_type.to_index()) ^= bb;
-        let colored_piece_mask = get_item_unchecked_mut!(self._occupied_co, color.to_index());
+        let colored_piece_mask = get_item_unchecked_mut!(self._occupied_color, color.to_index());
         let colored_piece_mask_before = *colored_piece_mask;
         *colored_piece_mask ^= bb;
         self._occupied ^= bb;
@@ -376,7 +376,7 @@ impl BoardPosition {
         }
 
         // make sure the colors don't overlap, either
-        if !(self.occupied_co(White) & self.occupied_co(Black)).is_empty() {
+        if !(self.occupied_color(White) & self.occupied_color(Black)).is_empty() {
             return false;
         }
 
@@ -434,7 +434,7 @@ impl BoardPosition {
             // verify there are rooks on all those squares
             if castle_rights.unmoved_rooks(color)
                 & self.get_piece_mask(Rook)
-                & self.occupied_co(color)
+                & self.occupied_color(color)
                 != castle_rights.unmoved_rooks(color)
             {
                 return false;
@@ -497,9 +497,9 @@ impl BoardPosition {
 
     #[inline]
     pub fn color_at(&self, square: Square) -> Option<Color> {
-        if !(self.occupied_co(White) & square.to_bitboard()).is_empty() {
+        if !(self.occupied_color(White) & square.to_bitboard()).is_empty() {
             Some(White)
-        } else if !(self.occupied_co(Black) & square.to_bitboard()).is_empty() {
+        } else if !(self.occupied_color(Black) & square.to_bitboard()).is_empty() {
             Some(Black)
         } else {
             None
@@ -580,12 +580,12 @@ impl BoardPosition {
             Some(color) => color,
             None => return false,
         };
-        if !(pawn_mask & self.occupied_co(self_color)).contains(square) {
+        if !(pawn_mask & self.occupied_color(self_color)).contains(square) {
             return false;
         }
         let file = square.get_file();
         (pawn_mask
-            & self.occupied_co(!self_color)
+            & self.occupied_color(!self_color)
             & (file.get_adjacent_files_bb() ^ file.to_bitboard())
             & square.get_rank().get_upper_board_mask(self_color))
         .is_empty()
@@ -669,7 +669,7 @@ impl BoardPosition {
         // TODO: Change Transposition Keys
         self._piece_masks
             .iter_mut()
-            .chain(self._occupied_co.iter_mut())
+            .chain(self._occupied_color.iter_mut())
             .for_each(|bb| *bb = bb.flip_vertical());
         self._occupied = self._occupied.flip_vertical();
         self._castle_rights = [CastleRights::None; NUM_COLORS];
@@ -683,7 +683,7 @@ impl BoardPosition {
         // TODO: Change Transposition Keys
         self._piece_masks
             .iter_mut()
-            .chain(self._occupied_co.iter_mut())
+            .chain(self._occupied_color.iter_mut())
             .for_each(|bb| *bb = bb.flip_horizontal());
         self._occupied = self._occupied.flip_horizontal();
         self._castle_rights = [CastleRights::None; NUM_COLORS];
@@ -805,7 +805,7 @@ impl BoardPosition {
 
         let attackers = sliding_attackers ^ non_sliding_attackers;
 
-        color.map_or(attackers, |color| attackers & self.occupied_co(color))
+        color.map_or(attackers, |color| attackers & self.occupied_color(color))
     }
 
     #[inline]
@@ -839,7 +839,7 @@ impl BoardPosition {
             King => target_square.get_king_moves(),
         } & self.get_piece_mask(piece_type);
 
-        color.map_or(attackers, |color| attackers & self.occupied_co(color))
+        color.map_or(attackers, |color| attackers & self.occupied_color(color))
     }
 
     pub fn get_least_attackers_square(
@@ -993,8 +993,8 @@ impl BoardPosition {
     //     let kings = self.get_piece_mask(King);
     //     let touched_kings_cr = touched_cr & kings;
     //     !touched_cr.is_empty()
-    //         || !(BB_RANK_1 & touched_kings_cr & self.occupied_co(White)).is_empty()
-    //         || !(BB_RANK_8 & touched_kings_cr & self.occupied_co(Black)).is_empty()
+    //         || !(BB_RANK_1 & touched_kings_cr & self.occupied_color(White)).is_empty()
+    //         || !(BB_RANK_8 & touched_kings_cr & self.occupied_color(Black)).is_empty()
     // }
 
     pub fn reduces_castling_rights(&self, move_: Move) -> bool {
@@ -1006,9 +1006,9 @@ impl BoardPosition {
         !(touched_cr.is_empty()
             && touched_kings_cr_is_empty
             && BB_RANK_1.is_empty()
-            && self.occupied_co(White).is_empty()
+            && self.occupied_color(White).is_empty()
             && BB_RANK_8.is_empty()
-            && self.occupied_co(Black).is_empty())
+            && self.occupied_color(Black).is_empty())
     }
 
     #[inline]
@@ -1082,7 +1082,7 @@ impl BoardPosition {
     }
 
     #[inline]
-    pub fn into_innered_material_score_abs(&self, mask: BitBoard) -> Score {
+    pub fn get_masked_material_score_abs(&self, mask: BitBoard) -> Score {
         get_item_unchecked!(ALL_PIECE_TYPES, ..5)
             .iter()
             .map(|&piece| piece.evaluate() * (self.get_piece_mask(piece) & mask).popcnt() as Score)
@@ -1120,7 +1120,7 @@ impl BoardPosition {
             .iter()
             .cartesian_product(colors)
             .flat_map(move |(&piece_type, &color)| {
-                (self.get_piece_mask(piece_type) & self.occupied_co(color) & mask)
+                (self.get_piece_mask(piece_type) & self.occupied_color(color) & mask)
                     .into_iter()
                     .map(move |square| (Piece::new(piece_type, color), square))
             })
@@ -1142,10 +1142,14 @@ impl BoardPosition {
             BitBoard::new(ob.getattr("kings")?.extract()?),
         ];
         let (black_occupied, white_occupied) = {
-            if let Ok(occupied_co_py_object) = ob.getattr("occupied_co") {
+            if let Ok(occupied_color_py_object) = ob.getattr("occupied_color") {
                 (
-                    occupied_co_py_object.get_item(0)?.extract::<BitBoard>()?,
-                    occupied_co_py_object.get_item(1)?.extract::<BitBoard>()?,
+                    occupied_color_py_object
+                        .get_item(0)?
+                        .extract::<BitBoard>()?,
+                    occupied_color_py_object
+                        .get_item(1)?
+                        .extract::<BitBoard>()?,
                 )
             } else {
                 (
@@ -1329,7 +1333,7 @@ impl BoardPositionMethodOverload<Move> for BoardPosition {
             result.xor(Rook, end, self.turn());
         }
         // now, lets see if we're in check or pinned
-        let attackers = result.occupied_co(result.turn())
+        let attackers = result.occupied_color(result.turn())
             & ((ksq.get_bishop_rays_bb()
                 & (result.get_piece_mask(Bishop) | result.get_piece_mask(Queen)))
                 | (ksq.get_rook_rays_bb()
