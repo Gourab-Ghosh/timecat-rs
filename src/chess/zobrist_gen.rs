@@ -1,5 +1,27 @@
 const TURN: u64 = 4527170993230009529;
 
+// const fn generate_random_u64(seed: u64) -> u64 {
+//     seed
+// }
+
+// const ZOBRIST_PIECES: [[[u64; NUM_SQUARES]; NUM_PIECE_TYPES]; NUM_COLORS] = {
+//     let mut array = [[[0; NUM_SQUARES]; NUM_PIECE_TYPES]; NUM_COLORS];
+//     let mut i = 0;
+//     while i < NUM_COLORS {
+//         let mut j = 0;
+//         while j < NUM_PIECE_TYPES {
+//             let mut k = 0;
+//             while k < NUM_SQUARES {
+//                     array[i][j][k] = generate_random_u64(0);
+//                     k += 1;
+//                 }
+//                 j += 1;
+//             }
+//         i += 1;
+//     }
+//     array
+// };
+
 const ZOBRIST_PIECES: [[[u64; NUM_SQUARES]; NUM_PIECE_TYPES]; NUM_COLORS] = [[[
     8085185598151760447,
     13946325585335384165,
