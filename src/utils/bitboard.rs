@@ -2,13 +2,25 @@ use super::*;
 
 #[repr(transparent)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
+#[derive(Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Debug, Hash)]
 pub struct BitBoard(u64);
 
 impl BitBoard {
     #[inline]
     pub const fn new(bb: u64) -> Self {
         Self(bb)
+    }
+
+    #[inline]
+    pub fn from_array(array: [u64; 8]) -> Self {
+        Self(
+            array
+                .into_iter()
+                .rev()
+                .enumerate()
+                .map(|(i, bb)| bb << (i << 3))
+                .fold(0, |acc, bb| acc ^ bb),
+        )
     }
 
     #[inline]
@@ -105,7 +117,7 @@ impl BitBoard {
 
     #[inline]
     pub const fn shift_left(self) -> Self {
-        return Self((self.0 & !BB_FILE_A.0) >> 1);
+        Self((self.0 & !BB_FILE_A.0) >> 1)
     }
 
     #[inline]

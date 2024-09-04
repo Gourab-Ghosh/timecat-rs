@@ -18,12 +18,12 @@ impl Zobrist {
 
     #[inline]
     pub fn castles(castle_rights: CastleRights, color: Color) -> u64 {
-        *get_item_unchecked!(ZOBRIST_CASTLES, color.to_index(), castle_rights.to_index(),)
+        *get_item_unchecked!(ZOBRIST_CASTLES, color.to_index(), castle_rights.to_index())
     }
 
     #[inline]
     pub fn en_passant(file: File, color: Color) -> u64 {
-        *get_item_unchecked!(ZOBRIST_EP, color.to_index(), file.to_index(),)
+        *get_item_unchecked!(ZOBRIST_EP, color.to_index(), file.to_index())
     }
 
     #[inline]

@@ -470,6 +470,45 @@ impl MoveGenerator {
         move_list
     }
 
+    pub fn has_legal_moves(position: &BoardPosition) -> bool {
+        let checkers = position.get_checkers();
+        let mask = !position.occupied_co(position.turn());
+        let mut move_list = ArrayVec::new();
+
+        let legal_functions = if checkers == BB_EMPTY {
+            [
+                PawnMoves::legals::<NotInCheckMoves>,
+                KnightMoves::legals::<NotInCheckMoves>,
+                BishopMoves::legals::<NotInCheckMoves>,
+                RookMoves::legals::<NotInCheckMoves>,
+                QueenMoves::legals::<NotInCheckMoves>,
+                KingMoves::legals::<NotInCheckMoves>,
+            ]
+        } else if checkers.popcnt() == 1 {
+            [
+                PawnMoves::legals::<InCheckMoves>,
+                KnightMoves::legals::<InCheckMoves>,
+                BishopMoves::legals::<InCheckMoves>,
+                RookMoves::legals::<InCheckMoves>,
+                QueenMoves::legals::<InCheckMoves>,
+                KingMoves::legals::<InCheckMoves>,
+            ]
+        } else {
+            KingMoves::legals::<InCheckMoves>(&mut move_list, position, mask);
+            return !move_list.is_empty();
+        };
+
+        for function in legal_functions {
+            function(&mut move_list, position, mask);
+            if !move_list.is_empty() {
+                return true;
+            }
+            move_list.clear();
+        }
+
+        false
+    }
+
     #[inline]
     pub fn new_legal(position: &BoardPosition) -> MoveGenerator {
         MoveGenerator {

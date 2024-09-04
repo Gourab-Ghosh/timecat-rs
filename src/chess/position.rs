@@ -21,12 +21,12 @@ pub struct BoardPosition {
     _ep_square: Option<Square>,
     _pinned: BitBoard,
     _checkers: BitBoard,
-    _transposition_key: u64,
-    _pawn_transposition_key: u64,
+    _pawn_transposition_hash: u64,
+    _non_pawn_transposition_hash: u64,
+    _transposition_hash: u64,
     _halfmove_clock: u8,
     _fullmove_number: NumMoves,
-    _white_material_score: Score,
-    _black_material_score: Score,
+    _material_scores: [Score; 2],
 }
 
 impl PartialEq for BoardPosition {
@@ -67,28 +67,29 @@ impl BoardPosition {
             _castle_rights: [CastleRights::None; NUM_COLORS],
             _pinned: BB_EMPTY,
             _checkers: BB_EMPTY,
-            _transposition_key: 0,
-            _pawn_transposition_key: 0,
+            _pawn_transposition_hash: 0,
+            _non_pawn_transposition_hash: 0,
+            _transposition_hash: 0,
             _ep_square: None,
             _halfmove_clock: 0,
             _fullmove_number: 1,
-            _white_material_score: 0,
-            _black_material_score: 0,
+            _material_scores: [0; 2],
         }
     }
 
     #[inline]
+    pub fn has_legal_moves(&self) -> bool {
+        MoveGenerator::has_legal_moves(self)
+    }
+
+    #[inline]
     pub fn status(&self) -> BoardStatus {
-        let num_legal_moves = self.generate_legal_moves().len();
-        match num_legal_moves {
-            0 => {
-                if self.get_checkers().is_empty() {
-                    BoardStatus::Stalemate
-                } else {
-                    BoardStatus::Checkmate
-                }
-            }
-            _ => BoardStatus::Ongoing,
+        if self.has_legal_moves() {
+            BoardStatus::Ongoing
+        } else if self.get_checkers() == BB_EMPTY {
+            BoardStatus::Stalemate
+        } else {
+            BoardStatus::Checkmate
         }
     }
 
@@ -262,39 +263,74 @@ impl BoardPosition {
         self.remove_castle_rights(!self.turn(), remove);
     }
 
+    // fn update_transposition_hash(&mut self) {
+    //     self._transposition_hash = self.get_pawn_hash()
+    //         ^ self.get_non_pawn_hash()
+    //         ^ Zobrist::castles(self.castle_rights(self.turn()), self.turn())
+    //         ^ Zobrist::castles(self.castle_rights(!self.turn()), !self.turn());
+    //     if let Some(ep) = self.ep_square() {
+    //         self._transposition_hash ^= Zobrist::en_passant(ep.get_file(), !self.turn());
+    //     }
+    //     if self.turn() == Black {
+    //         self._transposition_hash ^= Zobrist::color();
+    //     }
+    // }
+
     fn xor(&mut self, piece_type: PieceType, bb: BitBoard, color: Color) {
         *get_item_unchecked_mut!(self._piece_masks, piece_type.to_index()) ^= bb;
         let colored_piece_mask = get_item_unchecked_mut!(self._occupied_co, color.to_index());
         let colored_piece_mask_before = *colored_piece_mask;
         *colored_piece_mask ^= bb;
         self._occupied ^= bb;
-        let zobrist_hash = Zobrist::piece(piece_type, bb.to_square(), color);
-        self._transposition_key ^= zobrist_hash;
         if piece_type == Pawn {
-            self._pawn_transposition_key ^= zobrist_hash;
+            self._pawn_transposition_hash ^= Zobrist::piece(piece_type, bb.to_square(), color);
+        } else {
+            self._non_pawn_transposition_hash ^= Zobrist::piece(piece_type, bb.to_square(), color);
         }
         if piece_type != King {
-            let score_change =
-                if colored_piece_mask.into_inner() > colored_piece_mask_before.into_inner() {
+            *get_item_unchecked_mut!(self._material_scores, color.to_index()) +=
+                if *colored_piece_mask > colored_piece_mask_before {
                     piece_type.evaluate()
                 } else {
                     -piece_type.evaluate()
                 };
-            match color {
-                White => self._white_material_score += score_change,
-                Black => self._black_material_score += score_change,
-            }
         }
     }
 
     #[inline]
+    pub fn get_pawn_hash(&self) -> u64 {
+        self._pawn_transposition_hash
+    }
+
+    #[inline]
+    pub fn get_non_pawn_hash(&self) -> u64 {
+        self._non_pawn_transposition_hash
+    }
+
+    #[inline]
+    pub fn get_hash(&self) -> u64 {
+        self.get_pawn_hash()
+            ^ self.get_non_pawn_hash()
+            ^ Zobrist::castles(self.castle_rights(self.turn()), self.turn())
+            ^ Zobrist::castles(self.castle_rights(!self.turn()), !self.turn())
+            ^ self
+                .ep_square()
+                .map_or(0, |ep| Zobrist::en_passant(ep.get_file(), !self.turn()))
+            ^ if self.turn() == Black {
+                Zobrist::color()
+            } else {
+                0
+            }
+    }
+
+    #[inline]
     pub fn get_white_material_score(&self) -> Score {
-        self._white_material_score
+        *get_item_unchecked!(self._material_scores, 0)
     }
 
     #[inline]
     pub fn get_black_material_score(&self) -> Score {
-        self._black_material_score
+        *get_item_unchecked!(self._material_scores, 1)
     }
 
     #[inline]
@@ -310,7 +346,7 @@ impl BoardPosition {
 
     pub fn null_move_unchecked(&self) -> Self {
         let mut result = self.to_owned();
-        result._turn = !result.turn();
+        result.flip_turn_unchecked();
         result.remove_ep();
         result._halfmove_clock += 1;
         result._fullmove_number += 1;
@@ -382,7 +418,7 @@ impl BoardPosition {
 
         // make sure my opponent is not currently in check (because that would be illegal)
         let mut board_copy = self.to_owned();
-        board_copy._turn = !board_copy.turn();
+        board_copy.flip_turn_unchecked();
         board_copy.update_pin_and_checkers_info();
         if !board_copy.get_checkers().is_empty() {
             return false;
@@ -420,34 +456,6 @@ impl BoardPosition {
 
         // it checks out
         true
-    }
-
-    #[inline]
-    pub fn get_hash(&self) -> u64 {
-        self._transposition_key
-            ^ if let Some(ep) = self.ep_square() {
-                Zobrist::en_passant(ep.get_file(), !self.turn())
-            } else {
-                0
-            }
-            ^ Zobrist::castles(
-                *get_item_unchecked!(self._castle_rights, self.turn().to_index()),
-                self.turn(),
-            )
-            ^ Zobrist::castles(
-                *get_item_unchecked!(self._castle_rights, (!self.turn()).to_index()),
-                !self.turn(),
-            )
-            ^ if self.turn() == Black {
-                Zobrist::color()
-            } else {
-                0
-            }
-    }
-
-    #[inline]
-    pub fn get_pawn_hash(&self) -> u64 {
-        self._pawn_transposition_key
     }
 
     #[inline]
@@ -666,8 +674,8 @@ impl BoardPosition {
         self._occupied = self._occupied.flip_vertical();
         self._castle_rights = [CastleRights::None; NUM_COLORS];
         self.update_pin_and_checkers_info();
-        // self._transposition_key = self._transposition_key;
-        // self._pawn_transposition_key = self._pawn_transposition_key;
+        // self._non_pawn_transposition_hash = self._non_pawn_transposition_hash;
+        // self._pawn_transposition_hash = self._pawn_transposition_hash;
         self._ep_square = self._ep_square.map(|square| square.horizontal_mirror());
     }
 
@@ -680,8 +688,8 @@ impl BoardPosition {
         self._occupied = self._occupied.flip_horizontal();
         self._castle_rights = [CastleRights::None; NUM_COLORS];
         self.update_pin_and_checkers_info();
-        // self._transposition_key = self._transposition_key;
-        // self._pawn_transposition_key = self._pawn_transposition_key;
+        // self._non_pawn_transposition_hash = self._non_pawn_transposition_hash;
+        // self._pawn_transposition_hash = self._pawn_transposition_hash;
         self._ep_square = self._ep_square.map(|square| square.vertical_mirror());
     }
 
@@ -1336,7 +1344,8 @@ impl BoardPositionMethodOverload<Move> for BoardPosition {
             }
         }
 
-        result._turn = !result.turn();
+        result.flip_turn_unchecked();
+
         result
     }
 }
@@ -1382,7 +1391,7 @@ impl TryFrom<&BoardPositionBuilder> for BoardPosition {
             }
         }
 
-        position._turn = position_builder.get_turn();
+        position.set_turn_unchecked(position_builder.get_turn());
 
         if let Some(ep) = position_builder.get_en_passant() {
             position._turn = !position.turn();
