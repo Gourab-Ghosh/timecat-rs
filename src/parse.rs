@@ -130,6 +130,10 @@ impl UserCommand {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct TimecatResponse {}
+
 impl From<UserCommand> for Result<Vec<UserCommand>> {
     fn from(value: UserCommand) -> Self {
         Ok(vec![value])
