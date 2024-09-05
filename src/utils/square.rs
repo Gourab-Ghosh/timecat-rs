@@ -115,6 +115,17 @@ const ROOK_RAYS: [BitBoard; NUM_SQUARES] = {
     array
 };
 
+const ALL_RAYS: [BitBoard; NUM_SQUARES] = {
+    let mut array = [BB_EMPTY; NUM_SQUARES];
+    let mut index = 0;
+    while index < NUM_SQUARES {
+        array[index] =
+            BitBoard::new(ROOK_RAYS[index].into_inner() ^ BISHOP_RAYS[index].into_inner());
+        index += 1;
+    }
+    array
+};
+
 const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
     const fn cmp(int1: u8, int2: u8) -> Ordering {
         if int1 > int2 {
@@ -127,12 +138,8 @@ const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
     }
 
     const fn calculate_between(square1: Square, square2: Square) -> BitBoard {
-        if (ROOK_RAYS[square1.to_index()].into_inner()
-            & BB_SQUARES[square2.to_index()].into_inner())
+        if (ALL_RAYS[square1.to_index()].into_inner() & BB_SQUARES[square2.to_index()].into_inner())
             == 0
-            && (BISHOP_RAYS[square1.to_index()].into_inner()
-                & BB_SQUARES[square2.to_index()].into_inner())
-                == 0
         {
             return BB_EMPTY;
         }
@@ -182,10 +189,12 @@ const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
 
 const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
     const fn calculate_line(square1: Square, square2: Square) -> BitBoard {
-        #[cfg(debug_assertions)]
-        if square1.to_int() == square2.to_int() {
-            unreachable!();
+        if (ALL_RAYS[square1.to_index()].into_inner() & BB_SQUARES[square2.to_index()].into_inner())
+            == 0
+        {
+            return BB_EMPTY;
         }
+
         let square2_bb = BB_SQUARES[square2.to_index()];
         let mut possible_line = BB_RANKS[square1.get_rank().to_index()];
         if possible_line.into_inner() & square2_bb.into_inner() != 0 {
@@ -203,7 +212,8 @@ const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
         if possible_line.into_inner() & square2_bb.into_inner() != 0 {
             return possible_line;
         }
-        BB_EMPTY
+        
+        unreachable!();
     }
 
     let mut array = [[BB_EMPTY; NUM_SQUARES]; NUM_SQUARES];
@@ -505,6 +515,12 @@ impl Square {
     #[inline]
     pub fn get_rook_rays_bb(self) -> BitBoard {
         *get_item_unchecked!(ROOK_RAYS, self.to_index())
+    }
+
+    /// Get the rays for a rook and bishop together on a particular square.
+    #[inline]
+    pub fn get_all_rays_bb(self) -> BitBoard {
+        *get_item_unchecked!(ALL_RAYS, self.to_index())
     }
 
     /// Get the king moves for a particular square.
