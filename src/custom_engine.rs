@@ -273,7 +273,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
             let mut threaded_searcher = self.generate_searcher(id);
             let controller = self.controller.clone();
             let join_handle = thread::spawn(move || {
-                threaded_searcher.go(GoCommand::Infinite, controller, false);
+                threaded_searcher.go(&GoCommand::Infinite, controller, false);
             });
             join_handles.push(join_handle);
         }
@@ -286,7 +286,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
             }));
         }
         let mut main_thread_searcher = self.generate_searcher(0);
-        main_thread_searcher.go(command.clone(), self.controller.clone(), verbose);
+        main_thread_searcher.go(command, self.controller.clone(), verbose);
         self.set_stop_command(true);
         for join_handle in join_handles {
             join_handle.join().unwrap();

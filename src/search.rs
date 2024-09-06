@@ -693,12 +693,12 @@ impl<P: PositionEvaluation> Searcher<P> {
 
     pub fn go(
         &mut self,
-        mut command: GoCommand,
+        mut command: &GoCommand,
         mut controller: impl SearchControl<Self>,
         verbose: bool,
     ) {
         if self.board.generate_legal_moves().len() == 1 {
-            command = GoCommand::Depth(1);
+            command = &GoCommand::Depth(1);
         }
         controller.on_receiving_go_command(command, self);
         let mut alpha = -INFINITY;

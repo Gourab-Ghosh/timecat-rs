@@ -70,11 +70,11 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
         }
     }
 
-    fn on_receiving_go_command(&mut self, command: GoCommand, searcher: &Searcher<P>) {
+    fn on_receiving_go_command(&mut self, command: &GoCommand, searcher: &Searcher<P>) {
         let board = searcher.get_board();
         match command {
-            GoCommand::MoveTime(duration) => self.set_max_time(duration),
-            GoCommand::Timed {
+            &GoCommand::MoveTime(duration) => self.set_max_time(duration),
+            &GoCommand::Timed {
                 wtime,
                 btime,
                 winc,
@@ -113,7 +113,7 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
                     .max(Duration::from_millis(100));
                 self.set_max_time(search_time);
             }
-            GoCommand::Depth(depth) => self.max_depth = depth,
+            &GoCommand::Depth(depth) => self.max_depth = depth,
             GoCommand::Infinite | GoCommand::Ponder => (),
         }
     }
