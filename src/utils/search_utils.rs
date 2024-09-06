@@ -3,12 +3,12 @@ use super::*;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum GoCommand {
+    Ponder,
     Infinite,
     MoveTime(Duration),
     Depth(Depth),
     // Nodes(usize),
     // Mate(Ply),
-    Ponder,
     // SearchMoves {
     //     go_command: Box<Self>,
     //     moves: Vec<Move>,
@@ -74,7 +74,7 @@ impl TryFrom<&[&str]> for GoCommand {
 
     fn try_from(commands: &[&str]) -> std::result::Result<Self, Self::Error> {
         // TODO: Improve Unknown Command Detection
-        if ["perft", "depth", "movetime", "infinite"]
+        if ["perft", "depth", "movetime", "ponder", "infinite"]
             .iter()
             .filter(|&s| commands.contains(s))
             .count()
