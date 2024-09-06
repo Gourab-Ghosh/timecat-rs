@@ -79,7 +79,7 @@ pub trait SearchControl<Searcher>: Clone + Send + 'static {
     fn reset_variables(&mut self);
     fn stop_search_at_root_node(&mut self, searcher: &Searcher) -> bool;
     fn stop_search_at_every_node(&mut self, searcher: &Searcher) -> bool;
-    fn on_receiving_go_command(&mut self, command: &GoCommand, searcher: &Searcher);
+    fn on_receiving_search_config(&mut self, config: &SearchConfig, searcher: &Searcher);
     fn on_each_search_completion(&mut self, searcher: &Searcher);
 
     #[inline]
@@ -137,7 +137,7 @@ pub trait ChessEngine {
     fn clear_hash(&mut self);
     fn evaluate_current_position(&mut self) -> Score;
     fn evaluate_current_position_flipped(&mut self) -> Score;
-    fn go(&mut self, command: &GoCommand, verbose: bool) -> SearchInfo;
+    fn go(&mut self, config: &SearchConfig, verbose: bool) -> SearchInfo;
 
     #[inline]
     fn print_info(&self) {}
@@ -148,14 +148,14 @@ pub trait ChessEngine {
 
     #[inline]
     #[must_use = "If you don't need the search info, you can just search the position."]
-    fn go_quiet(&mut self, command: &GoCommand) -> SearchInfo {
-        self.go(command, false)
+    fn go_quiet(&mut self, config: &SearchConfig) -> SearchInfo {
+        self.go(config, false)
     }
 
     #[inline]
     #[must_use = "If you don't need the search info, you can just search the position."]
-    fn go_verbose(&mut self, command: &GoCommand) -> SearchInfo {
-        self.go(command, true)
+    fn go_verbose(&mut self, config: &SearchConfig) -> SearchInfo {
+        self.go(config, true)
     }
 
     fn with_io_reader(mut self, optional_io_reader: Self::IoReader) -> Self

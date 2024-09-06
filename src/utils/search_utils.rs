@@ -1,7 +1,7 @@
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum GoCommand {
     Ponder,
     Infinite,
@@ -51,6 +51,97 @@ impl GoCommand {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct SearchConfig {
+    go_command: GoCommand,
+    moves_to_search: Option<Vec<Move>>,
+}
+
+impl SearchConfig {
+    #[inline]
+    pub const fn from_go_command(go_command: GoCommand) -> Self {
+        Self {
+            go_command,
+            moves_to_search: None,
+        }
+    }
+
+    #[inline]
+    pub const fn new_ponder() -> Self {
+        Self::from_go_command(GoCommand::Ponder)
+    }
+
+    #[inline]
+    pub const fn new_infinite() -> Self {
+        Self::from_go_command(GoCommand::Infinite)
+    }
+
+    #[inline]
+    pub const fn new_move_time(duration: Duration) -> Self {
+        Self::from_go_command(GoCommand::MoveTime(duration))
+    }
+
+    #[inline]
+    pub const fn new_depth(depth: Depth) -> Self {
+        Self::from_go_command(GoCommand::Depth(depth))
+    }
+
+    // #[inline]
+    // pub const fn new_nodes(nodes: usize) -> Self {
+    //     Self::from_go_command(GoCommand::Nodes(nodes))
+    // }
+
+    // #[inline]
+    // pub const fn new_mate(mate: Ply) -> Self {
+    //     Self::from_go_command(GoCommand::Mate(mate))
+    // }
+
+    #[inline]
+    pub const fn new_timed(
+        wtime: Duration,
+        btime: Duration,
+        winc: Duration,
+        binc: Duration,
+        moves_to_go: Option<NumMoves>,
+    ) -> Self {
+        Self::from_go_command(GoCommand::Timed {
+            wtime,
+            btime,
+            winc,
+            binc,
+            moves_to_go,
+        })
+    }
+
+    #[inline]
+    pub const fn get_command(&self) -> GoCommand {
+        self.go_command
+    }
+
+    #[inline]
+    pub fn get_moves_to_search(&self) -> Option<&[Move]> {
+        self.moves_to_search.as_deref()
+    }
+}
+
+impl Deref for SearchConfig {
+    type Target = GoCommand;
+
+    fn deref(&self) -> &Self::Target {
+        &self.go_command
+    }
+}
+
+impl From<GoCommand> for SearchConfig {
+    fn from(go_command: GoCommand) -> Self {
+        Self {
+            go_command,
+            moves_to_search: None,
+        }
+    }
+}
+
 macro_rules! extract_value {
     ($commands:ident, $command:expr) => {
         $commands
@@ -69,11 +160,27 @@ macro_rules! extract_time {
     };
 }
 
-impl TryFrom<&[&str]> for GoCommand {
+impl TryFrom<&[&str]> for SearchConfig {
     type Error = TimecatError;
 
     fn try_from(commands: &[&str]) -> std::result::Result<Self, Self::Error> {
         // TODO: Improve Unknown Command Detection
+        let binding = commands
+            .iter()
+            .map(|command| command.to_lowercase())
+            .collect_vec();
+        let mut iter = binding.iter();
+        let mut commands = vec![];
+        let mut moves_str = vec![];
+        while let Some(s) = iter.next() {
+            if s == "searchmoves" {
+                break;
+            }
+            commands.push(s.as_str());
+        }
+        while let Some(s) = iter.next() {
+            moves_str.push(s.as_str());
+        }
         if ["perft", "depth", "movetime", "ponder", "infinite"]
             .iter()
             .filter(|&s| commands.contains(s))
@@ -96,12 +203,7 @@ impl TryFrom<&[&str]> for GoCommand {
             ("ponder", 2),
             ("infinite", 2),
         ] {
-            if second_command == string
-                && ["searchmove", "searchmoves"]
-                    .into_iter()
-                    .map(|command| Some(command))
-                    .contains(&commands.get(index).copied())
-            {
+            if second_command == string && commands.get(index).is_some() {
                 return Err(TimecatError::InvalidGoCommand {
                     s: commands.join(" "),
                 });
@@ -118,31 +220,39 @@ impl TryFrom<&[&str]> for GoCommand {
                 if depth.is_negative() {
                     return Err(TimecatError::InvalidDepth { depth });
                 }
-                Ok(GoCommand::Depth(depth))
+                GoCommand::Depth(depth)
             }
-            "movetime" => Ok(GoCommand::from_millis(
+            "movetime" => GoCommand::from_millis(
                 commands
                     .get(2)
                     .ok_or(TimecatError::InvalidGoCommand {
                         s: commands.join(" "),
                     })?
                     .parse()?,
-            )),
-            "infinite" => Ok(GoCommand::Infinite),
-            "ponder" => Ok(GoCommand::Ponder),
-            _ => Ok(GoCommand::Timed {
+            ),
+            "infinite" => GoCommand::Infinite,
+            "ponder" => GoCommand::Ponder,
+            _ => GoCommand::Timed {
                 wtime: extract_time!(commands, "wtime").ok_or(TimecatError::WTimeNotMentioned)?,
                 btime: extract_time!(commands, "btime").ok_or(TimecatError::BTimeNotMentioned)?,
                 winc: extract_time!(commands, "winc").unwrap_or(Duration::ZERO),
                 binc: extract_time!(commands, "binc").unwrap_or(Duration::ZERO),
                 moves_to_go: extract_value!(commands, "movestogo"),
-            }),
+            },
         };
-        go_command
+        Ok(Self {
+            go_command,
+            moves_to_search: Some(
+                moves_str
+                    .into_iter()
+                    .map(|move_str| Move::from_str(move_str))
+                    .collect::<Result<Vec<_>>>()?,
+            ),
+        })
     }
 }
 
-impl TryFrom<Vec<&str>> for GoCommand {
+impl TryFrom<Vec<&str>> for SearchConfig {
     type Error = TimecatError;
 
     fn try_from(commands: Vec<&str>) -> std::result::Result<Self, Self::Error> {
@@ -150,11 +260,11 @@ impl TryFrom<Vec<&str>> for GoCommand {
     }
 }
 
-impl FromStr for GoCommand {
+impl FromStr for SearchConfig {
     type Err = TimecatError;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        let binding = remove_double_spaces_and_trim(s);
+        let binding = remove_double_spaces_and_trim(s).to_lowercase();
         let commands = binding.split(' ').collect_vec();
         Self::try_from(commands)
     }

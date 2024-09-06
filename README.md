@@ -88,7 +88,7 @@ fn main() {
     let mut engine = Engine::from_board(board);
 
     // Configure the engine to search for the best move up to a depth of 10 plies.
-    let response = engine.go_verbose(&GoCommand::Depth(10));
+    let response = engine.go_verbose(&GoCommand::Depth(10).into());
     let best_move = response.get_best_move().expect("No best move found");
 
     // Output the best move found by the engine.
@@ -149,7 +149,7 @@ use std::error::Error;
 fn main() -> Result<(), Box<dyn Error>> {
     self_play(
         &mut Engine::default(),
-        &GoCommand::MoveTime(Duration::from_millis(10)),
+        &GoCommand::MoveTime(Duration::from_millis(10)).into(),
         // set to verbose mode (true/false)
         true,
         // Limit to number of moves to play (u16/Some(u16)/None), None denoting no limit

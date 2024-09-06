@@ -26,7 +26,7 @@ pub enum UserCommand {
     Stop,
     Help,
     Perft(Depth),
-    Go(GoCommand),
+    Go(SearchConfig),
     PushMoves(String),
     PopMoves(u16),
     SetFen(String),
@@ -35,7 +35,7 @@ pub enum UserCommand {
     SetUCIOption {
         user_input: String,
     },
-    SelfPlay(GoCommand),
+    SelfPlay(SearchConfig),
     // SetHashSize(u64),
     // SetThreads(u8),
     // SetMultiPV(u8),
@@ -111,7 +111,7 @@ impl UserCommand {
             }
             Self::Help => println_wasm!("{}", Self::generate_help_message()),
             &Self::Perft(depth) => GoAndPerft::run_perft_command(engine, depth)?,
-            Self::Go(go_command) => GoAndPerft::run_go_command(engine, go_command)?,
+            Self::Go(config) => GoAndPerft::run_go_command(engine, config)?,
             Self::PushMoves(user_input) => {
                 let binding = Parser::sanitize_string(user_input);
                 Push::push_moves(engine, &binding.split_whitespace().collect_vec())?
@@ -123,7 +123,7 @@ impl UserCommand {
             Self::SetUCIOption { user_input } => {
                 uci_state_manager.run_command(engine, user_input)?
             }
-            Self::SelfPlay(go_command) => self_play(engine, go_command, true, None)?,
+            Self::SelfPlay(config) => self_play(engine, config, true, None)?,
         }
 
         Ok(())
@@ -148,7 +148,7 @@ impl GoAndPerft {
         if second_command == "perft" {
             UserCommand::Perft(commands.get(2).ok_or(UnknownCommand)?.parse()?).into()
         } else {
-            UserCommand::Go(GoCommand::try_from(commands)?).into()
+            UserCommand::Go(SearchConfig::try_from(commands)?).into()
         }
     }
 
@@ -170,12 +170,12 @@ impl GoAndPerft {
         Ok(())
     }
 
-    fn run_go_command(engine: &mut impl ChessEngine, go_command: &GoCommand) -> Result<()> {
+    fn run_go_command(engine: &mut impl ChessEngine, config: &SearchConfig) -> Result<()> {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
-        let response = engine.go_verbose(go_command);
+        let response = engine.go_verbose(config);
         let best_move = response.get_best_move().ok_or(BestMoveNotFound {
             fen: engine.get_board().get_fen(),
         })?;
@@ -346,12 +346,12 @@ impl SelfPlay {
     fn parse_sub_commands(commands: &[&str]) -> Result<Vec<UserCommand>> {
         let mut commands = commands.to_vec();
         commands[0] = "go";
-        let go_command = if commands.get(1).is_some() {
-            GoCommand::try_from(commands)?
+        let config = if commands.get(1).is_some() {
+            SearchConfig::try_from(commands)?
         } else {
             DEFAULT_SELFPLAY_COMMAND
         };
-        UserCommand::SelfPlay(go_command).into()
+        UserCommand::SelfPlay(config).into()
     }
 }
 

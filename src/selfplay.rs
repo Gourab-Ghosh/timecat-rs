@@ -12,7 +12,7 @@ fn calculate_prediction_accuracy(rms: f64) -> f64 {
 
 pub fn self_play(
     engine: &mut impl ChessEngine,
-    go_command: &GoCommand,
+    search_config: &SearchConfig,
     verbose: bool,
     move_limit: impl Into<Option<NumMoves>> + Copy,
 ) -> Result<()> {
@@ -37,7 +37,7 @@ pub fn self_play(
         if verbose {
             println_wasm!();
         }
-        let response = engine.go(go_command, verbose);
+        let response = engine.go(search_config, verbose);
         let Some(best_move) = response.get_best_move() else {
             return Err(TimecatError::BestMoveNotFound {
                 fen: engine.get_board().get_fen(),
@@ -123,7 +123,7 @@ pub fn self_play(
             .map(|&score| score.stringify())
             .join(", "),
     );
-    match go_command {
+    match search_config.get_command() {
         GoCommand::Depth(depth) => println_info("Depth Searched", depth),
         GoCommand::MoveTime(time) => println_info("Time Searched Per Move", time.stringify()),
         _ => (),

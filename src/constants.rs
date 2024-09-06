@@ -238,7 +238,8 @@ pub mod engine {
 pub mod binary {
     use super::*;
 
-    pub const DEFAULT_SELFPLAY_COMMAND: GoCommand = GoCommand::from_millis(3000);
+    pub const DEFAULT_SELFPLAY_COMMAND: SearchConfig =
+        SearchConfig::from_go_command(GoCommand::from_millis(3000));
 }
 
 pub mod io {
