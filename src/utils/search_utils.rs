@@ -90,14 +90,24 @@ impl TryFrom<&[&str]> for GoCommand {
                 s: commands.join(" "),
             })?
             .to_lowercase();
-        for (string, index) in [("depth", 3), ("movetime", 3), ("infinite", 2)] {
-            if second_command == string && commands.get(index).is_some() {
+        for (string, index) in [
+            ("depth", 3),
+            ("movetime", 3),
+            ("ponder", 2),
+            ("infinite", 2),
+        ] {
+            if second_command == string
+                && ["searchmove", "searchmoves"]
+                    .into_iter()
+                    .map(|command| Some(command))
+                    .contains(&commands.get(index).copied())
+            {
                 return Err(TimecatError::InvalidGoCommand {
                     s: commands.join(" "),
                 });
             }
         }
-        match second_command.as_str() {
+        let go_command = match second_command.as_str() {
             "depth" => {
                 let depth: Depth = commands
                     .get(2)
@@ -120,9 +130,6 @@ impl TryFrom<&[&str]> for GoCommand {
             )),
             "infinite" => Ok(GoCommand::Infinite),
             "ponder" => Ok(GoCommand::Ponder),
-            // "search" => {
-            //     moves = commands.iter().skip(2)
-            // },
             _ => Ok(GoCommand::Timed {
                 wtime: extract_time!(commands, "wtime").ok_or(TimecatError::WTimeNotMentioned)?,
                 btime: extract_time!(commands, "btime").ok_or(TimecatError::BTimeNotMentioned)?,
@@ -130,7 +137,8 @@ impl TryFrom<&[&str]> for GoCommand {
                 binc: extract_time!(commands, "binc").unwrap_or(Duration::ZERO),
                 moves_to_go: extract_value!(commands, "movestogo"),
             }),
-        }
+        };
+        go_command
     }
 }
 
