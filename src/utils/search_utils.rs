@@ -28,7 +28,7 @@ impl GoCommand {
     }
 
     pub fn is_infinite(&self) -> bool {
-        self == &Self::Infinite
+        *self == Self::Infinite
     }
 
     pub fn is_move_time(&self) -> bool {
