@@ -212,7 +212,7 @@ const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
         if possible_line.into_inner() & square2_bb.into_inner() != 0 {
             return possible_line;
         }
-        
+
         unreachable!();
     }
 

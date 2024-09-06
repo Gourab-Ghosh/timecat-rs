@@ -9,7 +9,10 @@ pub enum GoCommand {
     // Nodes(usize),
     // Mate(usize),
     Ponder,
-    // SearchMoves(Vec<Move>),
+    // SearchMoves {
+    //     go_command: Box<Self>,
+    //     moves: Vec<Move>,
+    // },
     Timed {
         wtime: Duration,
         btime: Duration,
@@ -45,6 +48,107 @@ impl GoCommand {
             Self::Depth(depth) => *depth,
             _ => depth,
         }
+    }
+}
+
+macro_rules! extract_value {
+    ($commands:ident, $command:expr) => {
+        $commands
+            .iter()
+            .skip_while(|&&s| s != $command)
+            .skip(1)
+            .next()
+            .map(|s| s.parse())
+            .transpose()?
+    };
+}
+
+macro_rules! extract_time {
+    ($commands:ident, $command:expr) => {
+        extract_value!($commands, $command).map(|t| Duration::from_millis(t))
+    };
+}
+
+impl TryFrom<&[&str]> for GoCommand {
+    type Error = TimecatError;
+
+    fn try_from(commands: &[&str]) -> std::result::Result<Self, Self::Error> {
+        // TODO: Improve Unknown Command Detection
+        if ["perft", "depth", "movetime", "infinite"]
+            .iter()
+            .filter(|&s| commands.contains(s))
+            .count()
+            > 1
+        {
+            return Err(TimecatError::InvalidGoCommand {
+                s: commands.join(" "),
+            });
+        }
+        let second_command = commands
+            .get(1)
+            .ok_or(TimecatError::InvalidGoCommand {
+                s: commands.join(" "),
+            })?
+            .to_lowercase();
+        for (string, index) in [("depth", 3), ("movetime", 3), ("infinite", 2)] {
+            if second_command == string && commands.get(index).is_some() {
+                return Err(TimecatError::InvalidGoCommand {
+                    s: commands.join(" "),
+                });
+            }
+        }
+        match second_command.as_str() {
+            "depth" => {
+                let depth: Depth = commands
+                    .get(2)
+                    .ok_or(TimecatError::InvalidGoCommand {
+                        s: commands.join(" "),
+                    })?
+                    .parse()?;
+                if depth.is_negative() {
+                    return Err(TimecatError::InvalidDepth { depth });
+                }
+                Ok(GoCommand::Depth(depth))
+            }
+            "movetime" => Ok(GoCommand::from_millis(
+                commands
+                    .get(2)
+                    .ok_or(TimecatError::InvalidGoCommand {
+                        s: commands.join(" "),
+                    })?
+                    .parse()?,
+            )),
+            "infinite" => Ok(GoCommand::Infinite),
+            "ponder" => Ok(GoCommand::Ponder),
+            // "search" => {
+            //     moves = commands.iter().skip(2)
+            // },
+            _ => Ok(GoCommand::Timed {
+                wtime: extract_time!(commands, "wtime").ok_or(TimecatError::WTimeNotMentioned)?,
+                btime: extract_time!(commands, "btime").ok_or(TimecatError::BTimeNotMentioned)?,
+                winc: extract_time!(commands, "winc").unwrap_or(Duration::ZERO),
+                binc: extract_time!(commands, "binc").unwrap_or(Duration::ZERO),
+                moves_to_go: extract_value!(commands, "movestogo"),
+            }),
+        }
+    }
+}
+
+impl TryFrom<Vec<&str>> for GoCommand {
+    type Error = TimecatError;
+
+    fn try_from(commands: Vec<&str>) -> std::result::Result<Self, Self::Error> {
+        Self::try_from(commands.as_slice())
+    }
+}
+
+impl FromStr for GoCommand {
+    type Err = TimecatError;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let binding = remove_double_spaces_and_trim(s);
+        let commands = binding.split(' ').collect_vec();
+        Self::try_from(commands)
     }
 }
 

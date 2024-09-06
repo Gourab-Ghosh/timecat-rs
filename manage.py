@@ -5,6 +5,7 @@ from manager import *
 
 os.environ["RUST_BACKTRACE"] = "1"
 
+
 def process_args():
     binary_args_started = False
     args = set()
@@ -18,6 +19,7 @@ def process_args():
                 continue
             args.add(arg)
     return args, binary_args
+
 
 def main():
     FEATURE_SETS_CHECK = [
@@ -37,7 +39,9 @@ def main():
         sys.path.append(possible_cargo_path)
 
     if which("cargo") is None:
-        print("Cargo not found. Please install Rust from https://www.rust-lang.org/tools/install")
+        print(
+            "Cargo not found. Please install Rust from https://www.rust-lang.org/tools/install"
+        )
         return
 
     args, binary_args = process_args()
@@ -47,7 +51,7 @@ def main():
             return
 
     if "clippy" in args:
-        if check_errors(FEATURE_SETS_CHECK, clippy = True):
+        if check_errors(FEATURE_SETS_CHECK, clippy=True):
             return
 
     if "test" in args:
@@ -59,7 +63,7 @@ def main():
             return
 
     if "run" in args:
-        run_package(os.path.dirname(__file__), args = args, binary_args = binary_args)
+        run_package(os.path.dirname(__file__), args=args, binary_args=binary_args)
 
     if "backup" in args:
         backup_code("--noconfirm" in args)
@@ -70,6 +74,7 @@ def main():
             if not test_package():
                 backup_code("--noconfirm" in args)
                 publish_package()
+
 
 if __name__ == "__main__":
     main()

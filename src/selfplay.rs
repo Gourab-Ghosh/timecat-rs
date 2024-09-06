@@ -123,10 +123,10 @@ pub fn self_play(
             .map(|&score| score.stringify())
             .join(", "),
     );
-    if let GoCommand::Depth(depth) = go_command {
-        println_info("Depth Searched", format!("{}", depth));
-    } else if let GoCommand::MoveTime(time) = go_command {
-        println_info("Time Searched Per Move", time.stringify());
+    match go_command {
+        GoCommand::Depth(depth) => println_info("Depth Searched", depth),
+        GoCommand::MoveTime(time) => println_info("Time Searched Per Move", time.stringify()),
+        _ => (),
     }
     println_info(
         "Time taken per move",

@@ -1,7 +1,11 @@
 import os
 
+
 def get_environment_variables(*flags):
-    return "-C target-cpu=native {}".format(" ".join("-C link-args=" + flag.strip() for flag in set(flags))).strip()
+    return "-C target-cpu=native {}".format(
+        " ".join("-C link-args=" + flag.strip() for flag in set(flags))
+    ).strip()
+
 
 def run_command_with_target_cpu_native(command: str):
     try:
@@ -11,6 +15,7 @@ def run_command_with_target_cpu_native(command: str):
         return os.system(command)
     finally:
         del os.environ["RUSTFLAGS"]
+
 
 def build_binary(is_release: bool, is_debug: bool = True):
     commands = ["cargo", "build"]

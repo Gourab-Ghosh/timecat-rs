@@ -140,76 +140,15 @@ impl From<UserCommand> for Result<Vec<UserCommand>> {
     }
 }
 
-macro_rules! extract_value {
-    ($commands:ident, $command:expr) => {
-        $commands
-            .iter()
-            .skip_while(|&&s| s != $command)
-            .skip(1)
-            .next()
-            .map(|s| s.parse())
-            .transpose()?
-    };
-}
-
-macro_rules! extract_time {
-    ($commands:ident, $command:expr) => {
-        extract_value!($commands, $command).map(|t| Duration::from_millis(t))
-    };
-}
-
 struct GoAndPerft;
 
 impl GoAndPerft {
-    fn extract_depth(depth_str: &str) -> Result<Depth> {
-        let depth: Depth = depth_str.parse()?;
-        if depth.is_negative() {
-            return Err(InvalidDepth { depth });
-        }
-        Ok(depth)
-    }
-
-    fn extract_go_command(commands: &[&str]) -> Result<GoCommand> {
-        // TODO: Improve Unknown Command Detection
-        if ["perft", "depth", "movetime", "infinite"]
-            .iter()
-            .filter(|&s| commands.contains(s))
-            .count()
-            > 1
-        {
-            return Err(UnknownCommand);
-        }
-        let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
-        for (string, index) in [("depth", 3), ("movetime", 3), ("infinite", 2)] {
-            if second_command == string && commands.get(index).is_some() {
-                return Err(UnknownCommand);
-            }
-        }
-        match second_command.as_str() {
-            "depth" => Ok(GoCommand::Depth(Self::extract_depth(
-                commands.get(2).ok_or(UnknownCommand)?,
-            )?)),
-            "movetime" => Ok(GoCommand::from_millis(
-                commands.get(2).ok_or(UnknownCommand)?.parse()?,
-            )),
-            "infinite" => Ok(GoCommand::Infinite),
-            "ponder" => Ok(GoCommand::Ponder),
-            _ => Ok(GoCommand::Timed {
-                wtime: extract_time!(commands, "wtime").ok_or(WTimeNotMentioned)?,
-                btime: extract_time!(commands, "btime").ok_or(BTimeNotMentioned)?,
-                winc: extract_time!(commands, "winc").unwrap_or(Duration::new(0, 0)),
-                binc: extract_time!(commands, "binc").unwrap_or(Duration::new(0, 0)),
-                moves_to_go: extract_value!(commands, "movestogo"),
-            }),
-        }
-    }
-
     pub fn parse_sub_commands(commands: &[&str]) -> Result<Vec<UserCommand>> {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         if second_command == "perft" {
             UserCommand::Perft(commands.get(2).ok_or(UnknownCommand)?.parse()?).into()
         } else {
-            UserCommand::Go(Self::extract_go_command(commands)?).into()
+            UserCommand::Go(GoCommand::try_from(commands)?).into()
         }
     }
 
@@ -408,7 +347,7 @@ impl SelfPlay {
         let mut commands = commands.to_vec();
         commands[0] = "go";
         let go_command = if commands.get(1).is_some() {
-            GoAndPerft::extract_go_command(&commands)?
+            GoCommand::try_from(commands)?
         } else {
             DEFAULT_SELFPLAY_COMMAND
         };
