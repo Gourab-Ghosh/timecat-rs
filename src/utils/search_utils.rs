@@ -7,7 +7,7 @@ pub enum GoCommand {
     MoveTime(Duration),
     Depth(Depth),
     // Nodes(usize),
-    // Mate(usize),
+    // Mate(Ply),
     Ponder,
     // SearchMoves {
     //     go_command: Box<Self>,
