@@ -137,7 +137,7 @@ pub trait ChessEngine {
     fn clear_hash(&mut self);
     fn evaluate_current_position(&mut self) -> Score;
     fn evaluate_current_position_flipped(&mut self) -> Score;
-    fn go(&mut self, command: GoCommand, verbose: bool) -> SearchInfo;
+    fn go(&mut self, command: &GoCommand, verbose: bool) -> SearchInfo;
 
     #[inline]
     fn print_info(&self) {}
@@ -148,13 +148,13 @@ pub trait ChessEngine {
 
     #[inline]
     #[must_use = "If you don't need the search info, you can just search the position."]
-    fn go_quiet(&mut self, command: GoCommand) -> SearchInfo {
+    fn go_quiet(&mut self, command: &GoCommand) -> SearchInfo {
         self.go(command, false)
     }
 
     #[inline]
     #[must_use = "If you don't need the search info, you can just search the position."]
-    fn go_verbose(&mut self, command: GoCommand) -> SearchInfo {
+    fn go_verbose(&mut self, command: &GoCommand) -> SearchInfo {
         self.go(command, true)
     }
 

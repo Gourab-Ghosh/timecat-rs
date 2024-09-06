@@ -1,7 +1,7 @@
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum GoCommand {
     Ponder,
     Infinite,

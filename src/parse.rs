@@ -111,7 +111,7 @@ impl UserCommand {
             }
             Self::Help => println_wasm!("{}", Self::generate_help_message()),
             &Self::Perft(depth) => GoAndPerft::run_perft_command(engine, depth)?,
-            &Self::Go(go_command) => GoAndPerft::run_go_command(engine, go_command)?,
+            Self::Go(go_command) => GoAndPerft::run_go_command(engine, go_command)?,
             Self::PushMoves(user_input) => {
                 let binding = Parser::sanitize_string(user_input);
                 Push::push_moves(engine, &binding.split_whitespace().collect_vec())?
@@ -123,7 +123,7 @@ impl UserCommand {
             Self::SetUCIOption { user_input } => {
                 uci_state_manager.run_command(engine, user_input)?
             }
-            &Self::SelfPlay(go_command) => self_play(engine, go_command, true, None)?,
+            Self::SelfPlay(go_command) => self_play(engine, go_command, true, None)?,
         }
 
         Ok(())
@@ -170,7 +170,7 @@ impl GoAndPerft {
         Ok(())
     }
 
-    fn run_go_command(engine: &mut impl ChessEngine, go_command: GoCommand) -> Result<()> {
+    fn run_go_command(engine: &mut impl ChessEngine, go_command: &GoCommand) -> Result<()> {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!("{}\n", engine.get_board());
         }

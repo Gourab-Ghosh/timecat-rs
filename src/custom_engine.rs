@@ -266,7 +266,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
     }
 
     #[must_use = "If you don't need the search info, you can just search the position."]
-    fn go(&mut self, command: GoCommand, verbose: bool) -> SearchInfo {
+    fn go(&mut self, command: &GoCommand, verbose: bool) -> SearchInfo {
         self.reset_variables();
         let mut join_handles = vec![];
         for id in 1..self.num_threads.get() {
@@ -286,7 +286,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
             }));
         }
         let mut main_thread_searcher = self.generate_searcher(0);
-        main_thread_searcher.go(command, self.controller.clone(), verbose);
+        main_thread_searcher.go(command.clone(), self.controller.clone(), verbose);
         self.set_stop_command(true);
         for join_handle in join_handles {
             join_handle.join().unwrap();
