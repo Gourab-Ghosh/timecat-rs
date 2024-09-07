@@ -156,6 +156,12 @@ macro_rules! extract_time {
     };
 }
 
+macro_rules! generate_command_in_error_message {
+    ($commands:expr) => {
+        format!("{:?}", $commands.join(" "))
+    };
+}
+
 impl TryFrom<&[&str]> for SearchConfig {
     type Error = TimecatError;
 
@@ -169,7 +175,7 @@ impl TryFrom<&[&str]> for SearchConfig {
         let mut commands = vec![];
         let mut moves_str = vec![];
         while let Some(s) = iter.next() {
-            if s == "searchmoves" {
+            if ["searchmove", "searchmoves"].contains(&s.as_str()) {
                 break;
             }
             commands.push(s.as_str());
@@ -184,13 +190,13 @@ impl TryFrom<&[&str]> for SearchConfig {
             > 1
         {
             return Err(TimecatError::InvalidGoCommand {
-                s: commands.join(" "),
+                s: generate_command_in_error_message!(commands),
             });
         }
         let binding = commands
             .get(1)
             .ok_or(TimecatError::InvalidGoCommand {
-                s: commands.join(" "),
+                s: generate_command_in_error_message!(commands),
             })?
             .to_lowercase();
         let second_command = binding.as_str();
@@ -202,14 +208,14 @@ impl TryFrom<&[&str]> for SearchConfig {
         ] {
             if second_command == string && commands.get(index).is_some() {
                 return Err(TimecatError::InvalidGoCommand {
-                    s: commands.join(" "),
+                    s: generate_command_in_error_message!(commands),
                 });
             }
         }
         let go_command = match second_command {
             "depth" | "nodes" | "mate" | "movetime" => {
                 let third_command = *commands.get(2).ok_or(TimecatError::InvalidGoCommand {
-                    s: commands.join(" "),
+                    s: generate_command_in_error_message!(commands),
                 })?;
                 match second_command {
                     "depth" => {
@@ -224,7 +230,7 @@ impl TryFrom<&[&str]> for SearchConfig {
                     "movetime" => GoCommand::from_millis(third_command.parse()?),
                     _ => {
                         return Err(TimecatError::InvalidGoCommand {
-                            s: commands.join(" "),
+                            s: generate_command_in_error_message!(commands),
                         });
                     }
                 }
