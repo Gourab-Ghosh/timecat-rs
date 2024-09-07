@@ -77,10 +77,10 @@ pub trait SearchControl<Searcher>: Clone + Send + 'static {
     fn get_move_overhead(&self) -> Duration;
     fn set_move_overhead(&mut self, duration: Duration);
     fn reset_variables(&mut self);
-    fn stop_search_at_root_node(&mut self, searcher: &Searcher) -> bool;
-    fn stop_search_at_every_node(&mut self, searcher: &Searcher) -> bool;
-    fn on_receiving_search_config(&mut self, config: &SearchConfig, searcher: &Searcher);
-    fn on_each_search_completion(&mut self, searcher: &Searcher);
+    fn stop_search_at_root_node(&mut self, searcher: &mut Searcher) -> bool;
+    fn stop_search_at_every_node(&mut self, searcher: &mut Searcher) -> bool;
+    fn on_receiving_search_config(&mut self, config: &SearchConfig, searcher: &mut Searcher);
+    fn on_each_search_completion(&mut self, searcher: &mut Searcher);
 
     #[inline]
     fn with_move_overhead(mut self, duration: Duration) -> Self {
@@ -113,12 +113,16 @@ pub trait PositionEvaluation: Clone + Send + 'static {
     }
 
     #[inline]
-    fn evaluate_checkmate_in(&mut self, mate_distance: Score) -> Score {
-        CHECKMATE_SCORE - mate_distance
+    fn evaluate_checkmate_in(&mut self, mate_distance: Ply) -> Score {
+        if CHECKMATE_SCORE as Ply > mate_distance {
+            CHECKMATE_SCORE - mate_distance as Score
+        } else {
+            0
+        }
     }
 
     #[inline]
-    fn evaluate_checkmated_in(&mut self, mate_distance: Score) -> Score {
+    fn evaluate_checkmated_in(&mut self, mate_distance: Ply) -> Score {
         -self.evaluate_checkmate_in(mate_distance)
     }
 

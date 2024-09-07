@@ -6,6 +6,8 @@ pub struct SearchController {
     move_overhead: Duration,
     max_time: Duration,
     max_depth: Depth,
+    max_num_nodes_searched: usize,
+    max_abs_score_reached: Score,
     stop_search_at_every_node: bool,
     moves_to_search: Option<Vec<Move>>,
 }
@@ -16,6 +18,8 @@ impl SearchController {
             move_overhead: TIMECAT_DEFAULTS.move_overhead,
             max_time: Duration::MAX,
             max_depth: Depth::MAX,
+            max_num_nodes_searched: usize::MAX,
+            max_abs_score_reached: Score::MAX,
             stop_search_at_every_node: false,
             moves_to_search: None,
         }
@@ -57,10 +61,12 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
     fn reset_variables(&mut self) {
         self.max_time = Duration::MAX;
         self.max_depth = Depth::MAX;
+        self.max_num_nodes_searched = usize::MAX;
+        self.max_abs_score_reached = Score::MAX;
         self.stop_search_at_every_node = false;
     }
 
-    fn on_each_search_completion(&mut self, searcher: &Searcher<P>) {
+    fn on_each_search_completion(&mut self, searcher: &mut Searcher<P>) {
         if self.max_time != Duration::MAX
             && searcher.is_main_threaded()
             && !searcher.is_outside_aspiration_window()
@@ -72,7 +78,7 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
         }
     }
 
-    fn on_receiving_search_config(&mut self, config: &SearchConfig, searcher: &Searcher<P>) {
+    fn on_receiving_search_config(&mut self, config: &SearchConfig, searcher: &mut Searcher<P>) {
         let board = searcher.get_board();
         self.moves_to_search = config.get_moves_to_search().map(|slice| {
             slice
@@ -123,6 +129,14 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
                 self.set_max_time(search_time);
             }
             GoCommand::Depth(depth) => self.max_depth = depth,
+            GoCommand::Nodes(num_nodes_searched) => {
+                self.max_num_nodes_searched = num_nodes_searched
+            }
+            GoCommand::Mate(mate_distance) => {
+                self.max_abs_score_reached = searcher
+                    .get_evaluator_mut()
+                    .evaluate_checkmate_in(2 * mate_distance)
+            }
             GoCommand::Infinite | GoCommand::Ponder => (),
         }
     }
@@ -132,18 +146,21 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
         self.moves_to_search.as_deref()
     }
 
-    fn stop_search_at_root_node(&mut self, searcher: &Searcher<P>) -> bool {
-        searcher.get_depth_completed() >= self.max_depth || self.stop_search_at_every_node(searcher)
+    fn stop_search_at_root_node(&mut self, searcher: &mut Searcher<P>) -> bool {
+        searcher.get_depth_completed() >= self.max_depth
+            || searcher.get_score().abs() > self.max_abs_score_reached
+            || self.stop_search_at_every_node(searcher)
     }
 
-    fn stop_search_at_every_node(&mut self, searcher: &Searcher<P>) -> bool {
+    fn stop_search_at_every_node(&mut self, searcher: &mut Searcher<P>) -> bool {
         if !searcher.is_main_threaded() {
             return false;
         }
         if self.stop_search_at_every_node {
             return true;
         }
-        self.is_time_up(searcher.get_time_elapsed())
+        searcher.get_num_nodes_searched() >= self.max_num_nodes_searched
+            || self.is_time_up(searcher.get_time_elapsed())
     }
 }
 

@@ -124,6 +124,16 @@ impl<P: PositionEvaluation> Searcher<P> {
     }
 
     #[inline]
+    pub fn get_evaluator(&self) -> &P {
+        &self.evaluator
+    }
+
+    #[inline]
+    pub fn get_evaluator_mut(&mut self) -> &mut P {
+        &mut self.evaluator
+    }
+
+    #[inline]
     pub fn get_transposition_table(&self) -> &TranspositionTable {
         &self.transposition_table
     }
@@ -223,7 +233,7 @@ impl<P: PositionEvaluation> Searcher<P> {
 
     #[inline]
     pub fn stop_search_at_every_node(
-        &self,
+        &mut self,
         controller: Option<&mut impl SearchControl<Self>>,
     ) -> bool {
         if self.stop_command.load(MEMORY_ORDERING) {
@@ -424,7 +434,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         mut controller: Option<&mut impl SearchControl<Self>>,
     ) -> Option<Score> {
         self.pv_table.set_length(self.ply, self.ply);
-        let mate_score = self.evaluator.evaluate_checkmate_in(self.ply as Score);
+        let mate_score = self.evaluator.evaluate_checkmate_in(self.ply);
         let draw_score = self.evaluator.evaluate_draw();
         if self.board.is_other_draw() {
             return Some(draw_score);

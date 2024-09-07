@@ -7,12 +7,8 @@ pub enum GoCommand {
     Infinite,
     MoveTime(Duration),
     Depth(Depth),
-    // Nodes(usize),
-    // Mate(Ply),
-    // SearchMoves {
-    //     go_command: Box<Self>,
-    //     moves: Vec<Move>,
-    // },
+    Nodes(usize),
+    Mate(Ply),
     Timed {
         wtime: Duration,
         btime: Duration,
@@ -191,12 +187,13 @@ impl TryFrom<&[&str]> for SearchConfig {
                 s: commands.join(" "),
             });
         }
-        let second_command = commands
+        let binding = commands
             .get(1)
             .ok_or(TimecatError::InvalidGoCommand {
                 s: commands.join(" "),
             })?
             .to_lowercase();
+        let second_command = binding.as_str();
         for (string, index) in [
             ("depth", 3),
             ("movetime", 3),
@@ -209,27 +206,29 @@ impl TryFrom<&[&str]> for SearchConfig {
                 });
             }
         }
-        let go_command = match second_command.as_str() {
-            "depth" => {
-                let depth: Depth = commands
-                    .get(2)
-                    .ok_or(TimecatError::InvalidGoCommand {
-                        s: commands.join(" "),
-                    })?
-                    .parse()?;
-                if depth.is_negative() {
-                    return Err(TimecatError::InvalidDepth { depth });
+        let go_command = match second_command {
+            "depth" | "nodes" | "mate" | "movetime" => {
+                let third_command = *commands.get(2).ok_or(TimecatError::InvalidGoCommand {
+                    s: commands.join(" "),
+                })?;
+                match second_command {
+                    "depth" => {
+                        let depth: Depth = third_command.parse()?;
+                        if depth.is_negative() {
+                            return Err(TimecatError::InvalidDepth { depth });
+                        }
+                        GoCommand::Depth(depth)
+                    }
+                    "nodes" => GoCommand::Nodes(third_command.parse()?),
+                    "mate" => GoCommand::Mate(third_command.parse()?),
+                    "movetime" => GoCommand::from_millis(third_command.parse()?),
+                    _ => {
+                        return Err(TimecatError::InvalidGoCommand {
+                            s: commands.join(" "),
+                        });
+                    }
                 }
-                GoCommand::Depth(depth)
             }
-            "movetime" => GoCommand::from_millis(
-                commands
-                    .get(2)
-                    .ok_or(TimecatError::InvalidGoCommand {
-                        s: commands.join(" "),
-                    })?
-                    .parse()?,
-            ),
             "infinite" => GoCommand::Infinite,
             "ponder" => GoCommand::Ponder,
             _ => GoCommand::Timed {
