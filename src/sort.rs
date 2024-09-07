@@ -337,7 +337,7 @@ impl MoveSorter {
     }
 
     pub fn score_root_moves<P: PositionEvaluation>(
-        board: &mut Board,
+        board: &Board,
         evaluator: &mut P,
         move_: Move,
         pv_move: Option<Move>,

@@ -309,7 +309,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 (
                     move_,
                     MoveSorter::score_root_moves(
-                        &mut self.board,
+                        &self.board,
                         &mut self.evaluator,
                         move_,
                         pv_move,
