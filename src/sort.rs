@@ -307,9 +307,7 @@ impl MoveSorter {
         }
         if moves_vec.len() < 2 {
             return WeightedMoveListSorter::from_iter(
-                moves_vec
-                    .iter()
-                    .map(|&move_| WeightedMove::new(move_, 0)),
+                moves_vec.iter().map(|&move_| WeightedMove::new(move_, 0)),
             );
         }
         WeightedMoveListSorter::from_iter(moves_vec.into_iter().enumerate().map(|(idx, m)| {
