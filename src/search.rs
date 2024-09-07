@@ -285,11 +285,20 @@ impl<P: PositionEvaluation> Searcher<P> {
         }
     }
 
-    fn get_sorted_root_node_moves(&mut self) -> Vec<(Move, MoveWeight)> {
+    fn get_sorted_root_node_moves(
+        &mut self,
+        controller: Option<&mut impl SearchControl<Self>>,
+    ) -> Vec<(Move, MoveWeight)> {
         let mut moves_vec_sorted = self
             .move_sorter
             .get_weighted_moves_sorted(
                 &self.board,
+                controller
+                    .map(|controller| controller.get_root_moves_to_search())
+                    .flatten()
+                    .map(|moves| moves.to_vec())
+                    .unwrap_or_else(|| self.board.generate_legal_moves().collect_vec())
+                    .into_iter(),
                 &self.transposition_table,
                 0,
                 self.transposition_table
@@ -345,7 +354,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         let mut score = -INFINITY;
         let mut flag = HashAlpha;
         let is_endgame = self.board.is_endgame();
-        let moves = self.get_sorted_root_node_moves();
+        let moves = self.get_sorted_root_node_moves(controller.as_deref_mut());
         for (move_index, &(move_, _)) in moves.iter().enumerate() {
             if !is_endgame && self.is_draw_move(move_.into()) && score > -DRAW_SCORE {
                 continue;
@@ -544,6 +553,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         let mut flag = HashAlpha;
         let weighted_moves = self.move_sorter.get_weighted_moves_sorted(
             &self.board,
+            self.board.generate_legal_moves(),
             &self.transposition_table,
             self.ply,
             best_move,

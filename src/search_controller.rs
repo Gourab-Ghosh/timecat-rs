@@ -7,6 +7,7 @@ pub struct SearchController {
     max_time: Duration,
     max_depth: Depth,
     stop_search_at_every_node: bool,
+    moves_to_search: Option<Vec<Move>>,
 }
 
 impl SearchController {
@@ -16,6 +17,7 @@ impl SearchController {
             max_time: Duration::MAX,
             max_depth: Depth::MAX,
             stop_search_at_every_node: false,
+            moves_to_search: None,
         }
     }
 
@@ -72,6 +74,13 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
 
     fn on_receiving_search_config(&mut self, config: &SearchConfig, searcher: &Searcher<P>) {
         let board = searcher.get_board();
+        self.moves_to_search = config.get_moves_to_search().map(|slice| {
+            slice
+                .iter()
+                .copied()
+                .filter(|&move_| board.is_legal(move_))
+                .collect_vec()
+        });
         match config.get_command() {
             GoCommand::MoveTime(duration) => self.set_max_time(duration),
             GoCommand::Timed {
@@ -116,6 +125,11 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
             GoCommand::Depth(depth) => self.max_depth = depth,
             GoCommand::Infinite | GoCommand::Ponder => (),
         }
+    }
+
+    #[inline]
+    fn get_root_moves_to_search(&self) -> Option<&[Move]> {
+        self.moves_to_search.as_deref()
     }
 
     fn stop_search_at_root_node(&mut self, searcher: &Searcher<P>) -> bool {

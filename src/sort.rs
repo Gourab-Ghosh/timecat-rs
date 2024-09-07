@@ -286,6 +286,7 @@ impl MoveSorter {
     pub fn get_weighted_moves_sorted(
         &mut self,
         position: &BoardPosition,
+        moves: impl Iterator<Item = Move>,
         transposition_table: &TranspositionTable,
         ply: Ply,
         mut best_move: Option<Move>,
@@ -294,11 +295,11 @@ impl MoveSorter {
         if best_move.is_none() {
             best_move = transposition_table.read_best_move(position.get_hash());
         }
-        let moves_vec = Vec::from_iter(position.generate_legal_moves());
+        let moves_vec = moves.collect_vec();
         if self.follow_pv {
             self.follow_pv = false;
-            if let Some(valid_or_null_move) = pv_move {
-                if moves_vec.contains(&valid_or_null_move) {
+            if let Some(move_) = pv_move {
+                if moves_vec.contains(&move_) {
                     self.follow_pv = true;
                     self.score_pv = true;
                 }
@@ -308,7 +309,7 @@ impl MoveSorter {
             return WeightedMoveListSorter::from_iter(
                 moves_vec
                     .iter()
-                    .map(|&valid_or_null_move| WeightedMove::new(valid_or_null_move, 0)),
+                    .map(|&move_| WeightedMove::new(move_, 0)),
             );
         }
         WeightedMoveListSorter::from_iter(moves_vec.into_iter().enumerate().map(|(idx, m)| {

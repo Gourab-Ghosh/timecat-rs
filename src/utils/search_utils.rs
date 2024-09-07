@@ -240,14 +240,19 @@ impl TryFrom<&[&str]> for SearchConfig {
                 moves_to_go: extract_value!(commands, "movestogo"),
             },
         };
+
         Ok(Self {
             go_command,
-            moves_to_search: Some(
-                moves_str
-                    .into_iter()
-                    .map(|move_str| Move::from_str(move_str))
-                    .collect::<Result<Vec<_>>>()?,
-            ),
+            moves_to_search: if moves_str.is_empty() {
+                None
+            } else {
+                Some(
+                    moves_str
+                        .into_iter()
+                        .map(|move_str| Move::from_str(move_str))
+                        .collect::<Result<Vec<_>>>()?,
+                )
+            },
         })
     }
 }

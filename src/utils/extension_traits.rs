@@ -87,6 +87,11 @@ pub trait SearchControl<Searcher>: Clone + Send + 'static {
         self.set_move_overhead(duration);
         self
     }
+
+    #[inline]
+    fn get_root_moves_to_search(&self) -> Option<&[Move]> {
+        None
+    }
 }
 
 // TODO: Try to remove static lifetime from the trait
