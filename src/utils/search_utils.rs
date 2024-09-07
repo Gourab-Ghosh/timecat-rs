@@ -140,7 +140,7 @@ impl From<GoCommand> for SearchConfig {
 
 macro_rules! generate_command_in_error_message {
     ($commands:expr) => {
-        format!("{:?}", $commands.join(" "))
+        $commands.join(" ")
     };
 }
 
