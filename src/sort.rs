@@ -286,7 +286,7 @@ impl MoveSorter {
     pub fn get_weighted_moves_sorted(
         &mut self,
         position: &BoardPosition,
-        moves: impl Iterator<Item = Move>,
+        moves: impl IntoIterator<Item = Move>,
         transposition_table: &TranspositionTable,
         ply: Ply,
         mut best_move: Option<Move>,
@@ -295,7 +295,7 @@ impl MoveSorter {
         if best_move.is_none() {
             best_move = transposition_table.read_best_move(position.get_hash());
         }
-        let moves_vec = moves.collect_vec();
+        let moves_vec = moves.into_iter().collect_vec();
         if self.follow_pv {
             self.follow_pv = false;
             if let Some(move_) = pv_move {

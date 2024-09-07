@@ -297,8 +297,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                     .map(|controller| controller.get_root_moves_to_search())
                     .flatten()
                     .map(|moves| moves.to_vec())
-                    .unwrap_or_else(|| self.board.generate_legal_moves().collect_vec())
-                    .into_iter(),
+                    .unwrap_or_else(|| self.board.generate_legal_moves().collect_vec()),
                 &self.transposition_table,
                 0,
                 self.transposition_table
