@@ -138,6 +138,12 @@ impl From<GoCommand> for SearchConfig {
     }
 }
 
+macro_rules! generate_command_in_error_message {
+    ($commands:expr) => {
+        format!("{:?}", $commands.join(" "))
+    };
+}
+
 macro_rules! extract_value {
     ($commands:ident, $command:expr) => {
         $commands
@@ -153,12 +159,6 @@ macro_rules! extract_value {
 macro_rules! extract_time {
     ($commands:ident, $command:expr) => {
         extract_value!($commands, $command).map(|t| Duration::from_millis(t))
-    };
-}
-
-macro_rules! generate_command_in_error_message {
-    ($commands:expr) => {
-        format!("{:?}", $commands.join(" "))
     };
 }
 
