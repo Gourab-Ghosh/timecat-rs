@@ -2,7 +2,7 @@
 Timecat is a UCI-compatible chess engine designed in Rust that combines powerful algorithms and advanced evaluation techniques to deliver top-notch chess analysis and game play. Using alpha-beta pruning with the negamax algorithm and the NNUE evaluation method, Timecat achieves enhanced depth and accuracy in game analysis.
 
 ## ⚠️ Beta Version Notice
-This chess engine is currently in **beta** and actively under development. Please be aware that **breaking changes** may occur as new features are added and improvements are made. Your feedback and contributions are greatly appreciated as we continue to refine and enhance the engine.
+This chess engine is currently in **beta** and actively under development. Please be aware that **breaking changes** may occur as new features are added and improvements are made. Your feedback and contributions are greatly appreciated as I continue to refine and enhance the engine.
 
 ## Timecat as a Library
 Timecat was originally conceived as a personal project. However, with the onset of a new chess-related project, I realized the benefits of publishing Timecat as a library to avoid excessive code duplication. Initially designed for personal use, Timecat will now be refined and updated to enhance its functionality and usability as a library, making it more accessible and beneficial for other users. Also the documentation will be further improved.
