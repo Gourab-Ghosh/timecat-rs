@@ -86,7 +86,10 @@ impl StringifyScore for Score {
         }
         if is_checkmate(self) {
             let mut mate_string = String::from("mate ");
-            let mate_distance = (CHECKMATE_SCORE - self.abs() + 1) / 2;
+            let mut mate_distance = (CHECKMATE_SCORE - self.abs() + 1) / 2;
+            if self.is_negative() {
+                mate_distance = -mate_distance;
+            }
             mate_string += &mate_distance.to_string();
             return mate_string;
         }

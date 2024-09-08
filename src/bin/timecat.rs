@@ -20,7 +20,8 @@ fn main() {
         GLOBAL_TIMECAT_STATE.set_to_uci_mode();
     }
     #[cfg(feature = "colored")]
-    if !std::io::stdout().is_terminal() {
+    // Command Prompt inn Windows do not render colors properly.
+    if !std::io::stdout().is_terminal() || cfg!(target_os = "windows") {
         GLOBAL_TIMECAT_STATE.set_colored_output(false, false);
     }
     TimecatBuilder::<Engine>::default()

@@ -141,12 +141,11 @@ pub struct CacheTable<T> {
     size: RwLock<CacheTableSize>,
     mask: AtomicUsize,
     is_safe_to_do_bitwise_and: AtomicBool,
+    num_cells_filled: AtomicUsize,
     #[cfg(feature = "extras")]
     num_overwrites: AtomicUsize,
     #[cfg(feature = "extras")]
     num_collisions: AtomicUsize,
-    #[cfg(feature = "extras")]
-    num_cells_filled: AtomicUsize,
     #[cfg(feature = "extras")]
     zero_hit: AtomicUsize,
 }
@@ -186,12 +185,11 @@ impl<T: Copy + PartialEq> CacheTable<T> {
             size: RwLock::new(size),
             mask: Default::default(),
             is_safe_to_do_bitwise_and: Default::default(),
+            num_cells_filled: AtomicUsize::new(0),
             #[cfg(feature = "extras")]
             num_overwrites: AtomicUsize::new(0),
             #[cfg(feature = "extras")]
             num_collisions: AtomicUsize::new(0),
-            #[cfg(feature = "extras")]
-            num_cells_filled: AtomicUsize::new(0),
             #[cfg(feature = "extras")]
             zero_hit: AtomicUsize::new(0),
         };
@@ -224,6 +222,10 @@ impl<T: Copy + PartialEq> CacheTable<T> {
         let hash = NonZeroU64::new(hash).unwrap_or(DEFAULT_HASH);
         let mut table = self.table.write().unwrap();
         let e = get_item_unchecked_mut!(table, self.get_index(hash.get()));
+        #[cfg(not(feature = "extras"))]
+        if e.is_none() {
+            self.num_cells_filled.fetch_add(1, MEMORY_ORDERING);
+        }
         #[cfg(feature = "extras")]
         let e_copy = *e;
         *e = Some(CacheTableEntry { hash, entry });
@@ -243,6 +245,10 @@ impl<T: Copy + PartialEq> CacheTable<T> {
             true
         };
         if to_replace {
+            #[cfg(not(feature = "extras"))]
+            if e.is_none() {
+                self.num_cells_filled.fetch_add(1, MEMORY_ORDERING);
+            }
             #[cfg(feature = "extras")]
             let e_copy = *e;
             *e = Some(CacheTableEntry { hash, entry });
@@ -255,7 +261,6 @@ impl<T: Copy + PartialEq> CacheTable<T> {
     #[inline]
     pub fn clear(&self) {
         self.table.write().unwrap().fill(None);
-        #[cfg(feature = "extras")]
         self.num_cells_filled.store(0, MEMORY_ORDERING);
         self.reset_variables()
     }
@@ -265,50 +270,48 @@ impl<T: Copy + PartialEq> CacheTable<T> {
         &self.table
     }
 
-    #[cfg(feature = "extras")]
-    #[inline]
-    pub fn get_num_overwrites(&self) -> usize {
-        self.num_overwrites.load(MEMORY_ORDERING)
-    }
-
-    #[cfg(feature = "extras")]
-    #[inline]
-    pub fn get_num_collisions(&self) -> usize {
-        self.num_collisions.load(MEMORY_ORDERING)
-    }
-
-    #[cfg(feature = "extras")]
     #[inline]
     pub fn get_num_cells_filled(&self) -> usize {
         self.num_cells_filled.load(MEMORY_ORDERING)
     }
 
-    #[cfg(feature = "extras")]
     #[inline]
+    #[cfg(feature = "extras")]
+    pub fn get_num_overwrites(&self) -> usize {
+        self.num_overwrites.load(MEMORY_ORDERING)
+    }
+
+    #[inline]
+    #[cfg(feature = "extras")]
+    pub fn get_num_collisions(&self) -> usize {
+        self.num_collisions.load(MEMORY_ORDERING)
+    }
+
+    #[inline]
+    #[cfg(feature = "extras")]
     pub fn get_zero_hit(&self) -> usize {
         self.zero_hit.load(MEMORY_ORDERING)
     }
 
-    #[cfg(feature = "extras")]
-    #[inline]
-    pub fn reset_num_overwrites(&self) {
-        self.num_overwrites.store(0, MEMORY_ORDERING);
-    }
-
-    #[cfg(feature = "extras")]
-    #[inline]
-    pub fn reset_num_collisions(&self) {
-        self.num_collisions.store(0, MEMORY_ORDERING);
-    }
-
-    #[cfg(feature = "extras")]
     #[inline]
     pub fn reset_num_cells_filled(&self) {
         self.num_cells_filled.store(0, MEMORY_ORDERING);
     }
 
-    #[cfg(feature = "extras")]
     #[inline]
+    #[cfg(feature = "extras")]
+    pub fn reset_num_overwrites(&self) {
+        self.num_overwrites.store(0, MEMORY_ORDERING);
+    }
+
+    #[inline]
+    #[cfg(feature = "extras")]
+    pub fn reset_num_collisions(&self) {
+        self.num_collisions.store(0, MEMORY_ORDERING);
+    }
+
+    #[inline]
+    #[cfg(feature = "extras")]
     pub fn reset_zero_hit(&self) {
         self.zero_hit.store(0, MEMORY_ORDERING);
     }
@@ -323,7 +326,6 @@ impl<T: Copy + PartialEq> CacheTable<T> {
         }
     }
 
-    #[cfg(feature = "extras")]
     #[inline]
     pub fn get_hash_full(&self) -> f64 {
         (self.num_cells_filled.load(MEMORY_ORDERING) as f64 / self.len() as f64) * 100.0
@@ -334,7 +336,6 @@ impl<T: Copy + PartialEq> CacheTable<T> {
         self.table.read().unwrap().len()
     }
 
-    #[cfg(feature = "extras")]
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.get_num_cells_filled() == 0
@@ -366,12 +367,11 @@ impl<T: Copy + PartialEq> Clone for CacheTable<T> {
             is_safe_to_do_bitwise_and: AtomicBool::new(
                 self.is_safe_to_do_bitwise_and.load(MEMORY_ORDERING),
             ),
+            num_cells_filled: AtomicUsize::new(self.num_cells_filled.load(MEMORY_ORDERING)),
             #[cfg(feature = "extras")]
             num_overwrites: AtomicUsize::new(self.num_overwrites.load(MEMORY_ORDERING)),
             #[cfg(feature = "extras")]
             num_collisions: AtomicUsize::new(self.num_collisions.load(MEMORY_ORDERING)),
-            #[cfg(feature = "extras")]
-            num_cells_filled: AtomicUsize::new(self.num_cells_filled.load(MEMORY_ORDERING)),
             #[cfg(feature = "extras")]
             zero_hit: AtomicUsize::new(self.zero_hit.load(MEMORY_ORDERING)),
         }

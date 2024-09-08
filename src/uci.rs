@@ -299,28 +299,6 @@ impl<T: ChessEngine> Default for UCIStateManager<T> {
 }
 
 fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
-    let t_table_size_uci = SpinValue::new(
-        TIMECAT_DEFAULTS.t_table_size,
-        CacheTableSize::Exact(1),
-        CacheTableSize::Exact({
-            let transposition_table_entry_size =
-                CacheTableSize::get_entry_size::<TranspositionTableEntry>();
-            let evaluator_entry_size = CacheTableSize::get_entry_size::<Score>();
-            let max_size = if transposition_table_entry_size > evaluator_entry_size {
-                transposition_table_entry_size
-            } else {
-                evaluator_entry_size
-            };
-            (usize::MAX >> 20) / max_size
-        }),
-    );
-
-    let move_overhead_uci = SpinValue::new(
-        TIMECAT_DEFAULTS.move_overhead,
-        Duration::from_secs(0),
-        Duration::MAX,
-    );
-
     let options: Vec<UCIOption<T>> = vec![
         UCIOption::new_spin(
             "Threads",
@@ -332,25 +310,41 @@ fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
             },
         )
         .alias("Thread"),
-        UCIOption::new_spin("Hash", t_table_size_uci, {
-            |engine, value| {
-                let size = CacheTableSize::Exact(value as usize);
-                engine.set_transposition_table_size(size);
-                print_uci_info(
-                    "Transposition table is set to size to",
-                    size.to_memory_size_in_mb::<TranspositionTableEntry>(),
-                );
-            }
-        }),
+        UCIOption::new_spin(
+            "Hash",
+            SpinValue::new(
+                TIMECAT_DEFAULTS.t_table_size,
+                CacheTableSize::Exact(1),
+                CacheTableSize::Exact(1 << 25),
+            ),
+            {
+                |engine, value| {
+                    let size = CacheTableSize::Exact(value as usize);
+                    engine.set_transposition_table_size(size);
+                    print_uci_info(
+                        "Transposition table is set to size to",
+                        size.to_memory_size_in_mb::<TranspositionTableEntry>(),
+                    );
+                }
+            },
+        ),
         UCIOption::new_button("Clear Hash", |engine| {
             engine.clear_hash();
             print_uci_info::<&str>("All hash tables are cleared!", None);
         }),
-        UCIOption::new_spin("Move Overhead", move_overhead_uci, |engine, value| {
-            let duration = Duration::from_millis(value as u64);
-            engine.set_move_overhead(duration);
-            print_uci_info("Move Overhead is set to", duration.stringify());
-        }),
+        UCIOption::new_spin(
+            "Move Overhead",
+            SpinValue::new(
+                TIMECAT_DEFAULTS.move_overhead,
+                Duration::ZERO,
+                Duration::from_secs(60),
+            ),
+            |engine, value| {
+                let duration = Duration::from_millis(value as u64);
+                engine.set_move_overhead(duration);
+                print_uci_info("Move Overhead is set to", duration.stringify());
+            },
+        ),
         // UCIOption::new_check(
         //     "OwnBook",
         //     TIMECAT_DEFAULTS.use_own_book,

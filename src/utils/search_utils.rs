@@ -501,7 +501,10 @@ impl SearchInfo {
             Some("info".colorize(INFO_MESSAGE_STYLE)),
             Self::format_info("depth", self.current_depth),
             Self::format_info("seldepth", self.seldepth),
-            Self::format_info("score", self.get_score().map(|score| score.stringify())),
+            Self::format_info(
+                "score",
+                self.get_score_flipped().map(|score| score.stringify()),
+            ),
             Self::format_info("nodes", self.nodes),
             Self::format_info("nps", self.get_nps()),
             Self::format_info("hashfull", hashfull_string),
@@ -524,7 +527,7 @@ impl SearchInfo {
         }
         let warning_message = format!(
             "info string resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {}, beta {} and score {} with time {}",
-            if let Some(current_depth) = self.current_depth { current_depth.to_string() } else { "None".to_string() },
+            if let Some(current_depth) = self.current_depth { current_depth.to_string() } else { STRINGIFY_NONE.to_string() },
             alpha.stringify(),
             beta.stringify(),
             if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
@@ -541,21 +544,20 @@ impl SearchInfo {
 impl<P: PositionEvaluation> From<&Searcher<P>> for SearchInfo {
     fn from(searcher: &Searcher<P>) -> Self {
         #[cfg(feature = "extras")]
-        let (hash_full, overwrites, collisions, zero_hit) = (
-            Some(searcher.get_transposition_table().get_hash_full()),
+        let (overwrites, collisions, zero_hit) = (
             Some(searcher.get_transposition_table().get_num_overwrites()),
             Some(searcher.get_transposition_table().get_num_collisions()),
             Some(searcher.get_transposition_table().get_zero_hit()),
         );
         #[cfg(not(feature = "extras"))]
-        let (hash_full, overwrites, collisions, zero_hit) = (None, None, None, None);
+        let (overwrites, collisions, zero_hit) = (None, None, None);
         let mut search_info = Self {
             position: searcher.get_initial_position().to_owned(),
             current_depth: Some(searcher.get_depth_completed().saturating_add(1)),
             seldepth: Some(searcher.get_selective_depth()),
             score: Some(searcher.get_score()),
             nodes: Some(searcher.get_num_nodes_searched()),
-            hash_full,
+            hash_full: Some(searcher.get_transposition_table().get_hash_full()),
             overwrites,
             collisions,
             zero_hit,

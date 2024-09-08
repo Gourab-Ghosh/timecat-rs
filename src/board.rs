@@ -367,14 +367,14 @@ impl Board {
         self.perft_helper(depth, true)
     }
 
-    #[cfg(feature = "extras")]
     #[inline]
+    #[cfg(feature = "extras")]
     pub fn evaluate(&mut self) -> Score {
         self.evaluator.evaluate(&self.position)
     }
 
-    #[cfg(feature = "extras")]
     #[inline]
+    #[cfg(feature = "extras")]
     pub fn evaluate_flipped(&mut self) -> Score {
         let score = self.evaluate();
         self.score_flipped(score)

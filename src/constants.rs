@@ -325,7 +325,7 @@ pub mod default_parameters {
         t_table_size: CacheTableSize::Exact(16),
         long_algebraic_notation: false,
         num_threads: unsafe { NonZeroUsize::new_unchecked(1) },
-        move_overhead: Duration::ZERO,
+        move_overhead: Duration::from_millis(10),
         use_own_book: false,
         debug_mode: true,
         chess960_mode: false,

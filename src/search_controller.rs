@@ -9,10 +9,12 @@ pub struct SearchController {
     max_num_nodes_searched: usize,
     max_abs_score_reached: Score,
     stop_search_at_every_node: bool,
+    is_infinite_search: bool,
     moves_to_search: Option<Vec<Move>>,
 }
 
 impl SearchController {
+    #[inline]
     pub fn new() -> Self {
         Self {
             move_overhead: TIMECAT_DEFAULTS.move_overhead,
@@ -21,10 +23,17 @@ impl SearchController {
             max_num_nodes_searched: usize::MAX,
             max_abs_score_reached: Score::MAX,
             stop_search_at_every_node: false,
+            is_infinite_search: false,
             moves_to_search: None,
         }
     }
 
+    #[inline]
+    pub fn is_infinite_search(&self) -> bool {
+        self.is_infinite_search
+    }
+
+    #[inline]
     pub fn reset_start_time(&mut self) {
         self.stop_search_at_every_node = false;
     }
@@ -34,6 +43,7 @@ impl SearchController {
         self.stop_search_at_every_node = false;
     }
 
+    #[inline]
     pub fn max_time(&self) -> Duration {
         self.max_time
     }
@@ -67,7 +77,7 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
     }
 
     fn on_each_search_completion(&mut self, searcher: &mut Searcher<P>) {
-        if self.max_time != Duration::MAX
+        if !self.is_infinite_search()
             && searcher.is_main_threaded()
             && !searcher.is_outside_aspiration_window()
             && searcher.get_depth_completed() >= 10
@@ -79,6 +89,7 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
     }
 
     fn on_receiving_search_config(&mut self, config: &SearchConfig, searcher: &mut Searcher<P>) {
+        self.is_infinite_search = false;
         let board = searcher.get_board();
         self.moves_to_search = config.get_moves_to_search().map(|slice| {
             slice
@@ -137,7 +148,8 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
                     .get_evaluator_mut()
                     .evaluate_checkmate_in(2 * mate_distance)
             }
-            GoCommand::Infinite | GoCommand::Ponder => (),
+            GoCommand::Ponder => (),
+            GoCommand::Infinite => self.is_infinite_search = true,
         }
     }
 
