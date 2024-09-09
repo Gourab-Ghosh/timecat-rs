@@ -230,6 +230,34 @@ const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
     array
 };
 
+// const MOVES_: [BitBoard; 0] = {
+//     const fn generate_mask(piece_type: PieceType, square: Square) -> BitBoard {
+//         match piece_type {
+//             Bishop => {
+//                 BISHOP_RAYS[square.to_index()] & !BB_CORNERS
+//             }
+//             Rook => {
+//                 let mut to_remove = BB_CORNERS.into_inner();
+//                 match square.get_rank() {
+//                     Rank::First => to_remove ^= BB_RANK_1.into_inner();
+//                     Rank::Eighth => to_remove ^= BB_RANK_8.into_inner();
+//                     _ => (),
+//                 }
+//                 // TODO: Check of xor works here!
+//                 match square.get_file() {
+//                     File::A => to_remove ^= BB_FILE_A.into_inner();
+//                     File::H => to_remove ^= BB_FILE_H.into_inner();
+//                     _ => (),
+//                 }
+//                 ROOK_RAYS & !to_remove
+//             }
+//             _ => unreachable!(),
+//         }
+//     }
+
+//     []
+// };
+
 #[rustfmt::skip]
 #[repr(u8)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

@@ -10,29 +10,6 @@ pub enum CastleRights {
     Both = 3,
 }
 
-const CASTLES_PER_SQUARE: [[usize; 64]; 2] = [
-    [
-        2, 0, 0, 0, 3, 0, 0, 1, // 1
-        0, 0, 0, 0, 0, 0, 0, 0, // 2
-        0, 0, 0, 0, 0, 0, 0, 0, // 3
-        0, 0, 0, 0, 0, 0, 0, 0, // 4
-        0, 0, 0, 0, 0, 0, 0, 0, // 5
-        0, 0, 0, 0, 0, 0, 0, 0, // 6
-        0, 0, 0, 0, 0, 0, 0, 0, // 7
-        0, 0, 0, 0, 0, 0, 0, 0, // 8
-    ],
-    [
-        0, 0, 0, 0, 0, 0, 0, 0, // 1
-        0, 0, 0, 0, 0, 0, 0, 0, // 2
-        0, 0, 0, 0, 0, 0, 0, 0, // 3
-        0, 0, 0, 0, 0, 0, 0, 0, // 4
-        0, 0, 0, 0, 0, 0, 0, 0, // 5
-        0, 0, 0, 0, 0, 0, 0, 0, // 6
-        0, 0, 0, 0, 0, 0, 0, 0, // 7
-        2, 0, 0, 0, 3, 0, 0, 1, // 8
-    ],
-];
-
 impl CastleRights {
     /// Can I castle kingside?
     #[inline]
@@ -48,6 +25,20 @@ impl CastleRights {
 
     #[inline]
     pub fn square_to_castle_rights(color: Color, square: Square) -> Self {
+        const CASTLES_PER_SQUARE: [[usize; 64]; 2] = {
+            let mut array = [[0; 64]; 2];
+            let temp_arr = [(0, 2), (4, 3), (7, 1)];
+            let mut i = 0;
+            while i < 2 {
+                let mut j = 0;
+                while j < 3 {
+                    array[i][56 * i + temp_arr[j].0] = temp_arr[j].1;
+                    j += 1;
+                }
+                i += 1;
+            }
+            array
+        };
         Self::from_index(*get_item_unchecked!(
             CASTLES_PER_SQUARE,
             color.to_index(),

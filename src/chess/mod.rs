@@ -1,7 +1,3 @@
-#![allow(unused_imports)]
-#![allow(dead_code)]
-#![allow(clippy::enum_variant_names)]
-
 pub mod castle;
 pub mod magic;
 pub mod move_generator;

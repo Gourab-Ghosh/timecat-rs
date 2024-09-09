@@ -323,9 +323,6 @@ impl ValidOrNullMove {
     }
 }
 
-#[allow(non_upper_case_globals)]
-pub const NullMove: ValidOrNullMove = ValidOrNullMove::NullMove;
-
 impl Default for ValidOrNullMove {
     fn default() -> Self {
         Self::NullMove
