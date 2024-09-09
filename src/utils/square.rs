@@ -230,28 +230,32 @@ const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
     array
 };
 
-// const MOVES_: [BitBoard; 0] = {
-//     const fn generate_mask(piece_type: PieceType, square: Square) -> BitBoard {
-//         match piece_type {
-//             Bishop => {
-//                 BISHOP_RAYS[square.to_index()] & !BB_CORNERS
-//             }
-//             Rook => {
-//                 let mut to_remove = BB_CORNERS.into_inner();
-//                 match square.get_rank() {
-//                     Rank::First => to_remove ^= BB_RANK_1.into_inner();
-//                     Rank::Eighth => to_remove ^= BB_RANK_8.into_inner();
-//                     _ => (),
-//                 }
-//                 // TODO: Check of xor works here!
-//                 match square.get_file() {
-//                     File::A => to_remove ^= BB_FILE_A.into_inner();
-//                     File::H => to_remove ^= BB_FILE_H.into_inner();
-//                     _ => (),
-//                 }
-//                 ROOK_RAYS & !to_remove
-//             }
-//             _ => unreachable!(),
+// const MOVES: [BitBoard; 0] = {
+//     const fn generate_rook_mask(square: Square) -> BitBoard {
+//         let mut to_remove = BB_CORNERS.into_inner();
+//         match square.get_rank() {
+//             Rank::First => to_remove ^= BB_RANK_1.into_inner(),
+//             Rank::Eighth => to_remove ^= BB_RANK_8.into_inner(),
+//             _ => (),
+//         }
+//         // TODO: Check of xor works here!
+//         match square.get_file() {
+//             File::A => to_remove ^= BB_FILE_A.into_inner(),
+//             File::H => to_remove ^= BB_FILE_H.into_inner(),
+//             _ => (),
+//         }
+//         BitBoard::new(ROOK_RAYS[square.to_index()].into_inner() & !to_remove)
+//     }
+
+//     let mut bishop_masks = [BB_EMPTY; 64];
+//     let mut rook_masks = [BB_EMPTY; 64];
+//     {
+//         let mut i = 0;
+//         while i < 64 {
+//             bishop_masks[i] =
+//                 BitBoard::new(BISHOP_RAYS[i].into_inner() & !BB_CORNERS.into_inner());
+//             rook_masks[i] = generate_rook_mask(Square::from_index(i));
+//             i += 1;
 //         }
 //     }
 
