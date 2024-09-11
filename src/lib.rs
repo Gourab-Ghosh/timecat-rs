@@ -1,9 +1,9 @@
 #![doc = include_str!("../README.md")]
 #![allow(unused_imports)]
 #![allow(dead_code)]
-#![allow(clippy::needless_doctest_main)]
-#![allow(clippy::too_many_arguments)]
-#![allow(clippy::result_large_err)]
+#![expect(clippy::needless_doctest_main)]
+#![expect(clippy::too_many_arguments)]
+#![expect(clippy::result_large_err)]
 // #![deny(missing_debug_implementations)]
 // #![warn(missing_docs)]
 

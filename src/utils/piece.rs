@@ -2,7 +2,7 @@ use super::*;
 pub use PieceType::*;
 
 pub mod all_pieces {
-    #![allow(non_upper_case_globals)]
+    #![expect(non_upper_case_globals)]
 
     use super::*;
 

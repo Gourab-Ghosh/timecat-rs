@@ -152,7 +152,7 @@ pub trait ChessEngine {
     fn print_info(&self) {}
 
     #[inline]
-    #[allow(unused_variables)]
+    #[expect(unused_variables)]
     fn set_optional_io_reader(&mut self, optional_io_reader: Self::IoReader) {}
 
     #[inline]

@@ -128,7 +128,7 @@ impl CastleRights {
 impl Add for CastleRights {
     type Output = Self;
 
-    #[allow(clippy::suspicious_arithmetic_impl)]
+    #[expect(clippy::suspicious_arithmetic_impl)]
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
         Self::from_index(self.to_index() | rhs.to_index())

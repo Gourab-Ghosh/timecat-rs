@@ -1,5 +1,4 @@
 use super::*;
-use EntryFlag::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
@@ -361,7 +360,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         }
         let key = self.board.get_hash();
         let mut score = -INFINITY;
-        let mut flag = HashAlpha;
+        let mut flag = EntryFlagHash::Alpha;
         let is_endgame = self.board.is_endgame();
         let moves = self.get_sorted_root_node_moves(controller.as_deref_mut());
         for (move_index, &(move_, _)) in moves.iter().enumerate() {
@@ -391,7 +390,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 }
             }
             if score > alpha {
-                flag = HashExact;
+                flag = EntryFlagHash::Exact;
                 alpha = score;
                 self.pv_table.update_table(self.ply, move_);
                 if score >= beta {
@@ -400,7 +399,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                         depth,
                         self.ply,
                         beta,
-                        HashBeta,
+                        EntryFlagHash::Beta,
                         Some(move_),
                     );
                     return Some(beta);
@@ -469,13 +468,13 @@ impl<P: PositionEvaluation> Searcher<P> {
                 //     return Some(alpha);
                 // }
                 match flag {
-                    HashExact => return Some(score),
-                    HashAlpha => {
+                    EntryFlagHash::Exact => return Some(score),
+                    EntryFlagHash::Alpha => {
                         if score <= alpha {
                             return Some(score);
                         }
                     }
-                    HashBeta => {
+                    EntryFlagHash::Beta => {
                         if score >= beta {
                             return Some(score);
                         }
@@ -559,7 +558,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 futility_pruning = static_evaluation + futility_margin <= alpha;
             }
         }
-        let mut flag = HashAlpha;
+        let mut flag = EntryFlagHash::Alpha;
         let weighted_moves = self.move_sorter.get_weighted_moves_sorted(
             &self.board,
             self.board.generate_legal_moves(),
@@ -628,7 +627,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             }
             self.pop();
             if score > alpha {
-                flag = HashExact;
+                flag = EntryFlagHash::Exact;
                 self.pv_table.update_table(self.ply, move_);
                 alpha = score;
                 if not_capture_move {
@@ -640,7 +639,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                         depth,
                         self.ply,
                         beta,
-                        HashBeta,
+                        EntryFlagHash::Beta,
                         Some(move_),
                     );
                     if not_capture_move {

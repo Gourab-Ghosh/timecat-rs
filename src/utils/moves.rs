@@ -247,7 +247,7 @@ impl<'source> FromPyObject<'source> for Move {
 pub struct ValidOrNullMove(Option<Move>);
 
 impl ValidOrNullMove {
-    #[allow(non_upper_case_globals)]
+    #[expect(non_upper_case_globals)]
     pub const NullMove: Self = Self(None);
 
     #[inline]
