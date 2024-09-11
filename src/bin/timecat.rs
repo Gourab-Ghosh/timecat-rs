@@ -7,10 +7,10 @@
 // https://backscattering.de/chess/uci/
 // https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#halfkav2-feature-set
 
-fn main() {
-    use std::io::IsTerminal;
-    use timecat::*;
+use std::io::IsTerminal;
+use timecat::*;
 
+fn main() {
     let args = std::env::args().collect_vec();
     let args = args.iter().map(|s| s.as_str()).collect_vec();
     if !args.contains(&"--disable-backtrace") {
