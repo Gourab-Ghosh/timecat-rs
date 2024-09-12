@@ -17,7 +17,7 @@ trait PieceMoves {
         let checkers = position.get_checkers();
 
         let check_mask = if T::IN_CHECK {
-            checkers.to_square().between(ksq) ^ checkers
+            checkers.to_square_unchecked().between(ksq) ^ checkers
         } else {
             BB_ALL
         };
@@ -87,7 +87,7 @@ impl PawnMoves {
             ^ source.to_bitboard()
             ^ dest.to_bitboard();
 
-        let ksq = (position.get_colored_piece_mask(King, position.turn())).to_square();
+        let ksq = (position.get_colored_piece_mask(King, position.turn())).to_square_unchecked();
 
         let rooks = (position.get_piece_mask(Rook) ^ position.get_piece_mask(Queen))
             & position.opponent_occupied();
@@ -139,7 +139,7 @@ impl PieceMoves for PawnMoves {
         let checkers = position.get_checkers();
 
         let check_mask = if T::IN_CHECK {
-            checkers.to_square().between(ksq) ^ checkers
+            checkers.to_square_unchecked().between(ksq) ^ checkers
         } else {
             BB_ALL
         };
@@ -240,7 +240,7 @@ impl PieceMoves for KnightMoves {
         let checkers = position.get_checkers();
 
         if T::IN_CHECK {
-            let check_mask = checkers.to_square().between(ksq) ^ checkers;
+            let check_mask = checkers.to_square_unchecked().between(ksq) ^ checkers;
 
             for src in pieces & !pinned {
                 let square_and_bitboard_array =
@@ -622,7 +622,7 @@ impl MoveGenerator {
                 let bb = move_.get_source().between(move_.get_dest());
                 if bb.popcnt() == 1 {
                     // castles
-                    if !KingMoves::legal_king_move(position, bb.to_square()) {
+                    if !KingMoves::legal_king_move(position, bb.to_square_unchecked()) {
                         false
                     } else {
                         KingMoves::legal_king_move(position, move_.get_dest())
@@ -744,6 +744,8 @@ impl Iterator for MoveGenerator {
     }
 
     fn next(&mut self) -> Option<Move> {
+        // TODO: Check Logic
+
         let square_and_bitboard_array_len = self.square_and_bitboard_array.len();
         if self.index >= square_and_bitboard_array_len {
             return None;
@@ -770,7 +772,8 @@ impl Iterator for MoveGenerator {
             // are we done?
             None
         } else if square_and_bitboard.promotion {
-            let dest = (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).to_square();
+            let dest = (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask)
+                .to_square_unchecked();
 
             // deal with potential promotions for this pawn
             let result = Move::new_unchecked(
@@ -789,7 +792,8 @@ impl Iterator for MoveGenerator {
             Some(result)
         } else {
             // not a promotion move, so its a 'normal' move as far as this function is concerned
-            let dest = (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).to_square();
+            let dest = (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask)
+                .to_square_unchecked();
 
             square_and_bitboard.bitboard ^= dest.to_bitboard();
             if (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty() {

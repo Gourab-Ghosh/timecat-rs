@@ -44,13 +44,27 @@ impl BitBoard {
     }
 
     #[inline]
-    pub const fn to_square_index(self) -> usize {
+    pub const fn to_square_index_unchecked(self) -> usize {
         self.0.trailing_zeros() as usize
     }
 
     #[inline]
-    pub fn to_square(self) -> Square {
-        *get_item_unchecked!(ALL_SQUARES, self.to_square_index())
+    pub fn to_square_unchecked(self) -> Square {
+        *get_item_unchecked!(ALL_SQUARES, self.to_square_index_unchecked())
+    }
+
+    #[inline]
+    pub const fn to_square_index(self) -> Option<usize> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.to_square_index_unchecked())
+        }
+    }
+
+    #[inline]
+    pub fn to_square(self) -> Option<Square> {
+        Some(*get_item_unchecked!(ALL_SQUARES, self.to_square_index()?))
     }
 
     #[inline]
@@ -364,14 +378,10 @@ impl Iterator for BitBoard {
 
     #[inline]
     fn next(&mut self) -> Option<Square> {
-        if self.0 == 0 {
-            None
-        } else {
-            let square_index = self.to_square_index();
-            let square = Square::from_index(square_index);
-            self.0 ^= 1 << square_index;
-            Some(square)
-        }
+        let square_index = self.to_square_index()?;
+        let square = Square::from_index(square_index);
+        self.0 ^= 1 << square_index;
+        Some(square)
     }
 }
 

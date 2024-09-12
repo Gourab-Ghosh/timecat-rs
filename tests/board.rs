@@ -58,7 +58,7 @@ test_draws_and_material_related_functions!(
 );
 
 #[test]
-fn test_attackers_mask() -> Result<()> {
+fn test_attackers_mask() {
     let mut board = Board::default();
     for fen in [
         STARTING_POSITION_FEN,
@@ -82,7 +82,7 @@ fn test_attackers_mask() -> Result<()> {
         "rnbqkbnr/pppp2pp/4p3/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3",
         "rnbqkbnr/pp1pppp1/8/1Pp4p/8/8/P1PPPPPP/RNBQKBNR w KQkq c6 0 3",
     ] {
-        board.set_fen(fen)?;
+        board.set_fen(fen).unwrap();
         for square in ALL_SQUARES {
             let result = board.get_attackers_mask(square, board.turn());
             let mut expected = BB_EMPTY;
@@ -109,8 +109,6 @@ fn test_attackers_mask() -> Result<()> {
             assert_eq!(expected, result, "Expected\n\n{expected}\n\nfound\n\n{result}\n\nin position\n\n{board}\n\n for square {square}");
         }
     }
-
-    Ok(())
 }
 
 macro_rules! test_repetition_and_checkmate {

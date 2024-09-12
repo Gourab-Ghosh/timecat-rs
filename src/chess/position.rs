@@ -130,7 +130,8 @@ impl BoardPosition {
 
     #[inline]
     pub fn get_king_square(&self, color: Color) -> Square {
-        self.get_colored_piece_mask(King, color).to_square()
+        self.get_colored_piece_mask(King, color)
+            .to_square_unchecked()
     }
 
     #[inline]
@@ -283,9 +284,11 @@ impl BoardPosition {
         *colored_piece_mask ^= bb;
         self._occupied ^= bb;
         if piece_type == Pawn {
-            self._pawn_transposition_hash ^= Zobrist::piece(piece_type, bb.to_square(), color);
+            self._pawn_transposition_hash ^=
+                Zobrist::piece(piece_type, bb.to_square_unchecked(), color);
         } else {
-            self._non_pawn_transposition_hash ^= Zobrist::piece(piece_type, bb.to_square(), color);
+            self._non_pawn_transposition_hash ^=
+                Zobrist::piece(piece_type, bb.to_square_unchecked(), color);
         }
         if piece_type != King {
             *get_item_unchecked_mut!(self._material_scores, color.to_index()) +=
@@ -712,7 +715,9 @@ impl BoardPosition {
         self._pinned = BB_EMPTY;
         self._checkers = BB_EMPTY;
 
-        let ksq = self.get_colored_piece_mask(King, self.turn()).to_square();
+        let ksq = self
+            .get_colored_piece_mask(King, self.turn())
+            .to_square_unchecked();
 
         let pinners = self.opponent_occupied()
             & ((ksq.get_bishop_rays_bb()
@@ -851,13 +856,8 @@ impl BoardPosition {
         ALL_PIECE_TYPES
             .into_iter()
             .filter_map(|piece_type| {
-                let attackers =
-                    self.get_attackers_mask_by_piece_type(target_square, piece_type, color);
-                if attackers.is_empty() {
-                    None
-                } else {
-                    Some(attackers.to_square())
-                }
+                self.get_attackers_mask_by_piece_type(target_square, piece_type, color)
+                    .to_square()
             })
             .next()
     }
@@ -1271,7 +1271,7 @@ impl BoardPositionMethodOverload<Move> for BoardPosition {
 
         let castles = moved == King && (move_bb & get_castle_moves()) == move_bb;
 
-        let ksq = opp_king.to_square();
+        let ksq = opp_king.to_square_unchecked();
 
         if moved == Knight {
             result._checkers ^= ksq.get_knight_moves() & dest_bb;

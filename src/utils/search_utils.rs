@@ -83,15 +83,15 @@ impl SearchConfig {
         Self::from_go_command(GoCommand::Depth(depth))
     }
 
-    // #[inline]
-    // pub const fn new_nodes(nodes: usize) -> Self {
-    //     Self::from_go_command(GoCommand::Nodes(nodes))
-    // }
+    #[inline]
+    pub const fn new_nodes(nodes: usize) -> Self {
+        Self::from_go_command(GoCommand::Nodes(nodes))
+    }
 
-    // #[inline]
-    // pub const fn new_mate(mate: Ply) -> Self {
-    //     Self::from_go_command(GoCommand::Mate(mate))
-    // }
+    #[inline]
+    pub const fn new_mate(mate: Ply) -> Self {
+        Self::from_go_command(GoCommand::Mate(mate))
+    }
 
     #[inline]
     pub const fn new_timed(
@@ -130,11 +130,9 @@ impl Deref for SearchConfig {
 }
 
 impl From<GoCommand> for SearchConfig {
+    #[inline]
     fn from(go_command: GoCommand) -> Self {
-        Self {
-            go_command,
-            moves_to_search: None,
-        }
+        Self::from_go_command(go_command)
     }
 }
 
@@ -174,13 +172,13 @@ impl TryFrom<&[&str]> for SearchConfig {
         let mut iter = binding.iter();
         let mut commands = vec![];
         let mut moves_str = vec![];
-        while let Some(s) = iter.next() {
+        for s in iter.by_ref() {
             if ["searchmove", "searchmoves"].contains(&s.as_str()) {
                 break;
             }
             commands.push(s.as_str());
         }
-        while let Some(s) = iter.next() {
+        for s in iter {
             moves_str.push(s.as_str());
         }
         if ["perft", "depth", "movetime", "ponder", "infinite"]
@@ -254,7 +252,7 @@ impl TryFrom<&[&str]> for SearchConfig {
                 Some(
                     moves_str
                         .into_iter()
-                        .map(|move_str| Move::from_str(move_str))
+                        .map(Move::from_str)
                         .collect::<Result<Vec<_>>>()?,
                 )
             },

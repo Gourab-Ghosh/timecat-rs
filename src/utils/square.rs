@@ -290,6 +290,7 @@ impl Square {
 
     #[inline]
     pub const fn from_int(int: u8) -> Self {
+        // TODO: Maybe consider getting it from ALL_SQUARES? Is it faster?
         unsafe { std::mem::transmute(int & 63) }
     }
 
