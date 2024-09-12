@@ -8,7 +8,7 @@ include!("magic_gen.rs");
 #[cfg(not(target_feature = "bmi2"))]
 pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
     let magic: Magic =
-        *get_item_unchecked!(const ROOK_AND_BISHOP_MAGIC_NUMBERS[0], square.to_index());
+        *get_item_unchecked!(const BISHOP_AND_ROOK_MAGIC_NUMBERS[1], square.to_index());
     *get_item_unchecked!(
         MOVES,
         magic.offset
@@ -37,7 +37,7 @@ pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
 #[cfg(not(target_feature = "bmi2"))]
 pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
     let magic: Magic =
-        *get_item_unchecked!(const ROOK_AND_BISHOP_MAGIC_NUMBERS[1], square.to_index());
+        *get_item_unchecked!(const BISHOP_AND_ROOK_MAGIC_NUMBERS[0], square.to_index());
     *get_item_unchecked!(
         MOVES,
         magic.offset
