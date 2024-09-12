@@ -39,7 +39,7 @@ impl<T: ToString> CustomColorize for T {
         if style_functions.is_empty() || !GLOBAL_TIMECAT_STATE.is_colored_output() {
             return self_string;
         }
-        let mut colorized_string = self_string.as_str().into();
+        let mut colorized_string = self_string.into();
         for &func in style_functions {
             colorized_string = func(colorized_string);
         }
@@ -50,7 +50,7 @@ impl<T: ToString> CustomColorize for T {
 #[cfg(not(feature = "colored"))]
 impl<T: ToString> CustomColorize for T {
     #[inline]
-    fn colorize(&self, _: &[fn(String) -> String]) -> String {
+    fn colorize(&self, _: &[ColoredStringFunction]) -> String {
         self.to_string()
     }
 }

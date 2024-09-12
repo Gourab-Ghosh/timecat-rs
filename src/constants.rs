@@ -19,6 +19,8 @@ pub mod types {
 
     #[cfg(feature = "colored")]
     pub type ColoredStringFunction = fn(colored::ColoredString) -> colored::ColoredString;
+    #[cfg(not(feature = "colored"))]
+    pub type ColoredStringFunction = fn(String) -> String;
 
     pub type Result<T> = std::result::Result<T, TimecatError>;
 }
@@ -140,17 +142,12 @@ pub mod fen {
 pub mod strings {
     use super::*;
 
-    #[cfg(feature = "colored")]
     macro_rules! generate_constants {
         ($constant_name:ident, [$( $func_name:ident ), *]) => {
+            #[cfg(feature = "colored")]
             pub const $constant_name: &[ColoredStringFunction] = &[$( colored::Colorize::$func_name ), *];
-        };
-    }
-
-    #[cfg(not(feature = "colored"))]
-    macro_rules! generate_constants {
-        ($constant_name:ident, [$( $_:ident ), *]) => {
-            pub const $constant_name: &[fn(String) -> String] = &[identity_function];
+            #[cfg(not(feature = "colored"))]
+            pub const $constant_name: &[ColoredStringFunction] = &[];
         };
     }
 

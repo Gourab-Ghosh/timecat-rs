@@ -1,7 +1,8 @@
 use super::*;
 
-pub fn identity_function<T>(object: T) -> T {
-    object
+#[inline]
+pub fn identity_function<T>(item: T) -> T {
+    item
 }
 
 pub fn print_uci_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>) {
@@ -64,14 +65,14 @@ impl GlobalTimecatState {
         }
     }
 
-    #[cfg(feature = "colored")]
     #[inline]
+    #[cfg(feature = "colored")]
     pub fn is_colored_output(&self) -> bool {
         self._colored.load(MEMORY_ORDERING)
     }
 
-    #[cfg(not(feature = "colored"))]
     #[inline]
+    #[cfg(not(feature = "colored"))]
     pub fn is_colored(&self) -> bool {
         false
     }
