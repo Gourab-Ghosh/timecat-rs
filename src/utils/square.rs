@@ -75,24 +75,20 @@ const KNIGHT_MOVES: [BitBoard; 64] = {
 };
 
 const BISHOP_DIAGONAL_RAYS: [BitBoard; NUM_SQUARES] = {
-    const fn calculate_diagonal_rays(square: Square) -> BitBoard {
+    let mut array = [BB_EMPTY; NUM_SQUARES];
+    let mut index = 0;
+    while index < NUM_SQUARES {
+        let square = Square::from_index(index);
         let square_rank_index = square.get_rank().to_int();
         let square_file_index = square.get_file().to_int();
         let rank_file_diff = square_rank_index.abs_diff(square_file_index);
-
-        if square_rank_index < square_file_index {
+        array[index] = if square_rank_index < square_file_index {
             DIAGONAL_RAY.shift_right_n_times(rank_file_diff)
         } else if square_rank_index > square_file_index {
             DIAGONAL_RAY.shift_left_n_times(rank_file_diff)
         } else {
             DIAGONAL_RAY
-        }
-    }
-
-    let mut array = [BB_EMPTY; NUM_SQUARES];
-    let mut index = 0;
-    while index < NUM_SQUARES {
-        array[index] = calculate_diagonal_rays(Square::from_index(index));
+        };
         index += 1;
     }
     array
