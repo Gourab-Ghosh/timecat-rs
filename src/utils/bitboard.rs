@@ -120,6 +120,20 @@ impl BitBoard {
     }
 
     #[inline]
+    pub fn shift_forward(self, color: Color) -> Self {
+        if color == White {
+            self.shift_up()
+        } else {
+            self.shift_down()
+        }
+    }
+
+    #[inline]
+    pub fn shift_backward(self, color: Color) -> Self {
+        self.shift_forward(!color)
+    }
+
+    #[inline]
     pub const fn shift_up(self) -> Self {
         Self((self.0 & !BB_RANK_8.0) << 8)
     }
@@ -159,7 +173,7 @@ impl BitBoard {
         let mut bb = self.0;
         let mut i = 0;
         while i < n {
-            bb = bb >> 8;
+            bb >>= 8;
             i += 1;
         }
         Self(bb)

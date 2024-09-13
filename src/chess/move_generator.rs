@@ -122,7 +122,7 @@ impl PieceMoves for PawnMoves {
 
     #[inline]
     fn pseudo_legals(src: Square, color: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
-        get_pawn_moves(src, color, occupied) & mask
+        src.get_pawn_moves(color, occupied) & mask
     }
 
     #[inline]
@@ -324,8 +324,7 @@ impl KingMoves {
         attackers ^= knight_rays & position.get_colored_piece_mask(Knight, !position.turn());
         attackers |=
             dest.get_king_moves() & position.get_colored_piece_mask(King, !position.turn());
-        attackers |= get_pawn_attacks(
-            dest,
+        attackers |= dest.get_pawn_attacks(
             position.turn(),
             position.get_colored_piece_mask(Pawn, !position.turn()),
         );

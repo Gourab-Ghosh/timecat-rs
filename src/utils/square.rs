@@ -1,7 +1,43 @@
 use super::*;
 pub use Square::*;
 
-#[rustfmt::skip]
+const PAWN_MOVES_AND_ATTACKS: [[[BitBoard; 64]; 2]; 2] = {
+    let mut moves_array = [[BB_EMPTY; 64]; 2];
+    let mut attacks_array = [[BB_EMPTY; 64]; 2];
+    let mut i = 0;
+    while i < NUM_COLORS {
+        let mut j = 0;
+        while j < NUM_SQUARES {
+            moves_array[i][j] = if i == 0 {
+                BB_SQUARES[j].shift_up()
+            } else {
+                BB_SQUARES[j].shift_down()
+            };
+            attacks_array[i][j] = BitBoard::new(
+                moves_array[i][j].shift_left().into_inner()
+                    ^ moves_array[i][j].shift_right().into_inner(),
+            );
+            j += 1;
+        }
+        i += 1;
+    }
+    let mut j = 8;
+    while j < 16 {
+        moves_array[0][j] = BitBoard::new(
+            moves_array[0][j].into_inner() ^ moves_array[0][j].shift_up().into_inner(),
+        );
+        j += 1;
+    }
+    j = 48;
+    while j < 56 {
+        moves_array[1][j] = BitBoard::new(
+            moves_array[1][j].into_inner() ^ moves_array[1][j].shift_down().into_inner(),
+        );
+        j += 1;
+    }
+    [moves_array, attacks_array]
+};
+
 const KING_MOVES: [BitBoard; 64] = {
     let mut array = [BB_EMPTY; NUM_SQUARES];
     let mut index = 0;
@@ -22,7 +58,6 @@ const KING_MOVES: [BitBoard; 64] = {
     array
 };
 
-#[rustfmt::skip]
 const KNIGHT_MOVES: [BitBoard; 64] = {
     let mut array = [BB_EMPTY; NUM_SQUARES];
     let mut index = 0;
@@ -557,6 +592,34 @@ impl Square {
     pub fn get_knight_moves(self) -> BitBoard {
         *get_item_unchecked!(KNIGHT_MOVES, self.to_index())
     }
+
+    /// Get the pawn capture move for a particular square, given the pawn's color and the potential
+    /// victims
+    #[inline]
+    pub fn get_pawn_attacks(self, color: Color, blockers: BitBoard) -> BitBoard {
+        *get_item_unchecked!(const PAWN_MOVES_AND_ATTACKS[1], color.to_index(), self.to_index())
+            & blockers
+    }
+
+    /// Get the quiet pawn moves (non-captures) for a particular square, given the pawn's color and
+    /// the potential blocking pieces.
+    #[inline]
+    pub fn get_pawn_quiets(self, color: Color, blockers: BitBoard) -> BitBoard {
+        // TODO: Maybe optimization possible?
+        if !(self.to_bitboard().shift_forward(color) & blockers).is_empty() {
+            BB_EMPTY
+        } else {
+            *get_item_unchecked!(const PAWN_MOVES_AND_ATTACKS[0], color.to_index(), self.to_index())
+                & !blockers
+        }
+    }
+
+    /// Get all the pawn moves for a particular square, given the pawn's color and the potential
+    /// blocking pieces and victims.
+    #[inline]
+    pub fn get_pawn_moves(self, color: Color, blockers: BitBoard) -> BitBoard {
+        self.get_pawn_attacks(color, blockers) ^ self.get_pawn_quiets(color, blockers)
+    }
 }
 
 impl FromStr for Square {
@@ -567,17 +630,8 @@ impl FromStr for Square {
             return Err(TimecatError::InvalidSquareString { s: s.to_string() });
         }
         let ch = s.to_lowercase().chars().collect_vec();
-        match ch[0] {
-            'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' => {}
-            _ => {
-                return Err(TimecatError::InvalidSquareString { s: s.to_string() });
-            }
-        }
-        match ch[1] {
-            '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' => {}
-            _ => {
-                return Err(TimecatError::InvalidSquareString { s: s.to_string() });
-            }
+        if !(('a'..='h').contains(&ch[0]) && ('1'..='8').contains(&ch[1])) {
+            return Err(TimecatError::InvalidSquareString { s: s.to_string() });
         }
         Ok(Square::from_rank_and_file(
             Rank::from_index(((ch[1] as usize) - ('1' as usize)) & 7),

@@ -49,13 +49,21 @@ impl CastleRights {
     /// What squares need to be empty to castle kingside?
     #[inline]
     pub fn kingside_squares(self, color: Color) -> BitBoard {
-        *get_item_unchecked!(KINGSIDE_CASTLE_SQUARES, color.to_index())
+        if color == White {
+            const { BitBoard::new(96) }
+        } else {
+            const { BitBoard::new(6917529027641081856) }
+        }
     }
 
     /// What squares need to be empty to castle queenside?
     #[inline]
     pub fn queenside_squares(self, color: Color) -> BitBoard {
-        *get_item_unchecked!(QUEENSIDE_CASTLE_SQUARES, color.to_index())
+        if color == White {
+            const { BitBoard::new(14) }
+        } else {
+            const { BitBoard::new(1008806316530991104) }
+        }
     }
 
     /// Remove castle rights, and return a new `CastleRights`.

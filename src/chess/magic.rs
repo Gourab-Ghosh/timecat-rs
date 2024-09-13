@@ -67,44 +67,18 @@ pub fn get_queen_moves(square: Square, blockers: BitBoard) -> BitBoard {
     get_rook_moves(square, blockers) ^ get_bishop_moves(square, blockers)
 }
 
-/// Get the pawn capture move for a particular square, given the pawn's color and the potential
-/// victims
-#[inline]
-pub fn get_pawn_attacks(square: Square, color: Color, blockers: BitBoard) -> BitBoard {
-    *get_item_unchecked!(const PAWN_MOVES_AND_ATTACKS[1], color.to_index(), square.to_index())
-        & blockers
-}
 /// Get the legal destination castle squares for both players
 #[inline]
 pub fn get_castle_moves() -> BitBoard {
-    CASTLE_MOVES
-}
-
-/// Get the quiet pawn moves (non-captures) for a particular square, given the pawn's color and
-/// the potential blocking pieces.
-#[inline]
-pub fn get_pawn_quiets(square: Square, color: Color, blockers: BitBoard) -> BitBoard {
-    if !(square.wrapping_forward(color).to_bitboard() & blockers).is_empty() {
-        BB_EMPTY
-    } else {
-        *get_item_unchecked!(const PAWN_MOVES_AND_ATTACKS[0], color.to_index(), square.to_index())
-            & !blockers
-    }
-}
-
-/// Get all the pawn moves for a particular square, given the pawn's color and the potential
-/// blocking pieces and victims.
-#[inline]
-pub fn get_pawn_moves(square: Square, color: Color, blockers: BitBoard) -> BitBoard {
-    get_pawn_attacks(square, color, blockers) ^ get_pawn_quiets(square, color, blockers)
+    const { BitBoard::new(6052837899185946708) }
 }
 
 #[inline]
-pub fn get_pawn_source_double_moves() -> BitBoard {
-    PAWN_SOURCE_DOUBLE_MOVES
+pub const fn get_pawn_source_double_moves() -> BitBoard {
+    const { BitBoard::new(BB_RANK_2.into_inner() ^ BB_RANK_7.into_inner()) }
 }
 
 #[inline]
-pub fn get_pawn_dest_double_moves() -> BitBoard {
-    PAWN_DEST_DOUBLE_MOVES
+pub const fn get_pawn_dest_double_moves() -> BitBoard {
+    const { BitBoard::new(BB_RANK_4.into_inner() ^ BB_RANK_5.into_inner()) }
 }

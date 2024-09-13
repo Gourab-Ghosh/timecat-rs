@@ -737,8 +737,7 @@ impl BoardPosition {
         self._checkers ^=
             ksq.get_knight_moves() & self.opponent_occupied() & self.get_piece_mask(Knight);
 
-        self._checkers ^= get_pawn_attacks(
-            ksq,
+        self._checkers ^= ksq.get_pawn_attacks(
             self.turn(),
             self.opponent_occupied() & self.get_piece_mask(Pawn),
         );
@@ -763,7 +762,7 @@ impl BoardPosition {
         let mut attacked_squares = BB_EMPTY;
         for (piece, square) in self.custom_iter(attacker_piece_types, colors, attackers_mask) {
             attacked_squares |= match piece.get_piece_type() {
-                Pawn => get_pawn_attacks(square, piece.get_color(), BB_ALL),
+                Pawn => square.get_pawn_attacks(piece.get_color(), BB_ALL),
                 Knight => square.get_knight_moves(),
                 Bishop => get_bishop_moves(square, self.occupied()),
                 Rook => get_rook_moves(square, self.occupied()),
@@ -794,10 +793,10 @@ impl BoardPosition {
         let queens_and_rooks = self.get_piece_mask(Rook) ^ self.get_piece_mask(Queen);
 
         let pawn_attacks = match color {
-            Some(color) => get_pawn_attacks(target_square, !color, BB_ALL),
+            Some(color) => target_square.get_pawn_attacks(!color, BB_ALL),
             None => {
-                get_pawn_attacks(target_square, White, BB_ALL)
-                    ^ get_pawn_attacks(target_square, Black, BB_ALL)
+                target_square.get_pawn_attacks(White, BB_ALL)
+                    ^ target_square.get_pawn_attacks(Black, BB_ALL)
             }
         } & self.get_piece_mask(Pawn);
 
@@ -829,10 +828,10 @@ impl BoardPosition {
 
         let attackers = match piece_type {
             Pawn => match color {
-                Some(color) => get_pawn_attacks(target_square, !color, BB_ALL),
+                Some(color) => target_square.get_pawn_attacks(!color, BB_ALL),
                 None => {
-                    get_pawn_attacks(target_square, White, BB_ALL)
-                        ^ get_pawn_attacks(target_square, Black, BB_ALL)
+                    target_square.get_pawn_attacks(White, BB_ALL)
+                        ^ target_square.get_pawn_attacks(Black, BB_ALL)
                 }
             },
             Knight => target_square.get_knight_moves(),
@@ -1287,16 +1286,16 @@ impl BoardPositionMethodOverload<Move> for BoardPosition {
                 && !(dest_bb & get_pawn_dest_double_moves()).is_empty()
             {
                 result.set_ep(dest.wrapping_backward(result.turn()));
-                result._checkers ^= get_pawn_attacks(ksq, !result.turn(), dest_bb);
+                result._checkers ^= ksq.get_pawn_attacks(!result.turn(), dest_bb);
             } else if Some(dest) == self.ep_square() {
                 result.xor(
                     Pawn,
                     dest.wrapping_backward(self.turn()).to_bitboard(),
                     !self.turn(),
                 );
-                result._checkers ^= get_pawn_attacks(ksq, !result.turn(), dest_bb);
+                result._checkers ^= ksq.get_pawn_attacks(!result.turn(), dest_bb);
             } else {
-                result._checkers ^= get_pawn_attacks(ksq, !result.turn(), dest_bb);
+                result._checkers ^= ksq.get_pawn_attacks(!result.turn(), dest_bb);
             }
         } else if castles {
             let my_backrank = self.turn().to_my_backrank();
