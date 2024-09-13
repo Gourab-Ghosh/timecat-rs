@@ -154,6 +154,7 @@ impl BitBoard {
     }
 
     pub const fn shift_up_n_times(self, n: u8) -> Self {
+        // TODO: Optimize the function
         if n > 7 {
             return BB_EMPTY;
         }
@@ -167,6 +168,7 @@ impl BitBoard {
     }
 
     pub const fn shift_down_n_times(self, n: u8) -> Self {
+        // TODO: Optimize the function
         if n > 7 {
             return BB_EMPTY;
         }
@@ -180,6 +182,7 @@ impl BitBoard {
     }
 
     pub const fn shift_left_n_times(self, n: u8) -> Self {
+        // TODO: Optimize the function
         if n > 7 {
             return BB_EMPTY;
         }
@@ -193,6 +196,7 @@ impl BitBoard {
     }
 
     pub const fn shift_right_n_times(self, n: u8) -> Self {
+        // TODO: Optimize the function
         if n > 7 {
             return BB_EMPTY;
         }
