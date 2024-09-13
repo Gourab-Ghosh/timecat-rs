@@ -76,8 +76,8 @@ const KNIGHT_MOVES: [BitBoard; 64] = {
 
 const BISHOP_DIAGONAL_RAYS: [BitBoard; NUM_SQUARES] = {
     const fn calculate_diagonal_rays(square: Square) -> BitBoard {
-        let square_rank_index = square.get_rank().to_index();
-        let square_file_index = square.get_file().to_index();
+        let square_rank_index = square.get_rank().to_int();
+        let square_file_index = square.get_file().to_int();
         let rank_file_diff = square_rank_index.abs_diff(square_file_index);
 
         if square_rank_index < square_file_index {

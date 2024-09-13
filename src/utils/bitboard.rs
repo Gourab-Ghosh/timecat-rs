@@ -153,7 +153,7 @@ impl BitBoard {
         Self((self.0 & !BB_FILE_H.0) << 1)
     }
 
-    pub const fn shift_up_n_times(self, n: usize) -> Self {
+    pub const fn shift_up_n_times(self, n: u8) -> Self {
         if n > 7 {
             return BB_EMPTY;
         }
@@ -166,7 +166,7 @@ impl BitBoard {
         Self(bb)
     }
 
-    pub const fn shift_down_n_times(self, n: usize) -> Self {
+    pub const fn shift_down_n_times(self, n: u8) -> Self {
         if n > 7 {
             return BB_EMPTY;
         }
@@ -179,7 +179,7 @@ impl BitBoard {
         Self(bb)
     }
 
-    pub const fn shift_left_n_times(self, n: usize) -> Self {
+    pub const fn shift_left_n_times(self, n: u8) -> Self {
         if n > 7 {
             return BB_EMPTY;
         }
@@ -192,7 +192,7 @@ impl BitBoard {
         Self(bb)
     }
 
-    pub const fn shift_right_n_times(self, n: usize) -> Self {
+    pub const fn shift_right_n_times(self, n: u8) -> Self {
         if n > 7 {
             return BB_EMPTY;
         }
