@@ -109,6 +109,8 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // parse_command(engine, "go movetime 3000");
     parse_command(engine, "go depth 15");
 
+    // println!("{:#?}", PAWN_MOVES);
+    
     // for square in ALL_SQUARES {
     //     println!("{square}");
     //     println!("{}\n", square.get_anti_diagonal_bishop_rays_bb() ^ square.to_bitboard());

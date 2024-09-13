@@ -71,7 +71,8 @@ pub fn get_queen_moves(square: Square, blockers: BitBoard) -> BitBoard {
 /// victims
 #[inline]
 pub fn get_pawn_attacks(square: Square, color: Color, blockers: BitBoard) -> BitBoard {
-    *get_item_unchecked!(PAWN_ATTACKS, color.to_index(), square.to_index()) & blockers
+    *get_item_unchecked!(const PAWN_MOVES_AND_ATTACKS[1], color.to_index(), square.to_index())
+        & blockers
 }
 /// Get the legal destination castle squares for both players
 #[inline]
@@ -86,7 +87,8 @@ pub fn get_pawn_quiets(square: Square, color: Color, blockers: BitBoard) -> BitB
     if !(square.wrapping_forward(color).to_bitboard() & blockers).is_empty() {
         BB_EMPTY
     } else {
-        *get_item_unchecked!(PAWN_MOVES, color.to_index(), square.to_index()) & !blockers
+        *get_item_unchecked!(const PAWN_MOVES_AND_ATTACKS[0], color.to_index(), square.to_index())
+            & !blockers
     }
 }
 
