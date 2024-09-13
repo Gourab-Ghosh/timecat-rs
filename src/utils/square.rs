@@ -29,14 +29,14 @@ const KNIGHT_MOVES: [BitBoard; 64] = {
     while index < NUM_SQUARES {
         let square_bb = BB_SQUARES[index];
         let mut bb = 0;
-        bb ^= square_bb.shift_up().shift_up().shift_left().into_inner();
-        bb ^= square_bb.shift_up().shift_up().shift_right().into_inner();
-        bb ^= square_bb.shift_down().shift_down().shift_left().into_inner();
-        bb ^= square_bb.shift_down().shift_down().shift_right().into_inner();
-        bb ^= square_bb.shift_left().shift_left().shift_up().into_inner();
-        bb ^= square_bb.shift_left().shift_left().shift_down().into_inner();
-        bb ^= square_bb.shift_right().shift_right().shift_up().into_inner();
-        bb ^= square_bb.shift_right().shift_right().shift_down().into_inner();
+        bb ^= square_bb.shift_up_n_times(2).shift_left().into_inner();
+        bb ^= square_bb.shift_up_n_times(2).shift_right().into_inner();
+        bb ^= square_bb.shift_down_n_times(2).shift_left().into_inner();
+        bb ^= square_bb.shift_down_n_times(2).shift_right().into_inner();
+        bb ^= square_bb.shift_left_n_times(2).shift_up().into_inner();
+        bb ^= square_bb.shift_left_n_times(2).shift_down().into_inner();
+        bb ^= square_bb.shift_right_n_times(2).shift_up().into_inner();
+        bb ^= square_bb.shift_right_n_times(2).shift_down().into_inner();
         array[index] = BitBoard::new(bb);
         index += 1;
     }
@@ -45,24 +45,14 @@ const KNIGHT_MOVES: [BitBoard; 64] = {
 
 const BISHOP_DIAGONAL_RAYS: [BitBoard; NUM_SQUARES] = {
     const fn calculate_diagonal_rays(square: Square) -> BitBoard {
-        let square_rank_index = square.get_rank().to_index() as u32;
-        let square_file_index = square.get_file().to_int() as u32;
-        let mut rank_file_diff = square_rank_index.abs_diff(square_file_index);
+        let square_rank_index = square.get_rank().to_index();
+        let square_file_index = square.get_file().to_index();
+        let rank_file_diff = square_rank_index.abs_diff(square_file_index);
 
         if square_rank_index < square_file_index {
-            let mut bb = DIAGONAL_RAY;
-            while rank_file_diff > 0 {
-                bb = bb.shift_right();
-                rank_file_diff -= 1;
-            }
-            bb
+            DIAGONAL_RAY.shift_right_n_times(rank_file_diff)
         } else if square_rank_index > square_file_index {
-            let mut bb = DIAGONAL_RAY;
-            while rank_file_diff > 0 {
-                bb = bb.shift_left();
-                rank_file_diff -= 1;
-            }
-            bb
+            DIAGONAL_RAY.shift_left_n_times(rank_file_diff)
         } else {
             DIAGONAL_RAY
         }

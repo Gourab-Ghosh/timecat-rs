@@ -139,6 +139,58 @@ impl BitBoard {
         Self((self.0 & !BB_FILE_H.0) << 1)
     }
 
+    pub const fn shift_up_n_times(self, n: usize) -> Self {
+        if n > 7 {
+            return BB_EMPTY;
+        }
+        let mut bb = self.0;
+        let mut i = 0;
+        while i < n {
+            bb = (bb & !BB_RANK_8.0) << 8;
+            i += 1;
+        }
+        Self(bb)
+    }
+
+    pub const fn shift_down_n_times(self, n: usize) -> Self {
+        if n > 7 {
+            return BB_EMPTY;
+        }
+        let mut bb = self.0;
+        let mut i = 0;
+        while i < n {
+            bb = bb >> 8;
+            i += 1;
+        }
+        Self(bb)
+    }
+
+    pub const fn shift_left_n_times(self, n: usize) -> Self {
+        if n > 7 {
+            return BB_EMPTY;
+        }
+        let mut bb = self.0;
+        let mut i = 0;
+        while i < n {
+            bb = (bb & !BB_FILE_A.0) >> 1;
+            i += 1;
+        }
+        Self(bb)
+    }
+
+    pub const fn shift_right_n_times(self, n: usize) -> Self {
+        if n > 7 {
+            return BB_EMPTY;
+        }
+        let mut bb = self.0;
+        let mut i = 0;
+        while i < n {
+            bb = (bb & !BB_FILE_H.0) << 1;
+            i += 1;
+        }
+        Self(bb)
+    }
+
     #[inline]
     pub fn contains(self, square: Square) -> bool {
         !(self & square.to_bitboard()).is_empty()
