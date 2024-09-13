@@ -21,19 +21,15 @@ const PAWN_MOVES_AND_ATTACKS: [[[BitBoard; 64]; 2]; 2] = {
         }
         i += 1;
     }
-    let mut j = 8;
-    while j < 16 {
-        moves_array[0][j] = BitBoard::new(
-            moves_array[0][j].into_inner() ^ moves_array[0][j].shift_up().into_inner(),
+    i = 0;
+    while i < 8 {
+        moves_array[0][i + 8] = BitBoard::new(
+            moves_array[0][i + 8].into_inner() ^ moves_array[0][i + 8].shift_up().into_inner(),
         );
-        j += 1;
-    }
-    j = 48;
-    while j < 56 {
-        moves_array[1][j] = BitBoard::new(
-            moves_array[1][j].into_inner() ^ moves_array[1][j].shift_down().into_inner(),
+        moves_array[1][i + 48] = BitBoard::new(
+            moves_array[1][i + 48].into_inner() ^ moves_array[1][i + 48].shift_down().into_inner(),
         );
-        j += 1;
+        i += 1;
     }
     [moves_array, attacks_array]
 };
@@ -140,7 +136,7 @@ const ROOK_RAYS: [BitBoard; NUM_SQUARES] = {
     array
 };
 
-const ALL_RAYS: [BitBoard; NUM_SQUARES] = {
+const ALL_DIRECTION_RAYS: [BitBoard; NUM_SQUARES] = {
     let mut array = [BB_EMPTY; NUM_SQUARES];
     let mut index = 0;
     while index < NUM_SQUARES {
@@ -163,7 +159,8 @@ const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
     }
 
     const fn calculate_between(square1: Square, square2: Square) -> BitBoard {
-        if (ALL_RAYS[square1.to_index()].into_inner() & BB_SQUARES[square2.to_index()].into_inner())
+        if (ALL_DIRECTION_RAYS[square1.to_index()].into_inner()
+            & BB_SQUARES[square2.to_index()].into_inner())
             == 0
         {
             return BB_EMPTY;
@@ -214,7 +211,8 @@ const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
 
 const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
     const fn calculate_line(square1: Square, square2: Square) -> BitBoard {
-        if (ALL_RAYS[square1.to_index()].into_inner() & BB_SQUARES[square2.to_index()].into_inner())
+        if (ALL_DIRECTION_RAYS[square1.to_index()].into_inner()
+            & BB_SQUARES[square2.to_index()].into_inner())
             == 0
         {
             return BB_EMPTY;
@@ -577,8 +575,8 @@ impl Square {
 
     /// Get the rays for a rook and bishop together on a particular square.
     #[inline]
-    pub fn get_all_rays_bb(self) -> BitBoard {
-        *get_item_unchecked!(ALL_RAYS, self.to_index())
+    pub fn get_all_direction_rays_bb(self) -> BitBoard {
+        *get_item_unchecked!(ALL_DIRECTION_RAYS, self.to_index())
     }
 
     /// Get the king moves for a particular square.
