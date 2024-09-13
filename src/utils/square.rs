@@ -39,16 +39,16 @@ const KING_MOVES: [BitBoard; 64] = {
     let mut index = 0;
     while index < NUM_SQUARES {
         let square_bb = BB_SQUARES[index];
-        let mut bb = 0;
-        bb ^= square_bb.shift_up().into_inner();
-        bb ^= square_bb.shift_down().into_inner();
-        bb ^= square_bb.shift_left().into_inner();
-        bb ^= square_bb.shift_right().into_inner();
-        bb ^= square_bb.shift_up().shift_left().into_inner();
-        bb ^= square_bb.shift_up().shift_right().into_inner();
-        bb ^= square_bb.shift_down().shift_left().into_inner();
-        bb ^= square_bb.shift_down().shift_right().into_inner();
-        array[index] = BitBoard::new(bb);
+        array[index] = BitBoard::new(
+            square_bb.shift_up().into_inner()
+                ^ square_bb.shift_down().into_inner()
+                ^ square_bb.shift_left().into_inner()
+                ^ square_bb.shift_right().into_inner()
+                ^ square_bb.shift_up().shift_left().into_inner()
+                ^ square_bb.shift_up().shift_right().into_inner()
+                ^ square_bb.shift_down().shift_left().into_inner()
+                ^ square_bb.shift_down().shift_right().into_inner(),
+        );
         index += 1;
     }
     array
@@ -59,16 +59,16 @@ const KNIGHT_MOVES: [BitBoard; 64] = {
     let mut index = 0;
     while index < NUM_SQUARES {
         let square_bb = BB_SQUARES[index];
-        let mut bb = 0;
-        bb ^= square_bb.shift_up_n_times(2).shift_left().into_inner();
-        bb ^= square_bb.shift_up_n_times(2).shift_right().into_inner();
-        bb ^= square_bb.shift_down_n_times(2).shift_left().into_inner();
-        bb ^= square_bb.shift_down_n_times(2).shift_right().into_inner();
-        bb ^= square_bb.shift_left_n_times(2).shift_up().into_inner();
-        bb ^= square_bb.shift_left_n_times(2).shift_down().into_inner();
-        bb ^= square_bb.shift_right_n_times(2).shift_up().into_inner();
-        bb ^= square_bb.shift_right_n_times(2).shift_down().into_inner();
-        array[index] = BitBoard::new(bb);
+        array[index] = BitBoard::new(
+            square_bb.shift_up_n_times(2).shift_left().into_inner()
+                ^ square_bb.shift_up_n_times(2).shift_right().into_inner()
+                ^ square_bb.shift_down_n_times(2).shift_left().into_inner()
+                ^ square_bb.shift_down_n_times(2).shift_right().into_inner()
+                ^ square_bb.shift_left_n_times(2).shift_up().into_inner()
+                ^ square_bb.shift_left_n_times(2).shift_down().into_inner()
+                ^ square_bb.shift_right_n_times(2).shift_up().into_inner()
+                ^ square_bb.shift_right_n_times(2).shift_down().into_inner(),
+        );
         index += 1;
     }
     array
