@@ -13,22 +13,15 @@ const PAWN_MOVES_AND_ATTACKS: [[[BitBoard; 64]; 2]; 2] = {
             } else {
                 BB_SQUARES[j].shift_down()
             };
-            attacks_array[i][j] = BitBoard::new(
-                moves_array[i][j].shift_left().into_inner()
-                    ^ moves_array[i][j].shift_right().into_inner(),
-            );
+            attacks_array[i][j] = bb_xor(moves_array[i][j].shift_left(), moves_array[i][j].shift_right());
             j += 1;
         }
         i += 1;
     }
     i = 0;
     while i < 8 {
-        moves_array[0][i + 8] = BitBoard::new(
-            moves_array[0][i + 8].into_inner() ^ moves_array[0][i + 8].shift_up().into_inner(),
-        );
-        moves_array[1][i + 48] = BitBoard::new(
-            moves_array[1][i + 48].into_inner() ^ moves_array[1][i + 48].shift_down().into_inner(),
-        );
+        moves_array[0][i + 8] = bb_xor(moves_array[0][i + 8], moves_array[0][i + 8].shift_up());
+        moves_array[1][i + 48] = bb_xor(moves_array[1][i + 48], moves_array[1][i + 48].shift_down());
         i += 1;
     }
     [moves_array, attacks_array]
@@ -109,10 +102,7 @@ const BISHOP_RAYS: [BitBoard; NUM_SQUARES] = {
     let mut array = [BB_EMPTY; NUM_SQUARES];
     let mut index = 0;
     while index < NUM_SQUARES {
-        array[index] = BitBoard::new(
-            BISHOP_DIAGONAL_RAYS[index].into_inner()
-                ^ BISHOP_ANTI_DIAGONAL_RAYS[index].into_inner(),
-        );
+        array[index] = bb_xor(BISHOP_DIAGONAL_RAYS[index], BISHOP_ANTI_DIAGONAL_RAYS[index]);
         index += 1;
     }
     array
@@ -123,10 +113,7 @@ const ROOK_RAYS: [BitBoard; NUM_SQUARES] = {
     let mut index = 0;
     while index < NUM_SQUARES {
         let square = Square::from_index(index);
-        array[index] = BitBoard::new(
-            BB_RANKS[square.get_rank().to_index()].into_inner()
-                ^ BB_FILES[square.get_file().to_index()].into_inner(),
-        );
+        array[index] = bb_xor(BB_RANKS[square.get_rank().to_index()], BB_FILES[square.get_file().to_index()]);
         index += 1;
     }
     array
@@ -136,29 +123,15 @@ const ALL_DIRECTION_RAYS: [BitBoard; NUM_SQUARES] = {
     let mut array = [BB_EMPTY; NUM_SQUARES];
     let mut index = 0;
     while index < NUM_SQUARES {
-        array[index] =
-            BitBoard::new(ROOK_RAYS[index].into_inner() ^ BISHOP_RAYS[index].into_inner());
+        array[index] = bb_xor(ROOK_RAYS[index], BISHOP_RAYS[index]);
         index += 1;
     }
     array
 };
 
 const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
-    const fn cmp(int1: u8, int2: u8) -> Ordering {
-        if int1 > int2 {
-            return Ordering::Greater;
-        }
-        if int1 < int2 {
-            return Ordering::Less;
-        }
-        Ordering::Equal
-    }
-
     const fn calculate_between(square1: Square, square2: Square) -> BitBoard {
-        if (ALL_DIRECTION_RAYS[square1.to_index()].into_inner()
-            & BB_SQUARES[square2.to_index()].into_inner())
-            == 0
-        {
+        if !bb_contains(ALL_DIRECTION_RAYS[square1.to_index()], square2) {
             return BB_EMPTY;
         }
 
@@ -167,10 +140,10 @@ const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
         let square2_rank = square2.get_rank();
         let square2_file = square2.get_file();
 
-        let rank_ordering = cmp(square1_rank.to_int(), square2_rank.to_int());
-        let file_ordering = cmp(square1_file.to_int(), square2_file.to_int());
+        let rank_ordering = u8_cmp(square1_rank.to_int(), square2_rank.to_int());
+        let file_ordering = u8_cmp(square1_file.to_int(), square2_file.to_int());
 
-        let mut bb = 0;
+        let mut bb = BB_EMPTY;
         let mut current_square = square1;
         loop {
             let mut next_square = match rank_ordering {
@@ -183,10 +156,10 @@ const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
                 Ordering::Equal => next_square,
                 Ordering::Greater => next_square.wrapping_left(),
             };
-            if next_square.to_int() == square2.to_int() {
-                return BitBoard::new(bb);
+            if square_eq(next_square, square2) {
+                return bb;
             }
-            bb ^= BB_SQUARES[next_square.to_index()].into_inner();
+            bb = bb_xor(bb, square_to_bitboard(next_square));
             current_square = next_square;
         }
     }
@@ -207,28 +180,25 @@ const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
 
 const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
     const fn calculate_line(square1: Square, square2: Square) -> BitBoard {
-        if (ALL_DIRECTION_RAYS[square1.to_index()].into_inner()
-            & BB_SQUARES[square2.to_index()].into_inner())
-            == 0
-        {
+        if !bb_contains(ALL_DIRECTION_RAYS[square1.to_index()], square2) {
             return BB_EMPTY;
         }
 
         let square2_bb = BB_SQUARES[square2.to_index()];
         let mut possible_line = BB_RANKS[square1.get_rank().to_index()];
-        if possible_line.into_inner() & square2_bb.into_inner() != 0 {
+        if !bb_and(possible_line, square2_bb).is_empty() {
             return possible_line;
         }
         possible_line = BB_FILES[square1.get_file().to_index()];
-        if possible_line.into_inner() & square2_bb.into_inner() != 0 {
+        if !bb_and(possible_line, square2_bb).is_empty() {
             return possible_line;
         }
         possible_line = BISHOP_DIAGONAL_RAYS[square1.to_index()];
-        if possible_line.into_inner() & square2_bb.into_inner() != 0 {
+        if !bb_and(possible_line, square2_bb).is_empty() {
             return possible_line;
         }
         possible_line = BISHOP_ANTI_DIAGONAL_RAYS[square1.to_index()];
-        if possible_line.into_inner() & square2_bb.into_inner() != 0 {
+        if !bb_and(possible_line, square2_bb).is_empty() {
             return possible_line;
         }
 
@@ -251,19 +221,19 @@ const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
 
 // const MOVES: [BitBoard; 0] = {
 //     const fn generate_rook_mask(square: Square) -> BitBoard {
-//         let mut to_remove = BB_CORNERS.into_inner();
+//         let mut to_remove = BB_CORNERS;
 //         match square.get_rank() {
-//             Rank::First => to_remove ^= BB_RANK_1.into_inner(),
-//             Rank::Eighth => to_remove ^= BB_RANK_8.into_inner(),
+//             Rank::First => to_remove = bb_xor(to_remove, BB_RANK_1),
+//             Rank::Eighth => to_remove = bb_xor(to_remove, BB_RANK_8),
 //             _ => (),
 //         }
 //         // TODO: Check of xor works here!
 //         match square.get_file() {
-//             File::A => to_remove ^= BB_FILE_A.into_inner(),
-//             File::H => to_remove ^= BB_FILE_H.into_inner(),
+//             File::A => to_remove = bb_xor(to_remove, BB_FILE_A),
+//             File::H => to_remove = bb_xor(to_remove, BB_FILE_H),
 //             _ => (),
 //         }
-//         BitBoard::new(ROOK_RAYS[square.to_index()].into_inner() & !to_remove)
+//         bb_and(ROOK_RAYS[square.to_index()], bb_not(to_remove))
 //     }
 
 //     let mut bishop_masks = [BB_EMPTY; 64];
@@ -271,8 +241,7 @@ const LINE: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
 //     {
 //         let mut i = 0;
 //         while i < 64 {
-//             bishop_masks[i] =
-//                 BitBoard::new(BISHOP_RAYS[i].into_inner() & !BB_CORNERS.into_inner());
+//             bishop_masks[i] = bb_and(BISHOP_RAYS[i], bb_not(BB_CORNERS));
 //             rook_masks[i] = generate_rook_mask(Square::from_index(i));
 //             i += 1;
 //         }
