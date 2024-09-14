@@ -68,6 +68,31 @@ impl BitBoard {
     }
 
     #[inline]
+    pub fn xor_square(&mut self, square: Square) {
+        self.0 ^= square.to_bitboard();
+    }
+
+    #[inline]
+    pub fn remove_square(&mut self, square: Square) {
+        self.0 &= !square.to_bitboard();
+    }
+
+    pub fn pop_square_unchecked(&mut self) -> Square {
+        let square = self.to_square_unchecked();
+        self.xor_square(square);
+        square
+    }
+
+    #[inline]
+    pub fn pop_square(&mut self) -> Option<Square> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.pop_square_unchecked())
+        }
+    }
+
+    #[inline]
     pub const fn wrapping_mul(self, rhs: Self) -> Self {
         Self(self.0.wrapping_mul(rhs.0))
     }
@@ -448,10 +473,7 @@ impl Iterator for BitBoard {
 
     #[inline]
     fn next(&mut self) -> Option<Square> {
-        let square_index = self.to_square_index()?;
-        let square = Square::from_index(square_index);
-        self.0 ^= 1 << square_index;
-        Some(square)
+        self.pop_square()
     }
 }
 
