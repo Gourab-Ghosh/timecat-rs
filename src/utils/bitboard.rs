@@ -8,12 +8,12 @@ pub struct BitBoard(u64);
 impl BitBoard {
     #[inline]
     pub const fn new(bb: u64) -> Self {
-        Self(bb)
+        unsafe { std::mem::transmute(bb) }
     }
 
     #[inline]
     pub fn from_array(array: [u64; 8]) -> Self {
-        Self(
+        Self::new(
             array
                 .into_iter()
                 .rev()
@@ -30,7 +30,7 @@ impl BitBoard {
 
     #[inline]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Self {
-        Self(1 << ((rank.to_int() << 3) | file.to_int()))
+        Self::new(1 << ((rank.to_int() << 3) | file.to_int()))
     }
 
     #[inline]
@@ -40,7 +40,7 @@ impl BitBoard {
 
     #[inline]
     pub const fn reverse_colors(self) -> Self {
-        Self(self.0.swap_bytes())
+        Self::new(self.0.swap_bytes())
     }
 
     #[inline]
@@ -94,7 +94,7 @@ impl BitBoard {
 
     #[inline]
     pub const fn wrapping_mul(self, rhs: Self) -> Self {
-        Self(self.0.wrapping_mul(rhs.0))
+        Self::new(self.0.wrapping_mul(rhs.0))
     }
 
     #[inline]
@@ -108,7 +108,7 @@ impl BitBoard {
         bb = ((bb >> 8) & 0x00FF_00FF_00FF_00FF) | ((bb & 0x00FF_00FF_00FF_00FF) << 8);
         bb = ((bb >> 16) & 0x0000_FFFF_0000_FFFF) | ((bb & 0x0000_FFFF_0000_FFFF) << 16);
         bb = (bb >> 32) | ((bb & 0x0000_0000_FFFF_FFFF) << 32);
-        Self(bb)
+        Self::new(bb)
     }
 
     /// <https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating#MirrorHorizontally>
@@ -117,7 +117,7 @@ impl BitBoard {
         bb = ((bb >> 1) & 0x5555_5555_5555_5555) | ((bb & 0x5555_5555_5555_5555) << 1);
         bb = ((bb >> 2) & 0x3333_3333_3333_3333) | ((bb & 0x3333_3333_3333_3333) << 2);
         bb = ((bb >> 4) & 0x0F0F_0F0F_0F0F_0F0F) | ((bb & 0x0F0F_0F0F_0F0F_0F0F) << 4);
-        Self(bb)
+        Self::new(bb)
     }
 
     /// <https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating#FlipabouttheDiagonal>
@@ -129,7 +129,7 @@ impl BitBoard {
         bb = bb ^ t ^ (t >> 14);
         t = (bb ^ (bb << 7)) & 0x5500_5500_5500_5500;
         bb = bb ^ t ^ (t >> 7);
-        Self(bb)
+        Self::new(bb)
     }
 
     /// <https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating#FlipabouttheAntidiagonal>
@@ -141,7 +141,7 @@ impl BitBoard {
         bb = bb ^ t ^ (t >> 18);
         t = (bb ^ (bb << 9)) & 0xAA00_AA00_AA00_AA00;
         bb = bb ^ t ^ (t >> 9);
-        Self(bb)
+        Self::new(bb)
     }
 
     #[inline]
@@ -160,22 +160,22 @@ impl BitBoard {
 
     #[inline]
     pub const fn shift_up(self) -> Self {
-        Self((self.0 & !BB_RANK_8.0) << 8)
+        Self::new((self.0 & !BB_RANK_8.0) << 8)
     }
 
     #[inline]
     pub const fn shift_down(self) -> Self {
-        Self(self.0 >> 8)
+        Self::new(self.0 >> 8)
     }
 
     #[inline]
     pub const fn shift_left(self) -> Self {
-        Self((self.0 & !BB_FILE_A.0) >> 1)
+        Self::new((self.0 & !BB_FILE_A.0) >> 1)
     }
 
     #[inline]
     pub const fn shift_right(self) -> Self {
-        Self((self.0 & !BB_FILE_H.0) << 1)
+        Self::new((self.0 & !BB_FILE_H.0) << 1)
     }
 
     pub const fn shift_up_n_times(self, n: u8) -> Self {
@@ -189,7 +189,7 @@ impl BitBoard {
             bb = (bb & !BB_RANK_8.0) << 8;
             i += 1;
         }
-        Self(bb)
+        Self::new(bb)
     }
 
     pub const fn shift_down_n_times(self, n: u8) -> Self {
@@ -203,7 +203,7 @@ impl BitBoard {
             bb >>= 8;
             i += 1;
         }
-        Self(bb)
+        Self::new(bb)
     }
 
     pub const fn shift_left_n_times(self, n: u8) -> Self {
@@ -217,7 +217,7 @@ impl BitBoard {
             bb = (bb & !BB_FILE_A.0) >> 1;
             i += 1;
         }
-        Self(bb)
+        Self::new(bb)
     }
 
     pub const fn shift_right_n_times(self, n: u8) -> Self {
@@ -231,7 +231,7 @@ impl BitBoard {
             bb = (bb & !BB_FILE_H.0) << 1;
             i += 1;
         }
-        Self(bb)
+        Self::new(bb)
     }
 
     #[inline]
@@ -256,7 +256,7 @@ macro_rules! implement_u64_methods {
             $(
                 #[inline]
                 $visibility const fn $function(&self, $($argument: $argument_type),*) -> $return_type {
-                    BitBoard(self.0.$function($($argument),*))
+                    Self::new(self.0.$function($($argument),*))
                 }
             )*
         }
@@ -357,7 +357,7 @@ macro_rules! implement_bitwise_operations {
 
             #[inline]
             fn $direct_func(self, rhs: $int_type) -> Self::Output {
-                Self(self.0.$direct_func(rhs as u64))
+                Self::new(self.0.$direct_func(rhs as u64))
             }
         }
 
@@ -455,7 +455,7 @@ impl Not for &BitBoard {
 
     #[inline]
     fn not(self) -> BitBoard {
-        BitBoard(!self.0)
+        BitBoard::new(!self.0)
     }
 }
 
@@ -501,7 +501,7 @@ impl fmt::Display for BitBoard {
 impl<'source> FromPyObject<'source> for BitBoard {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(int) = ob.extract::<u64>() {
-            return Ok(Self(int));
+            return Ok(Self::new(int));
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),

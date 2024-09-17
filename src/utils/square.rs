@@ -129,7 +129,7 @@ const ALL_DIRECTION_RAYS: [BitBoard; NUM_SQUARES] = {
     array
 };
 
-const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
+pub(crate) const BETWEEN: [[BitBoard; NUM_SQUARES]; NUM_SQUARES] = {
     const fn calculate_between(square1: Square, square2: Square) -> BitBoard {
         if !bb_contains(ALL_DIRECTION_RAYS[square1.to_index()], square2) {
             return BB_EMPTY;
@@ -449,7 +449,7 @@ impl Square {
         file_distance.max(rank_distance)
     }
 
-    pub fn manhattan_distance(self, other: Square) -> u8 {
+    pub const fn manhattan_distance(self, other: Square) -> u8 {
         let (file1, rank1) = (self.get_file(), self.get_rank());
         let (file2, rank2) = (other.get_file(), other.get_rank());
         let file_distance = file1.to_int().abs_diff(file2.to_int());
