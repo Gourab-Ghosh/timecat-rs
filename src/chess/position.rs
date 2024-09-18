@@ -644,6 +644,7 @@ impl BoardPosition {
 
     #[inline]
     pub fn is_legal(&self, move_: Move) -> bool {
+        // TODO: Scope of improvement
         self.generate_legal_moves().contains(&move_)
     }
 
