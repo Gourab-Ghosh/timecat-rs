@@ -111,7 +111,7 @@ impl UserCommand {
             }
             Self::Help => println_wasm!("{}", Self::generate_help_message()),
             &Self::Perft(depth) => GoAndPerft::run_perft_command(engine, depth)?,
-            Self::Go(config) => GoAndPerft::run_go_command(engine, config)?,
+            Self::Go(config) => GoAndPerft::run_search(engine, config)?,
             Self::PushMoves(user_input) => {
                 let binding = Parser::sanitize_string(user_input);
                 Push::push_moves(engine, &binding.split_whitespace().collect_vec())?
@@ -170,7 +170,17 @@ impl GoAndPerft {
         Ok(())
     }
 
-    fn run_go_command(engine: &mut impl ChessEngine, config: &SearchConfig) -> Result<()> {
+    fn run_search(engine: &mut impl ChessEngine, config: &SearchConfig) -> Result<()> {
+        if let Some(moves_to_search) = config.get_moves_to_search() {
+            if moves_to_search
+                .iter()
+                .any(|&move_| !engine.get_board().is_legal(move_))
+            {
+                return Err(TimecatError::IllegalSearchMoves {
+                    moves: moves_to_search.to_vec(),
+                });
+            }
+        }
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             println_wasm!("{}\n", engine.get_board());
         }

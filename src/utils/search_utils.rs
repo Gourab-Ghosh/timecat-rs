@@ -273,7 +273,7 @@ impl TryFrom<&[&str]> for SearchConfig {
             .collect_vec();
         let mut iter = binding.iter();
         let mut commands = vec![];
-        let mut moves_str = vec![];
+        let mut moves = vec![];
         for s in iter.by_ref() {
             if ["searchmove", "searchmoves"].contains(&s.as_str()) {
                 break;
@@ -281,7 +281,7 @@ impl TryFrom<&[&str]> for SearchConfig {
             commands.push(s.as_str());
         }
         for s in iter {
-            moves_str.push(s.as_str());
+            moves.push(Move::from_str(s)?);
         }
 
         let second_command = commands
@@ -330,16 +330,7 @@ impl TryFrom<&[&str]> for SearchConfig {
 
         Ok(Self {
             go_command,
-            moves_to_search: if moves_str.is_empty() {
-                None
-            } else {
-                Some(
-                    moves_str
-                        .into_iter()
-                        .map(Move::from_str)
-                        .collect::<Result<Vec<_>>>()?,
-                )
-            },
+            moves_to_search: if moves.is_empty() { None } else { Some(moves) },
         })
     }
 }
