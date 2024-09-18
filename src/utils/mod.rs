@@ -19,7 +19,7 @@ pub mod search_utils;
 pub mod serde_extension;
 pub mod square;
 pub mod string_utils;
-pub mod temporary_constants;
+pub mod constant_functions_temp;
 pub mod time_utils;
 
 use super::*;
@@ -44,5 +44,5 @@ pub use search_utils::*;
 pub use serde_extension::*;
 pub use square::*;
 pub use string_utils::*;
-pub use temporary_constants::*;
+pub use constant_functions_temp::*;
 pub use time_utils::*;
