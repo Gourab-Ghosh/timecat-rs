@@ -90,66 +90,79 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
 
     fn on_receiving_search_config(&mut self, config: &SearchConfig, searcher: &mut Searcher<P>) {
         self.is_infinite_search = false;
-        let board = searcher.get_board();
         self.moves_to_search = config.get_moves_to_search().map(|slice| {
             slice
                 .iter()
                 .copied()
-                .filter(|&move_| board.is_legal(move_))
+                .filter(|&move_| searcher.get_board().is_legal(move_))
                 .collect_vec()
         });
-        match config.get_command() {
-            GoCommand::MoveTime(duration) => self.set_max_time(duration),
-            GoCommand::Timed {
-                wtime,
-                btime,
-                winc,
-                binc,
-                moves_to_go,
-            } => {
-                let (self_time, self_inc, opponent_time, _) = match board.turn() {
-                    White => (wtime, winc, btime, binc),
-                    Black => (btime, binc, wtime, winc),
-                };
-                let divider = moves_to_go.unwrap_or(
-                    (20 as NumMoves)
-                        .checked_sub(board.get_fullmove_number() / 2)
-                        .unwrap_or_default()
-                        .max(5),
-                );
-                let new_inc = self_inc
-                    .checked_sub(Duration::from_secs(1))
-                    .unwrap_or_default();
-                let self_time_advantage_bonus =
-                    self_time.checked_sub(opponent_time).unwrap_or_default();
-                let opponent_time_advantage =
-                    opponent_time.checked_sub(self_time).unwrap_or_default();
-                let mut search_time = self_time
-                    .checked_sub(opponent_time_advantage)
-                    .unwrap_or_default()
-                    / divider as u32
-                    + new_inc
-                    + self_time_advantage_bonus
-                        .checked_sub(Duration::from_secs(10))
-                        .unwrap_or_default()
-                        / 4;
-                search_time = search_time
-                    .max((self_time / 2).min(Duration::from_secs(3)))
-                    .min(Duration::from_secs(board.get_fullmove_number() as u64) / 2)
-                    .max(Duration::from_millis(100));
-                self.set_max_time(search_time);
-            }
-            GoCommand::Depth(depth) => self.max_depth = depth,
-            GoCommand::Nodes(num_nodes_searched) => {
-                self.max_num_nodes_searched = num_nodes_searched
-            }
-            GoCommand::Mate(mate_distance) => {
-                self.max_abs_score_reached = searcher
-                    .get_evaluator_mut()
-                    .evaluate_checkmate_in(2 * mate_distance)
-            }
+        match config.get_go_command() {
             GoCommand::Ponder => (),
             GoCommand::Infinite => self.is_infinite_search = true,
+            GoCommand::Limit {
+                depth,
+                nodes,
+                mate,
+                movetime,
+                time_clock,
+            } => {
+                if let Some(depth) = depth {
+                    self.max_depth = *depth;
+                }
+                if let Some(nodes) = nodes {
+                    self.max_num_nodes_searched = *nodes;
+                }
+                if let Some(mate) = mate {
+                    self.max_abs_score_reached = searcher
+                        .get_evaluator_mut()
+                        .evaluate_checkmate_in(2 * *mate);
+                }
+                if let Some(movetime) = movetime {
+                    self.set_max_time(self.max_time.min(*movetime));
+                }
+                if let Some(TimedGoCommand {
+                    wtime,
+                    btime,
+                    winc,
+                    binc,
+                    moves_to_go,
+                }) = time_clock
+                {
+                    let board = searcher.get_board();
+                    let (self_time, self_inc, opponent_time, _) = match board.turn() {
+                        White => (*wtime, *winc, *btime, *binc),
+                        Black => (*btime, *binc, *wtime, *winc),
+                    };
+                    let divider = moves_to_go.unwrap_or(
+                        (20 as NumMoves)
+                            .checked_sub(board.get_fullmove_number() / 2)
+                            .unwrap_or_default()
+                            .max(5),
+                    );
+                    let new_inc = self_inc
+                        .checked_sub(Duration::from_secs(1))
+                        .unwrap_or_default();
+                    let self_time_advantage_bonus =
+                        self_time.checked_sub(opponent_time).unwrap_or_default();
+                    let opponent_time_advantage =
+                        opponent_time.checked_sub(self_time).unwrap_or_default();
+                    let mut search_time = self_time
+                        .checked_sub(opponent_time_advantage)
+                        .unwrap_or_default()
+                        / divider as u32
+                        + new_inc
+                        + self_time_advantage_bonus
+                            .checked_sub(Duration::from_secs(10))
+                            .unwrap_or_default()
+                            / 4;
+                    search_time = search_time
+                        .max((self_time / 2).min(Duration::from_secs(3)))
+                        .min(Duration::from_secs(board.get_fullmove_number() as u64) / 2)
+                        .max(Duration::from_millis(100));
+                    self.set_max_time(self.max_time.min(search_time));
+                }
+            }
         }
     }
 

@@ -123,9 +123,14 @@ pub fn self_play(
             .map(|&score| score.stringify())
             .join(", "),
     );
-    match search_config.get_command() {
-        GoCommand::Depth(depth) => println_info("Depth Searched", depth),
-        GoCommand::MoveTime(time) => println_info("Time Searched Per Move", time.stringify()),
+    match search_config.get_go_command() {
+        GoCommand::Limit {
+            depth: Some(depth), ..
+        } => println_info("Depth Searched", depth),
+        GoCommand::Limit {
+            movetime: Some(movetime),
+            ..
+        } => println_info("Time Searched Per Move", movetime.stringify()),
         _ => (),
     }
     println_info(

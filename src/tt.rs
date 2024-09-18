@@ -65,14 +65,6 @@ impl TranspositionTableEntry {
             best_move,
         }
     }
-
-    fn get_best_move(&self) -> Option<Move> {
-        self.best_move
-    }
-
-    fn set_best_move(&mut self, valid_or_null_move: Option<Move>) {
-        self.best_move = valid_or_null_move;
-    }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -109,7 +101,7 @@ impl TranspositionTable {
             Some(entry) => entry,
             None => return (None, None),
         };
-        let best_move = tt_entry.get_best_move();
+        let best_move = tt_entry.best_move;
         if tt_entry.optional_data.is_none() {
             return (None, best_move);
         }
@@ -130,7 +122,7 @@ impl TranspositionTable {
 
     #[inline]
     pub fn read_best_move(&self, key: u64) -> Option<Move> {
-        self.table.get(key)?.get_best_move()
+        self.table.get(key)?.best_move
     }
 
     pub fn write(
@@ -171,7 +163,7 @@ impl TranspositionTable {
             key,
             TranspositionTableEntry::new(
                 optional_data,
-                best_move.or(old_optional_entry.and_then(|tt_entry| tt_entry.get_best_move())),
+                best_move.or(old_optional_entry.and_then(|tt_entry| tt_entry.best_move)),
             ),
         );
     }
@@ -184,7 +176,9 @@ impl TranspositionTable {
             .unwrap()
             .iter_mut()
             .flatten()
-            .for_each(|entry| entry.get_entry_mut().set_best_move(None));
+            .for_each(|entry| {
+                entry.get_entry_mut().best_move = None;
+            });
     }
 }
 

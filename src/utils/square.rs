@@ -13,7 +13,10 @@ const PAWN_MOVES_AND_ATTACKS: [[[BitBoard; 64]; 2]; 2] = {
             } else {
                 BB_SQUARES[j].shift_down()
             };
-            attacks_array[i][j] = bb_xor(moves_array[i][j].shift_left(), moves_array[i][j].shift_right());
+            attacks_array[i][j] = bb_xor(
+                moves_array[i][j].shift_left(),
+                moves_array[i][j].shift_right(),
+            );
             j += 1;
         }
         i += 1;
@@ -21,7 +24,8 @@ const PAWN_MOVES_AND_ATTACKS: [[[BitBoard; 64]; 2]; 2] = {
     i = 0;
     while i < 8 {
         moves_array[0][i + 8] = bb_xor(moves_array[0][i + 8], moves_array[0][i + 8].shift_up());
-        moves_array[1][i + 48] = bb_xor(moves_array[1][i + 48], moves_array[1][i + 48].shift_down());
+        moves_array[1][i + 48] =
+            bb_xor(moves_array[1][i + 48], moves_array[1][i + 48].shift_down());
         i += 1;
     }
     [moves_array, attacks_array]
@@ -102,7 +106,10 @@ const BISHOP_RAYS: [BitBoard; NUM_SQUARES] = {
     let mut array = [BB_EMPTY; NUM_SQUARES];
     let mut index = 0;
     while index < NUM_SQUARES {
-        array[index] = bb_xor(BISHOP_DIAGONAL_RAYS[index], BISHOP_ANTI_DIAGONAL_RAYS[index]);
+        array[index] = bb_xor(
+            BISHOP_DIAGONAL_RAYS[index],
+            BISHOP_ANTI_DIAGONAL_RAYS[index],
+        );
         index += 1;
     }
     array
@@ -113,7 +120,10 @@ const ROOK_RAYS: [BitBoard; NUM_SQUARES] = {
     let mut index = 0;
     while index < NUM_SQUARES {
         let square = Square::from_index(index);
-        array[index] = bb_xor(BB_RANKS[square.get_rank().to_index()], BB_FILES[square.get_file().to_index()]);
+        array[index] = bb_xor(
+            BB_RANKS[square.get_rank().to_index()],
+            BB_FILES[square.get_file().to_index()],
+        );
         index += 1;
     }
     array

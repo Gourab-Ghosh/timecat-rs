@@ -1,49 +1,175 @@
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, Hash)]
+pub struct TimedGoCommand {
+    pub wtime: Duration,
+    pub btime: Duration,
+    pub winc: Duration,
+    pub binc: Duration,
+    pub moves_to_go: Option<NumMoves>,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub enum GoCommand {
     Ponder,
     Infinite,
-    MoveTime(Duration),
-    Depth(Depth),
-    Nodes(usize),
-    Mate(Ply),
-    Timed {
+    Limit {
+        depth: Option<Depth>,
+        nodes: Option<usize>,
+        mate: Option<Ply>,
+        movetime: Option<Duration>,
+        time_clock: Option<TimedGoCommand>,
+    },
+}
+
+impl GoCommand {
+    pub const NONE: Self = Self::Limit {
+        depth: None,
+        nodes: None,
+        mate: None,
+        movetime: None,
+        time_clock: None,
+    };
+
+    pub const fn from_depth(depth: Depth) -> Self {
+        Self::Limit {
+            depth: Some(depth),
+            nodes: None,
+            mate: None,
+            movetime: None,
+            time_clock: None,
+        }
+    }
+
+    pub const fn from_nodes(nodes: usize) -> Self {
+        Self::Limit {
+            depth: None,
+            nodes: Some(nodes),
+            mate: None,
+            movetime: None,
+            time_clock: None,
+        }
+    }
+
+    pub const fn from_mate(mate: Ply) -> Self {
+        Self::Limit {
+            depth: None,
+            nodes: None,
+            mate: Some(mate),
+            movetime: None,
+            time_clock: None,
+        }
+    }
+
+    pub const fn from_movetime(movetime: Duration) -> Self {
+        Self::Limit {
+            depth: None,
+            nodes: None,
+            mate: None,
+            movetime: Some(movetime),
+            time_clock: None,
+        }
+    }
+
+    pub const fn from_time_clock(
         wtime: Duration,
         btime: Duration,
         winc: Duration,
         binc: Duration,
         moves_to_go: Option<NumMoves>,
-    },
-}
-
-impl GoCommand {
-    pub const fn from_millis(millis: u64) -> Self {
-        Self::MoveTime(Duration::from_millis(millis))
+    ) -> Self {
+        Self::Limit {
+            depth: None,
+            nodes: None,
+            mate: None,
+            movetime: None,
+            time_clock: Some(TimedGoCommand {
+                wtime,
+                btime,
+                winc,
+                binc,
+                moves_to_go,
+            }),
+        }
     }
 
-    pub fn is_infinite(&self) -> bool {
+    pub const fn from_millis(millis: u64) -> Self {
+        Self::from_movetime(Duration::from_millis(millis))
+    }
+
+    pub fn has_infinite_config_info(&self) -> bool {
         *self == Self::Infinite
     }
 
-    pub fn is_move_time(&self) -> bool {
-        matches!(self, Self::MoveTime(_))
+    pub fn has_movetime_config_info(&self) -> bool {
+        matches!(
+            self,
+            Self::Limit {
+                movetime: Some(_),
+                ..
+            }
+        )
     }
 
-    pub fn is_depth(&self) -> bool {
-        matches!(self, Self::Depth(_))
+    pub fn has_depth_config_info(&self) -> bool {
+        matches!(self, Self::Limit { depth: Some(_), .. })
     }
 
-    pub fn is_timed(&self) -> bool {
-        matches!(self, Self::Timed { .. })
+    pub fn has_time_clock_config_info(&self) -> bool {
+        matches!(
+            self,
+            Self::Limit {
+                time_clock: Some(_),
+                ..
+            }
+        )
     }
+}
 
-    pub fn depth_or(&self, depth: Depth) -> Depth {
-        match self {
-            Self::Depth(depth) => *depth,
-            _ => depth,
+#[derive(PartialEq, Eq, Default, Debug)]
+struct LimitParser {
+    depth: Option<Depth>,
+    nodes: Option<usize>,
+    mate: Option<Ply>,
+    movetime: Option<Duration>,
+    wtime: Option<Duration>,
+    btime: Option<Duration>,
+    winc: Option<Duration>,
+    binc: Option<Duration>,
+    moves_to_go: Option<NumMoves>,
+}
+
+impl TryInto<GoCommand> for LimitParser {
+    type Error = TimecatError;
+
+    fn try_into(self) -> std::result::Result<GoCommand, Self::Error> {
+        if self.wtime.is_none() && self.btime.is_some() {
+            return Err(TimecatError::WTimeNotMentioned);
         }
+        if self.wtime.is_some() && self.btime.is_none() {
+            return Err(TimecatError::BTimeNotMentioned);
+        }
+        let timed_go_command = match (self.wtime, self.btime) {
+            (Some(wtime), Some(btime)) => Some(TimedGoCommand {
+                wtime,
+                btime,
+                winc: self.winc.unwrap_or_default(),
+                binc: self.binc.unwrap_or_default(),
+                moves_to_go: self.moves_to_go,
+            }),
+            (None, Some(_)) => return Err(TimecatError::WTimeNotMentioned),
+            (Some(_), None) => return Err(TimecatError::BTimeNotMentioned),
+            (None, None) => None,
+        };
+        Ok(GoCommand::Limit {
+            depth: self.depth,
+            nodes: self.nodes,
+            mate: self.mate,
+            movetime: self.movetime,
+            time_clock: timed_go_command,
+        })
     }
 }
 
@@ -74,50 +200,43 @@ impl SearchConfig {
     }
 
     #[inline]
-    pub const fn new_move_time(duration: Duration) -> Self {
-        Self::from_go_command(GoCommand::MoveTime(duration))
+    pub const fn new_movetime(duration: Duration) -> Self {
+        Self::from_go_command(GoCommand::from_movetime(duration))
     }
 
     #[inline]
     pub const fn new_depth(depth: Depth) -> Self {
-        Self::from_go_command(GoCommand::Depth(depth))
+        Self::from_go_command(GoCommand::from_depth(depth))
     }
 
     #[inline]
     pub const fn new_nodes(nodes: usize) -> Self {
-        Self::from_go_command(GoCommand::Nodes(nodes))
+        Self::from_go_command(GoCommand::from_nodes(nodes))
     }
 
     #[inline]
     pub const fn new_mate(mate: Ply) -> Self {
-        Self::from_go_command(GoCommand::Mate(mate))
+        Self::from_go_command(GoCommand::from_mate(mate))
     }
 
     #[inline]
-    pub const fn new_timed(
-        wtime: Duration,
-        btime: Duration,
-        winc: Duration,
-        binc: Duration,
-        moves_to_go: Option<NumMoves>,
-    ) -> Self {
-        Self::from_go_command(GoCommand::Timed {
-            wtime,
-            btime,
-            winc,
-            binc,
-            moves_to_go,
-        })
+    pub const fn get_go_command(&self) -> &GoCommand {
+        &self.go_command
     }
 
     #[inline]
-    pub const fn get_command(&self) -> GoCommand {
-        self.go_command
+    pub fn set_go_command(&mut self, go_command: GoCommand) {
+        self.go_command = go_command;
     }
 
     #[inline]
     pub fn get_moves_to_search(&self) -> Option<&[Move]> {
         self.moves_to_search.as_deref()
+    }
+
+    #[inline]
+    pub fn set_moves_to_search(&mut self, moves: impl Into<Option<Vec<Move>>>) {
+        self.moves_to_search = moves.into();
     }
 }
 
@@ -138,25 +257,9 @@ impl From<GoCommand> for SearchConfig {
 
 macro_rules! generate_command_in_error_message {
     ($commands:expr) => {
-        $commands.join(" ")
-    };
-}
-
-macro_rules! extract_value {
-    ($commands:ident, $command:expr) => {
-        $commands
-            .iter()
-            .skip_while(|&&s| s != $command)
-            .skip(1)
-            .next()
-            .map(|s| s.parse())
-            .transpose()?
-    };
-}
-
-macro_rules! extract_time {
-    ($commands:ident, $command:expr) => {
-        extract_value!($commands, $command).map(|t| Duration::from_millis(t))
+        TimecatError::InvalidGoCommand {
+            s: $commands.join(" "),
+        }
     };
 }
 
@@ -164,7 +267,6 @@ impl TryFrom<&[&str]> for SearchConfig {
     type Error = TimecatError;
 
     fn try_from(commands: &[&str]) -> std::result::Result<Self, Self::Error> {
-        // TODO: Improve Unknown Command Detection
         let binding = commands
             .iter()
             .map(|command| command.to_lowercase())
@@ -181,67 +283,49 @@ impl TryFrom<&[&str]> for SearchConfig {
         for s in iter {
             moves_str.push(s.as_str());
         }
-        if ["perft", "depth", "movetime", "ponder", "infinite"]
-            .iter()
-            .filter(|&s| commands.contains(s))
-            .count()
-            > 1
-        {
-            return Err(TimecatError::InvalidGoCommand {
-                s: generate_command_in_error_message!(commands),
-            });
-        }
-        let binding = commands
+
+        let second_command = commands
             .get(1)
-            .ok_or(TimecatError::InvalidGoCommand {
-                s: generate_command_in_error_message!(commands),
-            })?
-            .to_lowercase();
-        let second_command = binding.as_str();
-        for (string, index) in [
-            ("depth", 3),
-            ("movetime", 3),
-            ("ponder", 2),
-            ("infinite", 2),
-        ] {
-            if second_command == string && commands.get(index).is_some() {
-                return Err(TimecatError::InvalidGoCommand {
-                    s: generate_command_in_error_message!(commands),
-                });
-            }
+            .ok_or(generate_command_in_error_message!(commands))?;
+        if ["infinite", "ponder"].contains(second_command) && commands.get(2).is_some() {
+            return Err(generate_command_in_error_message!(commands));
         }
-        let go_command = match second_command {
-            "depth" | "nodes" | "mate" | "movetime" => {
-                let third_command = *commands.get(2).ok_or(TimecatError::InvalidGoCommand {
-                    s: generate_command_in_error_message!(commands),
-                })?;
-                match second_command {
-                    "depth" => {
-                        let depth: Depth = third_command.parse()?;
-                        if depth.is_negative() {
-                            return Err(TimecatError::InvalidDepth { depth });
-                        }
-                        GoCommand::Depth(depth)
-                    }
-                    "nodes" => GoCommand::Nodes(third_command.parse()?),
-                    "mate" => GoCommand::Mate(third_command.parse()?),
-                    "movetime" => GoCommand::from_millis(third_command.parse()?),
-                    _ => {
-                        return Err(TimecatError::InvalidGoCommand {
-                            s: generate_command_in_error_message!(commands),
-                        });
-                    }
-                }
-            }
+        let go_command = match *second_command {
             "infinite" => GoCommand::Infinite,
             "ponder" => GoCommand::Ponder,
-            _ => GoCommand::Timed {
-                wtime: extract_time!(commands, "wtime").ok_or(TimecatError::WTimeNotMentioned)?,
-                btime: extract_time!(commands, "btime").ok_or(TimecatError::BTimeNotMentioned)?,
-                winc: extract_time!(commands, "winc").unwrap_or(Duration::ZERO),
-                binc: extract_time!(commands, "binc").unwrap_or(Duration::ZERO),
-                moves_to_go: extract_value!(commands, "movestogo"),
-            },
+            _ => {
+                let command_tuples = commands[1..]
+                    .chunks(2)
+                    .map(|chunk| {
+                        if chunk.len() == 2 {
+                            Ok((chunk[0], chunk[1]))
+                        } else {
+                            Err(generate_command_in_error_message!(commands))
+                        }
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+                if command_tuples.len() == 0 {
+                    return Err(generate_command_in_error_message!(commands));
+                }
+                let mut limit_parser = LimitParser::default();
+                for (command, value) in command_tuples {
+                    match command {
+                        "depth" => limit_parser.depth = Some(value.parse()?),
+                        "nodes" => limit_parser.nodes = Some(value.parse()?),
+                        "mate" => limit_parser.mate = Some(value.parse()?),
+                        "movetime" => {
+                            limit_parser.movetime = Some(Duration::from_millis(value.parse()?))
+                        }
+                        "wtime" => limit_parser.wtime = Some(Duration::from_millis(value.parse()?)),
+                        "btime" => limit_parser.btime = Some(Duration::from_millis(value.parse()?)),
+                        "winc" => limit_parser.winc = Some(Duration::from_millis(value.parse()?)),
+                        "binc" => limit_parser.binc = Some(Duration::from_millis(value.parse()?)),
+                        "movestogo" => limit_parser.moves_to_go = Some(value.parse()?),
+                        _ => return Err(generate_command_in_error_message!(commands)),
+                    }
+                }
+                limit_parser.try_into()?
+            }
         };
 
         Ok(Self {
