@@ -357,10 +357,24 @@ impl From<Move> for ValidOrNullMove {
     }
 }
 
+impl From<&Move> for ValidOrNullMove {
+    #[inline]
+    fn from(value: &Move) -> Self {
+        Some(value).into()
+    }
+}
+
 impl From<Option<Move>> for ValidOrNullMove {
     #[inline]
     fn from(value: Option<Move>) -> Self {
         Self(value)
+    }
+}
+
+impl From<Option<&Move>> for ValidOrNullMove {
+    #[inline]
+    fn from(value: Option<&Move>) -> Self {
+        value.copied().into()
     }
 }
 

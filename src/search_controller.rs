@@ -94,7 +94,7 @@ impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
             slice
                 .iter()
                 .copied()
-                .filter(|&move_| searcher.get_board().is_legal(move_))
+                .filter(|move_| searcher.get_board().is_legal(move_))
                 .collect_vec()
         });
         match config.get_go_command() {

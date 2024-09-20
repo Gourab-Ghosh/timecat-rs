@@ -390,7 +390,7 @@ impl BoardMethodOverload<Move> for Board {
     }
 
     fn push(&mut self, move_: Move) -> Result<()> {
-        if !self.is_legal(move_) {
+        if !self.is_legal(&move_) {
             return Err(TimecatError::IllegalMove {
                 valid_or_null_move: move_.into(),
                 board_fen: self.get_fen(),

@@ -627,6 +627,7 @@ impl BoardPosition {
         from_bitboard: BitBoard,
         to_bitboard: BitBoard,
     ) -> MoveGenerator {
+        // TODO: Scope of improvement
         let mut moves = self.generate_legal_moves();
         moves.set_iterator_masks(from_bitboard, to_bitboard);
         moves
@@ -643,9 +644,13 @@ impl BoardPosition {
     }
 
     #[inline]
-    pub fn is_legal(&self, move_: Move) -> bool {
+    pub fn is_legal(&self, move_: &Move) -> bool {
         // TODO: Scope of improvement
-        self.generate_legal_moves().contains(&move_)
+        self.generate_masked_legal_moves(
+            move_.get_source().to_bitboard(),
+            move_.get_dest().to_bitboard(),
+        )
+        .contains(move_)
     }
 
     pub fn is_castling(&self, move_: Move) -> bool {
