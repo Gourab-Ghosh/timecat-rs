@@ -172,12 +172,17 @@ impl GoAndPerft {
 
     fn run_search(engine: &mut impl ChessEngine, config: &SearchConfig) -> Result<()> {
         if let Some(moves_to_search) = config.get_moves_to_search() {
+            let legal_moves = engine.get_board().generate_legal_moves();
             if moves_to_search
                 .iter()
-                .any(|&move_| !engine.get_board().is_legal(move_))
+                .any(|move_| !legal_moves.contains(move_))
             {
                 return Err(TimecatError::IllegalSearchMoves {
-                    moves: moves_to_search.to_vec(),
+                    illegal_moves: moves_to_search
+                        .iter()
+                        .copied()
+                        .filter(|move_| !legal_moves.contains(move_))
+                        .collect_vec(),
                 });
             }
         }

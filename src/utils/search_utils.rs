@@ -274,6 +274,7 @@ impl TryFrom<&[&str]> for SearchConfig {
         let mut iter = binding.iter();
         let mut commands = vec![];
         let mut moves = vec![];
+        let mut moves_cache = HashSet::new();
         for s in iter.by_ref() {
             if ["searchmove", "searchmoves"].contains(&s.as_str()) {
                 break;
@@ -281,7 +282,10 @@ impl TryFrom<&[&str]> for SearchConfig {
             commands.push(s.as_str());
         }
         for s in iter {
-            moves.push(Move::from_str(s)?);
+            let move_ = Move::from_str(s)?;
+            if moves_cache.insert(move_) {
+                moves.push(move_);
+            }
         }
 
         let second_command = commands

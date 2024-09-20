@@ -104,6 +104,7 @@ pub use selfplay::self_play;
 pub use serde::{Deserialize, Serialize};
 pub use sort::*;
 pub use std::cmp::{Ordering, Reverse};
+pub use std::collections::HashSet;
 pub use std::convert::From;
 pub use std::env;
 pub use std::error::Error;

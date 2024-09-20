@@ -101,7 +101,7 @@ pub enum TimecatError {
         s: String,
     },
     IllegalSearchMoves {
-        moves: Vec<Move>,
+        illegal_moves: Vec<Move>,
     },
     FeatureNotEnabled {
         s: String,
@@ -154,7 +154,7 @@ impl fmt::Display for TimecatError {
             InvalidUciMoveString { s } => write!(f, "Invalid uci move string {s}! Please try again!"),
             InvalidBoardPosition { position } => write!(f, "Invalid sub board generated:\n\n{position:#?}"),
             InvalidGoCommand { s } => write!(f, "Got invalid go command: {s:?}! Please try again!"),
-            IllegalSearchMoves { moves } => write!(f, "Got illegal search moves: {}! Please try again!", moves.iter().map(ToString::to_string).join(" ")),
+            IllegalSearchMoves { illegal_moves } => write!(f, "Got illegal search moves: {}! Please try again!", illegal_moves.iter().map(ToString::to_string).join(", ")),
             FeatureNotEnabled { s } => write!(f, "The feature {s:?} is not enabled. Please recompile the chess engine with this feature enabled!"),
             BadNNUEFile => write!(f, "The NNUE file cannot be parsed properly! Try again with a different NNUE file!"),
             CustomError { err_msg } => write!(f, "{err_msg}"),

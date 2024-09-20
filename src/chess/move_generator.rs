@@ -701,14 +701,22 @@ impl MoveGenerator {
             })
     }
 
-    // TODO: Invalid Logic (does not work for g2g5 in starting position)
-    // pub fn contains(&self, move_: &Move) -> bool {
-    //     self.square_and_bitboard_array
-    //         .iter()
-    //         .find(|square_and_bitboard| square_and_bitboard.square == move_.get_source())
-    //         .map(|square_and_bitboard| square_and_bitboard.bitboard.contains(move_.get_dest()))
-    //         .is_some()
-    // }
+    #[inline]
+    pub fn contains(&self, move_: &Move) -> bool {
+        self.square_and_bitboard_array
+            .iter()
+            .find(|square_and_bitboard| square_and_bitboard.square == move_.get_source())
+            .map(|square_and_bitboard| {
+                square_and_bitboard.bitboard.contains(move_.get_dest())
+                    && if square_and_bitboard.promotion {
+                        const { [Some(Knight), Some(Bishop), Some(Rook), Some(Queen)] }
+                            .contains(&move_.get_promotion())
+                    } else {
+                        move_.get_promotion().is_none()
+                    }
+            })
+            .unwrap_or(false)
+    }
 }
 
 impl ExactSizeIterator for MoveGenerator {
