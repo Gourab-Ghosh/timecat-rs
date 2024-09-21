@@ -646,11 +646,7 @@ impl BoardPosition {
     #[inline]
     pub fn is_legal(&self, move_: &Move) -> bool {
         // TODO: Scope of improvement
-        self.generate_masked_legal_moves(
-            move_.get_source().to_bitboard(),
-            move_.get_dest().to_bitboard(),
-        )
-        .contains(move_)
+        self.generate_legal_moves().contains(move_)
     }
 
     pub fn is_castling(&self, move_: Move) -> bool {
