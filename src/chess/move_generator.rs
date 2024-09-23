@@ -600,39 +600,6 @@ impl MoveGenerator {
         self.reorganize_square_and_bitboard_array();
     }
 
-    pub fn is_legal_quick(position: &BoardPosition, move_: Move) -> bool {
-        let piece = position.get_piece_type_at(move_.get_source()).unwrap();
-        match piece {
-            Rook => true,
-            Bishop => true,
-            Knight => true,
-            Queen => true,
-            Pawn => {
-                if move_.get_source().get_file() != move_.get_dest().get_file()
-                    && position.get_piece_type_at(move_.get_dest()).is_none()
-                {
-                    // en-passant
-                    PawnMoves::legal_ep_move(position, move_.get_source(), move_.get_dest())
-                } else {
-                    true
-                }
-            }
-            King => {
-                let bb = move_.get_source().between(move_.get_dest());
-                if bb.popcnt() == 1 {
-                    // castles
-                    if !KingMoves::legal_king_move(position, bb.to_square_unchecked()) {
-                        false
-                    } else {
-                        KingMoves::legal_king_move(position, move_.get_dest())
-                    }
-                } else {
-                    KingMoves::legal_king_move(position, move_.get_dest())
-                }
-            }
-        }
-    }
-
     pub fn perft_test(position: &BoardPosition, depth: usize) -> usize {
         let iterable = position.generate_legal_moves();
 
@@ -716,6 +683,44 @@ impl MoveGenerator {
                     }
             })
             .unwrap_or(false)
+    }
+
+    #[inline]
+    pub fn is_legal(position: &BoardPosition, move_: &Move) -> bool {
+        // TODO: Scope of improvement
+        let Some(piece_type) = position.get_piece_type_at(move_.get_source()) else {
+            return false;
+        };
+        let possibly_legal = match piece_type {
+            Pawn => {
+                if move_.get_source().get_file() != move_.get_dest().get_file()
+                    && position.get_piece_type_at(move_.get_dest()).is_none()
+                {
+                    // en-passant
+                    PawnMoves::legal_ep_move(position, move_.get_source(), move_.get_dest())
+                } else {
+                    true
+                }
+            }
+            King => {
+                let bb = move_.get_source().between(move_.get_dest());
+                if bb.popcnt() == 1 {
+                    // castles
+                    if !KingMoves::legal_king_move(position, bb.to_square_unchecked()) {
+                        false
+                    } else {
+                        KingMoves::legal_king_move(position, move_.get_dest())
+                    }
+                } else {
+                    KingMoves::legal_king_move(position, move_.get_dest())
+                }
+            }
+            _ => true,
+        };
+        if !possibly_legal {
+            return false;
+        }
+        position.generate_legal_moves().contains(move_)
     }
 }
 
