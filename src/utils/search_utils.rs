@@ -308,7 +308,7 @@ impl TryFrom<&[&str]> for SearchConfig {
                         }
                     })
                     .collect::<Result<Vec<_>>>()?;
-                if command_tuples.len() == 0 {
+                if command_tuples.is_empty() {
                     return Err(generate_command_in_error_message!(commands));
                 }
                 let mut limit_parser = LimitParser::default();
