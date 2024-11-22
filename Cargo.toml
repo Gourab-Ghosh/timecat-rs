@@ -2,6 +2,7 @@
 name = "timecat"
 authors = ["Gourab Ghosh"]
 version = "1.36.5"
+rust-version = "1.82"
 edition = "2021"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
