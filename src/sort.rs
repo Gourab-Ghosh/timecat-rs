@@ -267,7 +267,6 @@ impl MoveSorter {
                 return 500000 - idx as MoveWeight;
             }
         }
-        // self.get_history_score(move_, position)
         // history
         let history_score = self.get_history_score(move_, position);
         if history_score != 0 {

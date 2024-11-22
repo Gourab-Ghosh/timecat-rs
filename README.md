@@ -1,44 +1,56 @@
 # Timecat Chess Engine
+
 Timecat is a UCI-compatible chess engine designed in Rust that combines powerful algorithms and advanced evaluation techniques to deliver top-notch chess analysis and game play. Using alpha-beta pruning with the negamax algorithm and the NNUE evaluation method, Timecat achieves enhanced depth and accuracy in game analysis.
 
 ## Timecat as a Library
+
 Timecat was originally conceived as a personal project. However, with the onset of a new chess-related project, I realized the benefits of publishing Timecat as a library to avoid excessive code duplication. Initially designed for personal use, Timecat will now be refined and updated to enhance its functionality and usability as a library, making it more accessible and beneficial for other users. Also the documentation will be further improved.
 
 Make sure to always update rust to the latest version to use this library.
 
 ### ⚠️ Beta Version Notice
+
 This chess engine is currently in **beta** and actively under development. Please be aware that **breaking changes** may occur as new features are added and improvements are made. Your feedback and contributions are greatly appreciated as I continue to refine and enhance the engine.
 
 ## Key Features
+
 - **UCI Compatibility:** Fully compatible with the Universal Chess Interface (UCI) standard.
 - **Advanced Algorithms:** Utilizes alpha-beta pruning and the negamax algorithm for efficient move searching.
 - **NNUE Evaluation:** Incorporates NNUE (efficiently updatable neural network) for state-of-the-art position evaluation.
 - **Customizable Builds:** Supports tailored builds through configurable cargo features.
 
 ## Integration of the Chess Library
+
 Initially, Timecat was dependent on the external `chess` library, which is available at <https://github.com/jordanbray/chess>. To align more closely with specific requirements, the library was integrated directly into Timecat. This integration permitted significant modifications and extensions to its functionalities, thereby enhancing the engine's overall capabilities. Such integration demonstrates a commitment to adapting and evolving the tools to secure the best possible performance and accuracy in chess analytics.
 
 ## User Controls
+
 In the library, only `pub` or non-`pub` visibility modifiers are used (unless extremely necessary to prevent users from making catastrophic errors). This approach ensures that all potentially useful functions and structures are accessible to the user, avoiding the situation where a `pub(crate)` might restrict access to valuable components—a problem I've encountered while using the `chess` library. Therefore, only the features that is considered essential are included in `timecat::prelude`; all other functionalities are available for direct import from the `timecat` library.
 
 Also several cargo features have been introduced to provide users with complete control over the code's behavior.
 
 ## NNUE Support
+
 Timecat currently utilizes the Stockfish NNUE for evaluation (only `HalfKP` supported). Plans are in place to transition to a custom-trained NNUE in the future.
 
 ## Engine Strength
+
 Although it hasn't been thoroughly tested yet, but my chess engine is capable of defeating [chess.com's max bot](https://www.chess.com/play/computer/Komodo25), which has an Elo rating of 3200.
 
 ## Installation
 
 ### Installing as a Binary
+
 Optimize your setup for the best performance:
+
 ```bash
 RUSTFLAGS="-C target-cpu=native" cargo install timecat
 ```
 
 ### Compilation from Source
+
 Clone the repository and compile with native optimizations:
+
 ```bash
 git clone https://github.com/Gourab-Ghosh/timecat-rs.git
 cd timecat-rs
@@ -46,7 +58,9 @@ RUSTFLAGS="-C target-cpu=native" cargo run --release
 ```
 
 ### Compilation with Docker
+
 Clone the repository and compile with native optimizations:
+
 ```bash
 git clone https://github.com/Gourab-Ghosh/timecat-rs.git
 cd timecat-rs
@@ -57,20 +71,25 @@ sudo docker run -it --rm timecat
 ## Usage as a Library
 
 ### Minimal Dependency Integration
+
 Integrate Timecat into your Rust projects with minimal dependencies:
+
 ```bash
 cargo add timecat --no-default-features
 ```
 
 ### Examples
+
 This example demonstrates how to set up a chess board, make moves, evaluate board positions, and utilize the inbuilt engine to find optimal moves using the `timecat` library. Some optional features needs to be enabled.
 
 First, add the timecat crate to your project with the necessary features enabled:
+
 ```bash
 cargo add timecat --no-default-features --features "inbuilt_nnue extras"
 ```
 
 Then, you can proceed with the following Rust code:
+
 ```rust
 use timecat::prelude::*;
 
@@ -106,11 +125,13 @@ fn main() {
 You can use UCI commands, although it's not recommended in production environments due to potential parsing delays. The `inbuilt_nnue` optional feature is also required in this context.
 
 As previous, add the timecat crate to your project:
+
 ```bash
 cargo add timecat --no-default-features --features inbuilt_nnue
 ```
 
 Then, you can proceed with the following Rust code:
+
 ```rust
 use timecat::prelude::*;
 use std::error::Error;
@@ -143,6 +164,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 ```
 
 Or just enjoy the engine play against itself:
+
 ```rust
 use timecat::prelude::*;
 use std::time::Duration;
@@ -166,6 +188,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 The `selfplay` command works on the binary as well.
 
 ## Cargo Features
+
 - `binread`: Binread support.
 - `nnue_reader`: Adds support for NNUE evaluation by reading nnue files.
 - `inbuilt_nnue`: Integrate built-in NNUE evaluation support by including the nnue file directly into the binary, fetched using the minreq library.
@@ -180,6 +203,7 @@ The `selfplay` command works on the binary as well.
 Default features include `inbuilt_nnue` and `colored`.
 
 ## TODO
+
 - [ ] Implement other variants of chess.
 - [ ] Implement Syzygy Tablebase.
 - [ ] Organize the Polyglot Table codes to make it usable.
@@ -188,9 +212,11 @@ Default features include `inbuilt_nnue` and `colored`.
 - [ ] Add svg feature like the python library `chess` for better visualization.
 
 ## License
+
 Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](https://github.com/Gourab-Ghosh/timecat-rs/blob/master/LICENSE). You are free to use, modify, and distribute it under the same license.
 
 ## Contributing
+
 Feel free to fork the repository, make improvements, and submit pull requests. You can also report issues or suggest features through the GitHub issue tracker.
 
 ## Support the developer

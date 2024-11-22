@@ -134,7 +134,7 @@ impl TranspositionTable {
         flag: EntryFlagHash,
         best_move: Option<Move>,
     ) {
-        // TODO: Logic Wrong Here
+        // TODO: Logic Wrong Here?
         let save_score = !is_checkmate(score);
         if save_score && is_checkmate(score) {
             let mate_distance = CHECKMATE_SCORE
