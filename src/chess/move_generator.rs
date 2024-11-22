@@ -557,15 +557,15 @@ impl MoveGenerator {
     }
 
     pub fn remove_move(&mut self, move_: Move) -> bool {
+        let mut square_removed = false;
         for square_and_bitboard in self.square_and_bitboard_array.iter_mut() {
             if square_and_bitboard.square == move_.get_source() {
                 square_and_bitboard.bitboard &= !move_.get_dest().to_bitboard();
-                self.reorganize_square_and_bitboard_array();
-                return true;
+                square_removed = true;
             }
         }
         self.reorganize_square_and_bitboard_array();
-        false
+        square_removed
     }
 
     pub fn reset_indices(&mut self) {
@@ -672,9 +672,9 @@ impl MoveGenerator {
     pub fn contains(&self, move_: &Move) -> bool {
         self.square_and_bitboard_array
             .iter()
-            .filter(|square_and_bitboard| square_and_bitboard.square == move_.get_source())
             .any(|square_and_bitboard| {
-                square_and_bitboard.bitboard.contains(move_.get_dest())
+                square_and_bitboard.square == move_.get_source()
+                    && square_and_bitboard.bitboard.contains(move_.get_dest())
                     && if square_and_bitboard.promotion {
                         const { [Some(Knight), Some(Bishop), Some(Rook), Some(Queen)] }
                             .contains(&move_.get_promotion())
