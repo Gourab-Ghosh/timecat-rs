@@ -672,8 +672,8 @@ impl MoveGenerator {
     pub fn contains(&self, move_: &Move) -> bool {
         self.square_and_bitboard_array
             .iter()
-            .find(|square_and_bitboard| square_and_bitboard.square == move_.get_source())
-            .map(|square_and_bitboard| {
+            .filter(|square_and_bitboard| square_and_bitboard.square == move_.get_source())
+            .any(|square_and_bitboard| {
                 square_and_bitboard.bitboard.contains(move_.get_dest())
                     && if square_and_bitboard.promotion {
                         const { [Some(Knight), Some(Bishop), Some(Rook), Some(Queen)] }
@@ -682,7 +682,6 @@ impl MoveGenerator {
                         move_.get_promotion().is_none()
                     }
             })
-            .unwrap_or(false)
     }
 
     #[inline]

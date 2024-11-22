@@ -300,6 +300,23 @@ fn move_is_en_passant() {
     }
 }
 
+#[test]
+fn move_is_legal() {
+    // TODO: Add more test cases
+    let fens_and_move_strings = [("8/4R3/6rk/pPp4p/7P/4p1P1/7K/8 w - c6 0 48", "b5c6", true)];
+
+    let mut board = Board::default();
+
+    for (fen, move_str, expected_return) in fens_and_move_strings {
+        board.set_fen(fen).unwrap();
+        let returned_value = board.is_legal(&Move::from_str(move_str).unwrap());
+        assert_eq!(
+            returned_value, expected_return,
+            "Expected {expected_return} for move {move_str} in position {fen} but got {returned_value}"
+        );
+    }
+}
+
 macro_rules! board_material_check_command {
     ($command: expr; $board: expr; $white_material_score: expr; $black_material_score: expr) => {
         $command;

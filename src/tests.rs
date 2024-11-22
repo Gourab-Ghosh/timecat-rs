@@ -110,7 +110,10 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // parse_command(engine, "go depth 15");
 
     random_test();
-    
+
+    // let position = BoardPosition::from_fen("8/4R3/6rk/pPp4p/7P/4p1P1/7K/8 w - c6 0 48")?;
+    // println!("{}", position.is_legal(&Move::new(B5, C6, None)?));
+
     // println!("{:#?}", PAWN_MOVES);
     
     // for square in ALL_SQUARES {

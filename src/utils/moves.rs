@@ -41,6 +41,11 @@ impl Move {
         self.promotion
     }
 
+    #[inline]
+    pub fn from_uci(uci: &str) -> Result<Self> {
+        Self::from_str(uci)
+    }
+
     pub fn from_san(position: &BoardPosition, san: &str) -> Result<Self> {
         // TODO: Make the logic better
         let san = san.trim().replace('0', "O");

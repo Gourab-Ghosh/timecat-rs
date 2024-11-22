@@ -20,7 +20,8 @@ LIMIT = Limit(time=1 / 10)
 
 
 class Engine(SimpleEngine):
-    def clear_hash():
+    def clear_hash(self):
+        # self.protocol.send_line("setoption name Clear Hash")
         pass
 
 
@@ -146,7 +147,7 @@ def main():
                     if outcome.winner is None
                     else "Black"
                 )
-                time_left = datetime.utcfromtimestamp(
+                time_left = datetime.fromtimestamp(
                     total_time / (i + 1) * (len(fens_and_opening_name) - i - 1)
                 ).time()
                 print(
@@ -156,7 +157,7 @@ def main():
             except KeyboardInterrupt:
                 break
         print(f"Stats: {get_stats_string(stats)}")
-        print(f"Total time taken: {datetime.utcfromtimestamp(total_time).time()}")
+        print(f"Total time taken: {datetime.fromtimestamp(total_time).time()}")
 
 
 if __name__ == "__main__":

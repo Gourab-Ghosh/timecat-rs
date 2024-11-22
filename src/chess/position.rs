@@ -541,6 +541,11 @@ impl BoardPosition {
         self.to_string()
     }
 
+    #[inline]
+    pub fn from_fen(fen: &str) -> Result<Self> {
+        Self::from_str(fen)
+    }
+
     pub fn is_good_fen(fen: &str) -> bool {
         let fen = simplify_fen(fen);
         let mut splitted_fen = fen.split(' ');
