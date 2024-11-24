@@ -15,10 +15,6 @@ mod bitboards_generation {
     #[derive(Clone, Copy)]
     struct BitBoard(u64);
 
-    impl BitBoard {
-        const EMPTY: Self = Self(0);
-    }
-
     impl fmt::Debug for BitBoard {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "BitBoard::new(0x{:X})", self.0)
@@ -178,8 +174,8 @@ mod bitboards_generation {
     }
 
     fn create_pawn_moves(file: &mut File) -> Result<()> {
-        let mut moves_array = [[BitBoard::EMPTY; 64]; 2];
-        let mut attacks_array = [[BitBoard::EMPTY; 64]; 2];
+        let mut moves_array = [[BitBoard(0); 64]; 2];
+        let mut attacks_array = [[BitBoard(0); 64]; 2];
         for i in 0..2 {
             for j in 0..64 {
                 moves_array[i][j].0 = if i == 0 {
@@ -307,7 +303,7 @@ mod bitboards_generation {
     }
 
     fn create_rays(file: &mut File) -> Result<()> {
-        let mut bishop_diagonal_rays = vec![BitBoard::EMPTY; 64];
+        let mut bishop_diagonal_rays = vec![BitBoard(0); 64];
         for index in 0..64 {
             let square = index as u8;
             let square_rank_index = get_rank(square);
@@ -345,8 +341,8 @@ mod bitboards_generation {
             .map(|index| BitBoard(bishop_rays[index].0 ^ rook_rays[index].0))
             .collect_vec();
 
-        let mut between = [[BitBoard::EMPTY; 64]; 64];
-        let mut line = [[BitBoard::EMPTY; 64]; 64];
+        let mut between = [[BitBoard(0); 64]; 64];
+        let mut line = [[BitBoard(0); 64]; 64];
         for square1 in 0..64 {
             for square2 in 0..square1 {
                 between[square1][square2] = BitBoard(calculate_between(
@@ -547,7 +543,7 @@ mod bitboards_generation {
             Magic { magic_number: BitBoard(0xc000192040840102), mask: BitBoard(9115426935197958144), offset: 100864, right_shift: 52 },
         ]];
 
-        let mut moves = [BitBoard::EMPTY; 104960];
+        let mut moves = [BitBoard(0); 104960];
         for piece_index in 0..2 {
             for square_index in 0..64 {
                 let magic = bishop_and_rook_magic_numbers[piece_index][square_index];
