@@ -182,20 +182,18 @@ mod bitboards_generation {
         let mut attacks_array = [[BitBoard::EMPTY; 64]; 2];
         for i in 0..2 {
             for j in 0..64 {
-                moves_array[i][j] = if i == 0 {
-                    BitBoard(shift_up(1 << j))
+                moves_array[i][j].0 = if i == 0 {
+                    shift_up(1 << j)
                 } else {
-                    BitBoard(shift_down(1 << j))
+                    shift_down(1 << j)
                 };
-                attacks_array[i][j] =
-                    BitBoard(shift_left(moves_array[i][j].0) ^ shift_right(moves_array[i][j].0));
+                attacks_array[i][j].0 =
+                    shift_left(moves_array[i][j].0) ^ shift_right(moves_array[i][j].0);
             }
         }
         for i in 0..8 {
-            moves_array[0][i + 8] =
-                BitBoard(moves_array[0][i + 8].0 ^ shift_up(moves_array[0][i + 8].0));
-            moves_array[1][i + 48] =
-                BitBoard(moves_array[1][i + 48].0 ^ shift_down(moves_array[1][i + 48].0));
+            moves_array[0][i + 8].0 ^= shift_up(moves_array[0][i + 8].0);
+            moves_array[1][i + 48].0 ^= shift_down(moves_array[1][i + 48].0);
         }
 
         writeln!(
@@ -408,16 +406,13 @@ mod bitboards_generation {
             right_shift: u8,
         }
 
-        writeln!(
-            file,
-            r##"#[derive(Clone, Copy)]
-struct Magic {{
-    magic_number: BitBoard,
-    mask: BitBoard,
-    offset: usize,
-    right_shift: u8
-}}"##,
-        )?;
+        writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
+        writeln!(file, r##"struct Magic {{"##)?;
+        writeln!(file, r##"    magic_number: BitBoard,"##)?;
+        writeln!(file, r##"    mask: BitBoard,"##)?;
+        writeln!(file, r##"    offset: usize,"##)?;
+        writeln!(file, r##"    right_shift: u8,"##)?;
+        writeln!(file, r##"}}"##)?;
 
         #[rustfmt::skip]
         let bishop_and_rook_magic_numbers = [[
@@ -569,7 +564,7 @@ struct Magic {{
                     let index = (magic.magic_number.0.wrapping_mul(sub_mask) >> magic.right_shift)
                         as usize
                         + magic.offset;
-                    moves[index] = BitBoard(moves[index].0 | moves_bb);
+                    moves[index].0 |= moves_bb;
                     sub_masks_and_moves_array_index += 1;
                 }
             }
@@ -593,14 +588,11 @@ struct Magic {{
             offset: usize,
         }
 
-        writeln!(
-            file,
-            r##"#[derive(Clone, Copy)]
-struct BmiMagic {{
-    blockers_mask: BitBoard,
-    offset: usize,
-}}"##,
-        )?;
+        writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
+        writeln!(file, r##"struct BmiMagic {{"##)?;
+        writeln!(file, r##"    blockers_mask: BitBoard,"##)?;
+        writeln!(file, r##"    offset: usize,"##)?;
+        writeln!(file, r##"}}"##)?;
 
         #[rustfmt::skip]
         let bishop_and_rook_bmi_masks = [[
