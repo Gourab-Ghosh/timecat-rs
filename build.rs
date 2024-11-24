@@ -411,7 +411,7 @@ mod bitboards_generation {
         writeln!(file, r##"}}"##)?;
 
         #[rustfmt::skip]
-        let bishop_and_rook_magic_numbers = [[
+        let mut bishop_and_rook_magic_numbers = [[
             Magic { magic_number: BitBoard(0x204022080a222040), mask: BitBoard(18049651735527936), offset: 0, right_shift: 58 },
             Magic { magic_number: BitBoard(0x0020042400404100), mask: BitBoard(70506452091904), offset: 0, right_shift: 59 },
             Magic { magic_number: BitBoard(0x421073004500023a), mask: BitBoard(275415828992), offset: 64, right_shift: 59 },
@@ -542,26 +542,35 @@ mod bitboards_generation {
             Magic { magic_number: BitBoard(0x1020080210028904), mask: BitBoard(4485655873561051136), offset: 98816, right_shift: 53 },
             Magic { magic_number: BitBoard(0xc000192040840102), mask: BitBoard(9115426935197958144), offset: 100864, right_shift: 52 },
         ]];
+        // for piece_index in 0..2 {
+        //     for square_index in 0..64 {
+        //         bishop_and_rook_magic_numbers[piece_index][square_index].magic_number.0 ^= 0;
+        //     }
+        // }
 
         let mut moves = [BitBoard(0); 104960];
         for piece_index in 0..2 {
             for square_index in 0..64 {
-                let magic = bishop_and_rook_magic_numbers[piece_index][square_index];
+                let magic = &mut bishop_and_rook_magic_numbers[piece_index][square_index];
                 let sub_masks_and_moves_array = generate_all_sub_masks_and_moves(
                     magic.mask.0,
                     square_index as u8,
                     if piece_index == 0 { 2 } else { 3 },
                 );
-                let mut sub_masks_and_moves_array_index = 0;
-                let sub_masks_and_moves_array_index_stop = 1 << magic.mask.0.count_ones();
-                while sub_masks_and_moves_array_index < sub_masks_and_moves_array_index_stop {
+                magic.right_shift = (sub_masks_and_moves_array
+                    .iter()
+                    .take_while(|&&item| item != (0, 0))
+                    .count()
+                    .leading_zeros()
+                    + 1) as u8;
+
+                for sub_masks_and_moves_array_index in 0..1 << magic.mask.0.count_ones() {
                     let (sub_mask, moves_bb) =
                         sub_masks_and_moves_array[sub_masks_and_moves_array_index];
                     let index = (magic.magic_number.0.wrapping_mul(sub_mask) >> magic.right_shift)
                         as usize
                         + magic.offset;
                     moves[index].0 |= moves_bb;
-                    sub_masks_and_moves_array_index += 1;
                 }
             }
         }
