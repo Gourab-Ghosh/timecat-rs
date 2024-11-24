@@ -411,11 +411,11 @@ mod bitboards_generation {
         writeln!(
             file,
             r##"#[derive(Clone, Copy)]
-pub(crate) struct Magic {{
-    pub(crate) magic_number: BitBoard,
-    pub(crate) mask: BitBoard,
-    pub(crate) offset: usize,
-    pub(crate) right_shift: u8
+struct Magic {{
+    magic_number: BitBoard,
+    mask: BitBoard,
+    offset: usize,
+    right_shift: u8
 }}"##,
         )?;
 
@@ -577,12 +577,12 @@ pub(crate) struct Magic {{
 
         writeln!(
             file,
-            r"pub(crate) const BISHOP_AND_ROOK_MAGIC_NUMBERS: [[Magic; 64]; 2] = {:#?};",
+            r"const BISHOP_AND_ROOK_MAGIC_NUMBERS: [[Magic; 64]; 2] = {:#?};",
             bishop_and_rook_magic_numbers
         )?;
         writeln!(
             file,
-            r"pub(crate) const MOVES: [BitBoard; 104960] = {:#?};",
+            r"const MOVES: [BitBoard; 104960] = {:#?};",
             moves
         )?;
 
@@ -600,9 +600,9 @@ pub(crate) struct Magic {{
         writeln!(
             file,
             r##"#[derive(Clone, Copy)]
-pub(crate) struct BmiMagic {{
-    pub(crate) blockers_mask: BitBoard,
-    pub(crate) offset: usize,
+struct BmiMagic {{
+    blockers_mask: BitBoard,
+    offset: usize,
 }}"##,
         )?;
 
@@ -741,7 +741,7 @@ pub(crate) struct BmiMagic {{
         
         writeln!(
             file,
-            r"pub(crate) const BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
+            r"const BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
             bishop_and_rook_bmi_masks,
         )?;
         // writeln!(
