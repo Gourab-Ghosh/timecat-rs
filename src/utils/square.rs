@@ -3,37 +3,6 @@ pub use Square::*;
 
 include!(concat!(env!("OUT_DIR"), "/magic.rs"));
 
-// const MOVES: [BitBoard; 0] = {
-//     const fn generate_rook_mask(square: Square) -> BitBoard {
-//         let mut to_remove = BB_CORNERS;
-//         match square.get_rank() {
-//             Rank::First => to_remove = bb_xor(to_remove, BB_RANK_1),
-//             Rank::Eighth => to_remove = bb_xor(to_remove, BB_RANK_8),
-//             _ => (),
-//         }
-//         // TODO: Check of xor works here!
-//         match square.get_file() {
-//             File::A => to_remove = bb_xor(to_remove, BB_FILE_A),
-//             File::H => to_remove = bb_xor(to_remove, BB_FILE_H),
-//             _ => (),
-//         }
-//         bb_and(ROOK_RAYS[square.to_index()], bb_not(to_remove))
-//     }
-
-//     let mut bishop_masks = [BitBoard::EMPTY; 64];
-//     let mut rook_masks = [BitBoard::EMPTY; 64];
-//     {
-//         let mut i = 0;
-//         while i < 64 {
-//             bishop_masks[i] = bb_and(BISHOP_RAYS[i], bb_not(BB_CORNERS));
-//             rook_masks[i] = generate_rook_mask(Square::from_index(i));
-//             i += 1;
-//         }
-//     }
-
-//     []
-// };
-
 #[rustfmt::skip]
 #[repr(u8)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
