@@ -407,7 +407,7 @@ mod bitboards_generation {
             offset: usize,
             right_shift: u8,
         }
-        
+
         writeln!(
             file,
             r##"#[derive(Clone, Copy)]
@@ -580,11 +580,7 @@ struct Magic {{
             r"const BISHOP_AND_ROOK_MAGIC_NUMBERS: [[Magic; 64]; 2] = {:#?};",
             bishop_and_rook_magic_numbers
         )?;
-        writeln!(
-            file,
-            r"const MOVES: [BitBoard; 104960] = {:#?};",
-            moves
-        )?;
+        writeln!(file, r"const MOVES: [BitBoard; 104960] = {:#?};", moves)?;
 
         Ok(())
     }
@@ -596,7 +592,7 @@ struct Magic {{
             blockers_mask: BitBoard,
             offset: usize,
         }
-        
+
         writeln!(
             file,
             r##"#[derive(Clone, Copy)]
@@ -738,7 +734,7 @@ struct BmiMagic {{
             BmiMagic { blockers_mask: BitBoard(4485655873561051136), offset: 101408 },
             BmiMagic { blockers_mask: BitBoard(9115426935197958144), offset: 103488 },
         ]];
-        
+
         writeln!(
             file,
             r"const BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
