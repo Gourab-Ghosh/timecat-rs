@@ -95,7 +95,7 @@ impl CastleRights {
     #[inline]
     pub fn unmoved_rooks(self, color: Color) -> BitBoard {
         match self {
-            Self::None => BB_EMPTY,
+            Self::None => BitBoard::EMPTY,
             Self::KingSide => BitBoard::from_rank_and_file(color.to_my_backrank(), File::H),
             Self::QueenSide => BitBoard::from_rank_and_file(color.to_my_backrank(), File::A),
             Self::Both => {

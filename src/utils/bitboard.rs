@@ -6,6 +6,8 @@ use super::*;
 pub struct BitBoard(u64);
 
 impl BitBoard {
+    pub const EMPTY: Self = Self(0);
+
     #[inline]
     pub const fn new(bb: u64) -> Self {
         unsafe { std::mem::transmute(bb) }
@@ -181,7 +183,7 @@ impl BitBoard {
     pub const fn shift_up_n_times(self, n: u8) -> Self {
         // TODO: Optimize the function
         if n > 7 {
-            return BB_EMPTY;
+            return BitBoard::EMPTY;
         }
         let mut bb = self.0;
         let mut i = 0;
@@ -195,7 +197,7 @@ impl BitBoard {
     pub const fn shift_down_n_times(self, n: u8) -> Self {
         // TODO: Optimize the function
         if n > 7 {
-            return BB_EMPTY;
+            return BitBoard::EMPTY;
         }
         let mut bb = self.0;
         let mut i = 0;
@@ -209,7 +211,7 @@ impl BitBoard {
     pub const fn shift_left_n_times(self, n: u8) -> Self {
         // TODO: Optimize the function
         if n > 7 {
-            return BB_EMPTY;
+            return BitBoard::EMPTY;
         }
         let mut bb = self.0;
         let mut i = 0;
@@ -223,7 +225,7 @@ impl BitBoard {
     pub const fn shift_right_n_times(self, n: u8) -> Self {
         // TODO: Optimize the function
         if n > 7 {
-            return BB_EMPTY;
+            return BitBoard::EMPTY;
         }
         let mut bb = self.0;
         let mut i = 0;

@@ -60,13 +60,13 @@ impl BoardPosition {
     #[inline]
     fn new_empty() -> Self {
         Self {
-            _piece_masks: [BB_EMPTY; NUM_PIECE_TYPES],
-            _occupied_color: [BB_EMPTY; NUM_COLORS],
-            _occupied: BB_EMPTY,
+            _piece_masks: [BitBoard::EMPTY; NUM_PIECE_TYPES],
+            _occupied_color: [BitBoard::EMPTY; NUM_COLORS],
+            _occupied: BitBoard::EMPTY,
             _turn: White,
             _castle_rights: [CastleRights::None; NUM_COLORS],
-            _pinned: BB_EMPTY,
-            _checkers: BB_EMPTY,
+            _pinned: BitBoard::EMPTY,
+            _checkers: BitBoard::EMPTY,
             _pawn_transposition_hash: 0,
             _non_pawn_transposition_hash: 0,
             _transposition_hash: 0,
@@ -86,7 +86,7 @@ impl BoardPosition {
     pub fn status(&self) -> BoardStatus {
         if self.has_legal_moves() {
             BoardStatus::Ongoing
-        } else if self.get_checkers() == BB_EMPTY {
+        } else if self.get_checkers() == BitBoard::EMPTY {
             BoardStatus::Stalemate
         } else {
             BoardStatus::Checkmate
@@ -206,13 +206,13 @@ impl BoardPosition {
             CastleRights::Both => const { BitBoard::new(BB_A1.into_inner() ^ BB_H1.into_inner()) },
             CastleRights::KingSide => BB_H1,
             CastleRights::QueenSide => BB_A1,
-            CastleRights::None => BB_EMPTY,
+            CastleRights::None => BitBoard::EMPTY,
         };
         let black_castling_rights = match self.castle_rights(Black) {
             CastleRights::Both => const { BitBoard::new(BB_A8.into_inner() ^ BB_H8.into_inner()) },
             CastleRights::KingSide => BB_H8,
             CastleRights::QueenSide => BB_A8,
-            CastleRights::None => BB_EMPTY,
+            CastleRights::None => BitBoard::EMPTY,
         };
         white_castling_rights ^ black_castling_rights
     }
@@ -384,9 +384,9 @@ impl BoardPosition {
         }
 
         // grab all the pieces by OR'ing together each piece() BitBoard
-        let occupied = ALL_PIECE_TYPES
-            .iter()
-            .fold(BB_EMPTY, |cur, &next| cur | self.get_piece_mask(next));
+        let occupied = ALL_PIECE_TYPES.iter().fold(BitBoard::EMPTY, |cur, &next| {
+            cur | self.get_piece_mask(next)
+        });
 
         // make sure that's equal to the occupied bitboard
         if occupied != self.occupied() {
@@ -718,8 +718,8 @@ impl BoardPosition {
     }
 
     fn update_pin_and_checkers_info(&mut self) {
-        self._pinned = BB_EMPTY;
-        self._checkers = BB_EMPTY;
+        self._pinned = BitBoard::EMPTY;
+        self._checkers = BitBoard::EMPTY;
 
         let ksq = self
             .get_colored_piece_mask(King, self.turn())
@@ -765,7 +765,7 @@ impl BoardPosition {
         colors: &'a [Color],
         attackers_mask: BitBoard,
     ) -> BitBoard {
-        let mut attacked_squares = BB_EMPTY;
+        let mut attacked_squares = BitBoard::EMPTY;
         for (piece, square) in self.custom_iter(attacker_piece_types, colors, attackers_mask) {
             attacked_squares |= match piece.get_piece_type() {
                 Pawn => square.get_pawn_attacks(piece.get_color(), BB_ALL),
@@ -1169,7 +1169,7 @@ impl BoardPosition {
             const BB_A8_H8: BitBoard = BitBoard::new(BB_A8.into_inner() ^ BB_H8.into_inner());
             (
                 match castling_rights_bb & const { White.to_my_backrank() }.to_bitboard() {
-                    BB_EMPTY => CastleRights::None,
+                    BitBoard::EMPTY => CastleRights::None,
                     BB_H1 => CastleRights::KingSide,
                     BB_A1 => CastleRights::QueenSide,
                     BB_A1_H1 => CastleRights::Both,
@@ -1182,7 +1182,7 @@ impl BoardPosition {
                     }
                 },
                 match castling_rights_bb & const { Black.to_my_backrank() }.to_bitboard() {
-                    BB_EMPTY => CastleRights::None,
+                    BitBoard::EMPTY => CastleRights::None,
                     BB_H8 => CastleRights::KingSide,
                     BB_A8 => CastleRights::QueenSide,
                     BB_A8_H8 => CastleRights::Both,
@@ -1251,8 +1251,8 @@ impl BoardPositionMethodOverload<Move> for BoardPosition {
         }
 
         result.remove_ep();
-        result._checkers = BB_EMPTY;
-        result._pinned = BB_EMPTY;
+        result._checkers = BitBoard::EMPTY;
+        result._pinned = BitBoard::EMPTY;
         let source = move_.get_source();
         let dest = move_.get_dest();
 

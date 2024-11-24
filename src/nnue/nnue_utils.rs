@@ -1,11 +1,11 @@
 use super::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
-pub struct Magic<T> {
+pub struct BinaryMagic<T> {
     architecture: T,
 }
 
-impl<T> Deref for Magic<T> {
+impl<T> Deref for BinaryMagic<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -13,13 +13,13 @@ impl<T> Deref for Magic<T> {
     }
 }
 
-impl<T: Debug> Debug for Magic<T> {
+impl<T: Debug> Debug for BinaryMagic<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.architecture)
     }
 }
 
-impl<T: BinRead<Args = ()> + Copy + PartialEq + Send + Sync + 'static> BinRead for Magic<T> {
+impl<T: BinRead<Args = ()> + Copy + PartialEq + Send + Sync + 'static> BinRead for BinaryMagic<T> {
     type Args = (T,);
 
     fn read_options<R: Read + Seek>(
@@ -40,7 +40,7 @@ impl<T: BinRead<Args = ()> + Copy + PartialEq + Send + Sync + 'static> BinRead f
 }
 
 #[cfg(feature = "serde")]
-impl<T: Serialize> Serialize for Magic<T> {
+impl<T: Serialize> Serialize for BinaryMagic<T> {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -50,7 +50,7 @@ impl<T: Serialize> Serialize for Magic<T> {
 }
 
 #[cfg(feature = "serde")]
-impl<'de, T: Deserialize<'de>> Deserialize<'de> for Magic<T> {
+impl<'de, T: Deserialize<'de>> Deserialize<'de> for BinaryMagic<T> {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,

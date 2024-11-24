@@ -85,7 +85,7 @@ fn test_attackers_mask() {
         board.set_fen(fen).unwrap();
         for square in ALL_SQUARES {
             let result = board.get_attackers_mask(square, board.turn());
-            let mut expected = BB_EMPTY;
+            let mut expected = BitBoard::EMPTY;
             for piece_square in ALL_SQUARES {
                 if let Some(piece) = board.get_piece_at(piece_square) {
                     if piece.get_color() == board.turn()

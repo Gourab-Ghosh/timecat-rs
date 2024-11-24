@@ -102,7 +102,7 @@ impl Move {
             // Get ambiguous move candidates.
             // Relevant candidates: not exactly the current move,
             // but to the same square.
-            let mut others = BB_EMPTY;
+            let mut others = BitBoard::EMPTY;
             let from_mask =
                 position.get_piece_mask(piece) & position.self_occupied() & !source.to_bitboard();
             let to_mask = dest.to_bitboard();

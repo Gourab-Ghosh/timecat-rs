@@ -140,19 +140,19 @@ impl Debug for HalfKPNetwork {
 #[derive(Debug, Clone, BinRead)]
 pub struct HalfKPModelReader {
     #[br(args(VERSION))]
-    version: Magic<u32>,
+    version: BinaryMagic<u32>,
     #[br(args(ARCHITECTURE))]
-    architecture: Magic<u32>,
+    architecture: BinaryMagic<u32>,
     description_len: u32,
     #[br(count = description_len, try_map = String::from_utf8)]
     description: String,
     #[br(args(TRANSFORMER_ARCHITECTURE))]
-    transformer_architecture: Magic<u32>,
+    transformer_architecture: BinaryMagic<u32>,
     #[br(map = |x| SerdeWrapper::from(Arc::new(x)))]
     // #[br(map = |transformer: HalfKPFeatureTransformer<i16>| Arc::new((&transformer).into()))]
     transformer: SerdeWrapper<Arc<HalfKPFeatureTransformer<AccumulatorDataType>>>,
     #[br(args(NETWORK_ARCHITECTURE))]
-    network_architecture: Magic<u32>,
+    network_architecture: BinaryMagic<u32>,
     #[br(map = |x| SerdeWrapper::from(Arc::new(x)))]
     network: SerdeWrapper<Arc<HalfKPNetwork>>,
 }

@@ -474,7 +474,7 @@ impl MoveGenerator {
         let mask = !position.occupied_color(position.turn());
         let mut move_list = ArrayVec::new();
 
-        let legal_functions = if checkers == BB_EMPTY {
+        let legal_functions = if checkers == BitBoard::EMPTY {
             [
                 PawnMoves::legals::<NotInCheckMoves>,
                 KnightMoves::legals::<NotInCheckMoves>,
