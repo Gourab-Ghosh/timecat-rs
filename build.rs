@@ -400,8 +400,6 @@ mod bitboards_generation {
     }
 
     fn create_all_slider_moves(file: &mut File) -> Result<()> {
-        // TODO: Remove `pub(crate)`
-
         #[derive(Clone, Copy, Debug)]
         struct Magic {
             magic_number: BitBoard,
@@ -409,12 +407,17 @@ mod bitboards_generation {
             offset: usize,
             right_shift: u8,
         }
-
-        // #[derive(Clone, Copy, Debug)]
-        // struct BmiMagic {
-        //     blockers_mask: BitBoard,
-        //     offset: usize,
-        // }
+        
+        writeln!(
+            file,
+            r##"#[derive(Clone, Copy)]
+pub(crate) struct Magic {{
+    pub(crate) magic_number: BitBoard,
+    pub(crate) mask: BitBoard,
+    pub(crate) offset: usize,
+    pub(crate) right_shift: u8
+}}"##,
+        )?;
 
         #[rustfmt::skip]
         let bishop_and_rook_magic_numbers = [[
@@ -574,24 +577,6 @@ mod bitboards_generation {
 
         writeln!(
             file,
-            r##"
-#[derive(Clone, Copy)]
-pub(crate) struct Magic {{
-    pub(crate) magic_number: BitBoard,
-    pub(crate) mask: BitBoard,
-    pub(crate) offset: usize,
-    pub(crate) right_shift: u8
-}}
-
-#[derive(Clone, Copy)]
-pub(crate) struct BmiMagic {{
-    pub(crate) blockers_mask: BitBoard,
-    pub(crate) offset: usize,
-}}
-            "##,
-        )?;
-        writeln!(
-            file,
             r"pub(crate) const BISHOP_AND_ROOK_MAGIC_NUMBERS: [[Magic; 64]; 2] = {:#?};",
             bishop_and_rook_magic_numbers
         )?;
@@ -600,6 +585,170 @@ pub(crate) struct BmiMagic {{
             r"pub(crate) const MOVES: [BitBoard; 104960] = {:#?};",
             moves
         )?;
+
+        Ok(())
+    }
+
+    fn create_all_bmi_slider_moves(file: &mut File) -> Result<()> {
+        #[expect(dead_code)]
+        #[derive(Clone, Copy, Debug)]
+        struct BmiMagic {
+            blockers_mask: BitBoard,
+            offset: usize,
+        }
+        
+        writeln!(
+            file,
+            r##"#[derive(Clone, Copy)]
+pub(crate) struct BmiMagic {{
+    pub(crate) blockers_mask: BitBoard,
+    pub(crate) offset: usize,
+}}"##,
+        )?;
+
+        #[rustfmt::skip]
+        let bishop_and_rook_bmi_masks = [[
+            BmiMagic { blockers_mask: BitBoard(18049651735527936), offset: 4096 },
+            BmiMagic { blockers_mask: BitBoard(70506452091904), offset: 6208 },
+            BmiMagic { blockers_mask: BitBoard(275415828992), offset: 8288 },
+            BmiMagic { blockers_mask: BitBoard(1075975168), offset: 10368 },
+            BmiMagic { blockers_mask: BitBoard(38021120), offset: 12448 },
+            BmiMagic { blockers_mask: BitBoard(8657588224), offset: 14528 },
+            BmiMagic { blockers_mask: BitBoard(2216338399232), offset: 16608 },
+            BmiMagic { blockers_mask: BitBoard(567382630219776), offset: 20736 },
+            BmiMagic { blockers_mask: BitBoard(9024825867763712), offset: 22848 },
+            BmiMagic { blockers_mask: BitBoard(18049651735527424), offset: 23904 },
+            BmiMagic { blockers_mask: BitBoard(70506452221952), offset: 24960 },
+            BmiMagic { blockers_mask: BitBoard(275449643008), offset: 26016 },
+            BmiMagic { blockers_mask: BitBoard(9733406720), offset: 27072 },
+            BmiMagic { blockers_mask: BitBoard(2216342585344), offset: 28128 },
+            BmiMagic { blockers_mask: BitBoard(567382630203392), offset: 29184 },
+            BmiMagic { blockers_mask: BitBoard(1134765260406784), offset: 31264 },
+            BmiMagic { blockers_mask: BitBoard(4512412933816832), offset: 33344 },
+            BmiMagic { blockers_mask: BitBoard(9024825867633664), offset: 34400 },
+            BmiMagic { blockers_mask: BitBoard(18049651768822272), offset: 35456 },
+            BmiMagic { blockers_mask: BitBoard(70515108615168), offset: 36608 },
+            BmiMagic { blockers_mask: BitBoard(2491752130560), offset: 37760 },
+            BmiMagic { blockers_mask: BitBoard(567383701868544), offset: 38912 },
+            BmiMagic { blockers_mask: BitBoard(1134765256220672), offset: 40064 },
+            BmiMagic { blockers_mask: BitBoard(2269530512441344), offset: 42144 },
+            BmiMagic { blockers_mask: BitBoard(2256206450263040), offset: 44224 },
+            BmiMagic { blockers_mask: BitBoard(4512412900526080), offset: 45280 },
+            BmiMagic { blockers_mask: BitBoard(9024834391117824), offset: 46336 },
+            BmiMagic { blockers_mask: BitBoard(18051867805491712), offset: 47488 },
+            BmiMagic { blockers_mask: BitBoard(637888545440768), offset: 49024 },
+            BmiMagic { blockers_mask: BitBoard(1135039602493440), offset: 50560 },
+            BmiMagic { blockers_mask: BitBoard(2269529440784384), offset: 51712 },
+            BmiMagic { blockers_mask: BitBoard(4539058881568768), offset: 53792 },
+            BmiMagic { blockers_mask: BitBoard(1128098963916800), offset: 55872 },
+            BmiMagic { blockers_mask: BitBoard(2256197927833600), offset: 56928 },
+            BmiMagic { blockers_mask: BitBoard(4514594912477184), offset: 57984 },
+            BmiMagic { blockers_mask: BitBoard(9592139778506752), offset: 59136 },
+            BmiMagic { blockers_mask: BitBoard(19184279556981248), offset: 60672 },
+            BmiMagic { blockers_mask: BitBoard(2339762086609920), offset: 62208 },
+            BmiMagic { blockers_mask: BitBoard(4538784537380864), offset: 63360 },
+            BmiMagic { blockers_mask: BitBoard(9077569074761728), offset: 65440 },
+            BmiMagic { blockers_mask: BitBoard(562958610993152), offset: 67520 },
+            BmiMagic { blockers_mask: BitBoard(1125917221986304), offset: 68576 },
+            BmiMagic { blockers_mask: BitBoard(2814792987328512), offset: 69632 },
+            BmiMagic { blockers_mask: BitBoard(5629586008178688), offset: 70784 },
+            BmiMagic { blockers_mask: BitBoard(11259172008099840), offset: 71936 },
+            BmiMagic { blockers_mask: BitBoard(22518341868716544), offset: 73088 },
+            BmiMagic { blockers_mask: BitBoard(9007336962655232), offset: 74240 },
+            BmiMagic { blockers_mask: BitBoard(18014673925310464), offset: 76320 },
+            BmiMagic { blockers_mask: BitBoard(2216338399232), offset: 78400 },
+            BmiMagic { blockers_mask: BitBoard(4432676798464), offset: 79456 },
+            BmiMagic { blockers_mask: BitBoard(11064376819712), offset: 80512 },
+            BmiMagic { blockers_mask: BitBoard(22137335185408), offset: 81568 },
+            BmiMagic { blockers_mask: BitBoard(44272556441600), offset: 82624 },
+            BmiMagic { blockers_mask: BitBoard(87995357200384), offset: 83680 },
+            BmiMagic { blockers_mask: BitBoard(35253226045952), offset: 84736 },
+            BmiMagic { blockers_mask: BitBoard(70506452091904), offset: 86816 },
+            BmiMagic { blockers_mask: BitBoard(567382630219776), offset: 90944 },
+            BmiMagic { blockers_mask: BitBoard(1134765260406784), offset: 93056 },
+            BmiMagic { blockers_mask: BitBoard(2832480465846272), offset: 95136 },
+            BmiMagic { blockers_mask: BitBoard(5667157807464448), offset: 97216 },
+            BmiMagic { blockers_mask: BitBoard(11333774449049600), offset: 99296 },
+            BmiMagic { blockers_mask: BitBoard(22526811443298304), offset: 101376 },
+            BmiMagic { blockers_mask: BitBoard(9024825867763712), offset: 103456 },
+            BmiMagic { blockers_mask: BitBoard(18049651735527936), offset: 107584 },
+        ], [
+            BmiMagic { blockers_mask: BitBoard(282578800148862), offset: 0 },
+            BmiMagic { blockers_mask: BitBoard(565157600297596), offset: 4160 },
+            BmiMagic { blockers_mask: BitBoard(1130315200595066), offset: 6240 },
+            BmiMagic { blockers_mask: BitBoard(2260630401190006), offset: 8320 },
+            BmiMagic { blockers_mask: BitBoard(4521260802379886), offset: 10400 },
+            BmiMagic { blockers_mask: BitBoard(9042521604759646), offset: 12480 },
+            BmiMagic { blockers_mask: BitBoard(18085043209519166), offset: 14560 },
+            BmiMagic { blockers_mask: BitBoard(36170086419038334), offset: 16640 },
+            BmiMagic { blockers_mask: BitBoard(282578800180736), offset: 20800 },
+            BmiMagic { blockers_mask: BitBoard(565157600328704), offset: 22880 },
+            BmiMagic { blockers_mask: BitBoard(1130315200625152), offset: 23936 },
+            BmiMagic { blockers_mask: BitBoard(2260630401218048), offset: 24992 },
+            BmiMagic { blockers_mask: BitBoard(4521260802403840), offset: 26048 },
+            BmiMagic { blockers_mask: BitBoard(9042521604775424), offset: 27104 },
+            BmiMagic { blockers_mask: BitBoard(18085043209518592), offset: 28160 },
+            BmiMagic { blockers_mask: BitBoard(36170086419037696), offset: 29216 },
+            BmiMagic { blockers_mask: BitBoard(282578808340736), offset: 31296 },
+            BmiMagic { blockers_mask: BitBoard(565157608292864), offset: 33376 },
+            BmiMagic { blockers_mask: BitBoard(1130315208328192), offset: 34432 },
+            BmiMagic { blockers_mask: BitBoard(2260630408398848), offset: 35584 },
+            BmiMagic { blockers_mask: BitBoard(4521260808540160), offset: 36736 },
+            BmiMagic { blockers_mask: BitBoard(9042521608822784), offset: 37888 },
+            BmiMagic { blockers_mask: BitBoard(18085043209388032), offset: 39040 },
+            BmiMagic { blockers_mask: BitBoard(36170086418907136), offset: 40096 },
+            BmiMagic { blockers_mask: BitBoard(282580897300736), offset: 42176 },
+            BmiMagic { blockers_mask: BitBoard(565159647117824), offset: 44256 },
+            BmiMagic { blockers_mask: BitBoard(1130317180306432), offset: 45312 },
+            BmiMagic { blockers_mask: BitBoard(2260632246683648), offset: 46464 },
+            BmiMagic { blockers_mask: BitBoard(4521262379438080), offset: 48000 },
+            BmiMagic { blockers_mask: BitBoard(9042522644946944), offset: 49536 },
+            BmiMagic { blockers_mask: BitBoard(18085043175964672), offset: 50688 },
+            BmiMagic { blockers_mask: BitBoard(36170086385483776), offset: 51744 },
+            BmiMagic { blockers_mask: BitBoard(283115671060736), offset: 53824 },
+            BmiMagic { blockers_mask: BitBoard(565681586307584), offset: 55904 },
+            BmiMagic { blockers_mask: BitBoard(1130822006735872), offset: 56960 },
+            BmiMagic { blockers_mask: BitBoard(2261102847592448), offset: 58112 },
+            BmiMagic { blockers_mask: BitBoard(4521664529305600), offset: 59648 },
+            BmiMagic { blockers_mask: BitBoard(9042787892731904), offset: 61184 },
+            BmiMagic { blockers_mask: BitBoard(18085034619584512), offset: 62336 },
+            BmiMagic { blockers_mask: BitBoard(36170077829103616), offset: 63392 },
+            BmiMagic { blockers_mask: BitBoard(420017753620736), offset: 65472 },
+            BmiMagic { blockers_mask: BitBoard(699298018886144), offset: 67552 },
+            BmiMagic { blockers_mask: BitBoard(1260057572672512), offset: 68608 },
+            BmiMagic { blockers_mask: BitBoard(2381576680245248), offset: 69760 },
+            BmiMagic { blockers_mask: BitBoard(4624614895390720), offset: 70912 },
+            BmiMagic { blockers_mask: BitBoard(9110691325681664), offset: 72064 },
+            BmiMagic { blockers_mask: BitBoard(18082844186263552), offset: 73216 },
+            BmiMagic { blockers_mask: BitBoard(36167887395782656), offset: 74272 },
+            BmiMagic { blockers_mask: BitBoard(35466950888980736), offset: 76352 },
+            BmiMagic { blockers_mask: BitBoard(34905104758997504), offset: 78432 },
+            BmiMagic { blockers_mask: BitBoard(34344362452452352), offset: 79488 },
+            BmiMagic { blockers_mask: BitBoard(33222877839362048), offset: 80544 },
+            BmiMagic { blockers_mask: BitBoard(30979908613181440), offset: 81600 },
+            BmiMagic { blockers_mask: BitBoard(26493970160820224), offset: 82656 },
+            BmiMagic { blockers_mask: BitBoard(17522093256097792), offset: 83712 },
+            BmiMagic { blockers_mask: BitBoard(35607136465616896), offset: 84768 },
+            BmiMagic { blockers_mask: BitBoard(9079539427579068672), offset: 86848 },
+            BmiMagic { blockers_mask: BitBoard(8935706818303361536), offset: 91008 },
+            BmiMagic { blockers_mask: BitBoard(8792156787827803136), offset: 93088 },
+            BmiMagic { blockers_mask: BitBoard(8505056726876686336), offset: 95168 },
+            BmiMagic { blockers_mask: BitBoard(7930856604974452736), offset: 97248 },
+            BmiMagic { blockers_mask: BitBoard(6782456361169985536), offset: 99328 },
+            BmiMagic { blockers_mask: BitBoard(4485655873561051136), offset: 101408 },
+            BmiMagic { blockers_mask: BitBoard(9115426935197958144), offset: 103488 },
+        ]];
+        
+        writeln!(
+            file,
+            r"pub(crate) const BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
+            bishop_and_rook_bmi_masks,
+        )?;
+        // writeln!(
+        //     file,
+        //     r"const MOVES: [BitBoard; 104960] = {:#?};",
+        //     moves
+        // )?;
 
         Ok(())
     }
@@ -620,6 +769,7 @@ pub(crate) struct BmiMagic {{
         create_king_moves(&mut file)?;
         create_rays(&mut file)?;
         create_all_slider_moves(&mut file)?;
+        create_all_bmi_slider_moves(&mut file)?;
 
         Ok(())
     }
