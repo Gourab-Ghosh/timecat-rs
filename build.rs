@@ -198,19 +198,19 @@ mod bitboards_generation {
                 BitBoard(moves_array[1][i + 48].0 ^ shift_down(moves_array[1][i + 48].0));
         }
 
-        write!(
+        writeln!(
             file,
-            "const PAWN_MOVES_AND_ATTACKS: [[[BitBoard; 64]; 2]; 2] = [{:?}, {:?}];",
-            moves_array, attacks_array,
+            "const PAWN_MOVES_AND_ATTACKS: [[[BitBoard; 64]; 2]; 2] = {:#?};",
+            [moves_array, attacks_array],
         )?;
 
         Ok(())
     }
 
     fn create_knight_moves(file: &mut File) -> Result<()> {
-        write!(
+        writeln!(
             file,
-            "const KNIGHT_MOVES: [BitBoard; 64] = {:?};",
+            "const KNIGHT_MOVES: [BitBoard; 64] = {:#?};",
             std::array::from_fn::<_, 64, _>(|index| {
                 let bb_square = 1 << index;
                 let two_up_and_down =
@@ -229,9 +229,9 @@ mod bitboards_generation {
     }
 
     fn create_king_moves(file: &mut File) -> Result<()> {
-        write!(
+        writeln!(
             file,
-            "const KING_MOVES: [BitBoard; 64] = {:?};",
+            "const KING_MOVES: [BitBoard; 64] = {:#?};",
             std::array::from_fn::<_, 64, _>(|index| {
                 let mut bb = 1 << index;
                 bb ^= shift_left(bb) ^ shift_right(bb);
@@ -368,29 +368,33 @@ mod bitboards_generation {
             }
         }
 
-        write!(
+        writeln!(
             file,
-            "const BISHOP_DIAGONAL_RAYS: [BitBoard; 64] = {:?};",
+            "const BISHOP_DIAGONAL_RAYS: [BitBoard; 64] = {:#?};",
             bishop_diagonal_rays
         )?;
-        write!(
+        writeln!(
             file,
-            "const BISHOP_ANTI_DIAGONAL_RAYS: [BitBoard; 64] = {:?};",
+            "const BISHOP_ANTI_DIAGONAL_RAYS: [BitBoard; 64] = {:#?};",
             bishop_anti_diagonal_rays
         )?;
-        write!(
+        writeln!(
             file,
-            "const BISHOP_RAYS: [BitBoard; 64] = {:?};",
+            "const BISHOP_RAYS: [BitBoard; 64] = {:#?};",
             bishop_rays
         )?;
-        write!(file, "const ROOK_RAYS: [BitBoard; 64] = {:?};", rook_rays)?;
-        write!(
+        writeln!(file, "const ROOK_RAYS: [BitBoard; 64] = {:#?};", rook_rays)?;
+        writeln!(
             file,
-            "const ALL_DIRECTION_RAYS: [BitBoard; 64] = {:?};",
+            "const ALL_DIRECTION_RAYS: [BitBoard; 64] = {:#?};",
             all_direction_rays
         )?;
-        write!(file, "const BETWEEN: [[BitBoard; 64]; 64] = {:?};", between)?;
-        write!(file, "const LINE: [[BitBoard; 64]; 64] = {:?};", line)?;
+        writeln!(
+            file,
+            "const BETWEEN: [[BitBoard; 64]; 64] = {:#?};",
+            between
+        )?;
+        writeln!(file, "const LINE: [[BitBoard; 64]; 64] = {:#?};", line)?;
 
         Ok(())
     }
@@ -568,32 +572,32 @@ mod bitboards_generation {
             }
         }
 
-        write!(
+        writeln!(
             file,
             r##"
-                #[derive(Clone, Copy)]
-                pub(crate) struct Magic {{
-                    pub(crate) magic_number: BitBoard,
-                    pub(crate) mask: BitBoard,
-                    pub(crate) offset: usize,
-                    pub(crate) right_shift: u8
-                }}
+#[derive(Clone, Copy)]
+pub(crate) struct Magic {{
+    pub(crate) magic_number: BitBoard,
+    pub(crate) mask: BitBoard,
+    pub(crate) offset: usize,
+    pub(crate) right_shift: u8
+}}
 
-                #[derive(Clone, Copy)]
-                pub(crate) struct BmiMagic {{
-                    pub(crate) blockers_mask: BitBoard,
-                    pub(crate) offset: usize,
-                }}
+#[derive(Clone, Copy)]
+pub(crate) struct BmiMagic {{
+    pub(crate) blockers_mask: BitBoard,
+    pub(crate) offset: usize,
+}}
             "##,
         )?;
-        write!(
+        writeln!(
             file,
-            r"pub(crate) const BISHOP_AND_ROOK_MAGIC_NUMBERS: [[Magic; 64]; 2] = {:?};",
+            r"pub(crate) const BISHOP_AND_ROOK_MAGIC_NUMBERS: [[Magic; 64]; 2] = {:#?};",
             bishop_and_rook_magic_numbers
         )?;
-        write!(
+        writeln!(
             file,
-            r"pub(crate) const MOVES: [BitBoard; 104960] = {:?};",
+            r"pub(crate) const MOVES: [BitBoard; 104960] = {:#?};",
             moves
         )?;
 
@@ -675,7 +679,7 @@ mod nnue_features {
         if !nnue_downloaded_correctly(&nnue_path)? {
             remove_nnue_file(&nnue_path)?;
             let mut nnue_file = File::create(nnue_path.clone())
-                .map_err(|_| format!("Failed to create file at {:?}", nnue_dir))?;
+                .map_err(|_| format!("Failed to create file at {:#?}", nnue_dir))?;
             println!("cargo:rerun-if-env-changed=DOCS_RS");
             println!("cargo:rerun-if-env-changed=NNUE_DOWNLOAD");
             if std::env::var("DOCS_RS").is_ok()
@@ -685,7 +689,7 @@ mod nnue_features {
             }
             match generate_nnue_file(&mut nnue_file) {
                 Ok(_) => {
-                    println!("cargo:rerun-if-changed={:?}", nnue_path);
+                    println!("cargo:rerun-if-changed={:#?}", nnue_path);
                 }
                 Err(err) => {
                     remove_nnue_file(&nnue_path)?;
