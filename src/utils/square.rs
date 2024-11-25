@@ -14,8 +14,10 @@ pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
     *get_item_unchecked!(
         MOVES,
         magic.offset
-            + (magic.magic_number.wrapping_mul(blockers & magic.mask) >> magic.right_shift)
-                .to_usize(),
+            + ((blockers & magic.mask)
+                .into_inner()
+                .wrapping_mul(magic.magic_number)
+                >> magic.right_shift) as usize,
     ) & square.get_bishop_rays_bb()
 }
 
@@ -43,8 +45,10 @@ pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
     *get_item_unchecked!(
         MOVES,
         magic.offset
-            + (magic.magic_number.wrapping_mul(blockers & magic.mask) >> magic.right_shift)
-                .to_usize(),
+            + ((blockers & magic.mask)
+                .into_inner()
+                .wrapping_mul(magic.magic_number)
+                >> magic.right_shift) as usize,
     ) & square.get_rook_rays_bb()
 }
 

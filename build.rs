@@ -302,7 +302,7 @@ mod bitboards_generation {
         unreachable!();
     }
 
-    fn create_rays(file: &mut File) -> Result<()> {
+    fn create_rays(file: &mut File) -> Result<(Vec<BitBoard>, Vec<BitBoard>)> {
         let mut bishop_diagonal_rays = vec![BitBoard(0); 64];
         for index in 0..64 {
             let square = index as u8;
@@ -390,13 +390,17 @@ mod bitboards_generation {
         )?;
         writeln!(file, "const LINE: [[BitBoard; 64]; 64] = {:#?};", line)?;
 
-        Ok(())
+        Ok((bishop_rays, rook_rays))
     }
 
-    fn create_all_slider_moves(file: &mut File) -> Result<()> {
+    fn create_all_slider_moves(
+        file: &mut File,
+        bishop_rays: &[BitBoard],
+        rook_rays: &[BitBoard],
+    ) -> Result<()> {
         #[derive(Clone, Copy, Debug)]
         struct Magic {
-            magic_number: BitBoard,
+            magic_number: u64,
             mask: BitBoard,
             offset: usize,
             right_shift: u8,
@@ -404,7 +408,7 @@ mod bitboards_generation {
 
         writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
         writeln!(file, r##"struct Magic {{"##)?;
-        writeln!(file, r##"    magic_number: BitBoard,"##)?;
+        writeln!(file, r##"    magic_number: u64,"##)?;
         writeln!(file, r##"    mask: BitBoard,"##)?;
         writeln!(file, r##"    offset: usize,"##)?;
         writeln!(file, r##"    right_shift: u8,"##)?;
@@ -412,162 +416,177 @@ mod bitboards_generation {
 
         #[rustfmt::skip]
         let mut bishop_and_rook_magic_numbers = [[
-            Magic { magic_number: BitBoard(0x204022080a222040), mask: BitBoard(18049651735527936), offset: 0, right_shift: 58 },
-            Magic { magic_number: BitBoard(0x0020042400404100), mask: BitBoard(70506452091904), offset: 0, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x421073004500023a), mask: BitBoard(275415828992), offset: 64, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0008048100401040), mask: BitBoard(1075975168), offset: 32, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x8004042100840000), mask: BitBoard(38021120), offset: 96, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0001040240828006), mask: BitBoard(8657588224), offset: 64, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x00818c0520300620), mask: BitBoard(2216338399232), offset: 128, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0a10210048200900), mask: BitBoard(567382630219776), offset: 96, right_shift: 58 },
-            Magic { magic_number: BitBoard(0x2090210202180100), mask: BitBoard(9024825867763712), offset: 0, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x88050c1816004209), mask: BitBoard(18049651735527424), offset: 160, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x88050c1816004209), mask: BitBoard(70506452221952), offset: 160, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0040040404840000), mask: BitBoard(275449643008), offset: 192, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0020021210402001), mask: BitBoard(9733406720), offset: 192, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0100110308400104), mask: BitBoard(2216342585344), offset: 224, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x4c00424208244000), mask: BitBoard(567382630203392), offset: 224, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x9100012202100c00), mask: BitBoard(1134765260406784), offset: 128, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x881000400c534408), mask: BitBoard(4512412933816832), offset: 256, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x2090210202180100), mask: BitBoard(9024825867633664), offset: 256, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x8010004104108030), mask: BitBoard(18049651768822272), offset: 288, right_shift: 57 },
-            Magic { magic_number: BitBoard(0x2808000082004008), mask: BitBoard(70515108615168), offset: 288, right_shift: 57 },
-            Magic { magic_number: BitBoard(0x05010108200800a0), mask: BitBoard(2491752130560), offset: 416, right_shift: 57 },
-            Magic { magic_number: BitBoard(0x0280800101514000), mask: BitBoard(567383701868544), offset: 416, right_shift: 57 },
-            Magic { magic_number: BitBoard(0x02040101009a9000), mask: BitBoard(1134765256220672), offset: 544, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x1000800100880130), mask: BitBoard(2269530512441344), offset: 544, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0020081250500100), mask: BitBoard(2256206450263040), offset: 576, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x00082080840400a7), mask: BitBoard(4512412900526080), offset: 576, right_shift: 59 },
-            Magic { magic_number: BitBoard(0xa408880010182122), mask: BitBoard(9024834391117824), offset: 608, right_shift: 57 },
-            Magic { magic_number: BitBoard(0x0a00480004012020), mask: BitBoard(18051867805491712), offset: 608, right_shift: 55 },
-            Magic { magic_number: BitBoard(0x4c40840142802000), mask: BitBoard(637888545440768), offset: 736, right_shift: 55 },
-            Magic { magic_number: BitBoard(0x4089110002004104), mask: BitBoard(1135039602493440), offset: 1120, right_shift: 57 },
-            Magic { magic_number: BitBoard(0x02040101009a9000), mask: BitBoard(2269529440784384), offset: 1248, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0001020813108284), mask: BitBoard(4539058881568768), offset: 1248, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x4014100400082001), mask: BitBoard(1128098963916800), offset: 1280, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x010802820030a400), mask: BitBoard(2256197927833600), offset: 1280, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0004108802500840), mask: BitBoard(4514594912477184), offset: 1312, right_shift: 57 },
-            Magic { magic_number: BitBoard(0x00c0140400080211), mask: BitBoard(9592139778506752), offset: 1312, right_shift: 55 },
-            Magic { magic_number: BitBoard(0x24400100b0230040), mask: BitBoard(19184279556981248), offset: 1440, right_shift: 55 },
-            Magic { magic_number: BitBoard(0x8020040100022280), mask: BitBoard(2339762086609920), offset: 1824, right_shift: 57 },
-            Magic { magic_number: BitBoard(0x210d030100241400), mask: BitBoard(4538784537380864), offset: 1952, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x1008010050002601), mask: BitBoard(9077569074761728), offset: 1952, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x180404202a080401), mask: BitBoard(562958610993152), offset: 1984, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x9800420231802000), mask: BitBoard(1125917221986304), offset: 1984, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x000500148a015002), mask: BitBoard(2814792987328512), offset: 2016, right_shift: 57 },
-            Magic { magic_number: BitBoard(0x042044c010402200), mask: BitBoard(5629586008178688), offset: 2016, right_shift: 57 },
-            Magic { magic_number: BitBoard(0x00018a020a020c00), mask: BitBoard(11259172008099840), offset: 2144, right_shift: 57 },
-            Magic { magic_number: BitBoard(0x3001011001008080), mask: BitBoard(22518341868716544), offset: 2144, right_shift: 57 },
-            Magic { magic_number: BitBoard(0x8010844821408180), mask: BitBoard(9007336962655232), offset: 2272, right_shift: 59 },
-            Magic { magic_number: BitBoard(0xa004015605200601), mask: BitBoard(18014673925310464), offset: 2272, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x00818c0520300620), mask: BitBoard(2216338399232), offset: 2304, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x001442009008a009), mask: BitBoard(4432676798464), offset: 2304, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x800d030080904002), mask: BitBoard(11064376819712), offset: 2336, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0008000104882182), mask: BitBoard(22137335185408), offset: 2336, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x202000091024040c), mask: BitBoard(44272556441600), offset: 2368, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x2000085010008080), mask: BitBoard(87995357200384), offset: 2368, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x082092100200880a), mask: BitBoard(35253226045952), offset: 2400, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0020042400404100), mask: BitBoard(70506452091904), offset: 2400, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0a10210048200900), mask: BitBoard(567382630219776), offset: 2432, right_shift: 58 },
-            Magic { magic_number: BitBoard(0x9100012202100c00), mask: BitBoard(1134765260406784), offset: 2304, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x0404242101c11040), mask: BitBoard(2832480465846272), offset: 2496, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x4380800404208800), mask: BitBoard(5667157807464448), offset: 2432, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x1000000040504100), mask: BitBoard(11333774449049600), offset: 2528, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x400c04431c080084), mask: BitBoard(22526811443298304), offset: 2464, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x2090210202180100), mask: BitBoard(9024825867763712), offset: 2400, right_shift: 59 },
-            Magic { magic_number: BitBoard(0x204022080a222040), mask: BitBoard(18049651735527936), offset: 2496, right_shift: 58 },
+            Magic { magic_number: 0x204022080a222040, mask: BitBoard(18049651735527936), offset: 0, right_shift: 58 },
+            Magic { magic_number: 0x0020042400404100, mask: BitBoard(70506452091904), offset: 0, right_shift: 59 },
+            Magic { magic_number: 0x421073004500023a, mask: BitBoard(275415828992), offset: 64, right_shift: 59 },
+            Magic { magic_number: 0x0008048100401040, mask: BitBoard(1075975168), offset: 32, right_shift: 59 },
+            Magic { magic_number: 0x8004042100840000, mask: BitBoard(38021120), offset: 96, right_shift: 59 },
+            Magic { magic_number: 0x0001040240828006, mask: BitBoard(8657588224), offset: 64, right_shift: 59 },
+            Magic { magic_number: 0x00818c0520300620, mask: BitBoard(2216338399232), offset: 128, right_shift: 59 },
+            Magic { magic_number: 0x0a10210048200900, mask: BitBoard(567382630219776), offset: 96, right_shift: 58 },
+            Magic { magic_number: 0x2090210202180100, mask: BitBoard(9024825867763712), offset: 0, right_shift: 59 },
+            Magic { magic_number: 0x88050c1816004209, mask: BitBoard(18049651735527424), offset: 160, right_shift: 59 },
+            Magic { magic_number: 0x88050c1816004209, mask: BitBoard(70506452221952), offset: 160, right_shift: 59 },
+            Magic { magic_number: 0x0040040404840000, mask: BitBoard(275449643008), offset: 192, right_shift: 59 },
+            Magic { magic_number: 0x0020021210402001, mask: BitBoard(9733406720), offset: 192, right_shift: 59 },
+            Magic { magic_number: 0x0100110308400104, mask: BitBoard(2216342585344), offset: 224, right_shift: 59 },
+            Magic { magic_number: 0x4c00424208244000, mask: BitBoard(567382630203392), offset: 224, right_shift: 59 },
+            Magic { magic_number: 0x9100012202100c00, mask: BitBoard(1134765260406784), offset: 128, right_shift: 59 },
+            Magic { magic_number: 0x881000400c534408, mask: BitBoard(4512412933816832), offset: 256, right_shift: 59 },
+            Magic { magic_number: 0x2090210202180100, mask: BitBoard(9024825867633664), offset: 256, right_shift: 59 },
+            Magic { magic_number: 0x8010004104108030, mask: BitBoard(18049651768822272), offset: 288, right_shift: 57 },
+            Magic { magic_number: 0x2808000082004008, mask: BitBoard(70515108615168), offset: 288, right_shift: 57 },
+            Magic { magic_number: 0x05010108200800a0, mask: BitBoard(2491752130560), offset: 416, right_shift: 57 },
+            Magic { magic_number: 0x0280800101514000, mask: BitBoard(567383701868544), offset: 416, right_shift: 57 },
+            Magic { magic_number: 0x02040101009a9000, mask: BitBoard(1134765256220672), offset: 544, right_shift: 59 },
+            Magic { magic_number: 0x1000800100880130, mask: BitBoard(2269530512441344), offset: 544, right_shift: 59 },
+            Magic { magic_number: 0x0020081250500100, mask: BitBoard(2256206450263040), offset: 576, right_shift: 59 },
+            Magic { magic_number: 0x00082080840400a7, mask: BitBoard(4512412900526080), offset: 576, right_shift: 59 },
+            Magic { magic_number: 0xa408880010182122, mask: BitBoard(9024834391117824), offset: 608, right_shift: 57 },
+            Magic { magic_number: 0x0a00480004012020, mask: BitBoard(18051867805491712), offset: 608, right_shift: 55 },
+            Magic { magic_number: 0x4c40840142802000, mask: BitBoard(637888545440768), offset: 736, right_shift: 55 },
+            Magic { magic_number: 0x4089110002004104, mask: BitBoard(1135039602493440), offset: 1120, right_shift: 57 },
+            Magic { magic_number: 0x02040101009a9000, mask: BitBoard(2269529440784384), offset: 1248, right_shift: 59 },
+            Magic { magic_number: 0x0001020813108284, mask: BitBoard(4539058881568768), offset: 1248, right_shift: 59 },
+            Magic { magic_number: 0x4014100400082001, mask: BitBoard(1128098963916800), offset: 1280, right_shift: 59 },
+            Magic { magic_number: 0x010802820030a400, mask: BitBoard(2256197927833600), offset: 1280, right_shift: 59 },
+            Magic { magic_number: 0x0004108802500840, mask: BitBoard(4514594912477184), offset: 1312, right_shift: 57 },
+            Magic { magic_number: 0x00c0140400080211, mask: BitBoard(9592139778506752), offset: 1312, right_shift: 55 },
+            Magic { magic_number: 0x24400100b0230040, mask: BitBoard(19184279556981248), offset: 1440, right_shift: 55 },
+            Magic { magic_number: 0x8020040100022280, mask: BitBoard(2339762086609920), offset: 1824, right_shift: 57 },
+            Magic { magic_number: 0x210d030100241400, mask: BitBoard(4538784537380864), offset: 1952, right_shift: 59 },
+            Magic { magic_number: 0x1008010050002601, mask: BitBoard(9077569074761728), offset: 1952, right_shift: 59 },
+            Magic { magic_number: 0x180404202a080401, mask: BitBoard(562958610993152), offset: 1984, right_shift: 59 },
+            Magic { magic_number: 0x9800420231802000, mask: BitBoard(1125917221986304), offset: 1984, right_shift: 59 },
+            Magic { magic_number: 0x000500148a015002, mask: BitBoard(2814792987328512), offset: 2016, right_shift: 57 },
+            Magic { magic_number: 0x042044c010402200, mask: BitBoard(5629586008178688), offset: 2016, right_shift: 57 },
+            Magic { magic_number: 0x00018a020a020c00, mask: BitBoard(11259172008099840), offset: 2144, right_shift: 57 },
+            Magic { magic_number: 0x3001011001008080, mask: BitBoard(22518341868716544), offset: 2144, right_shift: 57 },
+            Magic { magic_number: 0x8010844821408180, mask: BitBoard(9007336962655232), offset: 2272, right_shift: 59 },
+            Magic { magic_number: 0xa004015605200601, mask: BitBoard(18014673925310464), offset: 2272, right_shift: 59 },
+            Magic { magic_number: 0x00818c0520300620, mask: BitBoard(2216338399232), offset: 2304, right_shift: 59 },
+            Magic { magic_number: 0x001442009008a009, mask: BitBoard(4432676798464), offset: 2304, right_shift: 59 },
+            Magic { magic_number: 0x800d030080904002, mask: BitBoard(11064376819712), offset: 2336, right_shift: 59 },
+            Magic { magic_number: 0x0008000104882182, mask: BitBoard(22137335185408), offset: 2336, right_shift: 59 },
+            Magic { magic_number: 0x202000091024040c, mask: BitBoard(44272556441600), offset: 2368, right_shift: 59 },
+            Magic { magic_number: 0x2000085010008080, mask: BitBoard(87995357200384), offset: 2368, right_shift: 59 },
+            Magic { magic_number: 0x082092100200880a, mask: BitBoard(35253226045952), offset: 2400, right_shift: 59 },
+            Magic { magic_number: 0x0020042400404100, mask: BitBoard(70506452091904), offset: 2400, right_shift: 59 },
+            Magic { magic_number: 0x0a10210048200900, mask: BitBoard(567382630219776), offset: 2432, right_shift: 58 },
+            Magic { magic_number: 0x9100012202100c00, mask: BitBoard(1134765260406784), offset: 2304, right_shift: 59 },
+            Magic { magic_number: 0x0404242101c11040, mask: BitBoard(2832480465846272), offset: 2496, right_shift: 59 },
+            Magic { magic_number: 0x4380800404208800, mask: BitBoard(5667157807464448), offset: 2432, right_shift: 59 },
+            Magic { magic_number: 0x1000000040504100, mask: BitBoard(11333774449049600), offset: 2528, right_shift: 59 },
+            Magic { magic_number: 0x400c04431c080084, mask: BitBoard(22526811443298304), offset: 2464, right_shift: 59 },
+            Magic { magic_number: 0x2090210202180100, mask: BitBoard(9024825867763712), offset: 2400, right_shift: 59 },
+            Magic { magic_number: 0x204022080a222040, mask: BitBoard(18049651735527936), offset: 2496, right_shift: 58 },
         ], [
-            Magic { magic_number: BitBoard(0x2280023020400080), mask: BitBoard(282578800148862), offset: 2560, right_shift: 52 },
-            Magic { magic_number: BitBoard(0x2840200010044000), mask: BitBoard(565157600297596), offset: 6656, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x0880100009a00080), mask: BitBoard(1130315200595066), offset: 8704, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x0080100014820800), mask: BitBoard(2260630401190006), offset: 10752, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x0100030004080070), mask: BitBoard(4521260802379886), offset: 12800, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x420006000130281c), mask: BitBoard(9042521604759646), offset: 14848, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x0100008100240600), mask: BitBoard(18085043209519166), offset: 16896, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x4080055123000080), mask: BitBoard(36170086419038334), offset: 18944, right_shift: 52 },
-            Magic { magic_number: BitBoard(0x600a002102004180), mask: BitBoard(282578800180736), offset: 23040, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x600a002102004180), mask: BitBoard(565157600328704), offset: 25088, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x4000801000200885), mask: BitBoard(1130315200625152), offset: 26112, right_shift: 54 },
-            Magic { magic_number: BitBoard(0xc001800802100080), mask: BitBoard(2260630401218048), offset: 27136, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0003001100880114), mask: BitBoard(4521260802403840), offset: 28160, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x1282001200100429), mask: BitBoard(9042521604775424), offset: 29184, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x01040006c8041011), mask: BitBoard(18085043209518592), offset: 30208, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x030a000042188405), mask: BitBoard(36170086419037696), offset: 31232, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x001080800040022a), mask: BitBoard(282578808340736), offset: 33280, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x504840c00a201000), mask: BitBoard(565157608292864), offset: 35328, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x00002a0010408200), mask: BitBoard(1130315208328192), offset: 36352, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x4200a30010000900), mask: BitBoard(2260630408398848), offset: 37376, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0068010010080500), mask: BitBoard(4521260808540160), offset: 38400, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x480080800a000400), mask: BitBoard(9042521608822784), offset: 39424, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x40310400210a0810), mask: BitBoard(18085043209388032), offset: 40448, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0000020008810844), mask: BitBoard(36170086418907136), offset: 41472, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x0080024040002010), mask: BitBoard(282580897300736), offset: 43520, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x6080200880400180), mask: BitBoard(565159647117824), offset: 45568, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x8000410100200210), mask: BitBoard(1130317180306432), offset: 46592, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x1040100100210008), mask: BitBoard(2260632246683648), offset: 47616, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0008001100040900), mask: BitBoard(4521262379438080), offset: 48640, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0204040080800200), mask: BitBoard(9042522644946944), offset: 49664, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x4001000100840200), mask: BitBoard(18085043175964672), offset: 50688, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0200c54200008409), mask: BitBoard(36170086385483776), offset: 51712, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x0080006000400040), mask: BitBoard(283115671060736), offset: 53760, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x600a002102004180), mask: BitBoard(565681586307584), offset: 55808, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x4000403082002200), mask: BitBoard(1130822006735872), offset: 56832, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0012809000801804), mask: BitBoard(2261102847592448), offset: 57856, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x5000800800800400), mask: BitBoard(4521664529305600), offset: 58880, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0204040080800200), mask: BitBoard(9042787892731904), offset: 59904, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x20111008040005c2), mask: BitBoard(18085034619584512), offset: 60928, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0020542142000381), mask: BitBoard(36170077829103616), offset: 61952, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x7000842040008000), mask: BitBoard(420017753620736), offset: 64000, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x9010004020004000), mask: BitBoard(699298018886144), offset: 66048, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0002028040220010), mask: BitBoard(1260057572672512), offset: 67072, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x1040100100210008), mask: BitBoard(2381576680245248), offset: 68096, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0088040008008080), mask: BitBoard(4624614895390720), offset: 69120, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0002000430420009), mask: BitBoard(9110691325681664), offset: 70144, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0040101881040002), mask: BitBoard(18082844186263552), offset: 71168, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x2040240080420001), mask: BitBoard(36167887395782656), offset: 72192, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x1802004108802200), mask: BitBoard(35466950888980736), offset: 74240, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x6080200880400180), mask: BitBoard(34905104758997504), offset: 76288, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x00002a0010408200), mask: BitBoard(34344362452452352), offset: 77312, right_shift: 54 },
-            Magic { magic_number: BitBoard(0xc001800802100080), mask: BitBoard(33222877839362048), offset: 78336, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x0000180224008080), mask: BitBoard(30979908613181440), offset: 79360, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x002e001004080a00), mask: BitBoard(26493970160820224), offset: 80384, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x3021006a00040100), mask: BitBoard(17522093256097792), offset: 81408, right_shift: 54 },
-            Magic { magic_number: BitBoard(0x2a402d4104108200), mask: BitBoard(35607136465616896), offset: 82432, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x0404402010800301), mask: BitBoard(9079539427579068672), offset: 84480, right_shift: 52 },
-            Magic { magic_number: BitBoard(0x0041001082204001), mask: BitBoard(8935706818303361536), offset: 88576, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x5000501900422001), mask: BitBoard(8792156787827803136), offset: 90624, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x0800182005005001), mask: BitBoard(8505056726876686336), offset: 92672, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x0006001410592006), mask: BitBoard(7930856604974452736), offset: 94720, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x0001006802140005), mask: BitBoard(6782456361169985536), offset: 96768, right_shift: 53 },
-            Magic { magic_number: BitBoard(0x1020080210028904), mask: BitBoard(4485655873561051136), offset: 98816, right_shift: 53 },
-            Magic { magic_number: BitBoard(0xc000192040840102), mask: BitBoard(9115426935197958144), offset: 100864, right_shift: 52 },
+            Magic { magic_number: 0x2280023020400080, mask: BitBoard(282578800148862), offset: 2560, right_shift: 52 },
+            Magic { magic_number: 0x2840200010044000, mask: BitBoard(565157600297596), offset: 6656, right_shift: 53 },
+            Magic { magic_number: 0x0880100009a00080, mask: BitBoard(1130315200595066), offset: 8704, right_shift: 53 },
+            Magic { magic_number: 0x0080100014820800, mask: BitBoard(2260630401190006), offset: 10752, right_shift: 53 },
+            Magic { magic_number: 0x0100030004080070, mask: BitBoard(4521260802379886), offset: 12800, right_shift: 53 },
+            Magic { magic_number: 0x420006000130281c, mask: BitBoard(9042521604759646), offset: 14848, right_shift: 53 },
+            Magic { magic_number: 0x0100008100240600, mask: BitBoard(18085043209519166), offset: 16896, right_shift: 53 },
+            Magic { magic_number: 0x4080055123000080, mask: BitBoard(36170086419038334), offset: 18944, right_shift: 52 },
+            Magic { magic_number: 0x600a002102004180, mask: BitBoard(282578800180736), offset: 23040, right_shift: 53 },
+            Magic { magic_number: 0x600a002102004180, mask: BitBoard(565157600328704), offset: 25088, right_shift: 54 },
+            Magic { magic_number: 0x4000801000200885, mask: BitBoard(1130315200625152), offset: 26112, right_shift: 54 },
+            Magic { magic_number: 0xc001800802100080, mask: BitBoard(2260630401218048), offset: 27136, right_shift: 54 },
+            Magic { magic_number: 0x0003001100880114, mask: BitBoard(4521260802403840), offset: 28160, right_shift: 54 },
+            Magic { magic_number: 0x1282001200100429, mask: BitBoard(9042521604775424), offset: 29184, right_shift: 54 },
+            Magic { magic_number: 0x01040006c8041011, mask: BitBoard(18085043209518592), offset: 30208, right_shift: 54 },
+            Magic { magic_number: 0x030a000042188405, mask: BitBoard(36170086419037696), offset: 31232, right_shift: 53 },
+            Magic { magic_number: 0x001080800040022a, mask: BitBoard(282578808340736), offset: 33280, right_shift: 53 },
+            Magic { magic_number: 0x504840c00a201000, mask: BitBoard(565157608292864), offset: 35328, right_shift: 54 },
+            Magic { magic_number: 0x00002a0010408200, mask: BitBoard(1130315208328192), offset: 36352, right_shift: 54 },
+            Magic { magic_number: 0x4200a30010000900, mask: BitBoard(2260630408398848), offset: 37376, right_shift: 54 },
+            Magic { magic_number: 0x0068010010080500, mask: BitBoard(4521260808540160), offset: 38400, right_shift: 54 },
+            Magic { magic_number: 0x480080800a000400, mask: BitBoard(9042521608822784), offset: 39424, right_shift: 54 },
+            Magic { magic_number: 0x40310400210a0810, mask: BitBoard(18085043209388032), offset: 40448, right_shift: 54 },
+            Magic { magic_number: 0x0000020008810844, mask: BitBoard(36170086418907136), offset: 41472, right_shift: 53 },
+            Magic { magic_number: 0x0080024040002010, mask: BitBoard(282580897300736), offset: 43520, right_shift: 53 },
+            Magic { magic_number: 0x6080200880400180, mask: BitBoard(565159647117824), offset: 45568, right_shift: 54 },
+            Magic { magic_number: 0x8000410100200210, mask: BitBoard(1130317180306432), offset: 46592, right_shift: 54 },
+            Magic { magic_number: 0x1040100100210008, mask: BitBoard(2260632246683648), offset: 47616, right_shift: 54 },
+            Magic { magic_number: 0x0008001100040900, mask: BitBoard(4521262379438080), offset: 48640, right_shift: 54 },
+            Magic { magic_number: 0x0204040080800200, mask: BitBoard(9042522644946944), offset: 49664, right_shift: 54 },
+            Magic { magic_number: 0x4001000100840200, mask: BitBoard(18085043175964672), offset: 50688, right_shift: 54 },
+            Magic { magic_number: 0x0200c54200008409, mask: BitBoard(36170086385483776), offset: 51712, right_shift: 53 },
+            Magic { magic_number: 0x0080006000400040, mask: BitBoard(283115671060736), offset: 53760, right_shift: 53 },
+            Magic { magic_number: 0x600a002102004180, mask: BitBoard(565681586307584), offset: 55808, right_shift: 54 },
+            Magic { magic_number: 0x4000403082002200, mask: BitBoard(1130822006735872), offset: 56832, right_shift: 54 },
+            Magic { magic_number: 0x0012809000801804, mask: BitBoard(2261102847592448), offset: 57856, right_shift: 54 },
+            Magic { magic_number: 0x5000800800800400, mask: BitBoard(4521664529305600), offset: 58880, right_shift: 54 },
+            Magic { magic_number: 0x0204040080800200, mask: BitBoard(9042787892731904), offset: 59904, right_shift: 54 },
+            Magic { magic_number: 0x20111008040005c2, mask: BitBoard(18085034619584512), offset: 60928, right_shift: 54 },
+            Magic { magic_number: 0x0020542142000381, mask: BitBoard(36170077829103616), offset: 61952, right_shift: 53 },
+            Magic { magic_number: 0x7000842040008000, mask: BitBoard(420017753620736), offset: 64000, right_shift: 53 },
+            Magic { magic_number: 0x9010004020004000, mask: BitBoard(699298018886144), offset: 66048, right_shift: 54 },
+            Magic { magic_number: 0x0002028040220010, mask: BitBoard(1260057572672512), offset: 67072, right_shift: 54 },
+            Magic { magic_number: 0x1040100100210008, mask: BitBoard(2381576680245248), offset: 68096, right_shift: 54 },
+            Magic { magic_number: 0x0088040008008080, mask: BitBoard(4624614895390720), offset: 69120, right_shift: 54 },
+            Magic { magic_number: 0x0002000430420009, mask: BitBoard(9110691325681664), offset: 70144, right_shift: 54 },
+            Magic { magic_number: 0x0040101881040002, mask: BitBoard(18082844186263552), offset: 71168, right_shift: 54 },
+            Magic { magic_number: 0x2040240080420001, mask: BitBoard(36167887395782656), offset: 72192, right_shift: 53 },
+            Magic { magic_number: 0x1802004108802200, mask: BitBoard(35466950888980736), offset: 74240, right_shift: 53 },
+            Magic { magic_number: 0x6080200880400180, mask: BitBoard(34905104758997504), offset: 76288, right_shift: 54 },
+            Magic { magic_number: 0x00002a0010408200, mask: BitBoard(34344362452452352), offset: 77312, right_shift: 54 },
+            Magic { magic_number: 0xc001800802100080, mask: BitBoard(33222877839362048), offset: 78336, right_shift: 54 },
+            Magic { magic_number: 0x0000180224008080, mask: BitBoard(30979908613181440), offset: 79360, right_shift: 54 },
+            Magic { magic_number: 0x002e001004080a00, mask: BitBoard(26493970160820224), offset: 80384, right_shift: 54 },
+            Magic { magic_number: 0x3021006a00040100, mask: BitBoard(17522093256097792), offset: 81408, right_shift: 54 },
+            Magic { magic_number: 0x2a402d4104108200, mask: BitBoard(35607136465616896), offset: 82432, right_shift: 53 },
+            Magic { magic_number: 0x0404402010800301, mask: BitBoard(9079539427579068672), offset: 84480, right_shift: 52 },
+            Magic { magic_number: 0x0041001082204001, mask: BitBoard(8935706818303361536), offset: 88576, right_shift: 53 },
+            Magic { magic_number: 0x5000501900422001, mask: BitBoard(8792156787827803136), offset: 90624, right_shift: 53 },
+            Magic { magic_number: 0x0800182005005001, mask: BitBoard(8505056726876686336), offset: 92672, right_shift: 53 },
+            Magic { magic_number: 0x0006001410592006, mask: BitBoard(7930856604974452736), offset: 94720, right_shift: 53 },
+            Magic { magic_number: 0x0001006802140005, mask: BitBoard(6782456361169985536), offset: 96768, right_shift: 53 },
+            Magic { magic_number: 0x1020080210028904, mask: BitBoard(4485655873561051136), offset: 98816, right_shift: 53 },
+            Magic { magic_number: 0xc000192040840102, mask: BitBoard(9115426935197958144), offset: 100864, right_shift: 52 },
         ]];
-        // for piece_index in 0..2 {
-        //     for square_index in 0..64 {
-        //         bishop_and_rook_magic_numbers[piece_index][square_index].magic_number.0 ^= 0;
-        //     }
-        // }
 
         let mut moves = [BitBoard(0); 104960];
+        // let mut offset = 0;
         for piece_index in 0..2 {
             for square_index in 0..64 {
                 let magic = &mut bishop_and_rook_magic_numbers[piece_index][square_index];
+                magic.mask.0 = match piece_index {
+                    0 => bishop_rays[square_index].0 & 0x007E7E7E7E7E7E00,
+                    1 => {
+                        let mut restriction = 0x007E7E7E7E7E7E00;
+                        for (corner_rows, allowed) in [
+                            (0x00000000000000FF, 0x000000000000007E),
+                            (0xFF00000000000000, 0x7E00000000000000),
+                            (0x0101010101010101, 0x0001010101010100),
+                            (0x8080808080808080, 0x0080808080808000),
+                        ] {
+                            if bb_contains(corner_rows, square_index as u8) {
+                                restriction ^= allowed;
+                            }
+                        }
+                        rook_rays[square_index].0 & restriction
+                    }
+                    _ => unreachable!(),
+                };
+                magic.right_shift = 64 - magic.mask.0.count_ones() as u8;
                 let sub_masks_and_moves_array = generate_all_sub_masks_and_moves(
                     magic.mask.0,
                     square_index as u8,
                     if piece_index == 0 { 2 } else { 3 },
                 );
-                magic.right_shift = (sub_masks_and_moves_array
-                    .iter()
-                    .take_while(|&&item| item != (0, 0))
-                    .count()
-                    .leading_zeros()
-                    + 1) as u8;
+                // offset += sub_masks_and_moves_array
+                //     .iter()
+                //     .take_while(|item| item.0 & 0 != 0)
+                //     .count()
+                //     .leading_zeros() as usize;
+                // magic.offset = offset;
 
                 for sub_masks_and_moves_array_index in 0..1 << magic.mask.0.count_ones() {
                     let (sub_mask, moves_bb) =
                         sub_masks_and_moves_array[sub_masks_and_moves_array_index];
-                    let index = (magic.magic_number.0.wrapping_mul(sub_mask) >> magic.right_shift)
+                    let index = (magic.magic_number.wrapping_mul(sub_mask) >> magic.right_shift)
                         as usize
                         + magic.offset;
                     moves[index].0 |= moves_bb;
@@ -760,8 +779,9 @@ mod bitboards_generation {
         create_pawn_moves(&mut file)?;
         create_knight_moves(&mut file)?;
         create_king_moves(&mut file)?;
-        create_rays(&mut file)?;
-        create_all_slider_moves(&mut file)?;
+
+        let (bishop_rays, rook_rays) = create_rays(&mut file)?;
+        create_all_slider_moves(&mut file, &bishop_rays, &rook_rays)?;
         create_all_bmi_slider_moves(&mut file)?;
 
         Ok(())
