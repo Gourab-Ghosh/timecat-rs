@@ -588,12 +588,17 @@ mod bitboards_generation {
                     if piece_index == 0 { 2 } else { 3 },
                 );
                 let num_sub_masks = 1 << (64 - magic.right_shift);
+                // magic.offset = offset;
                 // offset += sub_masks_and_moves_array
                 //     .iter()
                 //     .take_while(|item| item.0 & 0 != 0)
                 //     .count()
                 //     .leading_zeros() as usize;
-                // magic.offset = offset;
+
+                let bmi_magic = &mut bishop_and_rook_bmi_masks[piece_index][square_index];
+                bmi_magic.blockers_mask = magic.mask;
+                bmi_magic.offset = bmi_offset;
+                bmi_offset += num_sub_masks;
 
                 for sub_masks_and_moves_array_index in 0..num_sub_masks {
                     let (sub_mask, moves_bb) =
@@ -602,20 +607,20 @@ mod bitboards_generation {
                         as usize
                         + magic.offset;
                     moves[index].0 |= moves_bb;
-                }
 
-                let bmi_magic = &mut bishop_and_rook_bmi_masks[piece_index][square_index];
-                bmi_magic.blockers_mask = magic.mask;
-                bmi_magic.offset = bmi_offset;
-                for i in 0..num_sub_masks {
                     let sub_mask_key = unsafe {
-                        _pext_u64(sub_masks_and_moves_array[i].0, bmi_magic.blockers_mask.0)
-                            as usize
+                        _pext_u64(
+                            sub_masks_and_moves_array[sub_masks_and_moves_array_index].0,
+                            bmi_magic.blockers_mask.0,
+                        ) as usize
                     };
-                    bmi_moves[bmi_offset + sub_mask_key] =
-                        unsafe { _pext_u64(sub_masks_and_moves_array[i].1, ray.0) as u16 };
+                    bmi_moves[bmi_magic.offset + sub_mask_key] = unsafe {
+                        _pext_u64(
+                            sub_masks_and_moves_array[sub_masks_and_moves_array_index].1,
+                            ray.0,
+                        ) as u16
+                    };
                 }
-                bmi_offset += num_sub_masks;
             }
         }
 
