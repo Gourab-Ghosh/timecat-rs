@@ -565,12 +565,14 @@ mod bitboards_generation {
                         0 => 0x007E7E7E7E7E7E00,
                         1 => {
                             let mut restriction = 0x007E7E7E7E7E7E00;
-                            for (corner_rows, allowed) in [
-                                (0x00000000000000FF, 0x000000000000007E),
-                                (0xFF00000000000000, 0x7E00000000000000),
-                                (0x0101010101010101, 0x0001010101010100),
-                                (0x8080808080808080, 0x0080808080808000),
-                            ] {
+                            for (corner_rows, allowed) in const {
+                                [
+                                    (0x00000000000000FF, 0x000000000000007E),
+                                    (0xFF00000000000000, 0x7E00000000000000),
+                                    (0x0101010101010101, 0x0001010101010100),
+                                    (0x8080808080808080, 0x0080808080808000),
+                                ]
+                            } {
                                 if bb_contains(corner_rows, square_index as u8) {
                                     restriction ^= allowed;
                                 }
