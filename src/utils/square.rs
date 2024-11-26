@@ -4,7 +4,6 @@ use std::arch::x86_64::{_pdep_u64, _pext_u64};
 pub use Square::*;
 
 include!(concat!(env!("OUT_DIR"), "/magic.rs"));
-include!("magic_gen.rs");
 
 /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
 #[cfg(not(target_feature = "bmi2"))]

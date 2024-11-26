@@ -6,6 +6,7 @@ use std::fmt;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::arch::x86_64::_pext_u64;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -546,13 +547,21 @@ mod bitboards_generation {
         ]];
         let mut bishop_and_rook_bmi_masks = [[BmiMagic::default(); 64]; 2];
 
-        let mut moves = [BitBoard::default(); 104960];
         // let mut offset = 0;
+        let mut moves = [BitBoard::default(); 104960];
+        let mut bmi_offset = 0;
+        let mut bmi_moves = [0; 107648];
         for piece_index in 0..2 {
             for square_index in 0..64 {
+                let ray = match piece_index {
+                    0 => bishop_rays,
+                    1 => rook_rays,
+                    _ => unreachable!(),
+                }[square_index];
+
                 let magic = &mut bishop_and_rook_magic_numbers[piece_index][square_index];
-                magic.mask.0 = match piece_index {
-                    0 => bishop_rays[square_index].0 & 0x007E7E7E7E7E7E00,
+                magic.mask.0 = ray.0 & match piece_index {
+                    0 => 0x007E7E7E7E7E7E00,
                     1 => {
                         let mut restriction = 0x007E7E7E7E7E7E00;
                         for (corner_rows, allowed) in [
@@ -565,7 +574,7 @@ mod bitboards_generation {
                                 restriction ^= allowed;
                             }
                         }
-                        rook_rays[square_index].0 & restriction
+                        restriction
                     }
                     _ => unreachable!(),
                 };
@@ -575,6 +584,7 @@ mod bitboards_generation {
                     square_index as u8,
                     if piece_index == 0 { 2 } else { 3 },
                 );
+                let num_sub_masks = 1 << (64 - magic.right_shift);
                 // offset += sub_masks_and_moves_array
                 //     .iter()
                 //     .take_while(|item| item.0 & 0 != 0)
@@ -582,7 +592,7 @@ mod bitboards_generation {
                 //     .leading_zeros() as usize;
                 // magic.offset = offset;
 
-                for sub_masks_and_moves_array_index in 0..1 << magic.mask.0.count_ones() {
+                for sub_masks_and_moves_array_index in 0..num_sub_masks {
                     let (sub_mask, moves_bb) =
                         sub_masks_and_moves_array[sub_masks_and_moves_array_index];
                     let index = (magic.magic_number.wrapping_mul(sub_mask) >> magic.right_shift)
@@ -590,18 +600,15 @@ mod bitboards_generation {
                         + magic.offset;
                     moves[index].0 |= moves_bb;
                 }
-            }
-        }
 
-        // let mut bmi_moves = [BitBoard::default(); 107648];
-        let mut bmi_offset = 0;
-        for square_index in 0..64 {
-            for piece_index in (0..2).rev() {
-                let magic = &bishop_and_rook_magic_numbers[piece_index][square_index];
                 let bmi_magic = &mut bishop_and_rook_bmi_masks[piece_index][square_index];
                 bmi_magic.blockers_mask = magic.mask;
                 bmi_magic.offset = bmi_offset;
-                bmi_offset += 1 << (64 - magic.right_shift);
+                for i in 0..num_sub_masks {
+                    let sub_mask_key = unsafe { _pext_u64(sub_masks_and_moves_array[i].0, bmi_magic.blockers_mask.0) as usize };
+                    bmi_moves[bmi_offset + sub_mask_key] = unsafe { _pext_u64(sub_masks_and_moves_array[i].1, ray.0) as u16 };
+                }
+                bmi_offset += num_sub_masks;
             }
         }
 
@@ -631,6 +638,7 @@ mod bitboards_generation {
             r"const BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
             bishop_and_rook_bmi_masks,
         )?;
+        writeln!(file, r"const BMI_MOVES: [u16; 107648] = {:#?};", bmi_moves)?;
 
         Ok(())
     }
