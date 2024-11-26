@@ -1,12 +1,12 @@
 #![allow(unused_imports)]
 
 use itertools::*;
+use std::arch::x86_64::_pext_u64;
 use std::cmp::Ordering;
 use std::fmt;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::arch::x86_64::_pext_u64;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -560,24 +560,25 @@ mod bitboards_generation {
                 }[square_index];
 
                 let magic = &mut bishop_and_rook_magic_numbers[piece_index][square_index];
-                magic.mask.0 = ray.0 & match piece_index {
-                    0 => 0x007E7E7E7E7E7E00,
-                    1 => {
-                        let mut restriction = 0x007E7E7E7E7E7E00;
-                        for (corner_rows, allowed) in [
-                            (0x00000000000000FF, 0x000000000000007E),
-                            (0xFF00000000000000, 0x7E00000000000000),
-                            (0x0101010101010101, 0x0001010101010100),
-                            (0x8080808080808080, 0x0080808080808000),
-                        ] {
-                            if bb_contains(corner_rows, square_index as u8) {
-                                restriction ^= allowed;
+                magic.mask.0 = ray.0
+                    & match piece_index {
+                        0 => 0x007E7E7E7E7E7E00,
+                        1 => {
+                            let mut restriction = 0x007E7E7E7E7E7E00;
+                            for (corner_rows, allowed) in [
+                                (0x00000000000000FF, 0x000000000000007E),
+                                (0xFF00000000000000, 0x7E00000000000000),
+                                (0x0101010101010101, 0x0001010101010100),
+                                (0x8080808080808080, 0x0080808080808000),
+                            ] {
+                                if bb_contains(corner_rows, square_index as u8) {
+                                    restriction ^= allowed;
+                                }
                             }
+                            restriction
                         }
-                        restriction
-                    }
-                    _ => unreachable!(),
-                };
+                        _ => unreachable!(),
+                    };
                 magic.right_shift = 64 - magic.mask.0.count_ones() as u8;
                 let sub_masks_and_moves_array = generate_all_sub_masks_and_moves(
                     magic.mask.0,
@@ -605,8 +606,12 @@ mod bitboards_generation {
                 bmi_magic.blockers_mask = magic.mask;
                 bmi_magic.offset = bmi_offset;
                 for i in 0..num_sub_masks {
-                    let sub_mask_key = unsafe { _pext_u64(sub_masks_and_moves_array[i].0, bmi_magic.blockers_mask.0) as usize };
-                    bmi_moves[bmi_offset + sub_mask_key] = unsafe { _pext_u64(sub_masks_and_moves_array[i].1, ray.0) as u16 };
+                    let sub_mask_key = unsafe {
+                        _pext_u64(sub_masks_and_moves_array[i].0, bmi_magic.blockers_mask.0)
+                            as usize
+                    };
+                    bmi_moves[bmi_offset + sub_mask_key] =
+                        unsafe { _pext_u64(sub_masks_and_moves_array[i].1, ray.0) as u16 };
                 }
                 bmi_offset += num_sub_masks;
             }
@@ -619,7 +624,7 @@ mod bitboards_generation {
         writeln!(file, r##"    offset: usize,"##)?;
         writeln!(file, r##"    right_shift: u8,"##)?;
         writeln!(file, r##"}}"##)?;
-        
+
         writeln!(
             file,
             r"const BISHOP_AND_ROOK_MAGIC_NUMBERS: [[Magic; 64]; 2] = {:#?};",
