@@ -547,12 +547,14 @@ mod bitboards_generation {
         ]];
         let mut bishop_and_rook_bmi_masks = [[BmiMagic::default(); 64]; 2];
 
+        let mut offset = 0;
+        let mut bmi_offset = 0;
+
         const NUM_MOVES: usize = 64 * (1 << 12) + 64 * (1 << 9);
         let mut moves = vec![BitBoard::default(); NUM_MOVES];
         let mut rays_cache_temp = vec![0; NUM_MOVES];
-        let mut offset = 0;
-        let mut bmi_offset = 0;
         let mut bmi_moves = vec![0; 107648];
+
         for piece_index in 0..2 {
             for square_index in 0..64 {
                 let ray = match piece_index {
@@ -583,7 +585,6 @@ mod bitboards_generation {
                         }
                         _ => unreachable!(),
                     };
-                magic.right_shift = 64 - magic.mask.0.count_ones() as u8;
                 let sub_masks_and_moves_array = generate_all_sub_masks_and_moves(
                     magic.mask.0,
                     square_index as u8,
