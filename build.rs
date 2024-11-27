@@ -547,10 +547,10 @@ mod bitboards_generation {
         ]];
         let mut bishop_and_rook_bmi_masks = [[BmiMagic::default(); 64]; 2];
 
-        // let mut offset = 0;
-        let mut moves = [BitBoard::default(); 104960];
+        const NUM_MOVES: usize = 64 * (1<<12) + 64 * (1<<9);
+        let mut optional_moves = vec![None; NUM_MOVES];
         let mut bmi_offset = 0;
-        let mut bmi_moves = [0; 107648];
+        let mut bmi_moves = vec![0; 107648];
         for piece_index in 0..2 {
             for square_index in 0..64 {
                 let ray = match piece_index {
@@ -588,12 +588,6 @@ mod bitboards_generation {
                     if piece_index == 0 { 2 } else { 3 },
                 );
                 let num_sub_masks = 1 << (64 - magic.right_shift);
-                // magic.offset = offset;
-                // offset += sub_masks_and_moves_array
-                //     .iter()
-                //     .take_while(|item| item.0 & 0 != 0)
-                //     .count()
-                //     .leading_zeros() as usize;
 
                 let bmi_magic = &mut bishop_and_rook_bmi_masks[piece_index][square_index];
                 bmi_magic.blockers_mask = magic.mask;
@@ -606,7 +600,7 @@ mod bitboards_generation {
                     let index = (magic.magic_number.wrapping_mul(sub_mask) >> magic.right_shift)
                         as usize
                         + magic.offset;
-                    moves[index].0 |= moves_bb;
+                    optional_moves[index].get_or_insert(BitBoard::default()).0 |= moves_bb;
 
                     let sub_mask_key = unsafe {
                         _pext_u64(
@@ -623,6 +617,7 @@ mod bitboards_generation {
                 }
             }
         }
+        let moves = optional_moves.into_iter().map_while(|bb| bb).collect_vec();
 
         writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
         writeln!(file, r##"struct Magic {{"##)?;
@@ -637,7 +632,7 @@ mod bitboards_generation {
             r"const BISHOP_AND_ROOK_MAGIC_NUMBERS: [[Magic; 64]; 2] = {:#?};",
             bishop_and_rook_magic_numbers
         )?;
-        writeln!(file, r"const MOVES: [BitBoard; 104960] = {:#?};", moves)?;
+        writeln!(file, r"const MOVES: [BitBoard; {}] = {:#?};", moves.len(), moves)?;
 
         writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
         writeln!(file, r##"struct BmiMagic {{"##)?;
