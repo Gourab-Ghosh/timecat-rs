@@ -547,8 +547,10 @@ mod bitboards_generation {
         ]];
         let mut bishop_and_rook_bmi_masks = [[BmiMagic::default(); 64]; 2];
 
-        const NUM_MOVES: usize = 64 * (1<<12) + 64 * (1<<9);
-        let mut optional_moves = vec![None; NUM_MOVES];
+        const NUM_MOVES: usize = 64 * (1 << 12) + 64 * (1 << 9);
+        let mut moves = vec![BitBoard::default(); NUM_MOVES];
+        let mut rays_cache_temp = vec![0; NUM_MOVES];
+        let mut offset = 0;
         let mut bmi_offset = 0;
         let mut bmi_moves = vec![0; 107648];
         for piece_index in 0..2 {
@@ -588,6 +590,14 @@ mod bitboards_generation {
                     if piece_index == 0 { 2 } else { 3 },
                 );
                 let num_sub_masks = 1 << (64 - magic.right_shift);
+                magic.offset = (0..offset)
+                    .find(|&i| {
+                        rays_cache_temp[i..i + num_sub_masks]
+                            .iter()
+                            .all(|&bb| bb & ray.0 == 0)
+                    })
+                    .unwrap_or(offset);
+                offset = offset.max(magic.offset + num_sub_masks);
 
                 let bmi_magic = &mut bishop_and_rook_bmi_masks[piece_index][square_index];
                 bmi_magic.blockers_mask = magic.mask;
@@ -600,7 +610,8 @@ mod bitboards_generation {
                     let index = (magic.magic_number.wrapping_mul(sub_mask) >> magic.right_shift)
                         as usize
                         + magic.offset;
-                    optional_moves[index].get_or_insert(BitBoard::default()).0 |= moves_bb;
+                    moves[index].0 |= moves_bb;
+                    rays_cache_temp[index] |= ray.0;
 
                     let sub_mask_key = unsafe {
                         _pext_u64(
@@ -617,7 +628,6 @@ mod bitboards_generation {
                 }
             }
         }
-        let moves = optional_moves.into_iter().map_while(|bb| bb).collect_vec();
 
         writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
         writeln!(file, r##"struct Magic {{"##)?;
@@ -632,7 +642,12 @@ mod bitboards_generation {
             r"const BISHOP_AND_ROOK_MAGIC_NUMBERS: [[Magic; 64]; 2] = {:#?};",
             bishop_and_rook_magic_numbers
         )?;
-        writeln!(file, r"const MOVES: [BitBoard; {}] = {:#?};", moves.len(), moves)?;
+        writeln!(
+            file,
+            r"const MOVES: [BitBoard; {}] = {:#?};",
+            offset,
+            &moves[0..offset]
+        )?;
 
         writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
         writeln!(file, r##"struct BmiMagic {{"##)?;
