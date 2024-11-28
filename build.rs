@@ -521,13 +521,13 @@ mod bitboards_generation {
                     moves[index].0 |= moves_bb;
                     rays_cache_temp[index] |= ray.0;
 
-                    let sub_mask_key = unsafe {
-                        _pext_u64(
-                            sub_masks_and_moves_array[sub_masks_and_moves_array_index].0,
-                            bmi_magic.blockers_mask.0,
-                        ) as usize
-                    };
-                    bmi_moves[bmi_magic.offset + sub_mask_key] = unsafe {
+                    bmi_moves[bmi_magic.offset
+                        + unsafe {
+                            _pext_u64(
+                                sub_masks_and_moves_array[sub_masks_and_moves_array_index].0,
+                                bmi_magic.blockers_mask.0,
+                            ) as usize
+                        }] = unsafe {
                         _pext_u64(
                             sub_masks_and_moves_array[sub_masks_and_moves_array_index].1,
                             ray.0,
