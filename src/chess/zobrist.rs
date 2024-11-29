@@ -3,6 +3,7 @@ use super::*;
 pub struct Zobrist;
 
 include!("zobrist_gen.rs");
+// include!(concat!(env!("OUT_DIR"), "/magic.rs"));
 
 impl Zobrist {
     /// Get the value for a particular piece
@@ -27,7 +28,7 @@ impl Zobrist {
     }
 
     #[inline]
-    pub fn color() -> u64 {
+    pub const fn color() -> u64 {
         TURN
     }
 }
