@@ -152,7 +152,7 @@ impl fmt::Display for TimecatError {
             InvalidPieceTypeString { s } => write!(f, "Got invalid piece type string {s}! Please try again!"),
             InvalidPieceString { s } => write!(f, "Got invalid piece string {s}! Please try again!"),
             InvalidUciMoveString { s } => write!(f, "Invalid uci move string {s}! Please try again!"),
-            InvalidBoardPosition { position } => write!(f, "Invalid sub board generated:\n\n{position:#?}"),
+            InvalidBoardPosition { position } => write!(f, "Invalid position generated:\n\n{position:#?}"),
             InvalidGoCommand { s } => write!(f, "Got invalid go command: {s:?}! Please try again!"),
             IllegalSearchMoves { illegal_moves } => write!(f, "Got illegal search moves: {}! Please try again!", illegal_moves.iter().map(ToString::to_string).join(", ")),
             FeatureNotEnabled { s } => write!(f, "The feature {s:?} is not enabled. Please recompile the chess engine with this feature enabled!"),
