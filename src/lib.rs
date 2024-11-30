@@ -1,6 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![allow(unused_imports)]
 #![allow(dead_code)]
+#![allow(clippy::macro_metavars_in_unsafe)]
 #![expect(clippy::needless_doctest_main)]
 #![expect(clippy::too_many_arguments)]
 #![expect(clippy::result_large_err)]

@@ -130,7 +130,7 @@ mod bitboards_generation {
                     7 => shift_right(shift_down(current_square_bb)),
                     _ => unreachable!(),
                 };
-                moves_bb = moves_bb ^ current_square_bb;
+                moves_bb ^= current_square_bb;
                 if current_square_bb == 0 || current_square_bb & sub_mask != 0 {
                     break;
                 }
@@ -154,18 +154,21 @@ mod bitboards_generation {
             let mask_square = mask_copy.trailing_zeros() as u8;
             squares[pointer] = Some(mask_square);
             pointer += 1;
-            mask_copy = mask_copy ^ 1 << mask_square;
+            mask_copy ^= 1 << mask_square;
         }
 
         // Generate Sub Masks
         let mask_popcnt = mask.count_ones() as usize;
         for mask_index in 0..1 << mask_popcnt {
-            for bit_index in 0..mask_popcnt {
-                if bb_contains(mask_index, bit_index as u8) {
-                    array[mask_index as usize].0 =
-                        array[mask_index as usize].0 ^ 1 << squares[bit_index].unwrap();
-                }
-            }
+            squares
+                .iter()
+                .enumerate()
+                .take(mask_popcnt)
+                .for_each(|(bit_index, square)| {
+                    if bb_contains(mask_index, bit_index as u8) {
+                        array[mask_index as usize].0 ^= 1 << square.unwrap();
+                    }
+                });
             array[mask_index as usize].1 =
                 generate_moves_bb(array[mask_index as usize].0, square, piece_type);
         }
@@ -265,7 +268,7 @@ mod bitboards_generation {
             if next_square == square2 {
                 return bb;
             }
-            bb = bb ^ 1 << next_square;
+            bb ^= 1 << next_square;
             current_square = next_square;
         }
     }
@@ -303,12 +306,11 @@ mod bitboards_generation {
     }
 
     fn create_rays(file: &mut File) -> Result<(Vec<BitBoard>, Vec<BitBoard>)> {
-        let mut bishop_diagonal_rays = vec![BitBoard::default(); 64];
-        for index in 0..64 {
-            let square = index as u8;
-            let square_rank_index = get_rank(square);
-            let square_file_index = get_file(square);
-            bishop_diagonal_rays[index] = {
+        let bishop_diagonal_rays = (0..64)
+            .map(|index| {
+                let square = index as u8;
+                let square_rank_index = get_rank(square);
+                let square_file_index = get_file(square);
                 let mut bb = 0x8040201008040201;
                 for _ in 0..square_rank_index.abs_diff(square_file_index) {
                     bb = if square_rank_index < square_file_index {
@@ -318,8 +320,8 @@ mod bitboards_generation {
                     };
                 }
                 BitBoard(bb)
-            };
-        }
+            })
+            .collect_vec();
 
         // index ^ 7 is vertical mirror of a square
         let bishop_anti_diagonal_rays = (0..64)
@@ -519,6 +521,7 @@ mod bitboards_generation {
                     bmi_offset += num_sub_masks;
                 }
 
+                #[allow(clippy::needless_range_loop)]
                 for sub_masks_and_moves_array_index in 0..num_sub_masks {
                     let (sub_mask, moves_bb) =
                         sub_masks_and_moves_array[sub_masks_and_moves_array_index];
@@ -563,7 +566,7 @@ mod bitboards_generation {
         )?;
         writeln!(
             file,
-            r"const MOVES: [BitBoard; {}] = {:#?};",
+            r"static MOVES: [BitBoard; {}] = {:#?};",
             offset,
             &moves[0..offset]
         )?;
@@ -583,7 +586,7 @@ mod bitboards_generation {
             )?;
             writeln!(
                 file,
-                r"const BMI_MOVES: [u16; {}] = {:#?};",
+                r"static BMI_MOVES: [u16; {}] = {:#?};",
                 bmi_offset,
                 &bmi_moves[0..bmi_offset]
             )?;

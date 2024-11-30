@@ -32,7 +32,7 @@ fn get_bishop_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
             square.get_bishop_rays_bb().into_inner(),
         )
     };
-    return BitBoard::new(result);
+    BitBoard::new(result)
 }
 
 /// Get the moves for a rook on a particular square, given blockers blocking my movement.
@@ -62,7 +62,7 @@ fn get_rook_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
             square.get_rook_rays_bb().into_inner(),
         )
     };
-    return BitBoard::new(result);
+    BitBoard::new(result)
 }
 
 /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
