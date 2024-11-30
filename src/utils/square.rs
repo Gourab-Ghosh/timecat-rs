@@ -1,4 +1,5 @@
 use super::*;
+#[cfg(target_feature = "bmi2")]
 use std::arch::x86_64::{_pdep_u64, _pext_u64};
 pub use Square::*;
 
@@ -19,6 +20,7 @@ fn get_bishop_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
 }
 
 /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
+#[cfg(target_feature = "bmi2")]
 fn get_bishop_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
     let bmi2_magic = *get_item_unchecked!(const BISHOP_AND_ROOK_BMI_MASKS[0], square.to_index());
     let index = unsafe { _pext_u64(blockers.into_inner(), bmi2_magic.blockers_mask.into_inner()) }
@@ -48,6 +50,7 @@ fn get_rook_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
 }
 
 /// Get the moves for a rook on a particular square, given blockers blocking my movement.
+#[cfg(target_feature = "bmi2")]
 fn get_rook_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
     let bmi2_magic = *get_item_unchecked!(const BISHOP_AND_ROOK_BMI_MASKS[1], square.to_index());
     let index = unsafe { _pext_u64(blockers.into_inner(), bmi2_magic.blockers_mask.into_inner()) }

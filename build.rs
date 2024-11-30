@@ -1,7 +1,6 @@
 #![allow(unused_imports)]
 
 use itertools::*;
-use std::arch::x86_64::_pext_u64;
 use std::cmp::Ordering;
 use std::fmt;
 use std::fs::{self, File};
@@ -407,28 +406,15 @@ mod bitboards_generation {
             right_shift: u8,
         }
 
+        #[cfg(target_feature = "bmi2")]
         #[derive(Clone, Copy, Debug, Default)]
         struct BmiMagic {
             blockers_mask: BitBoard,
             offset: usize,
         }
 
-        writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
-        writeln!(file, r##"struct Magic {{"##)?;
-        writeln!(file, r##"    magic_number: u64,"##)?;
-        writeln!(file, r##"    mask: BitBoard,"##)?;
-        writeln!(file, r##"    offset: usize,"##)?;
-        writeln!(file, r##"    right_shift: u8,"##)?;
-        writeln!(file, r##"}}"##)?;
-
-        writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
-        writeln!(file, r##"struct BmiMagic {{"##)?;
-        writeln!(file, r##"    blockers_mask: BitBoard,"##)?;
-        writeln!(file, r##"    offset: usize,"##)?;
-        writeln!(file, r##"}}"##)?;
-
         #[rustfmt::skip]
-        let magic_numbers = [
+        let magic_numbers = const{[
             0x204022080a222040, 0x0020042400404100, 0x421073004500023a, 0x0008048100401040,
             0x8004042100840000, 0x0001040240828006, 0x00818c0520300620, 0x0a10210048200900,
             0x2090210202180100, 0x88050c1816004209, 0x88050c1816004209, 0x0040040404840000,
@@ -461,18 +447,21 @@ mod bitboards_generation {
             0x0000180224008080, 0x002e001004080a00, 0x3021006a00040100, 0x2a402d4104108200,
             0x0404402010800301, 0x0041001082204001, 0x5000501900422001, 0x0800182005005001,
             0x0006001410592006, 0x0001006802140005, 0x1020080210028904, 0xc000192040840102,
-        ];
-
-        let mut bishop_and_rook_magic_numbers = [[Magic::default(); 64]; 2];
-        let mut bishop_and_rook_bmi_masks = [[BmiMagic::default(); 64]; 2];
-
-        let mut offset = 0;
-        let mut bmi_offset = 0;
+        ]};
 
         const NUM_MOVES: usize = 64 * (1 << 12) + 64 * (1 << 9);
+
+        #[cfg(target_feature = "bmi2")]
+        let mut bmi_offset = 0;
+        #[cfg(target_feature = "bmi2")]
+        let mut bishop_and_rook_bmi_masks = [[BmiMagic::default(); 64]; 2];
+        #[cfg(target_feature = "bmi2")]
+        let mut bmi_moves = vec![0; NUM_MOVES];
+
+        let mut offset = 0;
+        let mut bishop_and_rook_magic_numbers = [[Magic::default(); 64]; 2];
         let mut moves = vec![BitBoard::default(); NUM_MOVES];
         let mut rays_cache_temp = vec![0; NUM_MOVES];
-        let mut bmi_moves = vec![0; NUM_MOVES];
 
         for piece_index in 0..2 {
             for square_index in 0..64 {
@@ -521,10 +510,14 @@ mod bitboards_generation {
                     .unwrap_or(offset);
                 offset = offset.max(magic.offset + num_sub_masks);
 
+                #[cfg(target_feature = "bmi2")]
                 let bmi_magic = &mut bishop_and_rook_bmi_masks[piece_index][square_index];
-                bmi_magic.blockers_mask = magic.mask;
-                bmi_magic.offset = bmi_offset;
-                bmi_offset += num_sub_masks;
+                #[cfg(target_feature = "bmi2")]
+                {
+                    bmi_magic.blockers_mask = magic.mask;
+                    bmi_magic.offset = bmi_offset;
+                    bmi_offset += num_sub_masks;
+                }
 
                 for sub_masks_and_moves_array_index in 0..num_sub_masks {
                     let (sub_mask, moves_bb) =
@@ -535,21 +528,33 @@ mod bitboards_generation {
                     moves[index].0 |= moves_bb;
                     rays_cache_temp[index] |= ray.0;
 
-                    bmi_moves[bmi_magic.offset
-                        + unsafe {
+                    #[cfg(target_feature = "bmi2")]
+                    {
+                        use std::arch::x86_64::_pext_u64;
+                        bmi_moves[bmi_magic.offset
+                            + unsafe {
+                                _pext_u64(
+                                    sub_masks_and_moves_array[sub_masks_and_moves_array_index].0,
+                                    bmi_magic.blockers_mask.0,
+                                ) as usize
+                            }] = unsafe {
                             _pext_u64(
-                                sub_masks_and_moves_array[sub_masks_and_moves_array_index].0,
-                                bmi_magic.blockers_mask.0,
-                            ) as usize
-                        }] = unsafe {
-                        _pext_u64(
-                            sub_masks_and_moves_array[sub_masks_and_moves_array_index].1,
-                            ray.0,
-                        ) as u16
-                    };
+                                sub_masks_and_moves_array[sub_masks_and_moves_array_index].1,
+                                ray.0,
+                            ) as u16
+                        };
+                    }
                 }
             }
         }
+
+        writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
+        writeln!(file, r##"struct Magic {{"##)?;
+        writeln!(file, r##"    magic_number: u64,"##)?;
+        writeln!(file, r##"    mask: BitBoard,"##)?;
+        writeln!(file, r##"    offset: usize,"##)?;
+        writeln!(file, r##"    right_shift: u8,"##)?;
+        writeln!(file, r##"}}"##)?;
 
         writeln!(
             file,
@@ -558,21 +563,31 @@ mod bitboards_generation {
         )?;
         writeln!(
             file,
-            r"const BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
-            bishop_and_rook_bmi_masks,
-        )?;
-        writeln!(
-            file,
             r"const MOVES: [BitBoard; {}] = {:#?};",
             offset,
             &moves[0..offset]
         )?;
-        writeln!(
-            file,
-            r"const BMI_MOVES: [u16; {}] = {:#?};",
-            bmi_offset,
-            &bmi_moves[0..bmi_offset]
-        )?;
+
+        #[cfg(target_feature = "bmi2")]
+        {
+            writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
+            writeln!(file, r##"struct BmiMagic {{"##)?;
+            writeln!(file, r##"    blockers_mask: BitBoard,"##)?;
+            writeln!(file, r##"    offset: usize,"##)?;
+            writeln!(file, r##"}}"##)?;
+
+            writeln!(
+                file,
+                r"const BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
+                bishop_and_rook_bmi_masks,
+            )?;
+            writeln!(
+                file,
+                r"const BMI_MOVES: [u16; {}] = {:#?};",
+                bmi_offset,
+                &bmi_moves[0..bmi_offset]
+            )?;
+        }
 
         Ok(())
     }
