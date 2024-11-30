@@ -413,6 +413,20 @@ mod bitboards_generation {
             offset: usize,
         }
 
+        writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
+        writeln!(file, r##"struct Magic {{"##)?;
+        writeln!(file, r##"    magic_number: u64,"##)?;
+        writeln!(file, r##"    mask: BitBoard,"##)?;
+        writeln!(file, r##"    offset: usize,"##)?;
+        writeln!(file, r##"    right_shift: u8,"##)?;
+        writeln!(file, r##"}}"##)?;
+
+        writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
+        writeln!(file, r##"struct BmiMagic {{"##)?;
+        writeln!(file, r##"    blockers_mask: BitBoard,"##)?;
+        writeln!(file, r##"    offset: usize,"##)?;
+        writeln!(file, r##"}}"##)?;
+
         #[rustfmt::skip]
         let magic_numbers = [
             0x204022080a222040, 0x0020042400404100, 0x421073004500023a, 0x0008048100401040,
@@ -537,14 +551,6 @@ mod bitboards_generation {
             }
         }
 
-        writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
-        writeln!(file, r##"struct Magic {{"##)?;
-        writeln!(file, r##"    magic_number: u64,"##)?;
-        writeln!(file, r##"    mask: BitBoard,"##)?;
-        writeln!(file, r##"    offset: usize,"##)?;
-        writeln!(file, r##"    right_shift: u8,"##)?;
-        writeln!(file, r##"}}"##)?;
-
         writeln!(
             file,
             r"const BISHOP_AND_ROOK_MAGIC_NUMBERS: [[Magic; 64]; 2] = {:#?};",
@@ -552,21 +558,14 @@ mod bitboards_generation {
         )?;
         writeln!(
             file,
+            r"const BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
+            bishop_and_rook_bmi_masks,
+        )?;
+        writeln!(
+            file,
             r"const MOVES: [BitBoard; {}] = {:#?};",
             offset,
             &moves[0..offset]
-        )?;
-
-        writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
-        writeln!(file, r##"struct BmiMagic {{"##)?;
-        writeln!(file, r##"    blockers_mask: BitBoard,"##)?;
-        writeln!(file, r##"    offset: usize,"##)?;
-        writeln!(file, r##"}}"##)?;
-
-        writeln!(
-            file,
-            r"const BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
-            bishop_and_rook_bmi_masks,
         )?;
         writeln!(
             file,
