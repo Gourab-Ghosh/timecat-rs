@@ -721,10 +721,7 @@ impl BoardPosition {
         self._pinned = BitBoard::EMPTY;
         self._checkers = BitBoard::EMPTY;
 
-        let ksq = self
-            .get_colored_piece_mask(King, self.turn())
-            .to_square_unchecked();
-
+        let ksq = self.get_king_square(self.turn());
         let pinners = self.opponent_occupied()
             & ((ksq.get_bishop_rays_bb()
                 & (self.get_piece_mask(Bishop) | self.get_piece_mask(Queen)))

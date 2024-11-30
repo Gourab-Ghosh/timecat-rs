@@ -458,7 +458,7 @@ mod bitboards_generation {
         const NUM_MOVES: usize = 64 * (1 << 12) + 64 * (1 << 9);
         let mut moves = vec![BitBoard::default(); NUM_MOVES];
         let mut rays_cache_temp = vec![0; NUM_MOVES];
-        let mut bmi_moves = vec![0; 107648];
+        let mut bmi_moves = vec![0; NUM_MOVES];
 
         for piece_index in 0..2 {
             for square_index in 0..64 {
@@ -568,7 +568,12 @@ mod bitboards_generation {
             r"const BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
             bishop_and_rook_bmi_masks,
         )?;
-        writeln!(file, r"const BMI_MOVES: [u16; 107648] = {:#?};", bmi_moves)?;
+        writeln!(
+            file,
+            r"const BMI_MOVES: [u16; {}] = {:#?};",
+            bmi_offset,
+            &bmi_moves[0..bmi_offset]
+        )?;
 
         Ok(())
     }
