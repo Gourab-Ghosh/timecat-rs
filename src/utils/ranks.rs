@@ -44,49 +44,47 @@ impl Rank {
     }
 
     #[inline]
-    pub const fn up(self) -> Option<Self> {
-        match self {
-            Self::First => Some(Self::Second),
-            Self::Second => Some(Self::Third),
-            Self::Third => Some(Self::Fourth),
-            Self::Fourth => Some(Self::Fifth),
-            Self::Fifth => Some(Self::Sixth),
-            Self::Sixth => Some(Self::Seventh),
-            Self::Seventh => Some(Self::Eighth),
-            Self::Eighth => None,
-        }
+    pub fn up(self) -> Option<Self> {
+        *get_item_unchecked!(
+            const [
+                Some(Rank::Second),
+                Some(Rank::Third),
+                Some(Rank::Fourth),
+                Some(Rank::Fifth),
+                Some(Rank::Sixth),
+                Some(Rank::Seventh),
+                Some(Rank::Eighth),
+                None,
+            ],
+            self.to_index(),
+        )
     }
 
     #[inline]
-    pub const fn down(self) -> Option<Self> {
-        match self {
-            Self::First => None,
-            Self::Second => Some(Self::First),
-            Self::Third => Some(Self::Second),
-            Self::Fourth => Some(Self::Third),
-            Self::Fifth => Some(Self::Fourth),
-            Self::Sixth => Some(Self::Fifth),
-            Self::Seventh => Some(Self::Sixth),
-            Self::Eighth => Some(Self::Seventh),
-        }
+    pub fn down(self) -> Option<Self> {
+        *get_item_unchecked!(
+            const [
+                None,
+                Some(Rank::First),
+                Some(Rank::Second),
+                Some(Rank::Third),
+                Some(Rank::Fourth),
+                Some(Rank::Fifth),
+                Some(Rank::Sixth),
+                Some(Rank::Seventh),
+            ],
+            self.to_index(),
+        )
     }
 
     #[inline]
-    pub const fn wrapping_up(self) -> Self {
-        if let Some(rank) = self.up() {
-            rank
-        } else {
-            Self::First
-        }
+    pub fn wrapping_up(self) -> Self {
+        self.up().unwrap_or(Self::First)
     }
 
     #[inline]
-    pub const fn wrapping_down(self) -> Self {
-        if let Some(rank) = self.down() {
-            rank
-        } else {
-            Self::Eighth
-        }
+    pub fn wrapping_down(self) -> Self {
+        self.down().unwrap_or(Self::Eighth)
     }
 
     #[inline]

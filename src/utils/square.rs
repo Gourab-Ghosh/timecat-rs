@@ -90,13 +90,13 @@ pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
 
 #[inline]
 pub fn get_queen_moves(square: Square, blockers: BitBoard) -> BitBoard {
-    get_rook_moves(square, blockers) ^ get_bishop_moves(square, blockers)
+    get_bishop_moves(square, blockers) ^ get_rook_moves(square, blockers)
 }
 
 /// Get the legal destination castle squares for both players
 #[inline]
 pub fn get_castle_moves() -> BitBoard {
-    const { BitBoard::new(6052837899185946708) }
+    const { BitBoard::new(0x5400000000000054) }
 }
 
 #[inline]
@@ -172,79 +172,59 @@ impl Square {
     }
 
     #[inline]
-    pub const fn up(self) -> Option<Square> {
-        if let Some(rank) = self.get_rank().up() {
-            Some(Square::from_rank_and_file(rank, self.get_file()))
-        } else {
-            None
-        }
+    pub fn up(self) -> Option<Square> {
+        Some(Square::from_rank_and_file(
+            self.get_rank().up()?,
+            self.get_file(),
+        ))
     }
 
     #[inline]
-    pub const fn up_left(self) -> Option<Square> {
-        if let Some(square) = self.up() {
-            square.left()
-        } else {
-            None
-        }
+    pub fn down(self) -> Option<Square> {
+        Some(Square::from_rank_and_file(
+            self.get_rank().down()?,
+            self.get_file(),
+        ))
     }
 
     #[inline]
-    pub const fn up_right(self) -> Option<Square> {
-        if let Some(square) = self.up() {
-            square.right()
-        } else {
-            None
-        }
+    pub fn left(self) -> Option<Square> {
+        Some(Square::from_rank_and_file(
+            self.get_rank(),
+            self.get_file().left()?,
+        ))
     }
 
     #[inline]
-    pub const fn down(self) -> Option<Square> {
-        if let Some(rank) = self.get_rank().down() {
-            Some(Square::from_rank_and_file(rank, self.get_file()))
-        } else {
-            None
-        }
+    pub fn right(self) -> Option<Square> {
+        Some(Square::from_rank_and_file(
+            self.get_rank(),
+            self.get_file().right()?,
+        ))
     }
 
     #[inline]
-    pub const fn down_left(self) -> Option<Square> {
-        if let Some(square) = self.down() {
-            square.left()
-        } else {
-            None
-        }
+    pub fn up_left(self) -> Option<Square> {
+        self.up()?.left()
     }
 
     #[inline]
-    pub const fn down_right(self) -> Option<Square> {
-        if let Some(square) = self.down() {
-            square.right()
-        } else {
-            None
-        }
+    pub fn up_right(self) -> Option<Square> {
+        self.up()?.right()
     }
 
     #[inline]
-    pub const fn left(self) -> Option<Square> {
-        if let Some(file) = self.get_file().left() {
-            Some(Square::from_rank_and_file(self.get_rank(), file))
-        } else {
-            None
-        }
+    pub fn down_left(self) -> Option<Square> {
+        self.down()?.left()
     }
 
     #[inline]
-    pub const fn right(self) -> Option<Square> {
-        if let Some(file) = self.get_file().right() {
-            Some(Square::from_rank_and_file(self.get_rank(), file))
-        } else {
-            None
-        }
+    pub fn down_right(self) -> Option<Square> {
+        self.down()?.right()
     }
 
     #[inline]
-    pub const fn forward(self, color: Color) -> Option<Square> {
+    pub fn forward(self, color: Color) -> Option<Square> {
         match color {
             White => self.up(),
             Black => self.down(),
@@ -252,7 +232,7 @@ impl Square {
     }
 
     #[inline]
-    pub const fn backward(self, color: Color) -> Option<Square> {
+    pub fn backward(self, color: Color) -> Option<Square> {
         match color {
             White => self.down(),
             Black => self.up(),
@@ -260,22 +240,22 @@ impl Square {
     }
 
     #[inline]
-    pub const fn wrapping_up(self) -> Square {
+    pub fn wrapping_up(self) -> Square {
         Square::from_rank_and_file(self.get_rank().wrapping_up(), self.get_file())
     }
 
     #[inline]
-    pub const fn wrapping_down(self) -> Square {
+    pub fn wrapping_down(self) -> Square {
         Square::from_rank_and_file(self.get_rank().wrapping_down(), self.get_file())
     }
 
     #[inline]
-    pub const fn wrapping_left(self) -> Square {
+    pub fn wrapping_left(self) -> Square {
         Square::from_rank_and_file(self.get_rank(), self.get_file().wrapping_left())
     }
 
     #[inline]
-    pub const fn wrapping_right(self) -> Square {
+    pub fn wrapping_right(self) -> Square {
         Square::from_rank_and_file(self.get_rank(), self.get_file().wrapping_right())
     }
 

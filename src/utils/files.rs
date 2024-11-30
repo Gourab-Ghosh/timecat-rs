@@ -21,49 +21,47 @@ impl File {
     }
 
     #[inline]
-    pub const fn left(self) -> Option<Self> {
-        match self {
-            Self::A => None,
-            Self::B => Some(Self::A),
-            Self::C => Some(Self::B),
-            Self::D => Some(Self::C),
-            Self::E => Some(Self::D),
-            Self::F => Some(Self::E),
-            Self::G => Some(Self::F),
-            Self::H => Some(Self::G),
-        }
+    pub fn left(self) -> Option<Self> {
+        *get_item_unchecked!(
+            const [
+                None,
+                Some(File::A),
+                Some(File::B),
+                Some(File::C),
+                Some(File::D),
+                Some(File::E),
+                Some(File::F),
+                Some(File::G),
+            ],
+            self.to_index(),
+        )
     }
 
     #[inline]
-    pub const fn right(self) -> Option<Self> {
-        match self {
-            Self::A => Some(Self::B),
-            Self::B => Some(Self::C),
-            Self::C => Some(Self::D),
-            Self::D => Some(Self::E),
-            Self::E => Some(Self::F),
-            Self::F => Some(Self::G),
-            Self::G => Some(Self::H),
-            Self::H => None,
-        }
+    pub fn right(self) -> Option<Self> {
+        *get_item_unchecked!(
+            const [
+                Some(File::B),
+                Some(File::C),
+                Some(File::D),
+                Some(File::E),
+                Some(File::F),
+                Some(File::G),
+                Some(File::H),
+                None,
+            ],
+            self.to_index(),
+        )
     }
 
     #[inline]
-    pub const fn wrapping_left(self) -> Self {
-        if let Some(file) = self.left() {
-            file
-        } else {
-            Self::H
-        }
+    pub fn wrapping_left(self) -> Self {
+        self.left().unwrap_or(Self::H)
     }
 
     #[inline]
-    pub const fn wrapping_right(self) -> Self {
-        if let Some(file) = self.right() {
-            file
-        } else {
-            Self::A
-        }
+    pub fn wrapping_right(self) -> Self {
+        self.right().unwrap_or(Self::A)
     }
 
     #[inline]

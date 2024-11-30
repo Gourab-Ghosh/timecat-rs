@@ -298,7 +298,7 @@ impl PieceMoves for QueenMoves {
 
     #[inline]
     fn pseudo_legals(src: Square, _color: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
-        (get_rook_moves(src, occupied) ^ get_bishop_moves(src, occupied)) & mask
+        get_queen_moves(src, occupied) & mask
     }
 }
 

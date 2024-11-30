@@ -4,8 +4,8 @@ pub use Color::*;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
 pub enum Color {
-    White,
-    Black,
+    White = 0,
+    Black = 1,
 }
 
 impl Color {
@@ -15,51 +15,33 @@ impl Color {
     }
 
     #[inline]
-    pub const fn to_my_backrank(self) -> Rank {
-        match self {
-            White => Rank::First,
-            Black => Rank::Eighth,
-        }
+    pub fn to_my_backrank(self) -> Rank {
+        *get_item_unchecked!(const [Rank::First, Rank::Eighth], self.to_index())
     }
 
     #[inline]
-    pub const fn to_their_backrank(self) -> Rank {
-        match self {
-            White => Rank::Eighth,
-            Black => Rank::First,
-        }
+    pub fn to_their_backrank(self) -> Rank {
+        *get_item_unchecked!(const [Rank::Eighth, Rank::First], self.to_index())
     }
 
     #[inline]
-    pub const fn to_second_rank(self) -> Rank {
-        match self {
-            White => Rank::Second,
-            Black => Rank::Seventh,
-        }
+    pub fn to_second_rank(self) -> Rank {
+        *get_item_unchecked!(const [Rank::Second, Rank::Seventh], self.to_index())
     }
 
     #[inline]
-    pub const fn to_third_rank(self) -> Rank {
-        match self {
-            White => Rank::Third,
-            Black => Rank::Sixth,
-        }
+    pub fn to_third_rank(self) -> Rank {
+        *get_item_unchecked!(const [Rank::Third, Rank::Sixth], self.to_index())
     }
 
     #[inline]
-    pub const fn to_fourth_rank(self) -> Rank {
-        match self {
-            White => Rank::Fourth,
-            Black => Rank::Fifth,
-        }
+    pub fn to_fourth_rank(self) -> Rank {
+        *get_item_unchecked!(const [Rank::Fourth, Rank::Fifth], self.to_index())
     }
 
     #[inline]
-    pub const fn to_seventh_rank(self) -> Rank {
-        match self {
-            White => Rank::Seventh,
-            Black => Rank::Second,
-        }
+    pub fn to_seventh_rank(self) -> Rank {
+        *get_item_unchecked!(const [Rank::Seventh, Rank::Second], self.to_index())
     }
 }
 
@@ -68,10 +50,7 @@ impl Not for Color {
 
     #[inline]
     fn not(self) -> Self {
-        match self {
-            White => Black,
-            Black => White,
-        }
+        *get_item_unchecked!(const [Black, White], self.to_index())
     }
 }
 

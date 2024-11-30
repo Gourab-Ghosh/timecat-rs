@@ -202,18 +202,22 @@ impl BoardPosition {
     }
 
     pub fn clean_castling_rights(&self) -> BitBoard {
-        let white_castling_rights = match self.castle_rights(White) {
-            CastleRights::Both => const { BitBoard::new(BB_A1.into_inner() ^ BB_H1.into_inner()) },
-            CastleRights::KingSide => BB_H1,
-            CastleRights::QueenSide => BB_A1,
-            CastleRights::None => BitBoard::EMPTY,
-        };
-        let black_castling_rights = match self.castle_rights(Black) {
-            CastleRights::Both => const { BitBoard::new(BB_A8.into_inner() ^ BB_H8.into_inner()) },
-            CastleRights::KingSide => BB_H8,
-            CastleRights::QueenSide => BB_A8,
-            CastleRights::None => BitBoard::EMPTY,
-        };
+        let white_castling_rights = const {
+            [
+                BitBoard::EMPTY,
+                BB_H1,
+                BB_A1,
+                BitBoard::new(BB_A1.into_inner() ^ BB_H1.into_inner()),
+            ]
+        }[self.castle_rights(White) as usize];
+        let black_castling_rights = const {
+            [
+                BitBoard::EMPTY,
+                BB_H8,
+                BB_A8,
+                BitBoard::new(BB_A8.into_inner() ^ BB_H8.into_inner()),
+            ]
+        }[self.castle_rights(Black) as usize];
         white_castling_rights ^ black_castling_rights
     }
 
@@ -404,18 +408,15 @@ impl BoardPosition {
         }
 
         // make sure the en passant square has a pawn on it of the right color
-        match self.ep_square() {
-            None => {}
-            Some(x) => {
-                let mut square_bb = x.to_bitboard();
-                if self.turn() == White {
-                    square_bb >>= 8;
-                } else {
-                    square_bb <<= 8;
-                }
-                if (self.get_colored_piece_mask(Pawn, !self.turn()) & square_bb).is_empty() {
-                    return false;
-                }
+        if let Some(x) = self.ep_square() {
+            let mut square_bb = x.to_bitboard();
+            if self.turn() == White {
+                square_bb >>= 8;
+            } else {
+                square_bb <<= 8;
+            }
+            if (self.get_colored_piece_mask(Pawn, !self.turn()) & square_bb).is_empty() {
+                return false;
             }
         }
 
@@ -567,26 +568,23 @@ impl BoardPosition {
         Ok(())
     }
 
+    #[inline]
     pub fn is_en_passant(&self, move_: Move) -> bool {
-        match self.ep_square() {
-            Some(ep_square) => {
-                let source = move_.get_source();
-                let dest = move_.get_dest();
-                ep_square == dest
-                    && self.get_piece_mask(Pawn).contains(source)
-                    && [7, 9].contains(&dest.to_int().abs_diff(source.to_int()))
-                    && !self.occupied().contains(dest)
-            }
-            None => false,
-        }
+        self.ep_square().map_or(false, |ep_square| {
+            let source = move_.get_source();
+            let dest = move_.get_dest();
+            ep_square == dest
+                && self.get_piece_mask(Pawn).contains(source)
+                && [7, 9].contains(&dest.to_int().abs_diff(source.to_int()))
+                && !self.occupied().contains(dest)
+        })
     }
 
     pub fn is_passed_pawn(&self, square: Square) -> bool {
         // TODO:: Scope for improvement
         let pawn_mask = self.get_piece_mask(Pawn);
-        let self_color = match self.color_at(square) {
-            Some(color) => color,
-            None => return false,
+        let Some(self_color) = self.color_at(square) else {
+            return false;
         };
         if !(pawn_mask & self.occupied_color(self_color)).contains(square) {
             return false;
@@ -769,10 +767,7 @@ impl BoardPosition {
                 Knight => square.get_knight_moves(),
                 Bishop => get_bishop_moves(square, self.occupied()),
                 Rook => get_rook_moves(square, self.occupied()),
-                Queen => {
-                    get_bishop_moves(square, self.occupied())
-                        ^ get_rook_moves(square, self.occupied())
-                }
+                Queen => get_queen_moves(square, self.occupied()),
                 King => square.get_king_moves(),
             };
         }
@@ -795,13 +790,11 @@ impl BoardPosition {
         let queens_and_bishops = self.get_piece_mask(Bishop) ^ self.get_piece_mask(Queen);
         let queens_and_rooks = self.get_piece_mask(Rook) ^ self.get_piece_mask(Queen);
 
-        let pawn_attacks = match color {
-            Some(color) => target_square.get_pawn_attacks(!color, BB_ALL),
-            None => {
-                target_square.get_pawn_attacks(White, BB_ALL)
-                    ^ target_square.get_pawn_attacks(Black, BB_ALL)
-            }
-        } & self.get_piece_mask(Pawn);
+        let pawn_attacks = color.map_or(
+            target_square.get_pawn_attacks(White, BB_ALL)
+                ^ target_square.get_pawn_attacks(Black, BB_ALL),
+            |color| target_square.get_pawn_attacks(!color, BB_ALL),
+        ) & self.get_piece_mask(Pawn);
 
         // TODO: Scope for improvement?
         let sliding_attackers = (get_bishop_moves(target_square, occupied) & queens_and_bishops)
@@ -840,9 +833,7 @@ impl BoardPosition {
             Knight => target_square.get_knight_moves(),
             Bishop => get_bishop_moves(target_square, occupied),
             Rook => get_rook_moves(target_square, occupied),
-            Queen => {
-                get_bishop_moves(target_square, occupied) ^ get_rook_moves(target_square, occupied)
-            }
+            Queen => get_queen_moves(target_square, occupied),
             King => target_square.get_king_moves(),
         } & self.get_piece_mask(piece_type);
 
@@ -876,10 +867,8 @@ impl BoardPosition {
 
     #[inline]
     pub fn piece_symbol_at(&self, square: Square) -> String {
-        match self.get_piece_at(square) {
-            Some(piece) => piece.to_string(),
-            None => EMPTY_SPACE_SYMBOL.to_string(),
-        }
+        self.get_piece_at(square)
+            .map_or_else(|| EMPTY_SPACE_SYMBOL.to_string(), |piece| piece.to_string())
     }
 
     pub fn piece_unicode_symbol_at(&self, square: Square, flip_color: bool) -> String {
@@ -1165,7 +1154,7 @@ impl BoardPosition {
             const BB_A1_H1: BitBoard = BitBoard::new(BB_A1.into_inner() ^ BB_H1.into_inner());
             const BB_A8_H8: BitBoard = BitBoard::new(BB_A8.into_inner() ^ BB_H8.into_inner());
             (
-                match castling_rights_bb & const { White.to_my_backrank() }.to_bitboard() {
+                match castling_rights_bb & White.to_my_backrank().to_bitboard() {
                     BitBoard::EMPTY => CastleRights::None,
                     BB_H1 => CastleRights::KingSide,
                     BB_A1 => CastleRights::QueenSide,
@@ -1178,7 +1167,7 @@ impl BoardPosition {
                         .into())
                     }
                 },
-                match castling_rights_bb & const { Black.to_my_backrank() }.to_bitboard() {
+                match castling_rights_bb & Black.to_my_backrank().to_bitboard() {
                     BitBoard::EMPTY => CastleRights::None,
                     BB_H8 => CastleRights::KingSide,
                     BB_A8 => CastleRights::QueenSide,
@@ -1305,31 +1294,33 @@ impl BoardPositionMethodOverload<Move> for BoardPosition {
             let index = dest.get_file().to_index();
             let start = BitBoard::from_rank_and_file(
                 my_backrank,
-                match index {
-                    0 => File::A,
-                    1 => File::A,
-                    2 => File::A,
-                    3 => File::A,
-                    4 => File::H,
-                    5 => File::H,
-                    6 => File::H,
-                    7 => File::H,
-                    _ => unreachable!(),
-                },
+                const {
+                    [
+                        File::A,
+                        File::A,
+                        File::A,
+                        File::A,
+                        File::H,
+                        File::H,
+                        File::H,
+                        File::H,
+                    ]
+                }[index],
             );
             let end = BitBoard::from_rank_and_file(
                 my_backrank,
-                match index {
-                    0 => File::D,
-                    1 => File::D,
-                    2 => File::D,
-                    3 => File::D,
-                    4 => File::F,
-                    5 => File::F,
-                    6 => File::F,
-                    7 => File::F,
-                    _ => unreachable!(),
-                },
+                const {
+                    [
+                        File::D,
+                        File::D,
+                        File::D,
+                        File::D,
+                        File::F,
+                        File::F,
+                        File::F,
+                        File::F,
+                    ]
+                }[index],
             );
             result.xor(Rook, start, self.turn());
             result.xor(Rook, end, self.turn());
