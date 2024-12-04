@@ -208,6 +208,12 @@ pub fn get_polyglot_piece_value(piece: Piece) -> usize {
 
 pub fn polyglot_hash_from_board(board: &Board) -> u64 {
     let mut hash = 0;
+    // for (piece, piece_square) in board.iter() {
+    //     hash ^= get_item_unchecked!(
+    //         POLYGLOT_RANDOM_64,
+    //         get_polyglot_piece_value(piece) << 6 | piece_square.to_index(),
+    //     );
+    // }
     for piece_square in board.occupied() {
         let piece = board.get_piece_at(piece_square).unwrap();
         let piece_value = get_polyglot_piece_value(piece);
@@ -221,7 +227,7 @@ pub fn polyglot_hash_from_board(board: &Board) -> u64 {
             Square::A1 => 1,
             Square::H8 => 2,
             Square::A8 => 3,
-            _ => panic!("Invalid castling square"),
+            _ => unreachable!(),
         };
         hash ^= POLYGLOT_RANDOM_64[offset + index];
     }
