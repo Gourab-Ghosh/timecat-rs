@@ -22,7 +22,7 @@ impl From<Pyo3Error> for PyErr {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub enum TimecatError {
     UnknownCommand,
     NoInput,

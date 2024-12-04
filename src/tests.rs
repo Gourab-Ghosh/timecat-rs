@@ -151,6 +151,9 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // };
     // engine.go(go_command, true);
 
+    // let mut test_hashmap = IdentityHashMap::default();
+    // test_hashmap.insert(BoardPosition::from_fen(STARTING_POSITION_FEN), Board::from_fen(STARTING_POSITION_FEN));
+
     let book_name = "codekiddy.bin";
     let path = dirs::home_dir().unwrap().join("Downloads/polyglot-collection").join(book_name);
     let path_str = path.as_path().to_str().unwrap();

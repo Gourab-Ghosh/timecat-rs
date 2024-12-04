@@ -1,5 +1,4 @@
 use super::*;
-use std::collections::HashMap;
 use std::io::{Read, Seek};
 
 pub fn get_move_from_polyglot_move_int(move_int: usize) -> Result<Move> {
@@ -215,7 +214,7 @@ pub mod map_implementation {
     #[derive(Clone, Debug)]
     pub struct PolyglotBook {
         // start_index: usize,
-        entries_map: HashMap<u64, Vec<PolyglotBookEntry>>,
+        entries_map: IdentityHashMap<u64, Vec<PolyglotBookEntry>>,
     }
 
     impl PolyglotBook {
@@ -233,7 +232,9 @@ pub mod map_implementation {
             self.entries_map.is_empty()
         }
 
-        pub fn get_all_weighted_moves_with_hashes(&self) -> HashMap<u64, Vec<WeightedMove>> {
+        pub fn get_all_weighted_moves_with_hashes(
+            &self,
+        ) -> IdentityHashMap<u64, Vec<WeightedMove>> {
             self.entries_map
                 .iter()
                 .map(|(&hash, entries)| {
@@ -279,8 +280,10 @@ pub mod map_implementation {
             entries.windows(2).all(|w| w[0] <= w[1])
         }
 
-        fn get_entries_from_bytes(bytes: &[u8]) -> Result<HashMap<u64, Vec<PolyglotBookEntry>>> {
-            let mut entries_map = HashMap::default();
+        fn get_entries_from_bytes(
+            bytes: &[u8],
+        ) -> Result<IdentityHashMap<u64, Vec<PolyglotBookEntry>>> {
+            let mut entries_map = IdentityHashMap::default();
             let mut offset = 0;
             while offset < bytes.len() {
                 let hash = u64::from_be_bytes(bytes[offset..offset + 8].try_into().unwrap());
@@ -306,7 +309,7 @@ pub mod map_implementation {
         }
 
         pub fn read_book_from_file(path: &str) -> Result<PolyglotBook> {
-            let mut entries_map = HashMap::default();
+            let mut entries_map = IdentityHashMap::default();
             let mut file = fs::File::open(path)?;
             let mut buffer = [0; 16];
             while file.read_exact(&mut buffer).is_ok() {

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
