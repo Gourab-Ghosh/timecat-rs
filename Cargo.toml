@@ -57,6 +57,7 @@ inherits = "release"
 arrayvec = "0"
 binread = { version = "2", features = ["const_generics"], optional = true}
 colored = { version = "2", optional = true }
+dirs = { version = "5", optional = true }
 itertools = "0"
 paste = "1"
 serde = { version = "1", features = ["derive"], optional = true }
@@ -86,7 +87,7 @@ colored = ["dep:colored"]
 serde = ["dep:serde", "web-time?/serde", "pyo3?/serde", "arrayvec/serde"]
 wasm = ["dep:web-time", "dep:gloo"]
 experimental = []
-debug = ["experimental", "colored", "extras", "inbuilt_nnue"]
+debug = ["experimental", "colored", "extras", "inbuilt_nnue", "dep:dirs"]
 pyo3 = ["dep:pyo3"]
 
 [[bin]]

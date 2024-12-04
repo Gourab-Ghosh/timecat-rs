@@ -275,10 +275,10 @@ impl BoardPosition {
     // fn update_transposition_hash(&mut self) {
     //     self._transposition_hash = self.get_pawn_hash()
     //         ^ self.get_non_pawn_hash()
-    //         ^ Zobrist::castles(self.castle_rights(self.turn()), self.turn())
-    //         ^ Zobrist::castles(self.castle_rights(!self.turn()), !self.turn());
+    //         ^ Zobrist::castle(self.castle_rights(self.turn()), self.turn())
+    //         ^ Zobrist::castle(self.castle_rights(!self.turn()), !self.turn());
     //     if let Some(ep) = self.ep_square() {
-    //         self._transposition_hash ^= Zobrist::en_passant(ep.get_file(), !self.turn());
+    //         self._transposition_hash ^= Zobrist::en_passant(ep.get_file());
     //     }
     //     if self.turn() == Black {
     //         self._transposition_hash ^= Zobrist::color();
@@ -318,20 +318,16 @@ impl BoardPosition {
         self._non_pawn_transposition_hash
     }
 
+    /// The hash function is defined according to the polyglot books.
     #[inline]
     pub fn get_hash(&self) -> u64 {
         self.get_pawn_hash()
             ^ self.get_non_pawn_hash()
-            ^ Zobrist::castles(self.castle_rights(self.turn()), self.turn())
-            ^ Zobrist::castles(self.castle_rights(!self.turn()), !self.turn())
+            ^ Zobrist::castle(self.castle_rights(White), self.castle_rights(Black))
             ^ self
                 .ep_square()
-                .map_or(0, |ep| Zobrist::en_passant(ep.get_file(), !self.turn()))
-            ^ if self.turn() == Black {
-                Zobrist::color()
-            } else {
-                0
-            }
+                .map_or(0, |ep| Zobrist::en_passant(ep.get_file()))
+            ^ Zobrist::color(self.turn())
     }
 
     #[inline]

@@ -95,6 +95,8 @@ pub use itertools::*;
 pub use nnue::*;
 pub use parse::*;
 pub use paste::paste;
+#[cfg(feature = "experimental")]
+pub use polyglot::*;
 #[cfg(feature = "pyo3")]
 pub use pyo3::prelude::*;
 pub use runner::*;
