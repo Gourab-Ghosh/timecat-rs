@@ -25,18 +25,12 @@ impl CastleRights {
 
     #[inline]
     pub fn square_to_castle_rights(color: Color, square: Square) -> Self {
+        #[rustfmt::skip]
         const CASTLES_PER_SQUARE: [[usize; 64]; 2] = {
             let mut array = [[0; 64]; 2];
-            let temp_arr = [(0, 2), (4, 3), (7, 1)];
-            let mut i = 0;
-            while i < 2 {
-                let mut j = 0;
-                while j < 3 {
-                    array[i][56 * i + temp_arr[j].0] = temp_arr[j].1;
-                    j += 1;
-                }
-                i += 1;
-            }
+            array[0][0] = 2; array[1][56] = 2;
+            array[0][4] = 3; array[1][60] = 3;
+            array[0][7] = 1; array[1][63] = 1;
             array
         };
         Self::from_index(*get_item_unchecked!(
@@ -49,26 +43,24 @@ impl CastleRights {
     /// What squares need to be empty to castle kingside?
     #[inline]
     pub fn kingside_squares(self, color: Color) -> BitBoard {
-        if color == White {
-            const { BitBoard::new(96) }
-        } else {
-            const { BitBoard::new(6917529027641081856) }
-        }
+        *get_item_unchecked!(
+            const [BitBoard::new(96), BitBoard::new(6917529027641081856)],
+            color.to_index(),
+        )
     }
 
     /// What squares need to be empty to castle queenside?
     #[inline]
     pub fn queenside_squares(self, color: Color) -> BitBoard {
-        if color == White {
-            const { BitBoard::new(14) }
-        } else {
-            const { BitBoard::new(1008806316530991104) }
-        }
+        *get_item_unchecked!(
+            const [BitBoard::new(14), BitBoard::new(1008806316530991104)],
+            color.to_index(),
+        )
     }
 
     /// Remove castle rights, and return a new `CastleRights`.
     #[inline]
-    pub const fn remove(self, remove: Self) -> Self {
+    pub fn remove(self, remove: Self) -> Self {
         Self::from_index(self.to_index() & !remove.to_index())
     }
 
@@ -80,20 +72,22 @@ impl CastleRights {
 
     /// Convert `usize` to `CastleRights`.  Panic if invalid number.
     #[inline]
-    pub const fn from_index(i: usize) -> Self {
-        // TODO: Write a proper panic message.
-        match i {
-            0 => Self::None,
-            1 => Self::KingSide,
-            2 => Self::QueenSide,
-            3 => Self::Both,
-            _ => unreachable!(),
-        }
+    pub fn from_index(i: usize) -> Self {
+        *get_item_unchecked!(
+            const [
+                Self::None,
+                Self::KingSide,
+                Self::QueenSide,
+                Self::Both,
+            ],
+            i,
+        )
     }
 
     /// Which rooks can we "guarantee" we haven't moved yet?
     #[inline]
     pub fn unmoved_rooks(self, color: Color) -> BitBoard {
+        // TODO: match can be removed.
         match self {
             Self::None => BitBoard::EMPTY,
             Self::KingSide => BitBoard::from_rank_and_file(color.to_my_backrank(), File::H),

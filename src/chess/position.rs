@@ -202,22 +202,26 @@ impl BoardPosition {
     }
 
     pub fn clean_castling_rights(&self) -> BitBoard {
-        let white_castling_rights = const {
+        let white_castling_rights = get_item_unchecked!(
+            const
             [
                 BitBoard::EMPTY,
                 BB_H1,
                 BB_A1,
                 BitBoard::new(BB_A1.into_inner() ^ BB_H1.into_inner()),
-            ]
-        }[self.castle_rights(White) as usize];
-        let black_castling_rights = const {
+            ],
+            self.castle_rights(White).to_index(),
+        );
+        let black_castling_rights = get_item_unchecked!(
+            const
             [
                 BitBoard::EMPTY,
                 BB_H8,
                 BB_A8,
                 BitBoard::new(BB_A8.into_inner() ^ BB_H8.into_inner()),
-            ]
-        }[self.castle_rights(Black) as usize];
+            ],
+            self.castle_rights(Black).to_index(),
+        );
         white_castling_rights ^ black_castling_rights
     }
 
@@ -1294,7 +1298,8 @@ impl BoardPositionMethodOverload<Move> for BoardPosition {
             let index = dest.get_file().to_index();
             let start = BitBoard::from_rank_and_file(
                 my_backrank,
-                const {
+                *get_item_unchecked!(
+                    const
                     [
                         File::A,
                         File::A,
@@ -1304,12 +1309,14 @@ impl BoardPositionMethodOverload<Move> for BoardPosition {
                         File::H,
                         File::H,
                         File::H,
-                    ]
-                }[index],
+                    ],
+                    index,
+                ),
             );
             let end = BitBoard::from_rank_and_file(
                 my_backrank,
-                const {
+                *get_item_unchecked!(
+                    const
                     [
                         File::D,
                         File::D,
@@ -1319,8 +1326,9 @@ impl BoardPositionMethodOverload<Move> for BoardPosition {
                         File::F,
                         File::F,
                         File::F,
-                    ]
-                }[index],
+                    ],
+                    index,
+                ),
             );
             result.xor(Rook, start, self.turn());
             result.xor(Rook, end, self.turn());

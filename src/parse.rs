@@ -512,13 +512,15 @@ impl Parser {
         }
         Self::sanitize_string(raw_input)
             .split("&&")
-            .map(|single_input| Self::parse_single_command(single_input.trim()))
-            .try_fold(Vec::new(), |mut vec, res| match res {
-                Ok(contents) => {
-                    vec.extend(contents);
-                    Ok(vec)
-                }
-                Err(e) => Err(e),
-            })
+            .try_fold(
+                Vec::new(),
+                |mut vec, input| match Self::parse_single_command(input.trim()) {
+                    Ok(contents) => {
+                        vec.extend(contents);
+                        Ok(vec)
+                    }
+                    error => error,
+                },
+            )
     }
 }
