@@ -1,5 +1,9 @@
 use super::*;
 
+pub trait UniqueIdentifier {
+    fn unique_identifier(&self) -> impl PartialEq + Hash;
+}
+
 pub trait Compress {
     type CompressedItem;
 

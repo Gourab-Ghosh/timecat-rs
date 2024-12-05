@@ -21,40 +21,33 @@ pub struct BoardPosition {
     _checkers: BitBoard,
     _pawn_transposition_hash: u64,
     _non_pawn_transposition_hash: u64,
-    _transposition_hash: u64,
+    // _transposition_hash: u64,
     _halfmove_clock: u8,
     _fullmove_number: NumMoves,
     _material_scores: [Score; 2],
 }
 
+impl UniqueIdentifier for BoardPosition {
+    fn unique_identifier(&self) -> impl PartialEq + Hash {
+        (
+            self._piece_masks,
+            self._occupied_color,
+            self._castle_rights,
+            self.turn(),
+            self.ep_square(),
+        )
+    }
+}
+
 impl PartialEq for BoardPosition {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.transposition_key_components()
-            .eq(&other.transposition_key_components())
+        self.unique_identifier()
+            .eq(&other.unique_identifier())
     }
 }
 
 impl BoardPosition {
-    #[inline]
-    pub fn transposition_key_components(
-        &self,
-    ) -> (
-        [BitBoard; 6],
-        [BitBoard; 2],
-        Color,
-        [CastleRights; 2],
-        Option<Square>,
-    ) {
-        (
-            self._piece_masks,
-            self._occupied_color,
-            self.turn(),
-            self._castle_rights,
-            self.ep_square(),
-        )
-    }
-
     #[inline]
     fn new_empty() -> Self {
         Self {
@@ -67,7 +60,7 @@ impl BoardPosition {
             _checkers: BitBoard::EMPTY,
             _pawn_transposition_hash: 0,
             _non_pawn_transposition_hash: 0,
-            _transposition_hash: 0,
+            // _transposition_hash: 0,
             _ep_square: None,
             _halfmove_clock: 0,
             _fullmove_number: 1,
@@ -316,7 +309,7 @@ impl BoardPosition {
         self._non_pawn_transposition_hash
     }
 
-    /// The hash function is defined according to the polyglot books.
+    /// The hash function is defined according to the polyglot hash function.
     #[inline]
     pub fn get_hash(&self) -> u64 {
         self.get_pawn_hash()
