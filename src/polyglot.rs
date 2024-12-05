@@ -12,6 +12,83 @@ fn polyglot_move_int_to_move(move_int: u16) -> Result<Move> {
     )
 }
 
+// mod temp_module {
+//     use super::*;
+
+//     pub struct PolyglotBookReader;
+
+//     impl PolyglotBookReader {
+//         pub fn read_bytes_at_offset(
+//             file: &fs::File,
+//             buffer: &mut [u8],
+//             len: u64,
+//         ) -> std::io::Result<()> {
+//             let mut reader = std::io::BufReader::new(file);
+//             reader.seek(std::io::SeekFrom::Start(len))?;
+//             reader.read_exact(buffer)
+//         }
+
+//         pub fn find_first_matching_index(file: &fs::File, target_hash: u64) -> Result<Option<u64>> {
+//             let mut buffer = [0; 16];
+//             let mut start = 0;
+//             let mut end = file.metadata()?.len() / 16 - 1;
+//             let mut first_match_idx = None;
+//             while start <= end {
+//                 let mid = start + (end - start) / 2;
+//                 if read_bytes_at_offset(file, &mut buffer, mid * 16).is_err() {
+//                     break;
+//                 }
+//                 let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
+//                 match hash.cmp(&target_hash) {
+//                     Ordering::Equal => {
+//                         first_match_idx = Some(mid);
+//                         end = mid - 1;
+//                     }
+//                     Ordering::Less => start = mid + 1,
+//                     Ordering::Greater => end = mid - 1,
+//                 }
+//             }
+//             Ok(first_match_idx)
+//         }
+
+//         pub fn search_all_moves_from_file(path: &str, board: &Board) -> Result<Vec<WeightedMove>> {
+//             let target_hash = board.get_hash();
+//             let file = fs::File::open(path)?;
+//             let mut buffer = [0; 16];
+//             let mut moves = Vec::new();
+//             if let Some(first_match_idx) = find_first_matching_index(&file, target_hash)? {
+//                 // Gather all moves with matching hash
+//                 let mut idx = first_match_idx;
+//                 loop {
+//                     let offset = idx * 16;
+//                     let read_result = read_bytes_at_offset(&file, &mut buffer, offset);
+//                     if read_result.is_err() {
+//                         break;
+//                     }
+//                     let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
+//                     let move_int = u16::from_be_bytes(buffer[8..10].try_into()?);
+//                     let weight = u16::from_be_bytes(buffer[10..12].try_into()?);
+//                     if hash == target_hash {
+//                         let valid_or_null_move = polyglot_move_int_to_move(move_int)?;
+//                         moves.push(WeightedMove::new(valid_or_null_move, weight as MoveWeight));
+//                         idx += 1;
+//                     } else {
+//                         break;
+//                     }
+//                 }
+//                 moves.sort_unstable_by_key(|wm| Reverse(wm.weight));
+//             }
+//             Ok(moves)
+//         }
+
+//         pub fn search_best_moves_from_file(path: &str, board: &Board) -> Result<Option<Move>> {
+//             Ok(search_all_moves_from_file(path, board)?
+//                 .first()
+//                 .map(|wm| wm.move_))
+//         }
+//     }
+// }
+
 pub mod array_implementation {
     use super::*;
 
