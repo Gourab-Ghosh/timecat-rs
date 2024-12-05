@@ -39,21 +39,26 @@ pub enum Rank {
 
 impl Rank {
     #[inline]
+    pub const fn from_int(i: u8) -> Self {
+        unsafe { std::mem::transmute(i) }
+    }
+
+    #[inline]
     pub const fn from_index(i: usize) -> Self {
-        unsafe { std::mem::transmute((i & 7) as u8) }
+        Self::from_int(i as u8)
     }
 
     #[inline]
     pub fn up(self) -> Option<Self> {
         *get_item_unchecked!(
             const [
-                Some(Rank::Second),
-                Some(Rank::Third),
-                Some(Rank::Fourth),
-                Some(Rank::Fifth),
-                Some(Rank::Sixth),
-                Some(Rank::Seventh),
-                Some(Rank::Eighth),
+                Some(Self::Second),
+                Some(Self::Third),
+                Some(Self::Fourth),
+                Some(Self::Fifth),
+                Some(Self::Sixth),
+                Some(Self::Seventh),
+                Some(Self::Eighth),
                 None,
             ],
             self.to_index(),
@@ -65,13 +70,13 @@ impl Rank {
         *get_item_unchecked!(
             const [
                 None,
-                Some(Rank::First),
-                Some(Rank::Second),
-                Some(Rank::Third),
-                Some(Rank::Fourth),
-                Some(Rank::Fifth),
-                Some(Rank::Sixth),
-                Some(Rank::Seventh),
+                Some(Self::First),
+                Some(Self::Second),
+                Some(Self::Third),
+                Some(Self::Fourth),
+                Some(Self::Fifth),
+                Some(Self::Sixth),
+                Some(Self::Seventh),
             ],
             self.to_index(),
         )
@@ -88,13 +93,13 @@ impl Rank {
     }
 
     #[inline]
-    pub const fn to_index(self) -> usize {
-        self as usize
+    pub const fn to_int(self) -> u8 {
+        self as u8
     }
 
     #[inline]
-    pub const fn to_int(self) -> u8 {
-        self as u8
+    pub const fn to_index(self) -> usize {
+        self as usize
     }
 
     #[inline]

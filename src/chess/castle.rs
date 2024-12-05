@@ -64,6 +64,12 @@ impl CastleRights {
         Self::from_index(self.to_index() & !remove.to_index())
     }
 
+    /// Convert `CastleRights` to `u8` for table lookups
+    #[inline]
+    pub const fn to_int(self) -> u8 {
+        self as u8
+    }
+
     /// Convert `CastleRights` to `usize` for table lookups
     #[inline]
     pub const fn to_index(self) -> usize {
@@ -72,16 +78,14 @@ impl CastleRights {
 
     /// Convert `usize` to `CastleRights`.  Panic if invalid number.
     #[inline]
+    pub fn from_int(i: u8) -> Self {
+        unsafe { std::mem::transmute(i) }
+    }
+
+    /// Convert `usize` to `CastleRights`.  Panic if invalid number.
+    #[inline]
     pub fn from_index(i: usize) -> Self {
-        *get_item_unchecked!(
-            const [
-                Self::None,
-                Self::KingSide,
-                Self::QueenSide,
-                Self::Both,
-            ],
-            i,
-        )
+        Self::from_int(i as u8)
     }
 
     /// Which rooks can we "guarantee" we haven't moved yet?

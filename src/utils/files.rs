@@ -16,8 +16,13 @@ pub enum File {
 
 impl File {
     #[inline]
+    pub const fn from_int(i: u8) -> Self {
+        unsafe { std::mem::transmute(i) }
+    }
+
+    #[inline]
     pub const fn from_index(i: usize) -> Self {
-        unsafe { std::mem::transmute((i & 7) as u8) }
+        Self::from_int(i as u8)
     }
 
     #[inline]
@@ -25,13 +30,13 @@ impl File {
         *get_item_unchecked!(
             const [
                 None,
-                Some(File::A),
-                Some(File::B),
-                Some(File::C),
-                Some(File::D),
-                Some(File::E),
-                Some(File::F),
-                Some(File::G),
+                Some(Self::A),
+                Some(Self::B),
+                Some(Self::C),
+                Some(Self::D),
+                Some(Self::E),
+                Some(Self::F),
+                Some(Self::G),
             ],
             self.to_index(),
         )
@@ -41,13 +46,13 @@ impl File {
     pub fn right(self) -> Option<Self> {
         *get_item_unchecked!(
             const [
-                Some(File::B),
-                Some(File::C),
-                Some(File::D),
-                Some(File::E),
-                Some(File::F),
-                Some(File::G),
-                Some(File::H),
+                Some(Self::B),
+                Some(Self::C),
+                Some(Self::D),
+                Some(Self::E),
+                Some(Self::F),
+                Some(Self::G),
+                Some(Self::H),
                 None,
             ],
             self.to_index(),
@@ -65,13 +70,13 @@ impl File {
     }
 
     #[inline]
-    pub const fn to_index(self) -> usize {
-        self as usize
+    pub const fn to_int(self) -> u8 {
+        self as u8
     }
 
     #[inline]
-    pub const fn to_int(self) -> u8 {
-        self as u8
+    pub const fn to_index(self) -> usize {
+        self as usize
     }
 
     #[inline]
