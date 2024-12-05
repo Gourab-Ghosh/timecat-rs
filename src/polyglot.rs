@@ -1,6 +1,7 @@
 use super::*;
 use std::io::{Read, Seek};
 
+#[inline]
 pub fn get_move_from_polyglot_move_int(move_int: u16) -> Result<Move> {
     Move::new(
         (move_int & 0x3F).decompress(),
