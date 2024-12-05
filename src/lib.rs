@@ -2,9 +2,9 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
 #![allow(clippy::macro_metavars_in_unsafe)]
+#![allow(clippy::result_large_err)]
 #![expect(clippy::needless_doctest_main)]
 #![expect(clippy::too_many_arguments)]
-#![expect(clippy::result_large_err)]
 // #![deny(missing_debug_implementations)]
 // #![warn(missing_docs)]
 

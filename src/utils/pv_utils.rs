@@ -21,7 +21,7 @@ pub fn get_pv_as_uci(pv: &[Move]) -> String {
     for move_ in pv {
         pv_string += &(move_.uci() + " ");
     }
-    return pv_string.trim().to_string();
+    pv_string.trim().to_string()
 }
 
 pub fn get_pv_as_algebraic(position: &BoardPosition, pv: &[Move], long: bool) -> String {
@@ -36,7 +36,7 @@ pub fn get_pv_as_algebraic(position: &BoardPosition, pv: &[Move], long: bool) ->
             move_.uci().colorize(ERROR_MESSAGE_STYLE)
         } + " ");
     }
-    return pv_string.trim().to_string();
+    pv_string.trim().to_string()
 }
 
 #[inline]

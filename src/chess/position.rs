@@ -1,7 +1,7 @@
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum BoardStatus {
     Ongoing,
     Stalemate,
@@ -28,13 +28,14 @@ pub struct BoardPosition {
 }
 
 impl UniqueIdentifier for BoardPosition {
+    #[inline]
     fn unique_identifier(&self) -> impl PartialEq + Hash {
         (
-            self._piece_masks,
-            self._occupied_color,
-            self._castle_rights,
-            self.turn(),
-            self.ep_square(),
+            &self._piece_masks,
+            &self._occupied_color,
+            &self._castle_rights,
+            &self._turn,
+            &self._ep_square,
         )
     }
 }
@@ -42,8 +43,10 @@ impl UniqueIdentifier for BoardPosition {
 impl PartialEq for BoardPosition {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.unique_identifier()
-            .eq(&other.unique_identifier())
+        if self.get_hash() != other.get_hash() {
+            return false;
+        }
+        self.unique_identifier().eq(&other.unique_identifier())
     }
 }
 
@@ -60,7 +63,7 @@ impl BoardPosition {
             _checkers: BitBoard::EMPTY,
             _pawn_transposition_hash: 0,
             _non_pawn_transposition_hash: 0,
-            // _transposition_hash: 0,
+            // _transposition_hash: Zobrist::color(White),
             _ep_square: None,
             _halfmove_clock: 0,
             _fullmove_number: 1,
