@@ -411,11 +411,11 @@ impl Square {
     #[inline]
     pub fn get_pawn_quiets(self, color: Color, blockers: BitBoard) -> BitBoard {
         // TODO: Maybe optimization possible?
-        if !(self.to_bitboard().shift_forward(color) & blockers).is_empty() {
-            BitBoard::EMPTY
-        } else {
+        if (self.to_bitboard().shift_forward(color) & blockers).is_empty() {
             *get_item_unchecked!(const PAWN_MOVES_AND_ATTACKS[0], color.to_index(), self.to_index())
                 & !blockers
+        } else {
+            BitBoard::EMPTY
         }
     }
 

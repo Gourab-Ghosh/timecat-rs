@@ -266,17 +266,17 @@ impl ValidOrNullMove {
     }
 
     #[inline]
-    pub fn into_inner(&self) -> Option<&Move> {
+    pub const fn into_inner(&self) -> Option<&Move> {
         self.0.as_ref()
     }
 
     #[inline]
-    pub fn into_inner_mut(&mut self) -> Option<&mut Move> {
+    pub const fn into_inner_mut(&mut self) -> Option<&mut Move> {
         self.0.as_mut()
     }
 
     #[inline]
-    pub fn is_null(&self) -> bool {
+    pub const fn is_null(&self) -> bool {
         self.into_inner().is_none()
     }
 
@@ -417,33 +417,6 @@ impl<'source> FromPyObject<'source> for ValidOrNullMove {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
-pub enum CastleMoveType {
-    KingSide,
-    QueenSide,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, PartialEq, Eq, Default, Debug, Hash)]
-pub enum MoveType {
-    Capture {
-        is_en_passant: bool,
-    },
-    Castle(CastleMoveType),
-    DoublePawnPush,
-    Promotion(PieceType),
-    #[default]
-    Other,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct MoveWithInfo {
-    valid_or_null_move: ValidOrNullMove,
-    type_: MoveType,
-    is_check: bool,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct WeightedMove {
     pub weight: MoveWeight,
@@ -472,4 +445,31 @@ impl fmt::Display for WeightedMove {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({}, {})", self.move_, self.weight)
     }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+pub enum CastleMoveType {
+    KingSide,
+    QueenSide,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, PartialEq, Eq, Default, Debug, Hash)]
+pub enum MoveType {
+    Capture {
+        is_en_passant: bool,
+    },
+    Castle(CastleMoveType),
+    DoublePawnPush,
+    Promotion(PieceType),
+    #[default]
+    Other,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct MoveWithInfo {
+    valid_or_null_move: ValidOrNullMove,
+    type_: MoveType,
+    is_check: bool,
 }
