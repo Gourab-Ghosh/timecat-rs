@@ -123,32 +123,3 @@ impl Default for IoReader {
         Self::new()
     }
 }
-
-const IO_READER_SERDE_STR: &str = "IoReader";
-
-#[cfg(feature = "serde")]
-impl Serialize for IoReader {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        IO_READER_SERDE_STR.serialize(serializer)
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'de> Deserialize<'de> for IoReader {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let deserialized = <&str>::deserialize(deserializer)?;
-        if deserialized != IO_READER_SERDE_STR {
-            return Err(serde::de::Error::invalid_value(
-                serde::de::Unexpected::Str(deserialized),
-                &IO_READER_SERDE_STR,
-            ));
-        }
-        Ok(Self::new())
-    }
-}

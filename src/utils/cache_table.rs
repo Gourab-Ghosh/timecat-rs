@@ -111,6 +111,12 @@ impl CacheTableSize {
     }
 }
 
+impl Default for CacheTableSize {
+    fn default() -> Self {
+        CACHE_TABLE_SIZE
+    }
+}
+
 impl fmt::Display for CacheTableSize {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} MB", self.unwrap())
@@ -135,7 +141,7 @@ macro_rules! update_variables {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CacheTable<T> {
     table: RwLock<Box<[Option<CacheTableEntry<T>>]>>,
     size: RwLock<CacheTableSize>,

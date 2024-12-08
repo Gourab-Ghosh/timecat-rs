@@ -174,7 +174,7 @@ pub mod evaluate {
     use super::*;
 
     pub const ENDGAME_PIECE_THRESHOLD: u32 = 12;
-    pub const EVALUATOR_SIZE: CacheTableSize = CacheTableSize::Exact(16);
+    pub const CACHE_TABLE_SIZE: CacheTableSize = CacheTableSize::Exact(16);
     pub const DRAW_SCORE: Score = PAWN_VALUE / 2;
     pub const CHECKMATE_SCORE: Score = 25_000;
     pub const CHECKMATE_THRESHOLD: Score = CHECKMATE_SCORE - MAX_PLY as Score - 1;

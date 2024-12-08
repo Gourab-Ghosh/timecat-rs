@@ -1,5 +1,6 @@
 use super::*;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
 pub struct BinaryMagic<T> {
     architecture: T,
@@ -36,27 +37,5 @@ impl<T: BinRead<Args = ()> + Copy + PartialEq + Send + Sync + 'static> BinRead f
                 found: Box::new(architecture),
             })
         }
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<T: Serialize> Serialize for BinaryMagic<T> {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        self.architecture.serialize(serializer)
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'de, T: Deserialize<'de>> Deserialize<'de> for BinaryMagic<T> {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        Ok(Self {
-            architecture: T::deserialize(deserializer)?,
-        })
     }
 }

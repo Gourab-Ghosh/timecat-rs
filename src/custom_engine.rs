@@ -54,6 +54,7 @@ pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
     num_threads: NonZeroUsize,
     num_nodes_searched: SerdeWrapper<Arc<AtomicUsize>>,
     selective_depth: SerdeWrapper<Arc<AtomicUsize>>,
+    #[cfg_attr(feature = "serde", serde(skip))]
     optional_io_reader: Option<IoReader>,
     stop_command: SerdeWrapper<Arc<AtomicBool>>,
     terminate: SerdeWrapper<Arc<AtomicBool>>,

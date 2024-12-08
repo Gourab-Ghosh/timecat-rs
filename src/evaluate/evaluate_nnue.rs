@@ -15,14 +15,15 @@ static HALFKP_MODEL_READER: LazyLock<HalfKPModelReader> = LazyLock::new(|| {
 #[derive(Clone, Debug)]
 pub struct EvaluatorNNUE {
     model: HalfKPModel,
-    score_cache: SerdeWrapper<Arc<CacheTable<Score>>>,
+    #[cfg_attr(feature = "serde", serde(skip))]
+    score_cache: Arc<CacheTable<Score>>,
 }
 
 impl EvaluatorNNUE {
     pub fn from_model(model: HalfKPModel) -> Self {
         Self {
             model,
-            score_cache: CacheTable::new(EVALUATOR_SIZE).into(),
+            score_cache: CacheTable::new(CACHE_TABLE_SIZE).into(),
         }
     }
 
