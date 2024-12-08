@@ -5,7 +5,7 @@ use super::*;
 pub struct BoardPositionBuilder {
     pieces: SerdeWrapper<[Option<Piece>; 64]>,
     turn: Color,
-    castle_rights: SerdeWrapper<[CastleRights; 2]>,
+    castle_rights: [CastleRights; 2],
     ep_file: Option<File>,
     halfmove_clock: u8,
     fullmove_number: NumMoves,
@@ -15,9 +15,9 @@ impl BoardPositionBuilder {
     /// Returns empty board builder with white to move
     pub fn new() -> Self {
         Self {
-            pieces: [None; 64].into(),
+            pieces: SerdeWrapper::new([None; 64]),
             turn: White,
-            castle_rights: [CastleRights::None, CastleRights::None].into(),
+            castle_rights: [CastleRights::None, CastleRights::None],
             ep_file: None,
             halfmove_clock: 0,
             fullmove_number: 1,
@@ -34,9 +34,9 @@ impl BoardPositionBuilder {
         fullmove_number: u16,
     ) -> BoardPositionBuilder {
         let mut result = BoardPositionBuilder {
-            pieces: [None; 64].into(),
+            pieces: SerdeWrapper::new([None; 64]),
             turn,
-            castle_rights: [white_castle_rights, black_castle_rights].into(),
+            castle_rights: [white_castle_rights, black_castle_rights],
             ep_file,
             halfmove_clock,
             fullmove_number,

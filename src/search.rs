@@ -10,8 +10,8 @@ pub struct PVTable {
 impl PVTable {
     pub fn new() -> Self {
         Self {
-            length: [0; MAX_PLY].into(),
-            table: [[None; MAX_PLY].into(); MAX_PLY].into(),
+            length: SerdeWrapper::new([0; MAX_PLY]),
+            table: SerdeWrapper::new([SerdeWrapper::new([None; MAX_PLY]); MAX_PLY]),
         }
     }
 
@@ -55,18 +55,18 @@ pub struct Searcher<P: PositionEvaluation> {
     initial_position: BoardPosition,
     board: Board,
     evaluator: P,
-    transposition_table: SerdeWrapper<Arc<TranspositionTable>>,
+    transposition_table: Arc<TranspositionTable>,
     pv_table: PVTable,
     best_moves: Vec<Move>,
     move_sorter: MoveSorter,
-    num_nodes_searched: SerdeWrapper<Arc<AtomicUsize>>,
-    selective_depth: SerdeWrapper<Arc<AtomicUsize>>,
+    num_nodes_searched: Arc<AtomicUsize>,
+    selective_depth: Arc<AtomicUsize>,
     ply: Ply,
     score: Score,
     depth_completed: Depth,
     is_outside_aspiration_window: bool,
     clock: Instant,
-    stop_command: SerdeWrapper<Arc<AtomicBool>>,
+    stop_command: Arc<AtomicBool>,
     properties: EngineProperties,
 }
 
@@ -86,18 +86,18 @@ impl<P: PositionEvaluation> Searcher<P> {
             initial_position: board.get_position().to_owned(),
             board,
             evaluator,
-            transposition_table: transposition_table.into(),
+            transposition_table,
             pv_table: PVTable::new(),
             best_moves: Vec::new(),
             move_sorter: MoveSorter::new(),
-            num_nodes_searched: num_nodes_searched.into(),
-            selective_depth: selective_depth.into(),
+            num_nodes_searched,
+            selective_depth,
             ply: 0,
             score: 0,
             depth_completed: 0,
             is_outside_aspiration_window: false,
             clock: Instant::now(),
-            stop_command: stop_command.into(),
+            stop_command,
             properties,
         }
     }
@@ -159,7 +159,7 @@ impl<P: PositionEvaluation> Searcher<P> {
 
     #[inline]
     pub fn get_stop_command(&self) -> Arc<AtomicBool> {
-        self.stop_command.clone().into_inner()
+        self.stop_command.clone()
     }
 
     #[inline]

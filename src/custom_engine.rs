@@ -48,16 +48,21 @@ impl Default for EngineProperties {
 #[derive(Debug)]
 pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
     board: Board,
-    transposition_table: SerdeWrapper<Arc<TranspositionTable>>,
+    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    transposition_table: Arc<TranspositionTable>,
     evaluator: P,
     controller: T,
     num_threads: NonZeroUsize,
-    num_nodes_searched: SerdeWrapper<Arc<AtomicUsize>>,
-    selective_depth: SerdeWrapper<Arc<AtomicUsize>>,
+    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    num_nodes_searched: Arc<AtomicUsize>,
+    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    selective_depth: Arc<AtomicUsize>,
     #[cfg_attr(feature = "serde", serde(skip))]
     optional_io_reader: Option<IoReader>,
-    stop_command: SerdeWrapper<Arc<AtomicBool>>,
-    terminate: SerdeWrapper<Arc<AtomicBool>>,
+    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    stop_command: Arc<AtomicBool>,
+    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    terminate: Arc<AtomicBool>,
     properties: EngineProperties,
 }
 
@@ -152,10 +157,10 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
             id,
             self.board.clone(),
             self.evaluator.clone(),
-            self.transposition_table.clone().into_inner(),
-            self.num_nodes_searched.clone().into_inner(),
-            self.selective_depth.clone().into_inner(),
-            self.stop_command.clone().into_inner(),
+            self.transposition_table.clone(),
+            self.num_nodes_searched.clone(),
+            self.selective_depth.clone(),
+            self.stop_command.clone(),
             self.properties.clone(),
         )
     }
@@ -279,9 +284,9 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
             join_handles.push(join_handle);
         }
         if let Some(io_reader) = self.optional_io_reader.as_ref() {
-            let stop_command = self.stop_command.clone().into_inner();
+            let stop_command = self.stop_command.clone();
             let reader = io_reader.clone();
-            let terminate = self.terminate.clone().into_inner();
+            let terminate = self.terminate.clone();
             join_handles.push(thread::spawn(move || {
                 Self::update_stop_command(stop_command, reader, terminate);
             }));

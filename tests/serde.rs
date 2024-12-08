@@ -40,7 +40,7 @@ mod serde_tests {
 
     #[test]
     fn serde_wrapper_empty_array_test_str_1() -> std::result::Result<(), Box<dyn Error>> {
-        let data: SerdeWrapper<[&str; 0]> = [].into();
+        let data: SerdeWrapper<[&str; 0]> = SerdeWrapper::new([]);
         let json = serde_json::to_string(&data)?;
         let de_data: SerdeWrapper<[&str; 0]> = serde_json::from_str(&json)?;
         assert_eq!(data, de_data);
@@ -49,7 +49,7 @@ mod serde_tests {
 
     #[test]
     fn serde_wrapper_empty_array_test_str_2() -> std::result::Result<(), Box<dyn Error>> {
-        let data: SerdeWrapper<[&str; 2]> = ["foo", "bar"].into();
+        let data: SerdeWrapper<[&str; 2]> = SerdeWrapper::new(["foo", "bar"]);
         let json = serde_json::to_string(&data)?;
         let de_data: SerdeWrapper<[&str; 2]> = serde_json::from_str(&json)?;
         assert_eq!(data, de_data);

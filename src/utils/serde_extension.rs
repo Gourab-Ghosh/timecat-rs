@@ -36,18 +36,6 @@ impl<T> DerefMut for SerdeWrapper<T> {
     }
 }
 
-impl<T> From<T> for SerdeWrapper<T> {
-    fn from(value: T) -> Self {
-        SerdeWrapper(value)
-    }
-}
-
-impl<T> From<T> for SerdeWrapper<Arc<T>> {
-    fn from(value: T) -> Self {
-        Arc::new(value).into()
-    }
-}
-
 #[cfg(feature = "binread")]
 impl<T: BinRead<Args = ()>> BinRead for SerdeWrapper<T> {
     type Args = ();
@@ -64,8 +52,7 @@ impl<T: BinRead<Args = ()>> BinRead for SerdeWrapper<T> {
 #[cfg(feature = "serde")]
 mod serde_implementations {
     use super::*;
-    use serde::de::{self, Visitor};
-    use serde::ser::SerializeTuple;
+    use serde::de;
     use serde::{Deserializer, Serializer};
     use std::marker::PhantomData;
     use std::mem::MaybeUninit;
@@ -88,7 +75,7 @@ mod serde_implementations {
                 marker: PhantomData<T>,
             }
 
-            impl<'de, T, const N: usize> Visitor<'de> for ArrayVisitor<T, N>
+            impl<'de, T, const N: usize> serde::de::Visitor<'de> for ArrayVisitor<T, N>
             where
                 T: Deserialize<'de>,
             {
@@ -124,22 +111,26 @@ mod serde_implementations {
             )
         }
     }
+}
 
-    impl<T: Serialize> Serialize for SerdeWrapper<Arc<T>> {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            self.as_ref().serialize(serializer)
-        }
+#[cfg(feature = "serde")]
+pub mod serde_arc {
+    use super::*;
+    use serde::{Deserializer, Serializer};
+
+    pub fn serialize<T, S>(arc: &Arc<T>, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        T: Serialize,
+        S: Serializer,
+    {
+        T::serialize(arc.as_ref(), serializer)
     }
 
-    impl<'de, T: Deserialize<'de>> Deserialize<'de> for SerdeWrapper<Arc<T>> {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            Ok(T::deserialize(deserializer)?.into())
-        }
+    pub fn deserialize<'de, T, D>(deserializer: D) -> std::result::Result<Arc<T>, D::Error>
+    where
+        T: Deserialize<'de>,
+        D: Deserializer<'de>,
+    {
+        T::deserialize(deserializer).map(Arc::new)
     }
 }

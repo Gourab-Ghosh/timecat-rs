@@ -148,13 +148,15 @@ pub struct HalfKPModelReader {
     description: String,
     #[br(args(TRANSFORMER_ARCHITECTURE))]
     transformer_architecture: BinaryMagic<u32>,
-    #[br(map = |x| SerdeWrapper::from(Arc::new(x)))]
+    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    #[br(map = Arc::new)]
     // #[br(map = |transformer: HalfKPFeatureTransformer<i16>| Arc::new((&transformer).into()))]
-    transformer: SerdeWrapper<Arc<HalfKPFeatureTransformer<AccumulatorDataType>>>,
+    transformer: Arc<HalfKPFeatureTransformer<AccumulatorDataType>>,
     #[br(args(NETWORK_ARCHITECTURE))]
     network_architecture: BinaryMagic<u32>,
-    #[br(map = |x| SerdeWrapper::from(Arc::new(x)))]
-    network: SerdeWrapper<Arc<HalfKPNetwork>>,
+    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    #[br(map = Arc::new)]
+    network: Arc<HalfKPNetwork>,
 }
 
 impl HalfKPModelReader {
@@ -174,8 +176,11 @@ impl HalfKPModelReader {
             .unwrap();
         HalfKPModel {
             accumulator: Accumulator {
-                king_squares_rotated: [white_king_square, black_king_square.rotate()].into(),
-                accumulators: accumulators.into(),
+                king_squares_rotated: SerdeWrapper::new([
+                    white_king_square,
+                    black_king_square.rotate(),
+                ]),
+                accumulators: SerdeWrapper::new(accumulators),
             },
             transformer: self.transformer.clone(),
             network: self.network.clone(),
@@ -209,8 +214,10 @@ struct Accumulator {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct HalfKPModel {
-    transformer: SerdeWrapper<Arc<HalfKPFeatureTransformer<AccumulatorDataType>>>,
-    network: SerdeWrapper<Arc<HalfKPNetwork>>,
+    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    transformer: Arc<HalfKPFeatureTransformer<AccumulatorDataType>>,
+    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    network: Arc<HalfKPNetwork>,
     accumulator: Accumulator,
     last_position: BoardPosition,
 }
@@ -271,11 +278,10 @@ impl HalfKPModel {
 
     pub fn reset_model(&mut self, position: &BoardPosition) {
         self.clear();
-        self.accumulator.king_squares_rotated = [
+        self.accumulator.king_squares_rotated = SerdeWrapper::new([
             position.get_king_square(White),
             position.get_king_square(Black).rotate(),
-        ]
-        .into();
+        ]);
         self.update_empty_model(position);
         self.update_last_position(position.clone());
     }
@@ -397,16 +403,14 @@ impl HalfKPModel {
             transformer: self.transformer.clone(),
             network: self.network.clone(),
             accumulator: Accumulator {
-                accumulators: [
+                accumulators: SerdeWrapper::new([
                     self.transformer.get_biases().clone(),
                     self.transformer.get_biases().clone(),
-                ]
-                .into(),
-                king_squares_rotated: [
+                ]),
+                king_squares_rotated: SerdeWrapper::new([
                     position.get_king_square(White),
                     position.get_king_square(Black).rotate(),
-                ]
-                .into(),
+                ]),
             },
             last_position: position.clone(),
         };
