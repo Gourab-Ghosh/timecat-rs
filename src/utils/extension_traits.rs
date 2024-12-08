@@ -207,3 +207,11 @@ pub trait BoardMethodOverload<T> {
 pub trait SearcherMethodOverload<T> {
     fn push_unchecked(&mut self, _: T);
 }
+
+#[cfg(feature = "serde")]
+pub trait SerdeHandler<'de> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>;
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        Self: Sized;
+}

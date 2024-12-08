@@ -104,7 +104,7 @@ pub use search::*;
 pub use search_controller::SearchController;
 pub use selfplay::self_play;
 #[cfg(feature = "serde")]
-pub use serde::{Deserialize, Serialize};
+pub use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub use sort::*;
 pub use std::cmp::{Ordering, Reverse};
 pub use std::collections::HashSet;

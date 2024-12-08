@@ -48,20 +48,20 @@ impl Default for EngineProperties {
 #[derive(Debug)]
 pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
     board: Board,
-    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     transposition_table: Arc<TranspositionTable>,
     evaluator: P,
     controller: T,
     num_threads: NonZeroUsize,
-    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     num_nodes_searched: Arc<AtomicUsize>,
-    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     selective_depth: Arc<AtomicUsize>,
     #[cfg_attr(feature = "serde", serde(skip))]
     optional_io_reader: Option<IoReader>,
-    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     stop_command: Arc<AtomicBool>,
-    #[cfg_attr(feature = "serde", serde(with = "serde_arc"))]
+    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     terminate: Arc<AtomicBool>,
     properties: EngineProperties,
 }

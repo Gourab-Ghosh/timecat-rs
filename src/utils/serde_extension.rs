@@ -53,7 +53,6 @@ impl<T: BinRead<Args = ()>> BinRead for SerdeWrapper<T> {
 mod serde_implementations {
     use super::*;
     use serde::de;
-    use serde::{Deserializer, Serializer};
     use std::marker::PhantomData;
     use std::mem::MaybeUninit;
 
@@ -114,23 +113,12 @@ mod serde_implementations {
 }
 
 #[cfg(feature = "serde")]
-pub mod serde_arc {
-    use super::*;
-    use serde::{Deserializer, Serializer};
-
-    pub fn serialize<T, S>(arc: &Arc<T>, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        T: Serialize,
-        S: Serializer,
-    {
-        T::serialize(arc.as_ref(), serializer)
+impl<'de, T: Serialize + Deserialize<'de>> SerdeHandler<'de> for Arc<T> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+        T::serialize(self.as_ref(), serializer)
     }
 
-    pub fn deserialize<'de, T, D>(deserializer: D) -> std::result::Result<Arc<T>, D::Error>
-    where
-        T: Deserialize<'de>,
-        D: Deserializer<'de>,
-    {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
         T::deserialize(deserializer).map(Arc::new)
     }
 }
