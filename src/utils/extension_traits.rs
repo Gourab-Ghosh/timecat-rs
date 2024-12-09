@@ -144,7 +144,7 @@ pub trait ChessEngine {
     fn set_transposition_table_size(&self, size: CacheTableSize);
     fn set_num_threads(&mut self, num_threads: NonZeroUsize);
     fn set_move_overhead(&mut self, duration: Duration);
-    fn set_opening_book(&mut self, opening_book: Option<PolyglotBookHashMap>);
+    fn set_opening_book_from_path(&mut self, book_path: &str) -> Result<()>;
     fn terminate(&self) -> bool;
     fn set_termination(&self, b: bool);
     fn set_fen(&mut self, fen: &str) -> Result<()>;
@@ -203,6 +203,11 @@ pub trait BoardMethodOverload<T> {
     fn gives_repetition(&self, _: T) -> bool;
     fn gives_threefold_repetition(&self, _: T) -> bool;
     fn gives_claimable_threefold_repetition(&self, _: T) -> bool;
+}
+
+pub trait PolyglotBook {
+    fn read_from_path(book_path: &str) -> Result<Self> where Self:Sized;
+    fn get_best_weighted_move(&self, board: &Board) -> Option<WeightedMove>;
 }
 
 pub trait SearcherMethodOverload<T> {

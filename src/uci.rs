@@ -359,8 +359,7 @@ fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
                 .book_path
                 .map_or_else(|| "None".to_string(), |path| format!("{:?}", path)),
             |engine, book_path| {
-                let book = PolyglotBookHashMap::try_from(book_path)?;
-                engine.set_opening_book(Some(book));
+                engine.set_opening_book_from_path(book_path)?;
                 print_uci_info("BookFile is set to", format!("{:?}", book_path));
                 Ok(())
             },

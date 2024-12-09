@@ -103,10 +103,26 @@ impl PolyglotBookReader {
         }
         Ok(moves)
     }
+}
 
-    pub fn get_best_weighted_move(&self, board: &Board) -> Result<Option<WeightedMove>> {
-        Ok(self
-            .find_first_matching_index(board.get_hash())?
+impl FromStr for PolyglotBookReader {
+    type Err = TimecatError;
+    
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::from_file_path(s)
+    }
+}
+
+impl PolyglotBook for PolyglotBookReader {
+    #[inline]
+    fn read_from_path(book_path: &str) -> Result<Self> {
+        Self::from_str(book_path)
+    }
+    
+    fn get_best_weighted_move(&self, board: &Board) -> Option<WeightedMove> {
+        self
+            .find_first_matching_index(board.get_hash())
+            .ok()?
             .map(|index| -> Result<_> {
                 let mut buffer = [0; 16];
                 Self::read_bytes_at_offset(
@@ -127,7 +143,9 @@ impl PolyglotBookReader {
                 let valid_or_null_move = polyglot_move_int_to_move(move_int)?;
                 Ok(WeightedMove::new(valid_or_null_move, weight as MoveWeight))
             })
-            .transpose()?)
+            .transpose()
+            .ok()
+            .flatten()
     }
 }
 
@@ -196,8 +214,16 @@ impl PolyglotBookHashMap {
             })
             .unwrap_or_default()
     }
+}
 
-    pub fn get_best_weighted_move(&self, board: &Board) -> Option<WeightedMove> {
+impl PolyglotBook for PolyglotBookHashMap {
+    #[inline]
+    fn read_from_path(book_path: &str) -> Result<Self> {
+        Self::from_str(book_path)
+    }
+    
+    #[inline]
+    fn get_best_weighted_move(&self, board: &Board) -> Option<WeightedMove> {
         //TODO: optimize
         self.entries_map
             .get(&board.get_hash())
@@ -291,12 +317,12 @@ impl TryFrom<fs::File> for PolyglotBookHashMap {
     }
 }
 
-impl TryFrom<&str> for PolyglotBookHashMap {
-    type Error = TimecatError;
+impl FromStr for PolyglotBookHashMap {
+    type Err = TimecatError;
 
     #[inline]
-    fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
-        fs::File::open(value)?.try_into()
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        fs::File::open(s)?.try_into()
     }
 }
 
@@ -305,6 +331,6 @@ impl TryFrom<String> for PolyglotBookHashMap {
 
     #[inline]
     fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
-        value.as_str().try_into()
+        Self::from_str(&value)
     }
 }

@@ -239,8 +239,9 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
         self.controller.set_move_overhead(duration);
     }
 
-    fn set_opening_book(&mut self, opening_book: Option<PolyglotBookHashMap>) {
-        self.opening_book = opening_book;
+    fn set_opening_book_from_path(&mut self, book_path: &str) -> Result<()> {
+        self.opening_book = Some(PolyglotBook::read_from_path(book_path)?);
+        Ok(())
     }
 
     #[inline]
