@@ -13,6 +13,7 @@ fn polyglot_move_int_to_move(move_int: u16) -> Result<Move> {
     )
 }
 
+#[derive(Clone)]
 pub struct PolyglotBookReader {
     file: Arc<fs::File>,
 }

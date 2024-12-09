@@ -45,7 +45,6 @@ impl Default for EngineProperties {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug)]
 pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
     board: Board,
     #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
@@ -64,7 +63,8 @@ pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
     #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     terminate: Arc<AtomicBool>,
     properties: EngineProperties,
-    opening_book: Option<PolyglotBookHashMap>,
+    #[cfg_attr(feature = "serde", serde(skip))]
+    opening_book: Option<Arc<dyn PolyglotBook>>,
 }
 
 impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
@@ -88,8 +88,9 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
             properties: EngineProperties::default(),
             opening_book: TIMECAT_DEFAULTS
                 .inbuilt_book_bytes
-                .map(|path| path.try_into().ok())
-                .flatten(),
+                .map(|bytes| PolyglotBookHashMap::try_from(bytes).ok())
+                .flatten()
+                .map(|book| Arc::new(book) as Arc<dyn PolyglotBook>),
         }
     }
 
@@ -239,9 +240,8 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
         self.controller.set_move_overhead(duration);
     }
 
-    fn set_opening_book_from_path(&mut self, book_path: &str) -> Result<()> {
-        self.opening_book = Some(PolyglotBook::read_from_path(book_path)?);
-        Ok(())
+    fn set_opening_book(&mut self, book: Option<Arc<dyn PolyglotBook>>) {
+        self.opening_book = book;
     }
 
     #[inline]
