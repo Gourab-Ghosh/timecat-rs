@@ -3,7 +3,8 @@ use super::*;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct BoardPositionBuilder {
-    pieces: SerdeWrapper<[Option<Piece>; 64]>,
+    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
+    pieces: [Option<Piece>; 64],
     turn: Color,
     castle_rights: [CastleRights; 2],
     ep_file: Option<File>,
@@ -15,7 +16,7 @@ impl BoardPositionBuilder {
     /// Returns empty board builder with white to move
     pub fn new() -> Self {
         Self {
-            pieces: SerdeWrapper::new([None; 64]),
+            pieces: [None; 64],
             turn: White,
             castle_rights: [CastleRights::None, CastleRights::None],
             ep_file: None,
@@ -34,7 +35,7 @@ impl BoardPositionBuilder {
         fullmove_number: u16,
     ) -> BoardPositionBuilder {
         let mut result = BoardPositionBuilder {
-            pieces: SerdeWrapper::new([None; 64]),
+            pieces: [None; 64],
             turn,
             castle_rights: [white_castle_rights, black_castle_rights],
             ep_file,

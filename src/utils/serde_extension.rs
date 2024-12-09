@@ -1,4 +1,6 @@
 use super::*;
+use std::marker::PhantomData;
+use std::mem::MaybeUninit;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Hash)]
@@ -52,9 +54,6 @@ impl<T: BinRead<Args = ()>> BinRead for SerdeWrapper<T> {
 #[cfg(feature = "serde")]
 mod serde_implementations {
     use super::*;
-    use serde::de;
-    use std::marker::PhantomData;
-    use std::mem::MaybeUninit;
 
     impl<T: Serialize, const N: usize> Serialize for SerdeWrapper<[T; N]> {
         fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
@@ -86,14 +85,14 @@ mod serde_implementations {
 
                 fn visit_seq<V>(self, mut seq: V) -> std::result::Result<Self::Value, V::Error>
                 where
-                    V: de::SeqAccess<'de>,
+                    V: serde::de::SeqAccess<'de>,
                 {
                     let mut array: [MaybeUninit<T>; N] =
                         unsafe { MaybeUninit::uninit().assume_init() };
                     for (i, entry) in array.iter_mut().enumerate() {
                         *entry = MaybeUninit::new(
                             seq.next_element()?
-                                .ok_or_else(|| de::Error::invalid_length(i, &self))?,
+                                .ok_or_else(|| serde::de::Error::invalid_length(i, &self))?,
                         );
                     }
                     Ok(SerdeWrapper(unsafe {
@@ -120,5 +119,52 @@ impl<'de, T: Serialize + Deserialize<'de>> SerdeHandler<'de> for Arc<T> {
 
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
         T::deserialize(deserializer).map(Arc::new)
+    }
+}
+
+#[cfg(feature = "serde")]
+struct ArrayVisitor<T, const N: usize> {
+    marker: PhantomData<T>,
+}
+
+#[cfg(feature = "serde")]
+impl<'de, T, const N: usize> serde::de::Visitor<'de> for ArrayVisitor<T, N>
+where
+    T: Deserialize<'de>,
+{
+    type Value = [T; N];
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str(&format!("an array of {} elements", N))
+    }
+
+    fn visit_seq<V>(self, mut seq: V) -> std::result::Result<Self::Value, V::Error>
+    where
+        V: serde::de::SeqAccess<'de>,
+    {
+        let mut array: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
+        for (i, entry) in array.iter_mut().enumerate() {
+            *entry = MaybeUninit::new(
+                seq.next_element()?
+                    .ok_or_else(|| serde::de::Error::invalid_length(i, &self))?,
+            );
+        }
+        Ok(unsafe { std::ptr::read(&array as *const _ as *const [T; N]) })
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, T: Serialize + Deserialize<'de>, const N: usize> SerdeHandler<'de> for [T; N] {
+    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+        self.as_slice().serialize(serializer)
+    }
+
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
+        deserializer.deserialize_tuple(
+            N,
+            ArrayVisitor {
+                marker: PhantomData,
+            },
+        )
     }
 }
