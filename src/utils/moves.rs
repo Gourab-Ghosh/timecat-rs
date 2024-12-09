@@ -313,11 +313,13 @@ impl ValidOrNullMove {
         Ok(Move::from_lan(position, lan)?.into())
     }
 
+    #[inline]
     pub fn algebraic_without_suffix(self, position: &BoardPosition, long: bool) -> Result<String> {
         self.map(|move_| move_.algebraic_without_suffix(position, long))
             .unwrap_or(Ok("--".to_string()))
     }
 
+    #[inline]
     pub fn algebraic_and_new_position(
         self,
         position: &BoardPosition,
@@ -386,12 +388,14 @@ impl From<Option<&Move>> for ValidOrNullMove {
 impl Deref for ValidOrNullMove {
     type Target = Option<Move>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
 impl DerefMut for ValidOrNullMove {
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
@@ -419,29 +423,33 @@ impl<'source> FromPyObject<'source> for ValidOrNullMove {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct WeightedMove {
-    pub weight: MoveWeight,
     pub move_: Move,
+    pub weight: MoveWeight,
 }
 
 impl PartialOrd for WeightedMove {
+    #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for WeightedMove {
+    #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         self.weight.cmp(&other.weight)
     }
 }
 
 impl WeightedMove {
+    #[inline]
     pub fn new(move_: Move, weight: MoveWeight) -> Self {
         Self { move_, weight }
     }
 }
 
 impl fmt::Display for WeightedMove {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({}, {})", self.move_, self.weight)
     }

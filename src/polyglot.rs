@@ -1,490 +1,310 @@
 use super::*;
+pub use std::fs;
 use std::io::{Read, Seek};
 
 #[inline]
 fn polyglot_move_int_to_move(move_int: u16) -> Result<Move> {
     Move::new(
-        (move_int & 0x3F).decompress(),
         (move_int >> 6 & 0x3F).decompress(),
+        (move_int & 0x3F).decompress(),
         *const { [None, Some(Knight), Some(Bishop), Some(Rook), Some(Queen)] }
             .get((move_int >> 12) as usize)
             .ok_or(TimecatError::BadPolyglotFile)?,
     )
 }
 
-// mod temp_module {
-//     use super::*;
+pub struct PolyglotBookReader {
+    file: Arc<fs::File>,
+}
 
-//     pub struct PolyglotBookReader;
-
-//     impl PolyglotBookReader {
-//         pub fn read_bytes_at_offset(
-//             file: &fs::File,
-//             buffer: &mut [u8],
-//             len: u64,
-//         ) -> std::io::Result<()> {
-//             let mut reader = std::io::BufReader::new(file);
-//             reader.seek(std::io::SeekFrom::Start(len))?;
-//             reader.read_exact(buffer)
-//         }
-
-//         pub fn find_first_matching_index(file: &fs::File, target_hash: u64) -> Result<Option<u64>> {
-//             let mut buffer = [0; 16];
-//             let mut start = 0;
-//             let mut end = file.metadata()?.len() / 16 - 1;
-//             let mut first_match_idx = None;
-//             while start <= end {
-//                 let mid = start + (end - start) / 2;
-//                 if read_bytes_at_offset(file, &mut buffer, mid * 16).is_err() {
-//                     break;
-//                 }
-//                 let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
-//                 match hash.cmp(&target_hash) {
-//                     Ordering::Equal => {
-//                         first_match_idx = Some(mid);
-//                         end = mid - 1;
-//                     }
-//                     Ordering::Less => start = mid + 1,
-//                     Ordering::Greater => end = mid - 1,
-//                 }
-//             }
-//             Ok(first_match_idx)
-//         }
-
-//         pub fn search_all_moves_from_file(path: &str, board: &Board) -> Result<Vec<WeightedMove>> {
-//             let target_hash = board.get_hash();
-//             let file = fs::File::open(path)?;
-//             let mut buffer = [0; 16];
-//             let mut moves = Vec::new();
-//             if let Some(first_match_idx) = find_first_matching_index(&file, target_hash)? {
-//                 // Gather all moves with matching hash
-//                 let mut idx = first_match_idx;
-//                 loop {
-//                     let offset = idx * 16;
-//                     let read_result = read_bytes_at_offset(&file, &mut buffer, offset);
-//                     if read_result.is_err() {
-//                         break;
-//                     }
-//                     let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
-//                     let move_int = u16::from_be_bytes(buffer[8..10].try_into()?);
-//                     let weight = u16::from_be_bytes(buffer[10..12].try_into()?);
-//                     if hash == target_hash {
-//                         let valid_or_null_move = polyglot_move_int_to_move(move_int)?;
-//                         moves.push(WeightedMove::new(valid_or_null_move, weight as MoveWeight));
-//                         idx += 1;
-//                     } else {
-//                         break;
-//                     }
-//                 }
-//                 moves.sort_unstable_by_key(|wm| Reverse(wm.weight));
-//             }
-//             Ok(moves)
-//         }
-
-//         pub fn search_best_moves_from_file(path: &str, board: &Board) -> Result<Option<Move>> {
-//             Ok(search_all_moves_from_file(path, board)?
-//                 .first()
-//                 .map(|wm| wm.move_))
-//         }
-//     }
-// }
-
-pub mod array_implementation {
-    use super::*;
-
-    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-    struct PolyglotBookEntry {
-        hash: u64,
-        move_: Move,
-        weight: u16,
-        learn: u32,
+impl PolyglotBookReader {
+    pub fn from_file_path(file_path: &str) -> Result<Self> {
+        Ok(Self::new(Arc::new(fs::File::open(file_path)?)))
     }
 
-    impl PolyglotBookEntry {
-        fn get_unique_key(&self) -> (u64, u16) {
-            (self.hash, u16::MAX - self.weight)
-        }
+    pub const fn new(file: Arc<fs::File>) -> Self {
+        Self { file }
+    }
 
-        fn get_weighted_move(&self) -> WeightedMove {
-            WeightedMove {
-                move_: self.move_,
-                weight: self.weight as MoveWeight,
+    fn read_bytes_at_offset(
+        reader: &mut BufReader<Arc<fs::File>>,
+        buffer: &mut [u8],
+        offset: u64,
+    ) -> std::io::Result<()> {
+        reader.seek(std::io::SeekFrom::Start(offset))?;
+        reader.read_exact(buffer)
+    }
+
+    fn find_first_matching_index(&self, target_hash: u64) -> Result<Option<u64>> {
+        let mut reader = std::io::BufReader::new(self.file.clone());
+        let mut buffer = [0; 16];
+        let mut start = 0;
+        let mut end = self.file.metadata()?.len() / 16 - 1;
+        let mut first_match_idx = None;
+        while start <= end {
+            let mid = start + (end - start) / 2;
+            if Self::read_bytes_at_offset(&mut reader, &mut buffer, mid << 4).is_err() {
+                break;
+            }
+            let hash = u64::from_be_bytes(
+                buffer[0..8]
+                    .try_into()
+                    .map_err(|_| TimecatError::BadPolyglotFile)?,
+            );
+            match hash.cmp(&target_hash) {
+                Ordering::Equal => {
+                    first_match_idx = Some(mid);
+                    end = mid - 1;
+                }
+                Ordering::Less => start = mid + 1,
+                Ordering::Greater => end = mid - 1,
             }
         }
+        Ok(first_match_idx)
     }
 
-    impl PartialOrd for PolyglotBookEntry {
-        fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-            Some((self.get_unique_key()).cmp(&other.get_unique_key()))
-        }
-    }
-
-    impl Ord for PolyglotBookEntry {
-        fn cmp(&self, other: &Self) -> Ordering {
-            self.get_unique_key().cmp(&other.get_unique_key())
-        }
-    }
-
-    #[derive(Clone, Debug)]
-    pub struct PolyglotBook {
-        entries: Vec<PolyglotBookEntry>,
-    }
-
-    impl PolyglotBook {
-        pub fn sort_book(&mut self) {
-            self.entries.sort_unstable();
-        }
-
-        pub fn len(&self) -> usize {
-            self.entries.len()
-        }
-
-        pub fn is_empty(&self) -> bool {
-            self.entries.is_empty()
-        }
-
-        pub fn get_all_weighted_moves_with_hashes(&self) -> Vec<(u64, WeightedMove)> {
-            self.entries
-                .iter()
-                .map(|entry| (entry.hash, entry.get_weighted_move()))
-                .collect()
-        }
-
-        pub fn get_all_weighed_moves(&self, board: &Board) -> Vec<WeightedMove> {
-            //TODO: optimize
-            let hash = board.get_hash();
-            let index = self
-                .entries
-                .binary_search_by(|entry| entry.hash.cmp(&hash))
-                .ok();
-            let mut moves = Vec::new();
-            if let Some(index) = index {
-                let mut initial_index = index;
-                let mut final_index = index;
-                while initial_index > 0 && self.entries[initial_index - 1].hash == hash {
-                    initial_index -= 1;
+    pub fn get_all_weighted_moves(&self, board: &Board) -> Result<Vec<WeightedMove>> {
+        let target_hash = board.get_hash();
+        let mut reader = std::io::BufReader::new(self.file.clone());
+        let mut buffer = [0; 16];
+        let mut moves = Vec::new();
+        if let Some(first_match_idx) = self.find_first_matching_index(target_hash)? {
+            // Gather all moves with matching hash
+            let mut idx = first_match_idx;
+            loop {
+                let offset = idx << 4;
+                let read_result = Self::read_bytes_at_offset(&mut reader, &mut buffer, offset);
+                if read_result.is_err() {
+                    break;
                 }
-                while final_index < self.entries.len() && self.entries[final_index].hash == hash {
-                    final_index += 1;
-                }
-                for entry in &self.entries[initial_index..final_index] {
-                    moves.push(entry.get_weighted_move());
+                let hash = u64::from_be_bytes(
+                    buffer[0..8]
+                        .try_into()
+                        .map_err(|_| TimecatError::BadPolyglotFile)?,
+                );
+                let move_int = u16::from_be_bytes(
+                    buffer[8..10]
+                        .try_into()
+                        .map_err(|_| TimecatError::BadPolyglotFile)?,
+                );
+                let weight = u16::from_be_bytes(
+                    buffer[10..12]
+                        .try_into()
+                        .map_err(|_| TimecatError::BadPolyglotFile)?,
+                );
+                if hash == target_hash {
+                    let valid_or_null_move = polyglot_move_int_to_move(move_int)?;
+                    moves.push(WeightedMove::new(valid_or_null_move, weight as MoveWeight));
+                    idx += 1;
+                } else {
+                    break;
                 }
             }
-            moves
         }
-
-        pub fn get_best_move(&self, board: &Board) -> Option<Move> {
-            //TODO: optimize
-            let hash = board.get_hash();
-            let index = self
-                .entries
-                .binary_search_by(|entry| entry.hash.cmp(&hash))
-                .ok();
-            if let Some(mut index) = index {
-                while index > 0 && self.entries[index - 1].hash == hash {
-                    index -= 1;
-                }
-                return Some(self.entries[index].move_);
-            }
-            None
-        }
+        Ok(moves)
     }
 
-    #[derive(Debug)]
-    pub struct PolyglotBookReader;
-
-    impl PolyglotBookReader {
-        fn entries_are_sorted(entries: &[PolyglotBookEntry]) -> bool {
-            entries.windows(2).all(|w| w[0] <= w[1])
-        }
-
-        fn get_entries_from_bytes(bytes: &[u8]) -> Result<Vec<PolyglotBookEntry>> {
-            let mut entries = Vec::new();
-            let mut offset = 0;
-            while offset < bytes.len() {
-                let hash = u64::from_be_bytes(bytes[offset..offset + 8].try_into().unwrap());
-                let move_int =
-                    u16::from_be_bytes(bytes[offset + 8..offset + 10].try_into().unwrap());
-                let weight =
-                    u16::from_be_bytes(bytes[offset + 10..offset + 12].try_into().unwrap());
-                let learn = u32::from_be_bytes(bytes[offset + 12..offset + 16].try_into().unwrap());
-                entries.push(PolyglotBookEntry {
-                    hash,
-                    move_: polyglot_move_int_to_move(move_int)?,
-                    weight,
-                    learn,
-                });
-                offset += 16;
-            }
-            if !Self::entries_are_sorted(&entries) {
-                entries.sort_unstable();
-            }
-            Ok(entries)
-        }
-
-        pub fn read_book_from_file(path: &str) -> Result<PolyglotBook> {
-            let mut entries = Vec::new();
-            let mut file = fs::File::open(path)?;
-            let mut buffer = [0; 16];
-            while file.read_exact(&mut buffer).is_ok() {
-                let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
-                let move_int = u16::from_be_bytes(buffer[8..10].try_into()?);
-                let weight = u16::from_be_bytes(buffer[10..12].try_into()?);
-                let learn = u32::from_be_bytes(buffer[12..16].try_into()?);
-                entries.push(PolyglotBookEntry {
-                    hash,
-                    move_: polyglot_move_int_to_move(move_int)?,
-                    weight,
-                    learn,
-                });
-            }
-            if !Self::entries_are_sorted(&entries) {
-                entries.sort_unstable();
-            }
-            Ok(PolyglotBook { entries })
-        }
-
-        pub fn read_book_from_bytes(bytes: &[u8]) -> Result<PolyglotBook> {
-            Ok(PolyglotBook {
-                entries: Self::get_entries_from_bytes(bytes)?,
+    pub fn get_best_weighted_move(&self, board: &Board) -> Result<Option<WeightedMove>> {
+        Ok(self
+            .find_first_matching_index(board.get_hash())?
+            .map(|index| -> Result<_> {
+                let mut buffer = [0; 16];
+                Self::read_bytes_at_offset(
+                    &mut std::io::BufReader::new(self.file.clone()),
+                    &mut buffer,
+                    index << 4,
+                )?;
+                let move_int = u16::from_be_bytes(
+                    buffer[8..10]
+                        .try_into()
+                        .map_err(|_| TimecatError::BadPolyglotFile)?,
+                );
+                let weight = u16::from_be_bytes(
+                    buffer[10..12]
+                        .try_into()
+                        .map_err(|_| TimecatError::BadPolyglotFile)?,
+                );
+                let valid_or_null_move = polyglot_move_int_to_move(move_int)?;
+                Ok(WeightedMove::new(valid_or_null_move, weight as MoveWeight))
             })
-        }
+            .transpose()?)
     }
 }
 
-pub mod map_implementation {
-    use super::*;
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+struct PolyglotBookEntry {
+    move_: Move,
+    weight: u16,
+    learn: u32,
+}
 
-    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-    struct PolyglotBookEntry {
-        move_: Move,
-        weight: u16,
-        learn: u32,
+impl PolyglotBookEntry {
+    fn get_weighted_move(&self) -> WeightedMove {
+        WeightedMove::new(self.move_, self.weight as MoveWeight)
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug)]
+pub struct PolyglotBookHashMap {
+    entries_map: IdentityHashMap<u64, Vec<PolyglotBookEntry>>,
+}
+
+impl PolyglotBookHashMap {
+    #[inline]
+    pub fn sort_book(&mut self) {
+        self.entries_map
+            .values_mut()
+            .for_each(|entries| entries.sort_unstable_by_key(|key| Reverse(key.weight)));
     }
 
-    impl PolyglotBookEntry {
-        fn get_weighted_move(&self) -> WeightedMove {
-            WeightedMove::new(self.move_, self.weight as MoveWeight)
-        }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.entries_map.len()
     }
 
-    impl PartialOrd for PolyglotBookEntry {
-        fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-            Some(self.cmp(other))
-        }
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.entries_map.is_empty()
     }
 
-    impl Ord for PolyglotBookEntry {
-        fn cmp(&self, other: &Self) -> Ordering {
-            other.weight.cmp(&self.weight)
-        }
-    }
-
-    #[derive(Clone, Debug)]
-    pub struct PolyglotBook {
-        // start_index: usize,
-        entries_map: IdentityHashMap<u64, Vec<PolyglotBookEntry>>,
-    }
-
-    impl PolyglotBook {
-        pub fn sort_book(&mut self) {
-            self.entries_map
-                .values_mut()
-                .for_each(|entries| entries.sort_unstable());
-        }
-
-        pub fn len(&self) -> usize {
-            self.entries_map.len()
-        }
-
-        pub fn is_empty(&self) -> bool {
-            self.entries_map.is_empty()
-        }
-
-        pub fn get_all_weighted_moves_with_hashes(
-            &self,
-        ) -> IdentityHashMap<u64, Vec<WeightedMove>> {
-            self.entries_map
-                .iter()
-                .map(|(&hash, entries)| {
-                    (
-                        hash,
-                        entries
-                            .iter()
-                            .map(|entry| entry.get_weighted_move())
-                            .collect_vec(),
-                    )
-                })
-                .collect()
-        }
-
-        pub fn get_all_weighed_moves(&self, board: &Board) -> Vec<WeightedMove> {
-            //TODO: optimize
-            let hash = board.get_hash();
-            self.entries_map
-                .get(&hash)
-                .map(|entries| {
+    pub fn get_all_weighted_moves_with_hashes(&self) -> IdentityHashMap<u64, Vec<WeightedMove>> {
+        self.entries_map
+            .iter()
+            .map(|(&hash, entries)| {
+                (
+                    hash,
                     entries
                         .iter()
                         .map(|entry| entry.get_weighted_move())
-                        .collect_vec()
-                })
-                .unwrap_or_default()
-        }
-
-        pub fn get_best_move(&self, board: &Board) -> Option<Move> {
-            //TODO: optimize
-            let hash = board.get_hash();
-            self.entries_map
-                .get(&hash)
-                .and_then(|entries| entries.first().map(|entry| entry.move_))
-        }
-    }
-
-    #[derive(Debug)]
-    pub struct PolyglotBookReader;
-
-    impl PolyglotBookReader {
-        fn entries_are_sorted(entries: &[PolyglotBookEntry]) -> bool {
-            entries.windows(2).all(|w| w[0] <= w[1])
-        }
-
-        fn get_entries_from_bytes(
-            bytes: &[u8],
-        ) -> Result<IdentityHashMap<u64, Vec<PolyglotBookEntry>>> {
-            let mut entries_map = IdentityHashMap::default();
-            let mut offset = 0;
-            while offset < bytes.len() {
-                let hash = u64::from_be_bytes(bytes[offset..offset + 8].try_into().unwrap());
-                let move_int =
-                    u16::from_be_bytes(bytes[offset + 8..offset + 10].try_into().unwrap());
-                let weight =
-                    u16::from_be_bytes(bytes[offset + 10..offset + 12].try_into().unwrap());
-                let learn = u32::from_be_bytes(bytes[offset + 12..offset + 16].try_into().unwrap());
-                let entry = PolyglotBookEntry {
-                    move_: polyglot_move_int_to_move(move_int)?,
-                    weight,
-                    learn,
-                };
-                entries_map.entry(hash).or_insert_with(Vec::new).push(entry);
-                offset += 16;
-            }
-            for entries in entries_map.values_mut() {
-                if !Self::entries_are_sorted(entries) {
-                    entries.sort_unstable();
-                }
-            }
-            Ok(entries_map)
-        }
-
-        pub fn read_book_from_file(path: &str) -> Result<PolyglotBook> {
-            let mut entries_map = IdentityHashMap::default();
-            let mut file = fs::File::open(path)?;
-            let mut buffer = [0; 16];
-            while file.read_exact(&mut buffer).is_ok() {
-                let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
-                let move_int = u16::from_be_bytes(buffer[8..10].try_into()?);
-                let weight = u16::from_be_bytes(buffer[10..12].try_into()?);
-                let learn = u32::from_be_bytes(buffer[12..16].try_into()?);
-                let entry = PolyglotBookEntry {
-                    move_: polyglot_move_int_to_move(move_int)?,
-                    weight,
-                    learn,
-                };
-                entries_map.entry(hash).or_insert_with(Vec::new).push(entry);
-            }
-            for entries in entries_map.values_mut() {
-                if !Self::entries_are_sorted(entries) {
-                    entries.sort_unstable();
-                }
-            }
-            Ok(PolyglotBook { entries_map })
-        }
-
-        pub fn read_book_from_bytes(bytes: &[u8]) -> Result<PolyglotBook> {
-            Ok(PolyglotBook {
-                entries_map: Self::get_entries_from_bytes(bytes)?,
+                        .collect_vec(),
+                )
             })
-        }
+            .collect()
+    }
+
+    pub fn get_all_weighed_moves(&self, board: &Board) -> Vec<WeightedMove> {
+        //TODO: optimize
+        self.entries_map
+            .get(&board.get_hash())
+            .map(|entries| {
+                entries
+                    .iter()
+                    .map(|entry| entry.get_weighted_move())
+                    .collect_vec()
+            })
+            .unwrap_or_default()
+    }
+
+    pub fn get_best_weighted_move(&self, board: &Board) -> Option<WeightedMove> {
+        //TODO: optimize
+        self.entries_map
+            .get(&board.get_hash())
+            .and_then(|entries| entries.first().map(|entry| entry.get_weighted_move()))
     }
 }
 
-fn read_bytes_at_offset(file: &fs::File, buffer: &mut [u8], offset: u64) -> std::io::Result<()> {
-    let mut reader = std::io::BufReader::new(file);
-    reader.seek(std::io::SeekFrom::Start(offset))?;
-    reader.read_exact(buffer)
-}
+impl TryFrom<&[u8]> for PolyglotBookHashMap {
+    type Error = TimecatError;
 
-pub fn find_first_matching_index(file: &fs::File, target_hash: u64) -> Result<Option<u64>> {
-    let mut buffer = [0; 16];
-    let mut start = 0;
-    let mut end = file.metadata()?.len() / 16 - 1;
-    let mut first_match_idx = None;
-    while start <= end {
-        let mid = start + (end - start) / 2;
-        let offset = mid * 16;
-        let read_result = read_bytes_at_offset(file, &mut buffer, offset);
-        if read_result.is_err() {
-            break;
+    fn try_from(value: &[u8]) -> std::result::Result<Self, Self::Error> {
+        let mut entries_map = IdentityHashMap::default();
+        let mut offset = 0;
+        while offset < value.len() {
+            let hash = u64::from_be_bytes(
+                value[offset..offset + 8]
+                    .try_into()
+                    .map_err(|_| TimecatError::BadPolyglotFile)?,
+            );
+            let move_int = u16::from_be_bytes(
+                value[offset + 8..offset + 10]
+                    .try_into()
+                    .map_err(|_| TimecatError::BadPolyglotFile)?,
+            );
+            let weight = u16::from_be_bytes(
+                value[offset + 10..offset + 12]
+                    .try_into()
+                    .map_err(|_| TimecatError::BadPolyglotFile)?,
+            );
+            let learn = u32::from_be_bytes(
+                value[offset + 12..offset + 16]
+                    .try_into()
+                    .map_err(|_| TimecatError::BadPolyglotFile)?,
+            );
+            let entry = PolyglotBookEntry {
+                move_: polyglot_move_int_to_move(move_int)?,
+                weight,
+                learn,
+            };
+            entries_map.entry(hash).or_insert_with(Vec::new).push(entry);
+            offset += 16;
         }
-        let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
-        match hash.cmp(&target_hash) {
-            Ordering::Equal => {
-                first_match_idx = Some(mid);
-                end = mid - 1;
-            }
-            Ordering::Less => start = mid + 1,
-            Ordering::Greater => end = mid - 1,
-        }
+        Ok(Self { entries_map })
     }
-    Ok(first_match_idx)
 }
 
-pub fn search_all_moves_from_file(path: &str, board: &Board) -> Result<Vec<WeightedMove>> {
-    let target_hash = board.get_hash();
-    let file = fs::File::open(path)?;
-    let mut buffer = [0; 16];
-    let mut moves = Vec::new();
-    if let Some(first_match_idx) = find_first_matching_index(&file, target_hash)? {
-        // Gather all moves with matching hash
-        let mut idx = first_match_idx;
-        loop {
-            let offset = idx * 16;
-            let read_result = read_bytes_at_offset(&file, &mut buffer, offset);
-            if read_result.is_err() {
-                break;
-            }
-            let hash = u64::from_be_bytes(buffer[0..8].try_into()?);
-            let move_int = u16::from_be_bytes(buffer[8..10].try_into()?);
-            let weight = u16::from_be_bytes(buffer[10..12].try_into()?);
-            if hash == target_hash {
-                let valid_or_null_move = polyglot_move_int_to_move(move_int)?;
-                moves.push(WeightedMove::new(valid_or_null_move, weight as MoveWeight));
-                idx += 1;
-            } else {
-                break;
-            }
-        }
-        moves.sort_unstable_by_key(|wm| Reverse(wm.weight));
+impl<const N: usize> TryFrom<[u8; N]> for PolyglotBookHashMap {
+    type Error = TimecatError;
+
+    #[inline]
+    fn try_from(value: [u8; N]) -> std::result::Result<Self, Self::Error> {
+        value.as_slice().try_into()
     }
-    Ok(moves)
 }
 
-pub fn search_best_moves_from_file(path: &str, board: &Board) -> Result<Option<Move>> {
-    Ok(search_all_moves_from_file(path, board)?
-        .first()
-        .map(|wm| wm.move_))
+impl TryFrom<fs::File> for PolyglotBookHashMap {
+    type Error = TimecatError;
+
+    fn try_from(mut value: fs::File) -> std::result::Result<Self, Self::Error> {
+        let mut entries_map = IdentityHashMap::default();
+        let mut buffer = [0; 16];
+        while value.read_exact(&mut buffer).is_ok() {
+            let hash = u64::from_be_bytes(
+                buffer[0..8]
+                    .try_into()
+                    .map_err(|_| TimecatError::BadPolyglotFile)?,
+            );
+            let move_int = u16::from_be_bytes(
+                buffer[8..10]
+                    .try_into()
+                    .map_err(|_| TimecatError::BadPolyglotFile)?,
+            );
+            let weight = u16::from_be_bytes(
+                buffer[10..12]
+                    .try_into()
+                    .map_err(|_| TimecatError::BadPolyglotFile)?,
+            );
+            let learn = u32::from_be_bytes(
+                buffer[12..16]
+                    .try_into()
+                    .map_err(|_| TimecatError::BadPolyglotFile)?,
+            );
+            let entry = PolyglotBookEntry {
+                move_: polyglot_move_int_to_move(move_int)?,
+                weight,
+                learn,
+            };
+            entries_map.entry(hash).or_insert_with(Vec::new).push(entry);
+        }
+        Ok(Self { entries_map })
+    }
 }
 
-pub fn test_polyglot(book_path: &str) -> Result<()> {
-    // let board = Board::from_fen(STARTING_POSITION_FEN)?;
-    let board = Board::from_fen("rnbqkbnr/ppp2ppp/4p3/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3")?;
-    let book = array_implementation::PolyglotBookReader::read_book_from_file(book_path)?;
-    let moves1 = book.get_all_weighed_moves(&board);
-    println_wasm!("{}", moves1.stringify());
-    let moves2 = search_all_moves_from_file(book_path, &board)?;
-    println_wasm!("{}", moves2.stringify());
-    assert_eq!(moves1, moves2);
-    Ok(())
+impl TryFrom<&str> for PolyglotBookHashMap {
+    type Error = TimecatError;
+
+    #[inline]
+    fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
+        fs::File::open(value)?.try_into()
+    }
+}
+
+impl TryFrom<String> for PolyglotBookHashMap {
+    type Error = TimecatError;
+
+    #[inline]
+    fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
+        value.as_str().try_into()
+    }
 }

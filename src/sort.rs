@@ -98,8 +98,9 @@ impl MoveSorter {
 
     pub fn reset_variables(&mut self) {
         self.killer_moves
-            .fill(const{SerdeWrapper::new([None; NUM_KILLER_MOVES])});
-        self.history_move_scores.fill(const{SerdeWrapper::new([0; 64])});
+            .fill(const { SerdeWrapper::new([None; NUM_KILLER_MOVES]) });
+        self.history_move_scores
+            .fill(const { SerdeWrapper::new([0; 64]) });
         self.follow_pv = false;
         self.score_pv = false;
     }
@@ -402,8 +403,8 @@ impl MoveSorter {
 impl Default for MoveSorter {
     fn default() -> Self {
         Self {
-            killer_moves: const {[SerdeWrapper::new([None; NUM_KILLER_MOVES]); MAX_PLY]},
-            history_move_scores: const {[SerdeWrapper::new([0; 64]); 12]},
+            killer_moves: const { [SerdeWrapper::new([None; NUM_KILLER_MOVES]); MAX_PLY] },
+            history_move_scores: const { [SerdeWrapper::new([0; 64]); 12] },
             follow_pv: false,
             score_pv: false,
         }

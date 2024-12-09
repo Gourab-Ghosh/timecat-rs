@@ -64,6 +64,7 @@ pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
     #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     terminate: Arc<AtomicBool>,
     properties: EngineProperties,
+    opening_book: Option<PolyglotBookHashMap>,
 }
 
 impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
@@ -85,6 +86,10 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
             stop_command: AtomicBool::new(false).into(),
             terminate: AtomicBool::new(false).into(),
             properties: EngineProperties::default(),
+            opening_book: TIMECAT_DEFAULTS
+                .inbuilt_book_bytes
+                .map(|path| path.try_into().ok())
+                .flatten(),
         }
     }
 
@@ -234,6 +239,10 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
         self.controller.set_move_overhead(duration);
     }
 
+    fn set_opening_book(&mut self, opening_book: Option<PolyglotBookHashMap>) {
+        self.opening_book = opening_book;
+    }
+
     #[inline]
     fn terminate(&self) -> bool {
         self.terminate.load(MEMORY_ORDERING)
@@ -273,6 +282,15 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
 
     #[must_use = "If you don't need the search info, you can just search the position."]
     fn go(&mut self, config: &SearchConfig, verbose: bool) -> SearchInfo {
+        if let Some(ref book) = self.opening_book {
+            if let Some(WeightedMove { move_, weight }) = book.get_best_weighted_move(&self.board) {
+                if self.board.is_legal(&move_) {
+                    return SearchInfoBuilder::new(self.board.get_position().clone(), vec![move_])
+                        .set_score(weight as Score)
+                        .build();
+                }
+            }
+        }
         self.reset_variables();
         let mut join_handles = vec![];
         for id in 1..self.num_threads.get() {
@@ -336,6 +354,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> Clone for CustomEngin
             stop_command: AtomicBool::new(self.stop_command.load(MEMORY_ORDERING)).into(),
             terminate: AtomicBool::new(self.terminate.load(MEMORY_ORDERING)).into(),
             properties: self.properties.clone(),
+            opening_book: self.opening_book.clone(),
             ..*self
         }
     }

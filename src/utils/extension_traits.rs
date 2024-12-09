@@ -144,6 +144,7 @@ pub trait ChessEngine {
     fn set_transposition_table_size(&self, size: CacheTableSize);
     fn set_num_threads(&mut self, num_threads: NonZeroUsize);
     fn set_move_overhead(&mut self, duration: Duration);
+    fn set_opening_book(&mut self, opening_book: Option<PolyglotBookHashMap>);
     fn terminate(&self) -> bool;
     fn set_termination(&self, b: bool);
     fn set_fen(&mut self, fen: &str) -> Result<()>;

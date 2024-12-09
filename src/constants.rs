@@ -323,6 +323,8 @@ pub mod default_parameters {
         num_threads: unsafe { NonZeroUsize::new_unchecked(1) },
         move_overhead: Duration::from_millis(10),
         use_own_book: false,
+        book_path: None,
+        inbuilt_book_bytes: None,
         debug_mode: true,
         chess960_mode: false,
     };

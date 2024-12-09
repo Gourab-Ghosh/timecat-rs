@@ -186,10 +186,7 @@ impl HalfKPModelReader {
             .unwrap();
         HalfKPModel {
             accumulator: Accumulator {
-                king_squares_rotated: [
-                    white_king_square,
-                    black_king_square.rotate(),
-                ],
+                king_squares_rotated: [white_king_square, black_king_square.rotate()],
                 accumulators,
             },
             transformer: self.transformer.clone(),
@@ -217,8 +214,7 @@ impl HalfKPModelReader {
 #[derive(Clone, Debug)]
 struct Accumulator {
     king_squares_rotated: [Square; 2],
-    accumulators:
-        [MathVec<AccumulatorDataType, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; 2],
+    accumulators: [MathVec<AccumulatorDataType, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; 2],
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

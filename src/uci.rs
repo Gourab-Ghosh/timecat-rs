@@ -29,26 +29,26 @@ impl_into_spin!(Duration, as_millis);
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum UCIOptionType<T: ChessEngine> {
     Button {
-        function: fn(&mut T),
+        function: fn(&mut T) -> Result<()>,
     },
     Check {
         default: bool,
-        function: fn(&mut T, bool),
+        function: fn(&mut T, bool) -> Result<()>,
     },
     String {
         default: String,
-        function: fn(&mut T, &str),
+        function: fn(&mut T, &str) -> Result<()>,
     },
     Spin {
         default: Spin,
         min: Spin,
         max: Spin,
-        function: fn(&mut T, Spin),
+        function: fn(&mut T, Spin) -> Result<()>,
     },
     Combo {
         default: String,
         options: Vec<String>,
-        function: fn(&mut T, &str),
+        function: fn(&mut T, &str) -> Result<()>,
     },
 }
 
@@ -107,7 +107,7 @@ impl<T: ChessEngine> UCIOption<T> {
     fn new_spin<U: Clone + Copy + IntoSpin>(
         name: &str,
         values: SpinValue<U>,
-        function: fn(&mut T, Spin),
+        function: fn(&mut T, Spin) -> Result<()>,
     ) -> Self {
         UCIOption::new(
             name,
@@ -120,18 +120,22 @@ impl<T: ChessEngine> UCIOption<T> {
         )
     }
 
-    fn new_check(name: &str, default: bool, function: fn(&mut T, bool)) -> Self {
+    fn new_check(name: &str, default: bool, function: fn(&mut T, bool) -> Result<()>) -> Self {
         UCIOption::new(name, UCIOptionType::Check { default, function })
     }
 
-    fn new_button(name: &str, function: fn(&mut T)) -> Self {
+    fn new_button(name: &str, function: fn(&mut T) -> Result<()>) -> Self {
         UCIOption::new(name, UCIOptionType::Button { function })
+    }
+
+    fn new_string(name: &str, default: String, function: fn(&mut T, &str) -> Result<()>) -> Self {
+        UCIOption::new(name, UCIOptionType::String { default, function })
     }
 
     fn set_option(&self, engine: &mut T, value_string: String) -> Result<()> {
         match self.option_type {
             UCIOptionType::Check { function, .. } => {
-                function(engine, value_string.parse()?);
+                function(engine, value_string.parse()?)?;
             }
             UCIOptionType::Spin {
                 min, max, function, ..
@@ -145,16 +149,16 @@ impl<T: ChessEngine> UCIOption<T> {
                         max,
                     });
                 }
-                function(engine, value);
+                function(engine, value)?;
             }
             UCIOptionType::Combo { function, .. } => {
-                function(engine, &value_string);
+                function(engine, &value_string)?;
             }
             UCIOptionType::Button { function } => {
-                function(engine);
+                function(engine)?;
             }
             UCIOptionType::String { function, .. } => {
-                function(engine, &value_string);
+                function(engine, &value_string)?;
             }
         }
         Ok(())
@@ -307,6 +311,7 @@ fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
                 let num_threads = unsafe { NonZeroUsize::new_unchecked(value as usize) };
                 engine.set_num_threads(num_threads);
                 print_uci_info("Number of threads is set to", num_threads);
+                Ok(())
             },
         )
         .alias("Thread"),
@@ -325,12 +330,14 @@ fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
                         "Transposition table is set to size to",
                         size.to_memory_size_in_mb::<TranspositionTableEntry>(),
                     );
+                    Ok(())
                 }
             },
         ),
         UCIOption::new_button("Clear Hash", |engine| {
             engine.clear_hash();
             print_uci_info::<&str>("All hash tables are cleared!", None);
+            Ok(())
         }),
         UCIOption::new_spin(
             "Move Overhead",
@@ -343,6 +350,19 @@ fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
                 let duration = Duration::from_millis(value as u64);
                 engine.set_move_overhead(duration);
                 print_uci_info("Move Overhead is set to", duration.stringify());
+                Ok(())
+            },
+        ),
+        UCIOption::new_string(
+            "BookFile",
+            TIMECAT_DEFAULTS
+                .book_path
+                .map_or_else(|| "None".to_string(), |path| format!("{:?}", path)),
+            |engine, book_path| {
+                let book = PolyglotBookHashMap::try_from(book_path)?;
+                engine.set_opening_book(Some(book));
+                print_uci_info("BookFile is set to", format!("{:?}", book_path));
+                Ok(())
             },
         ),
         // UCIOption::new_check(

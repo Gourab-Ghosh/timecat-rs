@@ -34,6 +34,8 @@ pub struct TimecatDefaults {
     pub num_threads: NonZeroUsize,
     pub move_overhead: Duration,
     pub use_own_book: bool,
+    pub book_path: Option<&'static str>,
+    pub inbuilt_book_bytes: Option<&'static [u8]>,
     pub debug_mode: bool,
     pub chess960_mode: bool,
 }

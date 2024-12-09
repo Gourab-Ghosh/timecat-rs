@@ -86,28 +86,28 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // let mut engine = Engine::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")?;
     // parse_command(engine, "go perft 6");
 
-    // // GLOBAL_TIMECAT_STATE.set_num_threads(2, true);
-    // // engine.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88")?; // test if engine can find mate in 3
-    // // engine.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111")?; // test t_table -> nodes initially: 3203606
-    // // engine.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105")?; // gives incomplete pv line
-    // // engine.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1")?; // test endgame
-    // // engine.set_fen("4k2r/Q7/3b4/Q7/8/2N5/5PPP/5RK1 b - - 0 1")?; // test draw by repetition
-    // // engine.set_fen(time_consuming_fens[7])?;
-    // // engine.set_fen(could_have_probably_played_better_move[2])?;
-    // // engine.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54")?; // incomplete pv line in 3 secs in my pc
-    // // engine.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47")?; // weird results in 3 secs in my pc
-    // // engine.set_fen("8/3k2P1/1p2Q3/3P4/4p3/2P1P3/6K1/q7 b - - 1 56")?; // weird mating results in 3 secs in my pc
-    // // engine.set_fen("8/R1pk3p/8/4B2p/p1r5/8/6PK/8 w - - 0 41")?; // weird mating results in 3 secs in my pc
-    // // engine.set_fen(could_have_probably_played_better_move[6])?;
-    // // engine.board.push_sans("Qc6+ Kf2 Ra8 Rd1+ Ke8 Rc1 Qe4 Rxc7 Rxa7")?;
-    // // engine.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170")?;
-    // // engine.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24")?;
-    // // engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170")?; // check for saving mate score
-    // // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12")?; // weird results in 3 secs in my pc
-    // // engine.set_fen("6k1/p2b1ppp/3r4/6q1/1p2Pb2/1N1B3P/PP2QPP1/4R1K1 w - - 1 33")?; // Missed tactics in 3 sec move
-    // engine.set_fen("8/6K1/4k3/8/8/2Q5/2B5/8 w - - 1 67")?; // Missed mate in 3
-    // // parse_command(engine, "go movetime 3000");
-    // parse_command(engine, "go depth 15");
+    // GLOBAL_TIMECAT_STATE.set_num_threads(2, true);
+    // engine.set_fen("6k1/5p2/6p1/1K6/8/8/3r4/7q b - - 1 88")?; // test if engine can find mate in 3
+    // engine.set_fen("7R/r7/3K4/8/5k2/8/8/8 b - - 80 111")?; // test t_table -> nodes initially: 3203606
+    // engine.set_fen("8/8/K5k1/2q5/8/1Q6/8/8 b - - 20 105")?; // gives incomplete pv line
+    // engine.set_fen("k7/8/8/8/8/8/3P4/4K3 w - - 0 1")?; // test endgame
+    // engine.set_fen("4k2r/Q7/3b4/Q7/8/2N5/5PPP/5RK1 b - - 0 1")?; // test draw by repetition
+    // engine.set_fen(time_consuming_fens[7])?;
+    // engine.set_fen(could_have_probably_played_better_move[2])?;
+    // engine.set_fen("6k1/2N5/6b1/6p1/2p5/R1P1Bn1P/8/7K w - - 1 54")?; // incomplete pv line in 3 secs in my pc
+    // engine.set_fen("2r3k1/5pb1/2r1pnp1/q3P1B1/3P4/7R/2p2PP1/2Q2RK1 w - - 0 47")?; // weird results in 3 secs in my pc
+    // engine.set_fen("8/3k2P1/1p2Q3/3P4/4p3/2P1P3/6K1/q7 b - - 1 56")?; // weird mating results in 3 secs in my pc
+    // engine.set_fen("8/R1pk3p/8/4B2p/p1r5/8/6PK/8 w - - 0 41")?; // weird mating results in 3 secs in my pc
+    // engine.set_fen(could_have_probably_played_better_move[6])?;
+    // engine.board.push_sans("Qc6+ Kf2 Ra8 Rd1+ Ke8 Rc1 Qe4 Rxc7 Rxa7")?;
+    // engine.set_fen("8/8/6K1/3k2P1/3b4/3N4/8/2B5 w - - 15 170")?;
+    // engine.set_fen("3r2k1/4Rp1p/6q1/1N2p3/8/1PPr1P1b/4Q1PP/5RK1 w - - 1 24")?;
+    // engine.set_fen("8/5K1k/2n5/2N5/6P1/8/8/B7 w - - 11 170")?; // check for saving mate score
+    // engine.set_fen("r2qr1k1/p1p2ppp/2P5/3n4/1b4b1/2N2P2/PPP1B1PP/R1BQK2R w KQ - 3 12")?; // weird results in 3 secs in my pc
+    // engine.set_fen("6k1/p2b1ppp/3r4/6q1/1p2Pb2/1N1B3P/PP2QPP1/4R1K1 w - - 1 33")?; // Missed tactics in 3 sec move
+    engine.set_fen("8/6K1/4k3/8/8/2Q5/2B5/8 w - - 1 67")?; // Missed mate in 3
+    // parse_command(engine, "go movetime 3000");
+    parse_command(engine, "go depth 15");
 
     // let position = BoardPosition::from_fen("8/4R3/6rk/pPp4p/7P/4p1P1/7K/8 w - c6 0 48")?;
     // println!("{}", position.is_legal(&Move::new(B5, C6, None)?));
@@ -154,11 +154,17 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // let mut test_hashmap = IdentityHashMap::default();
     // test_hashmap.insert(BoardPosition::from_fen(STARTING_POSITION_FEN), Board::from_fen(STARTING_POSITION_FEN));
 
-    let book_name = "codekiddy.bin";
-    let path = dirs::home_dir().unwrap().join("Downloads/polyglot-collection").join(book_name);
-    let path_str = path.as_path().to_str().unwrap();
-    println!("{}", path_str);
-    test_polyglot(path_str)?;
+    // let book_name = "codekiddy.bin";
+    // let path = dirs::home_dir().unwrap().join("Downloads/polyglot-collection").join(book_name);
+    // let path_str = path.as_path().to_str().unwrap();
+    // println!("{}", path_str);
+    // let board = Board::from_fen("rnbqkbnr/ppp2ppp/4p3/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3")?;
+    // let book = PolyglotBookHashMap::try_from(path_str)?;
+    // let moves1 = book.get_all_weighed_moves(&board);
+    // println_wasm!("{}", moves1.stringify());
+    // let moves2 = PolyglotBookReader::from_file_path(path_str)?.get_all_weighted_moves(&board)?;
+    // println_wasm!("{}", moves2.stringify());
+    // assert_eq!(moves1, moves2);
 
     // let mut board = Board::new();
     // println_wasm!("\n{board}");
