@@ -3,15 +3,17 @@ use super::*;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct PVTable {
-    length: SerdeWrapper<[usize; MAX_PLY]>,
-    table: SerdeWrapper<[SerdeWrapper<[Option<Move>; MAX_PLY]>; MAX_PLY]>,
+    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
+    length: [usize; MAX_PLY],
+    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
+    table: [SerdeWrapper<[Option<Move>; MAX_PLY]>; MAX_PLY],
 }
 
 impl PVTable {
     pub fn new() -> Self {
         Self {
-            length: SerdeWrapper::new([0; MAX_PLY]),
-            table: SerdeWrapper::new([SerdeWrapper::new([None; MAX_PLY]); MAX_PLY]),
+            length: [0; MAX_PLY],
+            table: [SerdeWrapper::new([None; MAX_PLY]); MAX_PLY],
         }
     }
 

@@ -114,7 +114,7 @@ mod serde_implementations {
 #[cfg(feature = "serde")]
 impl<'de, T: Serialize + Deserialize<'de>> SerdeHandler<'de> for Arc<T> {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
-        T::serialize(self.as_ref(), serializer)
+        self.as_ref().serialize(serializer)
     }
 
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
@@ -168,3 +168,14 @@ impl<'de, T: Serialize + Deserialize<'de>, const N: usize> SerdeHandler<'de> for
         )
     }
 }
+
+// #[cfg(feature = "serde")]
+// impl<'de, T: Serialize + Deserialize<'de>, const N: usize> SerdeHandler<'de> for Box<[T; N]> {
+//     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+//         self.as_ref().serialize(serializer)
+//     }
+
+//     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
+//         <[T; N]>::deserialize(deserializer).map(Box::new)
+//     }
+// }

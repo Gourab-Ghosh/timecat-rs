@@ -83,8 +83,10 @@ impl FromIterator<WeightedMove> for WeightedMoveListSorter {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct MoveSorter {
-    killer_moves: SerdeWrapper<[SerdeWrapper<[Option<Move>; NUM_KILLER_MOVES]>; MAX_PLY]>,
-    history_move_scores: SerdeWrapper<[SerdeWrapper<[MoveWeight; 64]>; 12]>,
+    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
+    killer_moves: [SerdeWrapper<[Option<Move>; NUM_KILLER_MOVES]>; MAX_PLY],
+    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
+    history_move_scores: [SerdeWrapper<[MoveWeight; 64]>; 12],
     follow_pv: bool,
     score_pv: bool,
 }
@@ -96,8 +98,8 @@ impl MoveSorter {
 
     pub fn reset_variables(&mut self) {
         self.killer_moves
-            .fill(SerdeWrapper::new([None; NUM_KILLER_MOVES]));
-        self.history_move_scores = SerdeWrapper::new([SerdeWrapper::new([0; 64]); 12]);
+            .fill(const{SerdeWrapper::new([None; NUM_KILLER_MOVES])});
+        self.history_move_scores.fill(const{SerdeWrapper::new([0; 64])});
         self.follow_pv = false;
         self.score_pv = false;
     }
@@ -400,8 +402,8 @@ impl MoveSorter {
 impl Default for MoveSorter {
     fn default() -> Self {
         Self {
-            killer_moves: SerdeWrapper::new([SerdeWrapper::new([None; NUM_KILLER_MOVES]); MAX_PLY]),
-            history_move_scores: SerdeWrapper::new([SerdeWrapper::new([0; 64]); 12]),
+            killer_moves: const {[SerdeWrapper::new([None; NUM_KILLER_MOVES]); MAX_PLY]},
+            history_move_scores: const {[SerdeWrapper::new([0; 64]); 12]},
             follow_pv: false,
             score_pv: false,
         }

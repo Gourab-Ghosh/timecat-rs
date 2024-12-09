@@ -48,9 +48,19 @@ impl<T: BinRead<Args = ()> + Debug> BinRead for HalfKPFeatureTransformer<T> {
             }
         }
         Ok(Self {
-            weights: SerdeWrapper::from_boxed_value(weights.try_into().unwrap()),
+            weights: SerdeWrapper::from_boxed_value(weights.try_into().map_err(|_| {
+                binread::Error::AssertFail {
+                    pos: 0,
+                    message: "Failed to convert weights into fixed-size array".to_string(),
+                }
+            })?),
             bona_piece_zero_weights: SerdeWrapper::from_boxed_value(
-                bona_piece_zero_weights.try_into().unwrap(),
+                bona_piece_zero_weights
+                    .try_into()
+                    .map_err(|_| binread::Error::AssertFail {
+                        pos: 0,
+                        message: "Failed to convert weights into fixed-size array".to_string(),
+                    })?,
             ),
             biases,
         })
@@ -176,11 +186,11 @@ impl HalfKPModelReader {
             .unwrap();
         HalfKPModel {
             accumulator: Accumulator {
-                king_squares_rotated: SerdeWrapper::new([
+                king_squares_rotated: [
                     white_king_square,
                     black_king_square.rotate(),
-                ]),
-                accumulators: SerdeWrapper::new(accumulators),
+                ],
+                accumulators,
             },
             transformer: self.transformer.clone(),
             network: self.network.clone(),
@@ -206,9 +216,9 @@ impl HalfKPModelReader {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 struct Accumulator {
-    king_squares_rotated: SerdeWrapper<[Square; 2]>,
+    king_squares_rotated: [Square; 2],
     accumulators:
-        SerdeWrapper<[MathVec<AccumulatorDataType, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; 2]>,
+        [MathVec<AccumulatorDataType, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; 2],
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -278,10 +288,10 @@ impl HalfKPModel {
 
     pub fn reset_model(&mut self, position: &BoardPosition) {
         self.clear();
-        self.accumulator.king_squares_rotated = SerdeWrapper::new([
+        self.accumulator.king_squares_rotated = [
             position.get_king_square(White),
             position.get_king_square(Black).rotate(),
-        ]);
+        ];
         self.update_empty_model(position);
         self.update_last_position(position.clone());
     }
@@ -403,14 +413,14 @@ impl HalfKPModel {
             transformer: self.transformer.clone(),
             network: self.network.clone(),
             accumulator: Accumulator {
-                accumulators: SerdeWrapper::new([
+                accumulators: [
                     self.transformer.get_biases().clone(),
                     self.transformer.get_biases().clone(),
-                ]),
-                king_squares_rotated: SerdeWrapper::new([
+                ],
+                king_squares_rotated: [
                     position.get_king_square(White),
                     position.get_king_square(Black).rotate(),
-                ]),
+                ],
             },
             last_position: position.clone(),
         };
