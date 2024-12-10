@@ -13,6 +13,21 @@ fn polyglot_move_int_to_move(move_int: u16) -> Result<Move> {
     )
 }
 
+#[inline]
+fn move_to_polyglot_move_int(move_: Move) -> Result<u16> {
+    let mut move_int = match move_.get_promotion() {
+        None => 0,
+        Some(Knight) => 1,
+        Some(Bishop) => 2,
+        Some(Rook) => 3,
+        Some(Queen) => 4,
+        _ => return Err(TimecatError::PolyglotTableParseError),
+    };
+    move_int = move_int << 6 ^ move_.get_source().compress();
+    move_int = move_int << 6 ^ move_.get_dest().compress();
+    Ok(move_int)
+}
+
 #[derive(Clone)]
 pub struct PolyglotBookReader {
     file: Arc<fs::File>,
@@ -163,6 +178,52 @@ impl PolyglotBookEntry {
     }
 }
 
+impl TryFrom<[u8; 8]> for PolyglotBookEntry {
+    type Error = TimecatError;
+
+    fn try_from(value: [u8; 8]) -> std::result::Result<Self, Self::Error> {
+        Ok(Self {
+            move_: polyglot_move_int_to_move(u16::from_be_bytes(
+                value[0..2]
+                    .try_into()
+                    .map_err(|_| TimecatError::BadPolyglotFile)?,
+            ))?,
+            weight: u16::from_be_bytes(
+                value[2..4]
+                    .try_into()
+                    .map_err(|_| TimecatError::BadPolyglotFile)?,
+            ),
+            learn: u32::from_be_bytes(
+                value[4..8]
+                    .try_into()
+                    .map_err(|_| TimecatError::BadPolyglotFile)?,
+            ),
+        })
+    }
+}
+
+impl TryFrom<&[u8]> for PolyglotBookEntry {
+    type Error = TimecatError;
+
+    fn try_from(value: &[u8]) -> std::result::Result<Self, Self::Error> {
+        <[u8; 8]>::try_from(value)?.try_into()
+    }
+}
+
+impl TryFrom<PolyglotBookEntry> for [u8; 8] {
+    type Error = TimecatError;
+
+    fn try_from(value: PolyglotBookEntry) -> std::result::Result<Self, Self::Error> {
+        let mut array = Vec::with_capacity(8);
+        array.extend_from_slice(&move_to_polyglot_move_int(value.move_)?.to_be_bytes());
+        array.extend_from_slice(&value.weight.to_be_bytes());
+        array.extend_from_slice(&value.learn.to_be_bytes());
+        array.try_into().map_err(|err| TimecatError::CustomError {
+            err_msg: format!("{:?}", err),
+        })
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct PolyglotBookHashMap {
@@ -243,27 +304,10 @@ impl TryFrom<&[u8]> for PolyglotBookHashMap {
                     .try_into()
                     .map_err(|_| TimecatError::BadPolyglotFile)?,
             );
-            let move_int = u16::from_be_bytes(
-                value[offset + 8..offset + 10]
-                    .try_into()
-                    .map_err(|_| TimecatError::BadPolyglotFile)?,
-            );
-            let weight = u16::from_be_bytes(
-                value[offset + 10..offset + 12]
-                    .try_into()
-                    .map_err(|_| TimecatError::BadPolyglotFile)?,
-            );
-            let learn = u32::from_be_bytes(
-                value[offset + 12..offset + 16]
-                    .try_into()
-                    .map_err(|_| TimecatError::BadPolyglotFile)?,
-            );
-            let entry = PolyglotBookEntry {
-                move_: polyglot_move_int_to_move(move_int)?,
-                weight,
-                learn,
-            };
-            entries_map.entry(hash).or_insert_with(Vec::new).push(entry);
+            entries_map
+                .entry(hash)
+                .or_insert_with(Vec::new)
+                .push(value[offset + 8..offset + 16].try_into()?);
             offset += 16;
         }
         Ok(Self { entries_map })

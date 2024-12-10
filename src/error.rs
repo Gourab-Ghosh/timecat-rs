@@ -108,6 +108,7 @@ pub enum TimecatError {
     },
     BadNNUEFile,
     BadPolyglotFile,
+    PolyglotTableParseError,
     CustomError {
         err_msg: String,
     },
@@ -159,6 +160,7 @@ impl fmt::Display for TimecatError {
             FeatureNotEnabled { s } => write!(f, "The feature {s:?} is not enabled. Please recompile the chess engine with this feature enabled!"),
             BadNNUEFile => write!(f, "The NNUE file cannot be parsed properly! Try again with a different NNUE file!"),
             BadPolyglotFile => write!(f, "The Polyglot file cannot be parsed properly! Try again with a different Polyglot file!"),
+            PolyglotTableParseError => write!(f, "The Polyglot Table cannot be parsed properly! Try again with a different Polyglot file!"),
             CustomError { err_msg } => write!(f, "{err_msg}"),
         }
     }
