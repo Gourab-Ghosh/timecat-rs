@@ -144,7 +144,8 @@ pub trait ChessEngine {
     fn set_transposition_table_size(&self, size: CacheTableSize);
     fn set_num_threads(&mut self, num_threads: NonZeroUsize);
     fn set_move_overhead(&mut self, duration: Duration);
-    fn set_opening_book(&mut self, book: Option<Arc<dyn PolyglotBook>>);
+    fn get_opening_book(&self) -> Option<&dyn PolyglotBook>;
+    fn set_opening_book<B: PolyglotBook + 'static>(&mut self, book: Option<Arc<B>>);
     fn terminate(&self) -> bool;
     fn set_termination(&self, b: bool);
     fn set_fen(&mut self, fen: &str) -> Result<()>;
@@ -159,6 +160,13 @@ pub trait ChessEngine {
     #[inline]
     #[expect(unused_variables)]
     fn set_optional_io_reader(&mut self, optional_io_reader: Self::IoReader) {}
+
+    #[inline]
+    fn get_opening_book_weighted_move(&self) -> Option<WeightedMove> {
+        self.get_opening_book()?
+            .get_best_weighted_move(self.get_board())
+            .filter(|WeightedMove { move_, .. }| self.get_board().is_legal(move_))
+    }
 
     #[inline]
     #[must_use = "If you don't need the search info, you can just search the position."]
@@ -206,7 +214,9 @@ pub trait BoardMethodOverload<T> {
 }
 
 pub trait PolyglotBook {
-    fn read_from_path(book_path: &str) -> Result<Self> where Self:Sized;
+    fn read_from_path(book_path: &str) -> Result<Self>
+    where
+        Self: Sized;
     fn get_best_weighted_move(&self, board: &Board) -> Option<WeightedMove>;
 }
 

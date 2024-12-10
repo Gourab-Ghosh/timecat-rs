@@ -108,7 +108,7 @@ impl PolyglotBookReader {
 
 impl FromStr for PolyglotBookReader {
     type Err = TimecatError;
-    
+
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         Self::from_file_path(s)
     }
@@ -119,10 +119,9 @@ impl PolyglotBook for PolyglotBookReader {
     fn read_from_path(book_path: &str) -> Result<Self> {
         Self::from_str(book_path)
     }
-    
+
     fn get_best_weighted_move(&self, board: &Board) -> Option<WeightedMove> {
-        self
-            .find_first_matching_index(board.get_hash())
+        self.find_first_matching_index(board.get_hash())
             .ok()?
             .map(|index| -> Result<_> {
                 let mut buffer = [0; 16];
@@ -222,7 +221,7 @@ impl PolyglotBook for PolyglotBookHashMap {
     fn read_from_path(book_path: &str) -> Result<Self> {
         Self::from_str(book_path)
     }
-    
+
     #[inline]
     fn get_best_weighted_move(&self, board: &Board) -> Option<WeightedMove> {
         //TODO: optimize

@@ -240,8 +240,14 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
         self.controller.set_move_overhead(duration);
     }
 
-    fn set_opening_book(&mut self, book: Option<Arc<dyn PolyglotBook>>) {
-        self.opening_book = book;
+    #[inline]
+    fn get_opening_book(&self) -> Option<&dyn PolyglotBook> {
+        self.opening_book.as_deref()
+    }
+
+    #[inline]
+    fn set_opening_book<B: PolyglotBook + 'static>(&mut self, book: Option<Arc<B>>) {
+        self.opening_book = book.map(|b| b as Arc<dyn PolyglotBook>);
     }
 
     #[inline]
@@ -283,14 +289,10 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
 
     #[must_use = "If you don't need the search info, you can just search the position."]
     fn go(&mut self, config: &SearchConfig, verbose: bool) -> SearchInfo {
-        if let Some(ref book) = self.opening_book {
-            if let Some(WeightedMove { move_, weight }) = book.get_best_weighted_move(&self.board) {
-                if self.board.is_legal(&move_) {
-                    return SearchInfoBuilder::new(self.board.get_position().clone(), vec![move_])
-                        .set_score(weight as Score)
-                        .build();
-                }
-            }
+        if let Some(WeightedMove { move_, weight }) = self.get_opening_book_weighted_move() {
+            return SearchInfoBuilder::new(self.board.get_position().clone(), vec![move_])
+                .set_score(weight as Score)
+                .build();
         }
         self.reset_variables();
         let mut join_handles = vec![];
