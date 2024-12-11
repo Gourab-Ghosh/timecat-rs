@@ -112,7 +112,7 @@ pub use std::error::Error;
 pub use std::fmt::{self, Debug};
 pub use std::fs;
 pub use std::hash::{Hash, Hasher};
-pub use std::io::{BufReader, Read, Seek};
+pub use std::io::{BufReader, Read, Seek, Write};
 pub use std::iter::Sum;
 pub use std::num::{NonZeroU64, NonZeroUsize, ParseIntError, Wrapping};
 pub use std::ops::{
@@ -120,6 +120,7 @@ pub use std::ops::{
     DerefMut, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Not, Range, Rem, RemAssign,
     Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
+pub use std::path::{Path, PathBuf};
 pub use std::str::{FromStr, ParseBoolError};
 pub use std::sync::atomic::{AtomicBool, AtomicUsize};
 pub use std::sync::{Arc, LazyLock, RwLock};

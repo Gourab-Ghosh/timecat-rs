@@ -1,7 +1,4 @@
 use super::*;
-pub use std::fs;
-use std::io::{Read, Seek, Write};
-use std::path::Path;
 
 #[inline]
 fn polyglot_move_int_to_move(move_int: u16) -> Result<Move> {
@@ -126,6 +123,11 @@ impl PolyglotBookReader {
         }
         Ok(moves)
     }
+
+    #[inline]
+    pub fn to_polyglot_hashmap(&self) -> Result<PolyglotBookHashMap> {
+        self.try_into()
+    }
 }
 
 impl FromStr for PolyglotBookReader {
@@ -185,9 +187,9 @@ impl PolyglotBookEntry {
     }
 
     fn write_to_file(&self, file: &mut fs::File) -> Result<()> {
-        file.write(&move_to_polyglot_move_int(self.move_)?.to_be_bytes())?;
-        file.write(&self.weight.to_be_bytes())?;
-        file.write(&self.learn.to_be_bytes())?;
+        file.write_all(&move_to_polyglot_move_int(self.move_)?.to_be_bytes())?;
+        file.write_all(&self.weight.to_be_bytes())?;
+        file.write_all(&self.learn.to_be_bytes())?;
         Ok(())
     }
 }
@@ -285,7 +287,7 @@ impl PolyglotBookHashMap {
         data.sort_unstable_by_key(|(&hash, entry)| (hash, Reverse(entry.weight)));
         let mut file = fs::File::create(file_path)?;
         for (hash, entry) in data {
-            file.write(&hash.to_be_bytes())?;
+            file.write_all(&hash.to_be_bytes())?;
             entry.write_to_file(&mut file)?;
         }
         Ok(())
@@ -326,6 +328,15 @@ impl TryFrom<&[u8]> for PolyglotBookHashMap {
             offset += 16;
         }
         Ok(Self { entries_map })
+    }
+}
+
+impl TryFrom<Vec<u8>> for PolyglotBookHashMap {
+    type Error = TimecatError;
+
+    #[inline]
+    fn try_from(value: Vec<u8>) -> std::result::Result<Self, Self::Error> {
+        value.as_slice().try_into()
     }
 }
 
@@ -384,14 +395,31 @@ impl TryFrom<fs::File> for PolyglotBookHashMap {
     }
 }
 
+impl TryFrom<&PolyglotBookReader> for PolyglotBookHashMap {
+    type Error = TimecatError;
+
+    #[inline]
+    fn try_from(value: &PolyglotBookReader) -> std::result::Result<Self, Self::Error> {
+        value.file.try_clone().map_or_else(
+            |_| {
+                value
+                    .file
+                    .clone()
+                    .bytes()
+                    .collect::<std::result::Result<Vec<_>, _>>()?
+                    .try_into()
+            },
+            |file| file.try_into(),
+        )
+    }
+}
+
 impl TryFrom<PolyglotBookReader> for PolyglotBookHashMap {
     type Error = TimecatError;
 
-    fn try_from(mut value: PolyglotBookReader) -> std::result::Result<Self, Self::Error> {
-        // TODO: Optimize memory consumption.
-        let mut data = Vec::new();
-        value.file.read_to_end(&mut data)?;
-        data.as_slice().try_into()
+    #[inline]
+    fn try_from(value: PolyglotBookReader) -> std::result::Result<Self, Self::Error> {
+        (&value).try_into()
     }
 }
 
