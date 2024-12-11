@@ -599,12 +599,7 @@ mod bitboards_generation {
         let out_dir_string = std::env::var("OUT_DIR")?;
         let output_dir = Path::new(&out_dir_string);
         let magic_file_path = output_dir.join("magic.rs");
-
-        if magic_file_path.exists() {
-            fs::remove_file(&magic_file_path)?;
-        }
-
-        let mut file = File::create_new(magic_file_path)?;
+        let mut file = File::create(magic_file_path)?;
 
         create_pawn_moves(&mut file)?;
         create_knight_moves(&mut file)?;

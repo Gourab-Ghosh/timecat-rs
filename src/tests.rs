@@ -155,16 +155,19 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // test_hashmap.insert(BoardPosition::from_fen(STARTING_POSITION_FEN), Board::from_fen(STARTING_POSITION_FEN));
 
     // let book_name = "codekiddy.bin";
+    // // let book_name = "temp.bin";
     // let path = dirs::home_dir().unwrap().join("Downloads/polyglot-collection").join(book_name);
     // let path_str = path.as_path().to_str().unwrap();
     // println!("{}", path_str);
-    // let board = Board::from_fen("rnbqkbnr/ppp2ppp/4p3/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3")?;
-    // let book = PolyglotBookHashMap::try_from(path_str)?;
+    // // let board = Board::from_fen("rnbqkbnr/ppp2ppp/4p3/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3")?;
+    // let board = Board::default();
+    // let book = PolyglotBookHashMap::from_str(path_str)?;
     // let moves1 = book.get_all_weighed_moves(&board);
     // println_wasm!("{}", moves1.stringify());
     // let moves2 = PolyglotBookReader::from_file_path(path_str)?.get_all_weighted_moves(&board)?;
     // println_wasm!("{}", moves2.stringify());
     // assert_eq!(moves1, moves2);
+    // book.save_to_file(dirs::home_dir().unwrap().join("Downloads/polyglot-collection/temp.bin"))?;
 
     // let mut board = Board::new();
     // println_wasm!("\n{board}");

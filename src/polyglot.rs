@@ -1,6 +1,7 @@
 use super::*;
 pub use std::fs;
-use std::io::{Read, Seek};
+use std::io::{Read, Seek, Write};
+use std::path::Path;
 
 #[inline]
 fn polyglot_move_int_to_move(move_int: u16) -> Result<Move> {
@@ -55,7 +56,9 @@ impl PolyglotBookReader {
         let mut reader = std::io::BufReader::new(self.file.clone());
         let mut buffer = [0; 16];
         let mut start = 0;
-        let mut end = self.file.metadata()?.len() / 16 - 1;
+        let mut end = (self.file.metadata()?.len() / 16)
+            .checked_sub(1)
+            .ok_or(TimecatError::BadPolyglotFile)?;
         let mut first_match_idx = None;
         while start <= end {
             let mid = start + (end - start) / 2;
@@ -70,10 +73,14 @@ impl PolyglotBookReader {
             match hash.cmp(&target_hash) {
                 Ordering::Equal => {
                     first_match_idx = Some(mid);
-                    end = mid - 1;
+                    end = mid.checked_sub(1).ok_or(TimecatError::BadPolyglotFile)?;
                 }
-                Ordering::Less => start = mid + 1,
-                Ordering::Greater => end = mid - 1,
+                Ordering::Less => {
+                    start = mid.checked_add(1).ok_or(TimecatError::BadPolyglotFile)?;
+                }
+                Ordering::Greater => {
+                    end = mid.checked_sub(1).ok_or(TimecatError::BadPolyglotFile)?;
+                }
             }
         }
         Ok(first_match_idx)
@@ -176,6 +183,13 @@ impl PolyglotBookEntry {
     fn get_weighted_move(&self) -> WeightedMove {
         WeightedMove::new(self.move_, self.weight as MoveWeight)
     }
+
+    fn write_to_file(&self, file: &mut fs::File) -> Result<()> {
+        file.write(&move_to_polyglot_move_int(self.move_)?.to_be_bytes())?;
+        file.write(&self.weight.to_be_bytes())?;
+        file.write(&self.learn.to_be_bytes())?;
+        Ok(())
+    }
 }
 
 impl TryFrom<[u8; 8]> for PolyglotBookEntry {
@@ -207,20 +221,6 @@ impl TryFrom<&[u8]> for PolyglotBookEntry {
 
     fn try_from(value: &[u8]) -> std::result::Result<Self, Self::Error> {
         <[u8; 8]>::try_from(value)?.try_into()
-    }
-}
-
-impl TryFrom<PolyglotBookEntry> for [u8; 8] {
-    type Error = TimecatError;
-
-    fn try_from(value: PolyglotBookEntry) -> std::result::Result<Self, Self::Error> {
-        let mut array = Vec::with_capacity(8);
-        array.extend_from_slice(&move_to_polyglot_move_int(value.move_)?.to_be_bytes());
-        array.extend_from_slice(&value.weight.to_be_bytes());
-        array.extend_from_slice(&value.learn.to_be_bytes());
-        array.try_into().map_err(|err| TimecatError::CustomError {
-            err_msg: format!("{:?}", err),
-        })
     }
 }
 
@@ -275,6 +275,21 @@ impl PolyglotBookHashMap {
             })
             .unwrap_or_default()
     }
+
+    pub fn save_to_file<P: AsRef<Path>>(&self, file_path: P) -> Result<()> {
+        let mut data = self
+            .entries_map
+            .iter()
+            .flat_map(|(hash, entries)| entries.iter().map(move |entry| (hash, entry)))
+            .collect_vec();
+        data.sort_unstable_by_key(|(&hash, entry)| (hash, Reverse(entry.weight)));
+        let mut file = fs::File::create(file_path)?;
+        for (hash, entry) in data {
+            file.write(&hash.to_be_bytes())?;
+            entry.write_to_file(&mut file)?;
+        }
+        Ok(())
+    }
 }
 
 impl PolyglotBook for PolyglotBookHashMap {
@@ -323,10 +338,10 @@ impl<const N: usize> TryFrom<[u8; N]> for PolyglotBookHashMap {
     }
 }
 
-impl TryFrom<fs::File> for PolyglotBookHashMap {
+impl TryFrom<&mut fs::File> for PolyglotBookHashMap {
     type Error = TimecatError;
 
-    fn try_from(mut value: fs::File) -> std::result::Result<Self, Self::Error> {
+    fn try_from(value: &mut fs::File) -> std::result::Result<Self, Self::Error> {
         let mut entries_map = IdentityHashMap::default();
         let mut buffer = [0; 16];
         while value.read_exact(&mut buffer).is_ok() {
@@ -358,6 +373,25 @@ impl TryFrom<fs::File> for PolyglotBookHashMap {
             entries_map.entry(hash).or_insert_with(Vec::new).push(entry);
         }
         Ok(Self { entries_map })
+    }
+}
+
+impl TryFrom<fs::File> for PolyglotBookHashMap {
+    type Error = TimecatError;
+
+    fn try_from(mut value: fs::File) -> std::result::Result<Self, Self::Error> {
+        (&mut value).try_into()
+    }
+}
+
+impl TryFrom<PolyglotBookReader> for PolyglotBookHashMap {
+    type Error = TimecatError;
+
+    fn try_from(mut value: PolyglotBookReader) -> std::result::Result<Self, Self::Error> {
+        // TODO: Optimize memory consumption.
+        let mut data = Vec::new();
+        value.file.read_to_end(&mut data)?;
+        data.as_slice().try_into()
     }
 }
 
