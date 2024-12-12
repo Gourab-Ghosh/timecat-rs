@@ -50,6 +50,7 @@ impl PolyglotBookReader {
     }
 
     fn find_first_matching_index(&self, target_hash: u64) -> Result<Option<u64>> {
+        // TODO: Check for error handling logic
         let mut reader = std::io::BufReader::new(self.file.clone());
         let mut buffer = [0; 16];
         let mut start = 0;
