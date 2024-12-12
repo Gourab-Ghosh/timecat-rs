@@ -265,7 +265,7 @@ impl PolyglotBookHashMap {
             .collect()
     }
 
-    pub fn get_all_weighed_moves(&self, board: &Board) -> Vec<WeightedMove> {
+    pub fn get_all_weighted_moves(&self, board: &Board) -> Vec<WeightedMove> {
         //TODO: optimize
         self.entries_map
             .get(&board.get_hash())

@@ -162,12 +162,12 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // // let board = Board::from_fen("rnbqkbnr/ppp2ppp/4p3/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3")?;
     // let board = Board::default();
     // let book = PolyglotBookHashMap::from_str(path_str)?;
-    // let moves1 = book.get_all_weighed_moves(&board);
+    // let moves1 = book.get_all_weighted_moves(&board);
     // println_wasm!("{}", moves1.stringify());
     // let moves2 = PolyglotBookReader::from_file_path(path_str)?.get_all_weighted_moves(&board)?;
     // println_wasm!("{}", moves2.stringify());
     // assert_eq!(moves1, moves2);
-    // book.save_to_file(dirs::home_dir().unwrap().join("Downloads/polyglot-collection/temp.bin"))?;
+    // // book.save_to_file(dirs::home_dir().unwrap().join("Downloads/polyglot-collection/temp.bin"))?;
 
     // let mut board = Board::new();
     // println_wasm!("\n{board}");
