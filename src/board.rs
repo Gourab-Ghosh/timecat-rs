@@ -48,6 +48,14 @@ impl Board {
             .into()
     }
 
+    pub fn shallow_clone(&self) -> Self {
+        Self {
+            position: self.position.clone(),
+            repetition_table: self.repetition_table.clone(),
+            ..Default::default()
+        }
+    }
+
     pub fn set_fen(&mut self, fen: &str) -> Result<()> {
         self.position.set_fen(fen)?;
         self.stack.clear();

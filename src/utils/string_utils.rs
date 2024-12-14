@@ -159,7 +159,7 @@ impl StringifyMove for Option<Move> {
 
 impl StringifyHash for u64 {
     fn stringify_hash(&self) -> String {
-        format!("{:x}", self).to_uppercase()
+        format!("{:X}", self)
     }
 }
 

@@ -122,6 +122,29 @@ pub mod bitboard_and_square {
 
     pub const DIAGONAL_RAY: BitBoard = BitBoard::new(0x8040201008040201);
     pub const ANTI_DIAGONAL_RAY: BitBoard = DIAGONAL_RAY.flip_horizontal();
+
+    pub const UPPER_BOARD_MASK: [[BitBoard; 8]; 2] = [
+        [
+            BitBoard::new(0xffff_ffff_ffff_ff00),
+            BitBoard::new(0xffff_ffff_ffff_0000),
+            BitBoard::new(0xffff_ffff_ff00_0000),
+            BitBoard::new(0xffff_ffff_0000_0000),
+            BitBoard::new(0xffff_ff00_0000_0000),
+            BitBoard::new(0xffff_0000_0000_0000),
+            BitBoard::new(0xff00_0000_0000_0000),
+            BitBoard::new(0x0000_0000_0000_0000),
+        ],
+        [
+            BitBoard::new(0x00ff_ffff_ffff_ffff),
+            BitBoard::new(0x0000_ffff_ffff_ffff),
+            BitBoard::new(0x0000_00ff_ffff_ffff),
+            BitBoard::new(0x0000_0000_ffff_ffff),
+            BitBoard::new(0x0000_0000_00ff_ffff),
+            BitBoard::new(0x0000_0000_0000_ffff),
+            BitBoard::new(0x0000_0000_0000_00ff),
+            BitBoard::new(0x0000_0000_0000_0000),
+        ],
+    ];
 }
 
 pub mod board {

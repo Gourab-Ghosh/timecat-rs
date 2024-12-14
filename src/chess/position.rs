@@ -575,7 +575,27 @@ impl BoardPosition {
     }
 
     pub fn is_passed_pawn(&self, square: Square) -> bool {
-        // TODO:: Scope for improvement
+        const PASSED_PAWN_CHECK_MASK: [[BitBoard; 64]; 2] = {
+            let mut array = [[BitBoard::EMPTY; 64]; 2];
+            let mut color_index = 0;
+            while color_index < 2 {
+                let mut square_index = 0;
+                while square_index < 64 {
+                    let square = Square::from_index(square_index);
+                    let file_index = square.get_file().to_index();
+                    array[color_index][square_index] = BitBoard::new(
+                        (BB_ADJACENT_FILES[file_index].into_inner()
+                            ^ BB_FILES[file_index].into_inner())
+                            & UPPER_BOARD_MASK[color_index][square.get_rank().to_index()]
+                                .into_inner(),
+                    );
+                    square_index += 1;
+                }
+                color_index += 1;
+            }
+            array
+        };
+
         let pawn_mask = self.get_piece_mask(Pawn);
         let Some(self_color) = self.color_at(square) else {
             return false;
@@ -583,11 +603,13 @@ impl BoardPosition {
         if !(pawn_mask & self.occupied_color(self_color)).contains(square) {
             return false;
         }
-        let file = square.get_file();
         (pawn_mask
             & self.occupied_color(!self_color)
-            & (file.get_adjacent_files_bb() ^ file.to_bitboard())
-            & square.get_rank().get_upper_board_mask(self_color))
+            & get_item_unchecked!(
+                PASSED_PAWN_CHECK_MASK,
+                self_color.to_index(),
+                square.to_index()
+            ))
         .is_empty()
     }
 

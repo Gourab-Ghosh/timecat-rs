@@ -66,7 +66,11 @@ impl BitBoard {
 
     #[inline]
     pub fn to_square(self) -> Option<Square> {
-        Some(*get_item_unchecked!(ALL_SQUARES, self.to_square_index()?))
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.to_square_unchecked())
+        }
     }
 
     #[inline]
