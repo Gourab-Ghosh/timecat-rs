@@ -135,14 +135,14 @@ pub mod bitboard_and_square {
             BitBoard::new(0x0000_0000_0000_0000),
         ],
         [
-            BitBoard::new(0x00ff_ffff_ffff_ffff),
-            BitBoard::new(0x0000_ffff_ffff_ffff),
-            BitBoard::new(0x0000_00ff_ffff_ffff),
-            BitBoard::new(0x0000_0000_ffff_ffff),
-            BitBoard::new(0x0000_0000_00ff_ffff),
-            BitBoard::new(0x0000_0000_0000_ffff),
-            BitBoard::new(0x0000_0000_0000_00ff),
             BitBoard::new(0x0000_0000_0000_0000),
+            BitBoard::new(0x0000_0000_0000_00ff),
+            BitBoard::new(0x0000_0000_0000_ffff),
+            BitBoard::new(0x0000_0000_00ff_ffff),
+            BitBoard::new(0x0000_0000_ffff_ffff),
+            BitBoard::new(0x0000_00ff_ffff_ffff),
+            BitBoard::new(0x0000_ffff_ffff_ffff),
+            BitBoard::new(0x00ff_ffff_ffff_ffff),
         ],
     ];
 }
