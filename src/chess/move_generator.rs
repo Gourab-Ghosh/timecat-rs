@@ -78,33 +78,35 @@ impl CheckMoves for NotInCheckMoves {
 
 impl PawnMoves {
     fn legal_ep_move(position: &BoardPosition, source: Square, dest: Square) -> bool {
-        let occupied = position.occupied()
-            ^ position
-                .ep_square()
-                .unwrap()
-                .wrapping_backward(position.turn())
-                .to_bitboard()
-            ^ source.to_bitboard()
-            ^ dest.to_bitboard();
+        match position.ep_square() {
+            None => return false,
+            Some(position_ep) => {
+                let occupied = position.occupied()
+                    ^ position_ep.wrapping_backward(position.turn()).to_bitboard()
+                    ^ source.to_bitboard()
+                    ^ dest.to_bitboard();
 
-        let ksq = (position.get_colored_piece_mask(King, position.turn())).to_square_unchecked();
+                let ksq =
+                    (position.get_colored_piece_mask(King, position.turn())).to_square_unchecked();
 
-        let rooks = (position.get_piece_mask(Rook) ^ position.get_piece_mask(Queen))
-            & position.opponent_occupied();
+                let rooks = (position.get_piece_mask(Rook) ^ position.get_piece_mask(Queen))
+                    & position.opponent_occupied();
 
-        if !(ksq.get_rook_rays_bb() & rooks).is_empty()
-            && !(get_rook_moves(ksq, occupied) & rooks).is_empty()
-        {
-            return false;
-        }
+                if !(ksq.get_rook_rays_bb() & rooks).is_empty()
+                    && !(get_rook_moves(ksq, occupied) & rooks).is_empty()
+                {
+                    return false;
+                }
 
-        let bishops = (position.get_piece_mask(Bishop) ^ position.get_piece_mask(Queen))
-            & position.opponent_occupied();
+                let bishops = (position.get_piece_mask(Bishop) ^ position.get_piece_mask(Queen))
+                    & position.opponent_occupied();
 
-        if !(ksq.get_bishop_rays_bb() & bishops).is_empty()
-            && !(get_bishop_moves(ksq, occupied) & bishops).is_empty()
-        {
-            return false;
+                if !(ksq.get_bishop_rays_bb() & bishops).is_empty()
+                    && !(get_bishop_moves(ksq, occupied) & bishops).is_empty()
+                {
+                    return false;
+                }
+            }
         }
 
         true
