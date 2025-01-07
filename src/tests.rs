@@ -109,6 +109,9 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // parse_command(engine, "go movetime 3000");
     parse_command(engine, "go depth 15");
 
+    // let mut board = Board::new();
+    // dbg!(board.push_uci("a7b6"));
+
     // let position = BoardPosition::from_fen("8/4R3/6rk/pPp4p/7P/4p1P1/7K/8 w - c6 0 48")?;
     // println!("{}", position.is_legal(&Move::new(B5, C6, None)?));
 
