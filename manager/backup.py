@@ -34,7 +34,7 @@ def backup_code(no_confirm=False):
             )
             print(f"\nGenerated commit message: {commit_message}\n")
         commit_command = f"git commit -m {repr(commit_message)}"
-        push_command = "git push -u origin master"
+        push_command = "git push -u origin dev"
         print()
         os.system(commit_command)
         os.system(push_command)

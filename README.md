@@ -213,7 +213,7 @@ Default features include `inbuilt_nnue` and `colored`.
 
 ## License
 
-Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](https://github.com/Gourab-Ghosh/timecat-rs/blob/master/LICENSE). You are free to use, modify, and distribute it under the same license.
+Timecat is open-sourced under the [GNU GENERAL PUBLIC LICENSE](https://github.com/Gourab-Ghosh/timecat-rs/blob/prod/LICENSE). You are free to use, modify, and distribute it under the same license.
 
 ## Contributing
 
