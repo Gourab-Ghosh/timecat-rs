@@ -78,12 +78,12 @@ impl CheckMoves for NotInCheckMoves {
 
 impl PawnMoves {
     fn legal_ep_move(position: &BoardPosition, source: Square, dest: Square) -> bool {
+        let Some(ep_square) = position.ep_square() else {
+            return false;
+        };
+
         let occupied = position.occupied()
-            ^ position
-                .ep_square()
-                .unwrap()
-                .wrapping_backward(position.turn())
-                .to_bitboard()
+            ^ ep_square.wrapping_backward(position.turn()).to_bitboard()
             ^ source.to_bitboard()
             ^ dest.to_bitboard();
 

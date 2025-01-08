@@ -18,7 +18,7 @@ mod model_update_test {
                 .update_model_and_evaluate(&position)
                 != EvaluatorNNUE::slow_evaluate_nnue_raw(&position)
             {
-                return Err(board.get_all_stack_moves());
+                return Err(board.get_all_stack_moves().collect_vec());
             }
             check_evaluation(board, depth - 1)?;
             board.pop();
@@ -36,7 +36,10 @@ mod model_update_test {
                         "Incorrect evaluation at position {} with starting fen {} and moves {}",
                         board.get_fen(),
                         $fen,
-                        Board::variation_san(&Board::from_fen($fen).unwrap(), variation)
+                        Board::variation_san(
+                            &Board::from_fen($fen).unwrap(),
+                            variation.into_iter()
+                        )
                     );
                 }
             }

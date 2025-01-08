@@ -17,7 +17,7 @@ impl PVTable {
         }
     }
 
-    pub fn get_pv(&self, ply: Ply) -> Vec<&Move> {
+    pub fn get_pv(&self, ply: Ply) -> impl Iterator<Item = &Move> {
         get_item_unchecked!(
             self.table,
             ply,
@@ -26,7 +26,6 @@ impl PVTable {
         .iter()
         .take_while(|opt_move| opt_move.is_some())
         .map(|opt_move| opt_move.as_ref().unwrap())
-        .collect_vec()
     }
 
     pub fn update_table(&mut self, ply: Ply, move_: Move) {
@@ -188,30 +187,27 @@ impl<P: PositionEvaluation> Searcher<P> {
     }
 
     #[inline]
-    pub fn get_pv(&self) -> Vec<&Move> {
+    pub fn get_pv(&self) -> impl Iterator<Item = &Move> {
         self.pv_table.get_pv(0)
     }
 
     #[inline]
     pub fn get_pv_from_t_table(&self) -> Vec<Move> {
         extract_pv_from_t_table(&self.initial_position, &self.transposition_table)
-            .into_iter()
-            .map_into()
-            .collect_vec()
     }
 
     #[inline]
-    pub fn get_nth_pv_move(&self, n: usize) -> Option<Move> {
-        Some(**self.pv_table.get_pv(0).get(n)?)
+    pub fn get_nth_pv_move(&self, n: usize) -> Option<&Move> {
+        self.pv_table.get_pv(0).nth(n)
     }
 
     #[inline]
-    pub fn get_best_move(&self) -> Option<Move> {
+    pub fn get_best_move(&self) -> Option<&Move> {
         self.get_nth_pv_move(0)
     }
 
     #[inline]
-    pub fn get_ponder_move(&self) -> Option<Move> {
+    pub fn get_ponder_move(&self) -> Option<&Move> {
         self.get_nth_pv_move(1)
     }
 
@@ -292,7 +288,7 @@ impl<P: PositionEvaluation> Searcher<P> {
     }
 
     fn update_best_moves(&mut self) {
-        if let Some(best_move) = self.get_best_move() {
+        if let Some(&best_move) = self.get_best_move() {
             self.best_moves
                 .retain(|&valid_or_null_move| valid_or_null_move != best_move);
             self.best_moves.insert(0, best_move);
@@ -303,6 +299,8 @@ impl<P: PositionEvaluation> Searcher<P> {
         &mut self,
         controller: Option<&mut impl SearchControl<Self>>,
     ) -> Vec<(Move, MoveWeight)> {
+        let best_move = self.get_best_move().copied();
+
         let mut moves_vec_sorted = self
             .move_sorter
             .get_weighted_moves_sorted(
@@ -315,17 +313,16 @@ impl<P: PositionEvaluation> Searcher<P> {
                 0,
                 self.transposition_table
                     .read_best_move(self.board.get_hash()),
-                self.get_best_move(),
+                best_move,
             )
             .map(|WeightedMove { move_, .. }| {
-                let pv_move = self.get_best_move();
                 (
                     move_,
                     MoveSorter::score_root_moves(
                         &self.board,
                         &mut self.evaluator,
                         move_,
-                        pv_move,
+                        best_move, // PV Move
                         &self.best_moves,
                     ),
                 )
@@ -411,8 +408,14 @@ impl<P: PositionEvaluation> Searcher<P> {
             }
         }
         if !self.stop_search_at_every_node(controller) {
-            self.transposition_table
-                .write(key, depth, self.ply, alpha, flag, self.get_best_move());
+            self.transposition_table.write(
+                key,
+                depth,
+                self.ply,
+                alpha,
+                flag,
+                self.get_best_move().copied(),
+            );
         }
         self.update_best_moves();
         Some(alpha)
@@ -569,7 +572,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             &self.transposition_table,
             self.ply,
             best_move,
-            self.get_nth_pv_move(self.ply),
+            self.get_nth_pv_move(self.ply).copied(),
         );
         if weighted_moves.is_empty() {
             return if not_in_check {
@@ -660,7 +663,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 self.ply,
                 alpha,
                 flag,
-                self.get_nth_pv_move(self.ply),
+                self.get_nth_pv_move(self.ply).copied(),
             );
         }
         Some(alpha)

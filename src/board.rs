@@ -202,8 +202,8 @@ impl Board {
     }
 
     #[inline]
-    pub fn get_all_stack_moves(&self) -> Vec<ValidOrNullMove> {
-        self.stack.iter().map(|(_, m)| *m).collect_vec()
+    pub fn get_all_stack_moves(&self) -> impl Iterator<Item = ValidOrNullMove> + '_ {
+        self.stack.iter().map(|(_, m)| *m)
     }
 
     #[inline]
@@ -227,13 +227,14 @@ impl Board {
     }
 
     pub fn push_san(&mut self, san: &str) -> Result<ValidOrNullMove> {
+        // TODO: Generate test cases.
         let valid_or_null_move = self.parse_san(san)?;
         self.push_unchecked(valid_or_null_move);
         Ok(valid_or_null_move)
     }
 
     #[inline]
-    pub fn push_sans(&mut self, sans: &str) -> Result<Vec<ValidOrNullMove>> {
+    pub fn push_san_moves(&mut self, sans: &str) -> Result<Vec<ValidOrNullMove>> {
         remove_double_spaces_and_trim(sans)
             .split(' ')
             .map(|san| self.push_san(san))
@@ -241,14 +242,15 @@ impl Board {
     }
 
     pub fn push_uci(&mut self, uci: &str) -> Result<ValidOrNullMove> {
+        // TODO: Generate test cases.
         let valid_or_null_move = self.parse_uci(uci)?;
         self.push(valid_or_null_move)?;
         Ok(valid_or_null_move)
     }
 
     #[inline]
-    pub fn push_str(&mut self, s: &str) {
-        self.push_uci(s).unwrap();
+    pub fn push_str(&mut self, s: &str) -> Result<ValidOrNullMove> {
+        self.push_uci(s)
     }
 
     #[inline]
@@ -294,7 +296,10 @@ impl Board {
         self.algebraic_and_push(valid_or_null_move, true)
     }
 
-    pub fn variation_san(board: &Board, variation: Vec<ValidOrNullMove>) -> String {
+    pub fn variation_san(
+        board: &Board,
+        variation: impl Iterator<Item = ValidOrNullMove>,
+    ) -> String {
         let mut board = board.clone();
         let mut san = Vec::new();
         for valid_or_null_move in variation {
@@ -342,8 +347,7 @@ impl Board {
             self.stack
                 .clone()
                 .into_iter()
-                .map(|(_, optional_m)| optional_m)
-                .collect_vec(),
+                .map(|(_, optional_m)| optional_m),
         );
         pgn
     }

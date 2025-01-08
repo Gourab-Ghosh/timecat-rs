@@ -118,7 +118,7 @@ macro_rules! test_repetition_and_checkmate {
             fn [<move_$func>]() {
                 for (fen, moves, move_, returned_value) in $array {
                     let mut board = Board::from_fen(fen).expect(&format!("Failed to set board FEN {fen}"));
-                    board.push_sans(moves).expect(&format!("Failed to push sans {moves:?} in position {board}"));
+                    board.push_san_moves(moves).expect(&format!("Failed to push sans {moves:?} in position {board}"));
                     assert_eq!(
                         board.$func(Move::from_san(&board, move_).expect(&format!("Failed to parse san {move_} in position {board}"))),
                         returned_value,
@@ -291,7 +291,7 @@ fn move_is_en_passant() {
     ];
     for (moves_str, valid_or_null_move, expected_return) in moves {
         board.set_fen(STARTING_POSITION_FEN).unwrap();
-        board.push_sans(moves_str).unwrap();
+        board.push_san_moves(moves_str).unwrap();
         let returned_value = board.is_en_passant(valid_or_null_move);
         assert_eq!(
             returned_value, expected_return,
@@ -360,7 +360,7 @@ fn test_board_material_score_track() {
 #[test]
 fn test_legal_capture_move_generator() {
     let mut board = Board::default();
-    board.push_sans("e4 Nc6 e5 d5").unwrap();
+    board.push_san_moves("e4 Nc6 e5 d5").unwrap();
 
     assert_eq!(
         board.generate_legal_captures().collect_vec(),
