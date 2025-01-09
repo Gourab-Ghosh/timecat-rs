@@ -535,10 +535,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 }
             }
             // null move pruning
-            if depth >= NULL_MOVE_MIN_DEPTH
-                && static_evaluation >= beta
-                && !is_pv_node
-            {
+            if depth >= NULL_MOVE_MIN_DEPTH && static_evaluation >= beta && !is_pv_node {
                 // let r = NULL_MOVE_MIN_REDUCTION
                 //     + (depth.max(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
                 //         .round() as Depth;
