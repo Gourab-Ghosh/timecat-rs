@@ -26,7 +26,7 @@ impl BoardPositionBuilder {
     }
 
     pub fn setup(
-        pieces: impl IntoIterator<Item = (Square, Piece)>,
+        pieces: impl IntoIterator<Item = (Piece, Square)>,
         turn: Color,
         white_castle_rights: CastleRights,
         black_castle_rights: CastleRights,
@@ -37,27 +37,36 @@ impl BoardPositionBuilder {
         let mut result = BoardPositionBuilder {
             pieces: [None; 64],
             turn,
-            castle_rights: [white_castle_rights, black_castle_rights],
+            castle_rights: std::array::from_fn(|index| {
+                if index == White.to_index() {
+                    white_castle_rights
+                } else {
+                    black_castle_rights
+                }
+            }),
             ep_file,
             halfmove_clock,
             fullmove_number,
         };
 
-        for (square, piece) in pieces {
-            result.pieces[square.to_index()] = Some(piece);
+        for (piece, square) in pieces {
+            *get_item_unchecked_mut!(result.pieces, square.to_index()) = Some(piece);
         }
 
         result
     }
 
+    #[inline]
     pub fn get_turn(&self) -> Color {
         self.turn
     }
 
+    #[inline]
     pub fn get_castle_rights(&self, color: Color) -> CastleRights {
-        self.castle_rights[color.to_index()]
+        *get_item_unchecked!(self.castle_rights, color.to_index())
     }
 
+    #[inline]
     pub fn get_en_passant(&self) -> Option<Square> {
         self.ep_file
             .map(|f| Square::from_rank_and_file((!self.get_turn()).to_third_rank(), f))
@@ -73,13 +82,13 @@ impl BoardPositionBuilder {
         self.fullmove_number
     }
 
-    pub fn turn(&mut self, color: Color) -> &mut Self {
+    pub fn set_turn(&mut self, color: Color) -> &mut Self {
         self.turn = color;
         self
     }
 
     pub fn castle_rights(&mut self, color: Color, castle_rights: CastleRights) -> &mut Self {
-        self.castle_rights[color.to_index()] = castle_rights;
+        *get_item_unchecked_mut!(self.castle_rights, color.to_index()) = castle_rights;
         self
     }
 
@@ -113,13 +122,13 @@ impl Index<Square> for BoardPositionBuilder {
     type Output = Option<Piece>;
 
     fn index(&self, index: Square) -> &Self::Output {
-        &self.pieces[index.to_index()]
+        get_item_unchecked!(self.pieces, index.to_index())
     }
 }
 
 impl IndexMut<Square> for BoardPositionBuilder {
     fn index_mut(&mut self, index: Square) -> &mut Self::Output {
-        &mut self.pieces[index.to_index()]
+        get_item_unchecked_mut!(self.pieces, index.to_index())
     }
 }
 
@@ -163,12 +172,12 @@ impl fmt::Display for BoardPositionBuilder {
         write!(
             f,
             "{}",
-            self.castle_rights[White.to_index()].to_string(White)
+            get_item_unchecked!(self.castle_rights, White.to_index()).to_string(White)
         )?;
         write!(
             f,
             "{}",
-            self.castle_rights[Black.to_index()].to_string(Black)
+            get_item_unchecked!(self.castle_rights, Black.to_index()).to_string(Black)
         )?;
         if self.castle_rights[0] == CastleRights::None
             && self.castle_rights[1] == CastleRights::None
@@ -293,8 +302,8 @@ impl FromStr for BoardPositionBuilder {
             }
         }
         match side {
-            "w" | "W" => _ = position_builder.turn(White),
-            "b" | "B" => _ = position_builder.turn(Black),
+            "w" | "W" => _ = position_builder.set_turn(White),
+            "b" | "B" => _ = position_builder.set_turn(Black),
             _ => {
                 return Err(TimecatError::BadFen {
                     fen: value.to_string(),
@@ -336,15 +345,8 @@ impl FromStr for BoardPositionBuilder {
 
 impl From<&BoardPosition> for BoardPositionBuilder {
     fn from(board: &BoardPosition) -> Self {
-        let mut pieces = vec![];
-        for square in ALL_SQUARES {
-            if let Some(piece) = board.get_piece_at(square) {
-                pieces.push((square, piece));
-            }
-        }
-
         BoardPositionBuilder::setup(
-            pieces,
+            board.iter(),
             board.turn(),
             board.castle_rights(White),
             board.castle_rights(Black),

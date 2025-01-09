@@ -13,7 +13,9 @@ use timecat::*;
 fn main() {
     let args = std::env::args().collect_vec();
     let args = args.iter().map(|s| s.as_str()).collect_vec();
+    #[cfg(feature = "debug")]
     if !args.contains(&"--disable-backtrace") {
+        println!("{}", "Running in Debug Mode\n".colorize(INFO_MESSAGE_STYLE));
         std::env::set_var("RUST_BACKTRACE", "1");
     }
     if !std::io::stdin().is_terminal() {

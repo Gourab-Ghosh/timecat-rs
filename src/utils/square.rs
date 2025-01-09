@@ -462,9 +462,10 @@ impl<'source> FromPyObject<'source> for Square {
         if let Ok(int) = ob.extract::<u8>() {
             return Ok(Self::from_int(int));
         }
-        if let Ok(fen) = ob.extract::<&str>() {
-            if let Ok(position) = Self::from_str(fen) {
-                return Ok(position);
+        if let Ok(mut s) = ob.extract::<&str>() {
+            s = s.trim();
+            if let Ok(square) = Self::from_str(s) {
+                return Ok(square);
             }
         }
         Err(Pyo3Error::Pyo3TypeConversionError {

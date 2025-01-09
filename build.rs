@@ -182,17 +182,17 @@ mod bitboards_generation {
         for i in 0..2 {
             for j in 0..64 {
                 moves_array[i][j].0 = if i == 0 {
-                    shift_up(1 << j)
-                } else {
                     shift_down(1 << j)
+                } else {
+                    shift_up(1 << j)
                 };
                 attacks_array[i][j].0 =
                     shift_left(moves_array[i][j].0) ^ shift_right(moves_array[i][j].0);
             }
         }
         for i in 0..8 {
-            moves_array[0][i + 8].0 ^= shift_up(moves_array[0][i + 8].0);
-            moves_array[1][i + 48].0 ^= shift_down(moves_array[1][i + 48].0);
+            moves_array[0][i + 48].0 ^= shift_down(moves_array[0][i + 48].0);
+            moves_array[1][i + 8].0 ^= shift_up(moves_array[1][i + 8].0);
         }
 
         writeln!(

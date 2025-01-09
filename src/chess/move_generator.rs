@@ -78,12 +78,12 @@ impl CheckMoves for NotInCheckMoves {
 
 impl PawnMoves {
     fn legal_ep_move(position: &BoardPosition, source: Square, dest: Square) -> bool {
+        let Some(ep_square) = position.ep_square() else {
+            return false;
+        };
+
         let occupied = position.occupied()
-            ^ position
-                .ep_square()
-                .unwrap()
-                .wrapping_backward(position.turn())
-                .to_bitboard()
+            ^ ep_square.wrapping_backward(position.turn()).to_bitboard()
             ^ source.to_bitboard()
             ^ dest.to_bitboard();
 
@@ -207,7 +207,7 @@ impl PieceMoves for BishopMoves {
     }
 
     #[inline]
-    fn pseudo_legals(src: Square, _color: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
+    fn pseudo_legals(src: Square, _: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
         get_bishop_moves(src, occupied) & mask
     }
 }
@@ -222,7 +222,7 @@ impl PieceMoves for KnightMoves {
     }
 
     #[inline]
-    fn pseudo_legals(src: Square, _color: Color, _occupied: BitBoard, mask: BitBoard) -> BitBoard {
+    fn pseudo_legals(src: Square, _: Color, _: BitBoard, mask: BitBoard) -> BitBoard {
         src.get_knight_moves() & mask
     }
 
@@ -282,7 +282,7 @@ impl PieceMoves for RookMoves {
     }
 
     #[inline]
-    fn pseudo_legals(src: Square, _color: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
+    fn pseudo_legals(src: Square, _: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
         get_rook_moves(src, occupied) & mask
     }
 }
@@ -297,7 +297,7 @@ impl PieceMoves for QueenMoves {
     }
 
     #[inline]
-    fn pseudo_legals(src: Square, _color: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
+    fn pseudo_legals(src: Square, _: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
         get_queen_moves(src, occupied) & mask
     }
 }
@@ -343,7 +343,7 @@ impl PieceMoves for KingMoves {
     }
 
     #[inline]
-    fn pseudo_legals(src: Square, _color: Color, _occupied: BitBoard, mask: BitBoard) -> BitBoard {
+    fn pseudo_legals(src: Square, _: Color, _: BitBoard, mask: BitBoard) -> BitBoard {
         src.get_king_moves() & mask
     }
 
@@ -658,7 +658,7 @@ impl MoveGenerator {
                 } else {
                     const { &[None] }
                 };
-                promotion_pieces.iter().flat_map(move |&promotion| {
+                promotion_pieces.into_iter().flat_map(move |&promotion| {
                     (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).map(
                         move |dest| {
                             Move::new_unchecked(square_and_bitboard.square, dest, promotion)

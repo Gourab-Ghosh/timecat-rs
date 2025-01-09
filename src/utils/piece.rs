@@ -61,9 +61,9 @@ impl PieceType {
             Pawn => PAWN_VALUE,
             Knight => const { (32 * PAWN_VALUE) / 10 },
             Bishop => const { (33 * PAWN_VALUE) / 10 },
-            Rook => 5 * PAWN_VALUE,
-            Queen => 9 * PAWN_VALUE,
-            King => 20 * PAWN_VALUE,
+            Rook => const { 5 * PAWN_VALUE },
+            Queen => const { 9 * PAWN_VALUE },
+            King => const { 20 * PAWN_VALUE },
         }
     }
 }
@@ -144,15 +144,13 @@ impl Piece {
     }
 
     #[inline]
-    pub const fn to_int(self) -> u8 {
-        //TODO: Replace with match statements
+    pub fn to_int(self) -> u8 {
         self.to_index() as u8
     }
 
     #[inline]
-    pub const fn to_index(self) -> usize {
-        //TODO: Replace with match statements
-        NUM_COLORS * self.get_piece_type().to_index() + self.get_color().to_index()
+    pub fn to_index(self) -> usize {
+        NUM_COLORS * self.get_piece_type().to_index() + (!self.get_color()).to_index()
     }
 
     #[inline]
