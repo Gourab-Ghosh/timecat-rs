@@ -537,31 +537,28 @@ impl<P: PositionEvaluation> Searcher<P> {
             // null move pruning
             if depth >= NULL_MOVE_MIN_DEPTH
                 && static_evaluation >= beta
-                && self.board.has_non_pawn_material()
+                && !is_pv_node
             {
                 // let r = NULL_MOVE_MIN_REDUCTION
                 //     + (depth.max(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
                 //         .round() as Depth;
                 // let reduced_depth = depth - r - 1;
-                let r = 1920 + (depth as i32) * 2368;
-                let reduced_depth = (((depth as u32) * 4096 - (r as u32)) / 4096) as Depth;
+                let r = 1920 + (depth as u32) * 2368;
+                let reduced_depth = ((depth as u32) - r / 4096) as Depth;
                 self.push_unchecked(ValidOrNullMove::NullMove);
                 let score =
                     -self.alpha_beta(reduced_depth, -beta, -beta + 1, controller.as_deref_mut())?;
                 self.pop();
                 if score >= beta {
-                    return Some(beta);
+                    return Some(score);
                 }
             }
             // futility pruning condition
             if depth < 4 && alpha < mate_score {
-                let futility_margin = match depth {
-                    0 => 0,
-                    1 => PAWN_VALUE,
-                    2 => const { Knight.evaluate() },
-                    3 => const { Rook.evaluate() },
-                    _ => unreachable!(),
-                };
+                let futility_margin = get_item_unchecked!(
+                    const [0, PAWN_VALUE, Knight.evaluate(), Rook.evaluate()],
+                    depth as usize,
+                );
                 futility_pruning = static_evaluation + futility_margin <= alpha;
             }
         }
@@ -590,7 +587,8 @@ impl<P: PositionEvaluation> Searcher<P> {
             if move_index != 0 && futility_pruning && not_an_interesting_position {
                 continue;
             }
-            let mut safe_to_apply_lmr = move_index >= FULL_DEPTH_SEARCH_LMR
+            let mut safe_to_apply_lmr = !DISABLE_ALL_PRUNINGS
+                && move_index >= FULL_DEPTH_SEARCH_LMR
                 && depth >= REDUCTION_LIMIT_LMR
                 && self.properties.use_lmr()
                 && not_an_interesting_position;
