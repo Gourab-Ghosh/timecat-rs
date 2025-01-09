@@ -28,12 +28,12 @@ impl CastleRights {
         *get_item_unchecked!(
             const {
                 let mut array = [[Self::None; 64]; 2];
-                array[0][0] = Self::QueenSide;
-                array[1][56] = Self::QueenSide;
-                array[0][4] = Self::Both;
-                array[1][60] = Self::Both;
-                array[0][7] = Self::KingSide;
-                array[1][63] = Self::KingSide;
+                array[0][63] = Self::KingSide;
+                array[1][7] = Self::KingSide;
+                array[0][56] = Self::QueenSide;
+                array[1][0] = Self::QueenSide;
+                array[0][60] = Self::Both;
+                array[1][4] = Self::Both;
                 array
             },
             color.to_index(),
@@ -45,7 +45,7 @@ impl CastleRights {
     #[inline]
     pub fn kingside_squares(self, color: Color) -> BitBoard {
         *get_item_unchecked!(
-            const [BitBoard::new(96), BitBoard::new(6917529027641081856)],
+            const [BitBoard::new(6917529027641081856), BitBoard::new(96)],
             color.to_index(),
         )
     }
@@ -54,7 +54,7 @@ impl CastleRights {
     #[inline]
     pub fn queenside_squares(self, color: Color) -> BitBoard {
         *get_item_unchecked!(
-            const [BitBoard::new(14), BitBoard::new(1008806316530991104)],
+            const [BitBoard::new(1008806316530991104), BitBoard::new(14)],
             color.to_index(),
         )
     }
@@ -98,20 +98,15 @@ impl CastleRights {
             Self::KingSide => BitBoard::from_rank_and_file(color.to_my_backrank(), File::H),
             Self::QueenSide => BitBoard::from_rank_and_file(color.to_my_backrank(), File::A),
             Self::Both => {
-                BitBoard::from_rank_and_file(color.to_my_backrank(), File::A)
-                    ^ BitBoard::from_rank_and_file(color.to_my_backrank(), File::H)
+                let my_backrank = color.to_my_backrank();
+                BitBoard::from_rank_and_file(my_backrank, File::A)
+                    ^ BitBoard::from_rank_and_file(my_backrank, File::H)
             }
         }
     }
 
     pub fn to_string(self, color: Color) -> String {
-        let result = match self {
-            Self::None => "",
-            Self::KingSide => "k",
-            Self::QueenSide => "q",
-            Self::Both => "kq",
-        };
-
+        let result = get_item_unchecked!(const ["", "k", "q", "kq"], self.to_index());
         if color == White {
             result.to_uppercase()
         } else {

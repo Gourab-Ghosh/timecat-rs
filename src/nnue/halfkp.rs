@@ -14,7 +14,13 @@ const FINAL_NUM_OUTPUTS: usize = 1;
 
 type AccumulatorDataType = i16;
 
+#[inline]
+fn get_king_squares_rotated(white_king_square: Square, black_king_square: Square) -> [Square; 2] {
+    [black_king_square.rotate(), white_king_square]
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug)]
 struct HalfKPFeatureTransformer<T> {
     weights: Box<
         SerdeWrapper<
@@ -80,15 +86,15 @@ impl<T> HalfKPFeatureTransformer<T> {
     }
 }
 
-impl<T> Debug for HalfKPFeatureTransformer<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "HalfKPFeatureTransformer[{}->{}x2]",
-            HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS,
-        )
-    }
-}
+// impl<T> Debug for HalfKPFeatureTransformer<T> {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(
+//             f,
+//             "HalfKPFeatureTransformer[{}->{}x2]",
+//             HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS,
+//         )
+//     }
+// }
 
 impl<T: Clone, U: From<T> + Debug> From<&HalfKPFeatureTransformer<T>>
     for HalfKPFeatureTransformer<U>
@@ -119,7 +125,7 @@ impl<T: Clone, U: From<T> + Debug> From<&HalfKPFeatureTransformer<T>>
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(BinRead)]
+#[derive(BinRead, Debug)]
 struct HalfKPNetwork {
     pub hidden_layer_1: Layer<
         i8,
@@ -132,19 +138,19 @@ struct HalfKPNetwork {
     pub output_layer: Layer<i8, i32, SECOND_HIDDEN_LAYER_NUM_OUTPUTS, FINAL_NUM_OUTPUTS>,
 }
 
-impl Debug for HalfKPNetwork {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "HalfKPNetwork[{}x{}->{}->{}->{}]",
-            HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS,
-            NUM_COLORS,
-            FIRST_HIDDEN_LAYER_NUM_OUTPUTS,
-            SECOND_HIDDEN_LAYER_NUM_OUTPUTS,
-            FINAL_NUM_OUTPUTS,
-        )
-    }
-}
+// impl Debug for HalfKPNetwork {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(
+//             f,
+//             "HalfKPNetwork[{}x{}->{}->{}->{}]",
+//             HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS,
+//             NUM_COLORS,
+//             FIRST_HIDDEN_LAYER_NUM_OUTPUTS,
+//             SECOND_HIDDEN_LAYER_NUM_OUTPUTS,
+//             FINAL_NUM_OUTPUTS,
+//         )
+//     }
+// }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, BinRead)]
@@ -174,34 +180,37 @@ impl HalfKPModelReader {
         &self,
         white_king_square: Square,
         black_king_square: Square,
-    ) -> HalfKPModel {
-        let accumulators = [
-            self.transformer.get_biases().into(),
-            self.transformer.get_biases().into(),
-        ];
+    ) -> Result<HalfKPModel> {
         let position: BoardPosition = BoardPositionBuilder::new()
             .add_piece(white_king_square, WhiteKing)
             .add_piece(black_king_square, BlackKing)
-            .try_into()
-            .unwrap();
-        HalfKPModel {
+            .try_into()?;
+        Ok(HalfKPModel {
             accumulator: Accumulator {
-                king_squares_rotated: [white_king_square, black_king_square.rotate()],
-                accumulators,
+                king_squares_rotated: get_king_squares_rotated(
+                    white_king_square,
+                    black_king_square,
+                ),
+                accumulators: [
+                    self.transformer.get_biases().clone(),
+                    self.transformer.get_biases().clone(),
+                ],
             },
             transformer: self.transformer.clone(),
             network: self.network.clone(),
             last_position: position,
-        }
+        })
     }
 
     pub fn to_model(&self, position: &BoardPosition) -> HalfKPModel {
-        let mut halfkp_model = self.to_empty_model(
-            position.get_king_square(White),
-            position.get_king_square(Black),
-        );
+        let mut halfkp_model = self
+            .to_empty_model(
+                position.get_king_square(White),
+                position.get_king_square(Black),
+            )
+            .unwrap();
         halfkp_model.update_empty_model(position);
-        halfkp_model.update_last_position(position.clone());
+        halfkp_model.update_last_position(position);
         halfkp_model
     }
 
@@ -235,7 +244,8 @@ impl HalfKPModel {
             square = square.rotate();
             piece.flip_color();
         }
-        NUM_SQUARES * (NUM_COLORS * (NUM_PIECE_TYPES - 1) * king.to_index() + piece.to_index())
+        NUM_SQUARES
+            * (const { NUM_COLORS * (NUM_PIECE_TYPES - 1) } * king.to_index() + piece.to_index())
             + square.to_index()
     }
 
@@ -254,7 +264,7 @@ impl HalfKPModel {
     #[inline]
     fn update_empty_model_of_one_side(&mut self, position: &BoardPosition, turn: Color) {
         position
-            .custom_iter(&ALL_PIECE_TYPES[..5], &[White, Black], BB_ALL)
+            .custom_iter(&ALL_PIECE_TYPES[..5], &ALL_COLORS, BB_ALL)
             .for_each(|(piece, square)| self.activate_non_king_piece(turn, piece, square))
     }
 
@@ -267,7 +277,8 @@ impl HalfKPModel {
 
     #[inline]
     pub fn clear_one_side(&mut self, turn: Color) {
-        self.accumulator.accumulators[turn.to_index()].clone_from(self.transformer.get_biases());
+        get_item_unchecked_mut!(self.accumulator.accumulators, turn.to_index())
+            .clone_from(self.transformer.get_biases());
     }
 
     #[inline]
@@ -278,27 +289,27 @@ impl HalfKPModel {
     }
 
     #[inline]
-    fn update_last_position(&mut self, position: BoardPosition) {
-        self.last_position = position;
+    fn update_last_position(&mut self, position: &BoardPosition) {
+        self.last_position = position.clone();
     }
 
     pub fn reset_model(&mut self, position: &BoardPosition) {
         self.clear();
-        self.accumulator.king_squares_rotated = [
+        self.accumulator.king_squares_rotated = get_king_squares_rotated(
             position.get_king_square(White),
-            position.get_king_square(Black).rotate(),
-        ];
+            position.get_king_square(Black),
+        );
         self.update_empty_model(position);
-        self.update_last_position(position.clone());
+        self.update_last_position(position);
     }
 
     fn update_king(&mut self, position: &BoardPosition, color: Color) {
-        let new_king_square = if color == White {
-            position.get_king_square(color)
-        } else {
-            position.get_king_square(color).rotate()
-        };
-        self.accumulator.king_squares_rotated[color.to_index()] = new_king_square;
+        *get_item_unchecked_mut!(self.accumulator.king_squares_rotated, color.to_index()) =
+            if color == White {
+                position.get_king_square(color)
+            } else {
+                position.get_king_square(color).rotate()
+            };
         self.clear_one_side(color);
         self.update_empty_model_of_one_side(position, color);
     }
@@ -315,11 +326,15 @@ impl HalfKPModel {
             black_king_updated = true;
         }
         let mut colors_to_update = Vec::with_capacity(2);
+        if !black_king_updated {
+            colors_to_update.push(Black);
+        }
         if !white_king_updated {
             colors_to_update.push(White);
         }
-        if !black_king_updated {
-            colors_to_update.push(Black);
+        if colors_to_update.is_empty() {
+            self.update_last_position(position);
+            return;
         }
         #[derive(Clone)]
         enum Change {
@@ -328,8 +343,8 @@ impl HalfKPModel {
         }
         let last_position_piece_masks = self.last_position.get_all_piece_masks().to_owned();
         let last_position_occupied_colors = [
-            self.last_position.occupied_color(White),
-            self.last_position.occupied_color(Black),
+            self.last_position.occupied_color(Color::from_index(0)),
+            self.last_position.occupied_color(Color::from_index(1)),
         ];
         colors_to_update
             .into_iter()
@@ -338,8 +353,12 @@ impl HalfKPModel {
                     .iter()
                     .cartesian_product(ALL_COLORS)
                     .flat_map(|(&piece_type, color)| {
-                        let prev_occupied = last_position_occupied_colors[color.to_index()]
-                            & last_position_piece_masks[piece_type.to_index()];
+                        let prev_occupied =
+                            get_item_unchecked!(last_position_occupied_colors, color.to_index())
+                                & get_item_unchecked!(
+                                    last_position_piece_masks,
+                                    piece_type.to_index()
+                                );
                         let new_occupied =
                             position.occupied_color(color) & position.get_piece_mask(piece_type);
                         (!prev_occupied & new_occupied)
@@ -357,7 +376,7 @@ impl HalfKPModel {
                     self.deactivate_non_king_piece(turn, piece, square)
                 }
             });
-        self.update_last_position(position.clone());
+        self.update_last_position(position);
     }
 
     pub fn evaluate_current_state_flipped(&self, turn: Color) -> Score {
@@ -368,7 +387,7 @@ impl HalfKPModel {
             } else {
                 &mut inputs[HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS..]
             };
-            self.accumulator.accumulators[color.to_index()].clipped_relu_into(
+            get_item_unchecked!(self.accumulator.accumulators, color.to_index()).clipped_relu_into(
                 0,
                 0,
                 127,
@@ -413,10 +432,10 @@ impl HalfKPModel {
                     self.transformer.get_biases().clone(),
                     self.transformer.get_biases().clone(),
                 ],
-                king_squares_rotated: [
+                king_squares_rotated: get_king_squares_rotated(
                     position.get_king_square(White),
-                    position.get_king_square(Black).rotate(),
-                ],
+                    position.get_king_square(Black),
+                ),
             },
             last_position: position.clone(),
         };

@@ -4,11 +4,16 @@ pub use Color::*;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
 pub enum Color {
-    White = 0,
-    Black = 1,
+    Black = 0,
+    White = 1,
 }
 
 impl Color {
+    #[inline]
+    pub fn from_index(index: usize) -> Self {
+        *get_item_unchecked!(const [Black, White], index)
+    }
+
     #[inline]
     pub const fn to_index(self) -> usize {
         self as usize
@@ -16,32 +21,32 @@ impl Color {
 
     #[inline]
     pub fn to_my_backrank(self) -> Rank {
-        *get_item_unchecked!(const [Rank::First, Rank::Eighth], self.to_index())
-    }
-
-    #[inline]
-    pub fn to_their_backrank(self) -> Rank {
         *get_item_unchecked!(const [Rank::Eighth, Rank::First], self.to_index())
     }
 
     #[inline]
+    pub fn to_their_backrank(self) -> Rank {
+        *get_item_unchecked!(const [Rank::First, Rank::Eighth], self.to_index())
+    }
+
+    #[inline]
     pub fn to_second_rank(self) -> Rank {
-        *get_item_unchecked!(const [Rank::Second, Rank::Seventh], self.to_index())
+        *get_item_unchecked!(const [Rank::Seventh, Rank::Second], self.to_index())
     }
 
     #[inline]
     pub fn to_third_rank(self) -> Rank {
-        *get_item_unchecked!(const [Rank::Third, Rank::Sixth], self.to_index())
+        *get_item_unchecked!(const [Rank::Sixth, Rank::Third], self.to_index())
     }
 
     #[inline]
     pub fn to_fourth_rank(self) -> Rank {
-        *get_item_unchecked!(const [Rank::Fourth, Rank::Fifth], self.to_index())
+        *get_item_unchecked!(const [Rank::Fifth, Rank::Fourth], self.to_index())
     }
 
     #[inline]
     pub fn to_seventh_rank(self) -> Rank {
-        *get_item_unchecked!(const [Rank::Seventh, Rank::Second], self.to_index())
+        *get_item_unchecked!(const [Rank::Second, Rank::Seventh], self.to_index())
     }
 }
 
@@ -50,7 +55,7 @@ impl Not for Color {
 
     #[inline]
     fn not(self) -> Self {
-        *get_item_unchecked!(const [Black, White], self.to_index())
+        *get_item_unchecked!(const [White, Black], self.to_index())
     }
 }
 
@@ -59,7 +64,7 @@ impl fmt::Display for Color {
         write!(
             f,
             "{}",
-            get_item_unchecked!(const ["White", "Black"], self.to_index())
+            get_item_unchecked!(const ["Black", "White"], self.to_index())
         )
     }
 }
@@ -74,7 +79,8 @@ impl<'source> FromPyObject<'source> for Color {
                 Ok(Self::Black)
             };
         }
-        if let Ok(s) = ob.extract::<&str>() {
+        if let Ok(mut s) = ob.extract::<&str>() {
+            s = s.trim();
             if s.eq_ignore_ascii_case("white") {
                 return Ok(Self::White);
             }

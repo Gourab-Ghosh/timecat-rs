@@ -221,14 +221,12 @@ impl BoardPosition {
 
     #[inline]
     fn add_castle_rights(&mut self, color: Color, add: CastleRights) {
-        *get_item_unchecked_mut!(self._castle_rights, color.to_index()) =
-            self.castle_rights(color).add(add);
+        *get_item_unchecked_mut!(self._castle_rights, color.to_index()) += add;
     }
 
     #[inline]
     fn remove_castle_rights(&mut self, color: Color, remove: CastleRights) {
-        *get_item_unchecked_mut!(self._castle_rights, color.to_index()) =
-            self.castle_rights(color).remove(remove);
+        *get_item_unchecked_mut!(self._castle_rights, color.to_index()) -= remove;
     }
 
     #[inline]
@@ -326,12 +324,12 @@ impl BoardPosition {
 
     #[inline]
     pub fn get_white_material_score(&self) -> Score {
-        *get_item_unchecked!(self._material_scores, 0)
+        *get_item_unchecked!(self._material_scores, White.to_index())
     }
 
     #[inline]
     pub fn get_black_material_score(&self) -> Score {
-        *get_item_unchecked!(self._material_scores, 1)
+        *get_item_unchecked!(self._material_scores, Black.to_index())
     }
 
     #[inline]
@@ -807,6 +805,7 @@ impl BoardPosition {
         let queens_and_rooks = self.get_piece_mask(Rook) ^ self.get_piece_mask(Queen);
 
         let pawn_attacks = color.map_or(
+            // TODO: make this const when it becomes stable.
             target_square.get_pawn_attacks(White, BB_ALL)
                 ^ target_square.get_pawn_attacks(Black, BB_ALL),
             |color| target_square.get_pawn_attacks(!color, BB_ALL),
@@ -842,6 +841,7 @@ impl BoardPosition {
             Pawn => match color {
                 Some(color) => target_square.get_pawn_attacks(!color, BB_ALL),
                 None => {
+                    // TODO: make this const when it becomes stable.
                     target_square.get_pawn_attacks(White, BB_ALL)
                         ^ target_square.get_pawn_attacks(Black, BB_ALL)
                 }
@@ -1204,10 +1204,10 @@ impl BoardPosition {
                 .zip(pieces_masks)
                 .flat_map(|(&piece_type, pieces_mask)| {
                     (pieces_mask & white_occupied)
-                        .map(move |square| (square, Piece::new(piece_type, White)))
+                        .map(move |square| (Piece::new(piece_type, White), square))
                         .chain(
                             (pieces_mask & black_occupied)
-                                .map(move |square| (square, Piece::new(piece_type, Black))),
+                                .map(move |square| (Piece::new(piece_type, Black), square)),
                         )
                 }),
             ob.getattr("turn")?.extract()?,
@@ -1451,6 +1451,7 @@ impl TryFrom<&mut BoardPositionBuilder> for BoardPosition {
 impl FromStr for BoardPosition {
     type Err = TimecatError;
 
+    #[inline]
     fn from_str(value: &str) -> Result<Self> {
         BoardPositionBuilder::from_str(value)?.try_into()
     }
@@ -1464,9 +1465,9 @@ impl Default for BoardPosition {
 }
 
 impl fmt::Display for BoardPosition {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let fen: BoardPositionBuilder = self.into();
-        write!(f, "{}", fen)
+        write!(f, "{}", BoardPositionBuilder::from(self))
     }
 }
 

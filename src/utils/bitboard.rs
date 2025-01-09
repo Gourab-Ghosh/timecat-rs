@@ -151,17 +151,19 @@ impl BitBoard {
     }
 
     #[inline]
-    pub fn shift_forward(self, color: Color) -> Self {
-        if color == White {
-            self.shift_up()
-        } else {
-            self.shift_down()
+    pub const fn shift_forward(self, color: Color) -> Self {
+        match color {
+            White => self.shift_up(),
+            Black => self.shift_down(),
         }
     }
 
     #[inline]
-    pub fn shift_backward(self, color: Color) -> Self {
-        self.shift_forward(!color)
+    pub const fn shift_backward(self, color: Color) -> Self {
+        match color {
+            White => self.shift_down(),
+            Black => self.shift_up(),
+        }
     }
 
     #[inline]
