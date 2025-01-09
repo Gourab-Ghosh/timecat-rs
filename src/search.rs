@@ -584,10 +584,9 @@ impl<P: PositionEvaluation> Searcher<P> {
             if move_index != 0 && futility_pruning && not_an_interesting_position {
                 continue;
             }
-            let mut safe_to_apply_lmr = !DISABLE_ALL_PRUNINGS
+            let mut safe_to_apply_lmr = self.properties.use_lmr()
                 && move_index >= FULL_DEPTH_SEARCH_LMR
                 && depth >= REDUCTION_LIMIT_LMR
-                && self.properties.use_lmr()
                 && not_an_interesting_position;
             self.push_unchecked(move_);
             safe_to_apply_lmr &= !self.board.is_check();

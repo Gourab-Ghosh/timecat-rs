@@ -9,26 +9,32 @@ pub struct EngineProperties {
 }
 
 impl EngineProperties {
+    #[inline]
     pub fn use_mate_distance_pruning(&self) -> bool {
         self._use_mate_distance_pruning
     }
 
+    #[inline]
     pub fn set_using_mate_distance_pruning(&mut self, value: bool) {
         self._use_mate_distance_pruning = value;
     }
 
+    #[inline]
     pub fn clear_table_after_each_search(&self) -> bool {
         self._clear_table_after_each_search
     }
 
+    #[inline]
     pub fn set_clearing_table_after_each_search(&mut self, value: bool) {
         self._clear_table_after_each_search = value;
     }
 
+    #[inline]
     pub fn use_lmr(&self) -> bool {
-        self._use_lmr
+        self._use_lmr && !DISABLE_ALL_PRUNINGS
     }
 
+    #[inline]
     pub fn set_using_lmr(&mut self, value: bool) {
         self._use_lmr = value;
     }
