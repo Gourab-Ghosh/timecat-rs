@@ -535,7 +535,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 }
             }
             // null move pruning
-            if depth >= NULL_MOVE_MIN_DEPTH && static_evaluation >= beta && !is_pv_node {
+            if !is_pv_node && depth >= NULL_MOVE_MIN_DEPTH && static_evaluation >= beta {
                 // let r = NULL_MOVE_MIN_REDUCTION
                 //     + (depth.max(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
                 //         .round() as Depth;
@@ -547,7 +547,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                     -self.alpha_beta(reduced_depth, -beta, -beta + 1, controller.as_deref_mut())?;
                 self.pop();
                 if score >= beta {
-                    return Some(score);
+                    return Some(beta);
                 }
             }
             // futility pruning condition
