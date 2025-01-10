@@ -498,7 +498,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             return None;
         }
         if depth == 0 {
-            return Some(self.quiescence(alpha, beta));
+            return self.quiescence(alpha, beta, controller.as_deref_mut());
         }
         if self.is_main_threaded() && is_pv_node {
             self.selective_depth.fetch_max(self.ply, MEMORY_ORDERING);
@@ -522,12 +522,12 @@ impl<P: PositionEvaluation> Searcher<P> {
                 let mut score = static_evaluation + const { (5 * PAWN_VALUE) / 4 };
                 if score < beta {
                     if depth == 1 {
-                        let new_score = self.quiescence(alpha, beta);
+                        let new_score = self.quiescence(alpha, beta, controller.as_deref_mut())?;
                         return Some(new_score.max(score));
                     }
                     score += const { (7 * PAWN_VALUE) / 4 };
                     if score < beta && depth < RAZORING_DEPTH {
-                        let new_score = self.quiescence(alpha, beta);
+                        let new_score = self.quiescence(alpha, beta, controller.as_deref_mut())?;
                         if new_score < beta {
                             return Some(new_score.max(score));
                         }
@@ -663,13 +663,18 @@ impl<P: PositionEvaluation> Searcher<P> {
         Some(alpha)
     }
 
-    fn quiescence(&mut self, mut alpha: Score, beta: Score) -> Score {
+    fn quiescence(
+        &mut self,
+        mut alpha: Score,
+        beta: Score,
+        mut controller: Option<&mut impl SearchControl<Self>>,
+    ) -> Option<Score> {
         if self.ply == MAX_PLY - 1 {
-            return self.evaluate_flipped();
+            return Some(self.evaluate_flipped());
         }
         self.pv_table.set_length(self.ply, self.ply);
         if self.board.is_other_draw() {
-            return self.evaluator.evaluate_draw();
+            return Some(self.evaluator.evaluate_draw());
         }
         let is_pv_node = alpha != beta - 1;
         if self.is_main_threaded() && is_pv_node {
@@ -678,7 +683,10 @@ impl<P: PositionEvaluation> Searcher<P> {
         self.num_nodes_searched.fetch_add(1, MEMORY_ORDERING);
         let evaluation = self.evaluate_flipped();
         if evaluation >= beta {
-            return beta;
+            return Some(beta);
+        }
+        if self.stop_search_at_every_node(controller.as_deref_mut()) {
+            return None;
         }
         alpha = alpha.max(evaluation);
         for WeightedMove { move_, weight } in self
@@ -689,10 +697,10 @@ impl<P: PositionEvaluation> Searcher<P> {
                 break;
             }
             self.push_unchecked(move_);
-            let score = -self.quiescence(-beta, -alpha);
+            let score = -self.quiescence(-beta, -alpha, controller.as_deref_mut())?;
             self.pop();
             if score >= beta {
-                return beta;
+                return Some(beta);
             }
             if score > alpha {
                 self.pv_table.update_table(self.ply, move_);
@@ -704,10 +712,10 @@ impl<P: PositionEvaluation> Searcher<P> {
                 delta += piece.evaluate() - PAWN_VALUE;
             }
             if score + delta < alpha {
-                return alpha;
+                return Some(alpha);
             }
         }
-        alpha
+        Some(alpha)
     }
 
     pub fn go(
