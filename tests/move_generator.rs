@@ -199,7 +199,7 @@ fn move_generator_issue_15() {
     .unwrap()
     .try_into()
     .unwrap();
-    let _ = MoveGenerator::new_legal(&position);
+    _ = MoveGenerator::new_legal(&position);
 }
 
 fn move_of(m: &str) -> Move {
