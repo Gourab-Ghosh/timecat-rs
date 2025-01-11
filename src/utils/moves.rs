@@ -46,7 +46,7 @@ impl Move {
         Self::from_str(uci)
     }
 
-    pub fn from_san(position: &BoardPosition, san: &str) -> Result<Self> {
+    pub fn from_san(position: &ChessPosition, san: &str) -> Result<Self> {
         // TODO: Make the logic better
         let san = san.trim().replace('0', "O");
         for move_ in position.generate_legal_moves() {
@@ -57,7 +57,7 @@ impl Move {
         Err(TimecatError::InvalidSanMoveString { s: san.to_string() })
     }
 
-    pub fn from_lan(position: &BoardPosition, lan: &str) -> Result<Self> {
+    pub fn from_lan(position: &ChessPosition, lan: &str) -> Result<Self> {
         // TODO: Make the logic better
         let lan = lan.trim().replace('0', "O");
         let lan = lan.replace('0', "O");
@@ -69,7 +69,7 @@ impl Move {
         Err(TimecatError::InvalidLanMoveString { s: lan.to_string() })
     }
 
-    pub fn algebraic_without_suffix(self, position: &BoardPosition, long: bool) -> Result<String> {
+    pub fn algebraic_without_suffix(self, position: &ChessPosition, long: bool) -> Result<String> {
         let source = self.get_source();
         let dest = self.get_dest();
 
@@ -162,9 +162,9 @@ impl Move {
 
     pub fn algebraic_and_new_position(
         self,
-        position: &BoardPosition,
+        position: &ChessPosition,
         long: bool,
-    ) -> Result<(String, BoardPosition)> {
+    ) -> Result<(String, ChessPosition)> {
         let san = self.algebraic_without_suffix(position, long)?;
 
         // Look ahead for check or checkmate.
@@ -295,7 +295,7 @@ impl ValidOrNullMove {
         self.into_inner()?.promotion
     }
 
-    pub fn from_san(position: &BoardPosition, san: &str) -> Result<Self> {
+    pub fn from_san(position: &ChessPosition, san: &str) -> Result<Self> {
         // TODO: Make the logic better
         let san = san.trim();
         if san == "--" || san == "0000" {
@@ -304,7 +304,7 @@ impl ValidOrNullMove {
         Ok(Move::from_san(position, san)?.into())
     }
 
-    pub fn from_lan(position: &BoardPosition, lan: &str) -> Result<Self> {
+    pub fn from_lan(position: &ChessPosition, lan: &str) -> Result<Self> {
         // TODO: Make the logic better
         let lan = lan.trim();
         if lan == "--" || lan == "0000" {
@@ -314,7 +314,7 @@ impl ValidOrNullMove {
     }
 
     #[inline]
-    pub fn algebraic_without_suffix(self, position: &BoardPosition, long: bool) -> Result<String> {
+    pub fn algebraic_without_suffix(self, position: &ChessPosition, long: bool) -> Result<String> {
         self.map(|move_| move_.algebraic_without_suffix(position, long))
             .unwrap_or(Ok("--".to_string()))
     }
@@ -322,9 +322,9 @@ impl ValidOrNullMove {
     #[inline]
     pub fn algebraic_and_new_position(
         self,
-        position: &BoardPosition,
+        position: &ChessPosition,
         long: bool,
-    ) -> Result<(String, BoardPosition)> {
+    ) -> Result<(String, ChessPosition)> {
         self.map(|move_| move_.algebraic_and_new_position(position, long))
             .unwrap_or(Ok(("--".to_string(), position.null_move()?)))
     }

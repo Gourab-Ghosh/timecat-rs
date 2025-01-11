@@ -34,8 +34,8 @@ impl GameResult {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Board {
-    position: BoardPosition,
-    stack: Vec<(BoardPosition, ValidOrNullMove)>,
+    position: ChessPosition,
+    stack: Vec<(ChessPosition, ValidOrNullMove)>,
     repetition_table: RepetitionTable,
     #[cfg(feature = "extras")]
     evaluator: Evaluator,
@@ -44,7 +44,7 @@ pub struct Board {
 impl Board {
     #[inline]
     pub fn new() -> Self {
-        BoardPosition::from_str(STARTING_POSITION_FEN)
+        ChessPosition::from_str(STARTING_POSITION_FEN)
             .unwrap()
             .into()
     }
@@ -72,7 +72,7 @@ impl Board {
     }
 
     #[inline]
-    pub fn get_position(&self) -> &BoardPosition {
+    pub fn get_position(&self) -> &ChessPosition {
         &self.position
     }
 
@@ -507,8 +507,8 @@ impl FromStr for Board {
     }
 }
 
-impl From<BoardPosition> for Board {
-    fn from(position: BoardPosition) -> Self {
+impl From<ChessPosition> for Board {
+    fn from(position: ChessPosition) -> Self {
         let mut board = Self {
             #[cfg(feature = "extras")]
             evaluator: Evaluator::new(&position),
@@ -521,14 +521,14 @@ impl From<BoardPosition> for Board {
     }
 }
 
-impl From<&BoardPosition> for Board {
-    fn from(position: &BoardPosition) -> Self {
+impl From<&ChessPosition> for Board {
+    fn from(position: &ChessPosition) -> Self {
         position.to_owned().into()
     }
 }
 
 impl Deref for Board {
-    type Target = BoardPosition;
+    type Target = ChessPosition;
 
     fn deref(&self) -> &Self::Target {
         &self.position
@@ -538,13 +538,13 @@ impl Deref for Board {
 #[cfg(feature = "pyo3")]
 impl<'source> FromPyObject<'source> for Board {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
-        if let Ok(position) = ob.extract::<BoardPosition>() {
+        if let Ok(position) = ob.extract::<ChessPosition>() {
             let mut board = Board::from(position);
             if let (Ok(moves_py_object), Ok(states_py_object)) =
                 (ob.getattr("move_stack"), ob.getattr("_stack"))
             {
                 let states = states_py_object
-                    .extract::<Vec<BoardPosition>>()
+                    .extract::<Vec<ChessPosition>>()
                     .unwrap_or_default();
                 let moves = moves_py_object
                     .extract::<Vec<ValidOrNullMove>>()

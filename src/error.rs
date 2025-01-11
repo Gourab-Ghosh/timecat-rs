@@ -95,7 +95,7 @@ pub enum TimecatError {
         s: String,
     },
     InvalidBoardPosition {
-        position: BoardPosition,
+        position: ChessPosition,
     },
     InvalidGoCommand {
         s: String,

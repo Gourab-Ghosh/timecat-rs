@@ -116,7 +116,7 @@ impl MoveSorter {
         get_item_unchecked!(self.killer_moves, ply).contains(&Some(move_))
     }
 
-    pub fn add_history_move(&mut self, history_move: Move, position: &BoardPosition, depth: Depth) {
+    pub fn add_history_move(&mut self, history_move: Move, position: &ChessPosition, depth: Depth) {
         let depth = (depth as MoveWeight).pow(2);
         let src = history_move.get_source();
         let dest = history_move.get_dest();
@@ -126,20 +126,20 @@ impl MoveSorter {
     }
 
     #[inline]
-    pub fn get_history_score(&self, history_move: Move, position: &BoardPosition) -> MoveWeight {
+    pub fn get_history_score(&self, history_move: Move, position: &ChessPosition) -> MoveWeight {
         let src = history_move.get_source();
         let dest = history_move.get_dest();
         let piece = position.get_piece_at(src).unwrap();
         *get_item_unchecked!(self.history_move_scores, piece.to_index(), dest.to_index())
     }
 
-    fn get_least_attackers_move(square: Square, position: &BoardPosition) -> Option<Move> {
+    fn get_least_attackers_move(square: Square, position: &ChessPosition) -> Option<Move> {
         position
             .generate_masked_legal_moves(position.self_occupied(), square.to_bitboard())
             .next() // No need to find least attacker as the moves are already sorted
     }
 
-    // fn get_least_attackers_move(square: Square, position: &BoardPosition) -> Option<Move> {
+    // fn get_least_attackers_move(square: Square, position: &ChessPosition) -> Option<Move> {
     //     if position.is_check() {
     //         position
     //             .generate_masked_legal_moves(
@@ -171,7 +171,7 @@ impl MoveSorter {
     //     }
     // }
 
-    fn see(square: Square, position: &BoardPosition) -> Score {
+    fn see(square: Square, position: &ChessPosition) -> Score {
         let least_attackers_move = match Self::get_least_attackers_move(square, position) {
             Some(valid_or_null_move) => valid_or_null_move,
             None => return 0,
@@ -182,7 +182,7 @@ impl MoveSorter {
         .max(0)
     }
 
-    fn see_capture(square: Square, position: &BoardPosition) -> Score {
+    fn see_capture(square: Square, position: &ChessPosition) -> Score {
         let least_attackers_move = match Self::get_least_attackers_move(square, position) {
             Some(valid_or_null_move) => valid_or_null_move,
             None => return 0,
@@ -191,7 +191,7 @@ impl MoveSorter {
         capture_piece.evaluate() - Self::see(square, &position.make_move_new(least_attackers_move))
     }
 
-    fn mvv_lva(move_: Move, position: &BoardPosition) -> MoveWeight {
+    fn mvv_lva(move_: Move, position: &ChessPosition) -> MoveWeight {
         *get_item_unchecked!(
             MVV_LVA,
             position
@@ -206,7 +206,7 @@ impl MoveSorter {
     }
 
     #[inline]
-    fn score_capture(move_: Move, best_move: Option<Move>, position: &BoardPosition) -> MoveWeight {
+    fn score_capture(move_: Move, best_move: Option<Move>, position: &ChessPosition) -> MoveWeight {
         if Some(move_) == best_move {
             return 10000;
         }
@@ -214,7 +214,7 @@ impl MoveSorter {
     }
 
     fn score_easily_winning_position_moves(
-        position: &BoardPosition,
+        position: &ChessPosition,
         source: Square,
         dest: Square,
     ) -> Option<MoveWeight> {
@@ -246,7 +246,7 @@ impl MoveSorter {
     fn score_move(
         &mut self,
         move_: Move,
-        position: &BoardPosition,
+        position: &ChessPosition,
         ply: Ply,
         best_move: Option<Move>,
         pv_move: Option<Move>,
@@ -289,7 +289,7 @@ impl MoveSorter {
 
     pub fn get_weighted_moves_sorted(
         &mut self,
-        position: &BoardPosition,
+        position: &ChessPosition,
         moves: impl IntoIterator<Item = Move>,
         transposition_table: &TranspositionTable,
         ply: Ply,
@@ -324,7 +324,7 @@ impl MoveSorter {
 
     pub fn get_weighted_capture_moves_sorted(
         &self,
-        position: &BoardPosition,
+        position: &ChessPosition,
         transposition_table: &TranspositionTable,
     ) -> WeightedMoveListSorter {
         let best_move = transposition_table.read_best_move(position.get_hash());

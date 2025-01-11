@@ -56,7 +56,7 @@ impl Default for PVTable {
 #[derive(Clone, Debug)]
 pub struct Searcher<P: PositionEvaluation> {
     id: usize,
-    initial_position: BoardPosition,
+    initial_position: ChessPosition,
     board: Board,
     evaluator: P,
     transposition_table: Arc<TranspositionTable>,
@@ -117,7 +117,7 @@ impl<P: PositionEvaluation> Searcher<P> {
     }
 
     #[inline]
-    pub fn get_initial_position(&self) -> &BoardPosition {
+    pub fn get_initial_position(&self) -> &ChessPosition {
         &self.initial_position
     }
 

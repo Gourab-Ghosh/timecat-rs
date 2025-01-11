@@ -343,8 +343,8 @@ impl FromStr for BoardPositionBuilder {
     }
 }
 
-impl From<&BoardPosition> for BoardPositionBuilder {
-    fn from(board: &BoardPosition) -> Self {
+impl From<&ChessPosition> for BoardPositionBuilder {
+    fn from(board: &ChessPosition) -> Self {
         BoardPositionBuilder::setup(
             board.iter(),
             board.turn(),
@@ -357,8 +357,8 @@ impl From<&BoardPosition> for BoardPositionBuilder {
     }
 }
 
-impl From<BoardPosition> for BoardPositionBuilder {
-    fn from(board: BoardPosition) -> Self {
+impl From<ChessPosition> for BoardPositionBuilder {
+    fn from(board: ChessPosition) -> Self {
         (&board).into()
     }
 }

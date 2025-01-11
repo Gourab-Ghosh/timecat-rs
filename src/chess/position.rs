@@ -8,9 +8,10 @@ pub enum BoardStatus {
     Checkmate,
 }
 
+/// This struct is named so because the name `Position` already exists in `itertools` which is used in `timecat` as a dependency.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq)]
-pub struct BoardPosition {
+pub struct ChessPosition {
     _piece_masks: [BitBoard; NUM_PIECE_TYPES],
     _occupied_color: [BitBoard; NUM_COLORS],
     _occupied: BitBoard,
@@ -27,7 +28,7 @@ pub struct BoardPosition {
     _material_scores: [Score; 2],
 }
 
-impl UniqueIdentifier for BoardPosition {
+impl UniqueIdentifier for ChessPosition {
     #[inline]
     fn unique_identifier(&self) -> impl PartialEq + Hash {
         (
@@ -40,7 +41,7 @@ impl UniqueIdentifier for BoardPosition {
     }
 }
 
-impl PartialEq for BoardPosition {
+impl PartialEq for ChessPosition {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         if self.get_hash() != other.get_hash() {
@@ -50,7 +51,7 @@ impl PartialEq for BoardPosition {
     }
 }
 
-impl BoardPosition {
+impl ChessPosition {
     #[inline]
     fn new_empty() -> Self {
         Self {
@@ -1215,7 +1216,7 @@ impl BoardPosition {
     }
 }
 
-impl BoardPositionMethodOverload<Move> for BoardPosition {
+impl BoardPositionMethodOverload<Move> for ChessPosition {
     #[inline]
     fn parse_san(&self, san: &str) -> Result<Move> {
         Move::from_san(self, san)
@@ -1359,7 +1360,7 @@ impl BoardPositionMethodOverload<Move> for BoardPosition {
     }
 }
 
-impl BoardPositionMethodOverload<ValidOrNullMove> for BoardPosition {
+impl BoardPositionMethodOverload<ValidOrNullMove> for ChessPosition {
     #[inline]
     fn parse_san(&self, san: &str) -> Result<ValidOrNullMove> {
         ValidOrNullMove::from_san(self, san)
@@ -1384,11 +1385,11 @@ impl BoardPositionMethodOverload<ValidOrNullMove> for BoardPosition {
     }
 }
 
-impl TryFrom<&BoardPositionBuilder> for BoardPosition {
+impl TryFrom<&BoardPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
     fn try_from(position_builder: &BoardPositionBuilder) -> Result<Self> {
-        let mut position = BoardPosition::new_empty();
+        let mut position = ChessPosition::new_empty();
 
         for square in ALL_SQUARES {
             if let Some(piece) = position_builder[square] {
@@ -1425,7 +1426,7 @@ impl TryFrom<&BoardPositionBuilder> for BoardPosition {
     }
 }
 
-impl TryFrom<BoardPositionBuilder> for BoardPosition {
+impl TryFrom<BoardPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
     fn try_from(position_builder: BoardPositionBuilder) -> Result<Self> {
@@ -1433,7 +1434,7 @@ impl TryFrom<BoardPositionBuilder> for BoardPosition {
     }
 }
 
-impl TryFrom<&mut BoardPositionBuilder> for BoardPosition {
+impl TryFrom<&mut BoardPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
     fn try_from(position_builder: &mut BoardPositionBuilder) -> Result<Self> {
@@ -1441,7 +1442,7 @@ impl TryFrom<&mut BoardPositionBuilder> for BoardPosition {
     }
 }
 
-impl FromStr for BoardPosition {
+impl FromStr for ChessPosition {
     type Err = TimecatError;
 
     #[inline]
@@ -1450,35 +1451,35 @@ impl FromStr for BoardPosition {
     }
 }
 
-impl Default for BoardPosition {
+impl Default for ChessPosition {
     #[inline]
     fn default() -> Self {
         Self::from_str(STARTING_POSITION_FEN).unwrap()
     }
 }
 
-impl fmt::Display for BoardPosition {
+impl fmt::Display for ChessPosition {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", BoardPositionBuilder::from(self))
     }
 }
 
-impl Hash for BoardPosition {
+impl Hash for ChessPosition {
     fn hash<H: Hasher>(&self, state: &mut H) {
         state.write_u64(self.get_hash())
     }
 }
 
 #[cfg(feature = "pyo3")]
-impl<'source> FromPyObject<'source> for BoardPosition {
+impl<'source> FromPyObject<'source> for ChessPosition {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(fen) = ob.extract::<&str>() {
             if let Ok(position) = Self::from_str(fen) {
                 return Ok(position);
             }
         }
-        if let Ok(position) = BoardPosition::from_py_board(ob) {
+        if let Ok(position) = ChessPosition::from_py_board(ob) {
             return Ok(position);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {

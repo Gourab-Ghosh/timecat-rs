@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use timecat::*;
 
 fn move_generator_perft_test(fen: &str, depth: usize, expected_result: usize) {
-    let position = BoardPosition::from_str(fen).unwrap();
+    let position = ChessPosition::from_str(fen).unwrap();
     let result = MoveGenerator::perft_test(&position, depth);
     assert_eq!(
         result, expected_result,
@@ -224,7 +224,7 @@ fn move_of(m: &str) -> Move {
 
 #[test]
 fn test_masked_move_generator() {
-    let position = BoardPosition::from_str(
+    let position = ChessPosition::from_str(
         "r1bqkb1r/pp3ppp/5n2/2ppn1N1/4pP2/1BN1P3/PPPP2PP/R1BQ1RK1 w kq - 0 9",
     )
     .unwrap();

@@ -28,11 +28,11 @@ impl EvaluatorNNUE {
     }
 
     #[cfg(feature = "inbuilt_nnue")]
-    pub fn new(position: &BoardPosition) -> Self {
+    pub fn new(position: &ChessPosition) -> Self {
         Self::from_model(HALFKP_MODEL_READER.to_model(position))
     }
 
-    pub fn from_nnue_bytes(nnue_bytes: &[u8], position: &BoardPosition) -> Result<Self> {
+    pub fn from_nnue_bytes(nnue_bytes: &[u8], position: &ChessPosition) -> Result<Self> {
         let mut reader = std::io::Cursor::new(nnue_bytes);
         let model = HalfKPModelReader::read(&mut reader)
             .map_err(|_| TimecatError::BadNNUEFile)?
@@ -40,7 +40,7 @@ impl EvaluatorNNUE {
         Ok(Self::from_model(model))
     }
 
-    pub fn from_nnue_path(path: &str, position: &BoardPosition) -> Result<Self> {
+    pub fn from_nnue_path(path: &str, position: &ChessPosition) -> Result<Self> {
         let file = std::fs::File::open(path)?;
         let mut reader = BufReader::new(file);
         let model = HalfKPModelReader::read(&mut reader)
@@ -60,7 +60,7 @@ impl EvaluatorNNUE {
     }
 
     fn force_opponent_king_to_corner(
-        position: &BoardPosition,
+        position: &ChessPosition,
         winning_side: Color,
         is_bishop_knight_endgame: bool,
     ) -> Score {
@@ -115,11 +115,11 @@ impl EvaluatorNNUE {
             + losing_king_opponent_pieces_score
     }
 
-    fn force_passed_pawn_push(position: &BoardPosition) -> Score {
+    fn force_passed_pawn_push(position: &ChessPosition) -> Score {
         todo!("force_passed_pawn_push {}", position)
     }
 
-    fn king_corner_forcing_evaluation(position: &BoardPosition, material_score: Score) -> Score {
+    fn king_corner_forcing_evaluation(position: &ChessPosition, material_score: Score) -> Score {
         let is_bishop_knight_endgame = position.get_num_pieces() == 4
             && material_score.abs() == const { Knight.evaluate() + Bishop.evaluate() };
         let winning_side = if material_score.is_positive() {
@@ -133,7 +133,7 @@ impl EvaluatorNNUE {
         (50 * PAWN_VALUE + king_forcing_score / 2) * signum + 2 * material_score
     }
 
-    pub fn is_easily_winning_position(position: &BoardPosition, material_score: Score) -> bool {
+    pub fn is_easily_winning_position(position: &ChessPosition, material_score: Score) -> bool {
         if material_score.abs() > const { PAWN_VALUE + Bishop.evaluate() } {
             let white_occupied = position.occupied_color(White);
             let black_occupied = position.occupied_color(Black);
@@ -186,7 +186,7 @@ impl EvaluatorNNUE {
         false
     }
 
-    fn evaluate_raw(position: &BoardPosition, mut nnue_eval_func: impl FnMut() -> Score) -> Score {
+    fn evaluate_raw(position: &ChessPosition, mut nnue_eval_func: impl FnMut() -> Score) -> Score {
         let knights_mask = position.get_piece_mask(Knight);
         if position.get_non_king_pieces_mask() == knights_mask && knights_mask.popcnt() < 3 {
             return 0;
@@ -224,7 +224,7 @@ impl EvaluatorNNUE {
         nnue_eval
     }
 
-    fn hashed_evaluate(&mut self, position: &BoardPosition) -> Score {
+    fn hashed_evaluate(&mut self, position: &ChessPosition) -> Score {
         let hash = position.get_hash();
         if let Some(score) = self.score_cache.get(hash) {
             return score;
@@ -236,7 +236,7 @@ impl EvaluatorNNUE {
 
     #[cfg(feature = "inbuilt_nnue")]
     #[inline]
-    pub fn slow_evaluate_nnue_raw(position: &BoardPosition) -> Score {
+    pub fn slow_evaluate_nnue_raw(position: &ChessPosition) -> Score {
         HALFKP_MODEL_READER
             .to_model(position)
             .evaluate_current_state(position.turn())
@@ -244,7 +244,7 @@ impl EvaluatorNNUE {
 
     #[cfg(feature = "inbuilt_nnue")]
     #[inline]
-    pub fn slow_evaluate(position: &BoardPosition) -> Score {
+    pub fn slow_evaluate(position: &ChessPosition) -> Score {
         Self::evaluate_raw(position, || Self::slow_evaluate_nnue_raw(position))
     }
 
@@ -256,7 +256,7 @@ impl EvaluatorNNUE {
 
 impl PositionEvaluation for EvaluatorNNUE {
     #[inline]
-    fn evaluate(&mut self, position: &BoardPosition) -> Score {
+    fn evaluate(&mut self, position: &ChessPosition) -> Score {
         self.hashed_evaluate(position)
     }
 
@@ -283,6 +283,6 @@ impl PositionEvaluation for EvaluatorNNUE {
 #[cfg(feature = "inbuilt_nnue")]
 impl Default for EvaluatorNNUE {
     fn default() -> Self {
-        Self::new(&BoardPosition::default())
+        Self::new(&ChessPosition::default())
     }
 }
