@@ -42,12 +42,14 @@ pub struct Board {
 }
 
 impl Board {
+    #[inline]
     pub fn new() -> Self {
         BoardPosition::from_str(STARTING_POSITION_FEN)
             .unwrap()
             .into()
     }
 
+    #[inline]
     pub fn shallow_clone(&self) -> Self {
         Self {
             position: self.position.clone(),
@@ -58,7 +60,7 @@ impl Board {
 
     pub fn set_fen(&mut self, fen: &str) -> Result<()> {
         self.position.set_fen(fen)?;
-        self.stack.clear();
+        self.clear_stack();
         self.update_repetition_table();
         Ok(())
     }
@@ -69,43 +71,41 @@ impl Board {
         Ok(board)
     }
 
+    #[inline]
     pub fn get_position(&self) -> &BoardPosition {
         &self.position
     }
 
     #[cfg(feature = "extras")]
+    #[inline]
     pub fn get_evaluator(&self) -> &Evaluator {
         &self.evaluator
     }
 
     #[cfg(feature = "extras")]
+    #[inline]
     pub fn get_evaluator_mut(&mut self) -> &mut Evaluator {
         &mut self.evaluator
     }
 
+    #[inline]
     pub fn reset(&mut self) {
         self.set_fen(STARTING_POSITION_FEN).unwrap();
     }
 
-    pub fn clear(&mut self) {
-        self.set_fen(EMPTY_FEN).unwrap();
-    }
-
+    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
     pub fn flip_vertical(&mut self) {
+        #[expect(deprecated)]
         self.position.flip_vertical();
-        self.stack.clear();
+        self.clear_stack();
         self.update_repetition_table();
     }
 
-    pub fn flip_vertical_and_flip_turn_unchecked(&mut self) {
-        self.position.flip_vertical_and_flip_turn_unchecked();
-        self.stack.clear();
-        self.update_repetition_table();
-    }
-
+    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
     pub fn flip_horizontal(&mut self) {
+        #[expect(deprecated)]
         self.position.flip_horizontal();
-        self.stack.clear();
+        self.clear_stack();
         self.update_repetition_table();
     }
 
@@ -139,6 +139,11 @@ impl Board {
         self.stack.len() as NumMoves
     }
 
+    #[inline]
+    pub fn clear_stack(&mut self) {
+        self.stack.clear();
+    }
+    
     pub fn update_repetition_table(&mut self) {
         self.repetition_table.clear();
         for (position, _) in &self.stack {
