@@ -597,7 +597,7 @@ impl BoardPosition {
         }
         (pawn_mask
             & self.occupied_color(!self_color)
-            & get_item_unchecked!(
+            & *get_item_unchecked!(
                 PASSED_PAWN_CHECK_MASK,
                 self_color.to_index(),
                 square.to_index()

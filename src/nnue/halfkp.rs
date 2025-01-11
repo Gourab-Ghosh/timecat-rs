@@ -355,7 +355,7 @@ impl HalfKPModel {
                     .flat_map(|(&piece_type, color)| {
                         let prev_occupied =
                             get_item_unchecked!(last_position_occupied_colors, color.to_index())
-                                & get_item_unchecked!(
+                                & *get_item_unchecked!(
                                     last_position_piece_masks,
                                     piece_type.to_index()
                                 );

@@ -639,7 +639,7 @@ impl<P: PositionEvaluation> From<&Searcher<P>> for SearchInfo {
             collisions,
             zero_hit,
             time_elapsed: Some(searcher.get_time_elapsed()),
-            pv: searcher.get_pv().into_iter().copied().collect_vec(),
+            pv: searcher.get_pv().copied().collect_vec(),
         };
         search_info.score = search_info
             .score

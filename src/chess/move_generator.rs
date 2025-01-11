@@ -658,7 +658,7 @@ impl MoveGenerator {
                 } else {
                     const { &[None] }
                 };
-                promotion_pieces.into_iter().flat_map(move |&promotion| {
+                promotion_pieces.iter().flat_map(move |&promotion| {
                     (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).map(
                         move |dest| {
                             Move::new_unchecked(square_and_bitboard.square, dest, promotion)

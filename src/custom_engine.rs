@@ -94,8 +94,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
             properties: EngineProperties::default(),
             opening_book: TIMECAT_DEFAULTS
                 .inbuilt_book_bytes
-                .map(|bytes| PolyglotBookHashMap::try_from(bytes).ok())
-                .flatten()
+                .and_then(|bytes| PolyglotBookHashMap::try_from(bytes).ok())
                 .map(|book| Arc::new(book) as Arc<dyn PolyglotBook>),
         }
     }
