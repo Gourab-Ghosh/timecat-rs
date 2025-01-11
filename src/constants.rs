@@ -156,7 +156,7 @@ pub mod board {
 }
 
 pub mod fen {
-    pub const EMPTY_FEN: &str = "8/8/8/8/8/8/8/8 w - - 0 1";
+    pub const EMPTY_POSITION_FEN: &str = "8/8/8/8/8/8/8/8 w - - 0 1";
     pub const STARTING_POSITION_FEN: &str =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 }

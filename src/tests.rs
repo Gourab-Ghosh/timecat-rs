@@ -109,10 +109,7 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // parse_command(engine, "go movetime 3000");
     parse_command(engine, "go depth 15");
 
-    // let board = Board::new();
-    // println!("{}", board);
-
-    // let position = BoardPosition::from_fen("8/4R3/6rk/pPp4p/7P/4p1P1/7K/8 w - c6 0 48")?;
+    // let position = ChessPosition::from_fen("8/4R3/6rk/pPp4p/7P/4p1P1/7K/8 w - c6 0 48")?;
     // println!("{}", position.is_legal(&Move::new(B5, C6, None)?));
 
     // println!("{:#?}", PAWN_MOVES);
@@ -155,7 +152,7 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // engine.go(go_command, true);
 
     // let mut test_hashmap = IdentityHashMap::default();
-    // test_hashmap.insert(BoardPosition::from_fen(STARTING_POSITION_FEN), Board::from_fen(STARTING_POSITION_FEN));
+    // test_hashmap.insert(ChessPosition::from_fen(STARTING_POSITION_FEN), Board::from_fen(STARTING_POSITION_FEN));
 
     // let book_name = "codekiddy.bin";
     // // let book_name = "temp.bin";

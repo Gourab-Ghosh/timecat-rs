@@ -360,7 +360,7 @@ impl FromStr for SearchConfig {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Default)]
 pub struct SearchInfoBuilder {
-    position: BoardPosition,
+    position: ChessPosition,
     current_depth: Option<Depth>,
     seldepth: Option<Ply>,
     score: Option<Score>,
@@ -374,7 +374,7 @@ pub struct SearchInfoBuilder {
 }
 
 impl SearchInfoBuilder {
-    pub fn new(position: BoardPosition, pv: Vec<Move>) -> Self {
+    pub fn new(position: ChessPosition, pv: Vec<Move>) -> Self {
         Self {
             position,
             pv,
@@ -382,7 +382,7 @@ impl SearchInfoBuilder {
         }
     }
 
-    pub fn set_position(mut self, position: BoardPosition) -> Self {
+    pub fn set_position(mut self, position: ChessPosition) -> Self {
         self.position = position;
         self
     }
@@ -457,7 +457,7 @@ impl SearchInfoBuilder {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct SearchInfo {
-    position: BoardPosition,
+    position: ChessPosition,
     current_depth: Option<Depth>,
     seldepth: Option<Ply>,
     score: Option<Score>,
@@ -472,7 +472,7 @@ pub struct SearchInfo {
 
 impl SearchInfo {
     pub fn new(
-        position: BoardPosition,
+        position: ChessPosition,
         current_depth: Option<Depth>,
         seldepth: Option<Ply>,
         score: Option<Score>,
@@ -639,7 +639,7 @@ impl<P: PositionEvaluation> From<&Searcher<P>> for SearchInfo {
             collisions,
             zero_hit,
             time_elapsed: Some(searcher.get_time_elapsed()),
-            pv: searcher.get_pv().into_iter().copied().collect_vec(),
+            pv: searcher.get_pv().copied().collect_vec(),
         };
         search_info.score = search_info
             .score

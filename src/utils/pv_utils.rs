@@ -2,7 +2,7 @@ use super::*;
 
 // TODO: Is is possible to change Vec<Move> to impl Iterator<Item = Move>?
 pub fn extract_pv_from_t_table(
-    position: &BoardPosition,
+    position: &ChessPosition,
     transposition_table: &TranspositionTable,
 ) -> Vec<Move> {
     let mut pv = Vec::new();
@@ -25,7 +25,7 @@ pub fn get_pv_as_uci(pv: &[Move]) -> String {
     pv_string.trim().to_string()
 }
 
-pub fn get_pv_as_algebraic(position: &BoardPosition, pv: &[Move], long: bool) -> String {
+pub fn get_pv_as_algebraic(position: &ChessPosition, pv: &[Move], long: bool) -> String {
     let mut position = position.clone();
     let mut pv_string = String::new();
     for move_ in pv {
@@ -41,17 +41,17 @@ pub fn get_pv_as_algebraic(position: &BoardPosition, pv: &[Move], long: bool) ->
 }
 
 #[inline]
-pub fn get_pv_as_san(position: &BoardPosition, pv: &[Move]) -> String {
+pub fn get_pv_as_san(position: &ChessPosition, pv: &[Move]) -> String {
     get_pv_as_algebraic(position, pv, false)
 }
 
 #[inline]
-pub fn get_pv_as_lan(position: &BoardPosition, pv: &[Move]) -> String {
+pub fn get_pv_as_lan(position: &ChessPosition, pv: &[Move]) -> String {
     get_pv_as_algebraic(position, pv, true)
 }
 
 #[inline]
-pub fn get_pv_string(position: &BoardPosition, pv: &[Move]) -> String {
+pub fn get_pv_string(position: &ChessPosition, pv: &[Move]) -> String {
     if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
         get_pv_as_algebraic(
             position,

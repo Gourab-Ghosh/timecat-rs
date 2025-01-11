@@ -50,17 +50,17 @@ pub trait StringifyScore {
 
 pub trait StringifyMove {
     fn uci(self) -> String;
-    fn algebraic(self, position: &BoardPosition, long: bool) -> Result<String>;
-    fn stringify_move(self, position: &BoardPosition) -> Result<String>;
+    fn algebraic(self, position: &ChessPosition, long: bool) -> Result<String>;
+    fn stringify_move(self, position: &ChessPosition) -> Result<String>;
 
-    fn san(self, position: &BoardPosition) -> Result<String>
+    fn san(self, position: &ChessPosition) -> Result<String>
     where
         Self: Sized,
     {
         self.algebraic(position, false)
     }
 
-    fn lan(self, position: &BoardPosition) -> Result<String>
+    fn lan(self, position: &ChessPosition) -> Result<String>
     where
         Self: Sized,
     {
@@ -100,7 +100,7 @@ pub trait SearchControl<Searcher>: Clone + Send + 'static {
 
 // TODO: Try to remove static lifetime from the trait
 pub trait PositionEvaluation: Clone + Send + 'static {
-    fn evaluate(&mut self, position: &BoardPosition) -> Score;
+    fn evaluate(&mut self, position: &ChessPosition) -> Score;
 
     #[inline]
     fn reset_variables(&mut self) {}
@@ -112,7 +112,7 @@ pub trait PositionEvaluation: Clone + Send + 'static {
     fn print_info(&self) {}
 
     #[inline]
-    fn evaluate_flipped(&mut self, position: &BoardPosition) -> Score {
+    fn evaluate_flipped(&mut self, position: &ChessPosition) -> Score {
         position.score_flipped(self.evaluate(position))
     }
 

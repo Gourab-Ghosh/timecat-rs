@@ -97,7 +97,7 @@ impl IoReader {
             std::io::stdin()
                 .read_line(&mut user_input)
                 .expect("Failed to read line!");
-            let _ = sender.send(user_input);
+            _ = sender.send(user_input);
         })
     }
 

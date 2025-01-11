@@ -7,15 +7,15 @@ const CONTROL_CENTER_BONUS: Score = 50;
 pub struct EvaluatorNonNNUE;
 
 impl EvaluatorNonNNUE {
-    pub fn new(_: &BoardPosition) -> Self {
+    pub fn new(_: &ChessPosition) -> Self {
         Self
     }
 
-    pub fn slow_evaluate(position: &BoardPosition) -> Score {
+    pub fn slow_evaluate(position: &ChessPosition) -> Score {
         Self::new(position).evaluate(position)
     }
 
-    fn evaluate_raw(position: &BoardPosition) -> Score {
+    fn evaluate_raw(position: &ChessPosition) -> Score {
         let material_score = position.get_material_score();
         let mut score = material_score;
 
@@ -105,7 +105,7 @@ impl EvaluatorNonNNUE {
     }
 
     // Enhanced King Safety
-    fn evaluate_king_safety(position: &BoardPosition, king_square: Square) -> Score {
+    fn evaluate_king_safety(position: &ChessPosition, king_square: Square) -> Score {
         let king_color = position.get_piece_at(king_square).unwrap().get_color();
         let mut safety_score = 0;
 
@@ -151,7 +151,7 @@ impl EvaluatorNonNNUE {
     }
 
     // Enhanced Pawn Structure
-    fn evaluate_pawn_structure(position: &BoardPosition, pawn_square: Square) -> Score {
+    fn evaluate_pawn_structure(position: &ChessPosition, pawn_square: Square) -> Score {
         let mut structure_score = 0;
         let pawn = position.get_piece_at(pawn_square).unwrap();
         let pawn_color = pawn.get_color();
@@ -211,7 +211,7 @@ impl EvaluatorNonNNUE {
     }
 
     // Enhanced Piece Activity
-    fn evaluate_piece_activity(position: &BoardPosition, _piece: Piece, square: Square) -> Score {
+    fn evaluate_piece_activity(position: &ChessPosition, _piece: Piece, square: Square) -> Score {
         let mut activity_score = 0;
         // let piece_color = piece.get_color();
 
@@ -235,7 +235,7 @@ impl EvaluatorNonNNUE {
     }
 
     // Evaluate threats
-    fn evaluate_threats(position: &BoardPosition, piece: Piece, square: Square) -> Score {
+    fn evaluate_threats(position: &ChessPosition, piece: Piece, square: Square) -> Score {
         let mut threat_score = 0;
         let piece_color = piece.get_color();
 
@@ -255,7 +255,7 @@ impl EvaluatorNonNNUE {
 }
 
 impl PositionEvaluation for EvaluatorNonNNUE {
-    fn evaluate(&mut self, position: &BoardPosition) -> Score {
+    fn evaluate(&mut self, position: &ChessPosition) -> Score {
         let material_score = position.get_material_score();
         let mut score = material_score;
         for (piece, square) in position.iter() {

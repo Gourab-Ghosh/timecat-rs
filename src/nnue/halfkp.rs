@@ -181,7 +181,7 @@ impl HalfKPModelReader {
         white_king_square: Square,
         black_king_square: Square,
     ) -> Result<HalfKPModel> {
-        let position: BoardPosition = BoardPositionBuilder::new()
+        let position: ChessPosition = BoardPositionBuilder::new()
             .add_piece(white_king_square, WhiteKing)
             .add_piece(black_king_square, BlackKing)
             .try_into()?;
@@ -202,7 +202,7 @@ impl HalfKPModelReader {
         })
     }
 
-    pub fn to_model(&self, position: &BoardPosition) -> HalfKPModel {
+    pub fn to_model(&self, position: &ChessPosition) -> HalfKPModel {
         let mut halfkp_model = self
             .to_empty_model(
                 position.get_king_square(White),
@@ -215,7 +215,7 @@ impl HalfKPModelReader {
     }
 
     pub fn to_default_model(&self) -> HalfKPModel {
-        self.to_model(&BoardPosition::default())
+        self.to_model(&ChessPosition::default())
     }
 }
 
@@ -234,7 +234,7 @@ pub struct HalfKPModel {
     #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     network: Arc<HalfKPNetwork>,
     accumulator: Accumulator,
-    last_position: BoardPosition,
+    last_position: ChessPosition,
 }
 
 impl HalfKPModel {
@@ -262,14 +262,14 @@ impl HalfKPModel {
     }
 
     #[inline]
-    fn update_empty_model_of_one_side(&mut self, position: &BoardPosition, turn: Color) {
+    fn update_empty_model_of_one_side(&mut self, position: &ChessPosition, turn: Color) {
         position
             .custom_iter(&ALL_PIECE_TYPES[..5], &ALL_COLORS, BB_ALL)
             .for_each(|(piece, square)| self.activate_non_king_piece(turn, piece, square))
     }
 
     #[inline]
-    fn update_empty_model(&mut self, position: &BoardPosition) {
+    fn update_empty_model(&mut self, position: &ChessPosition) {
         ALL_COLORS
             .into_iter()
             .for_each(|turn| self.update_empty_model_of_one_side(position, turn));
@@ -289,11 +289,11 @@ impl HalfKPModel {
     }
 
     #[inline]
-    fn update_last_position(&mut self, position: &BoardPosition) {
+    fn update_last_position(&mut self, position: &ChessPosition) {
         self.last_position = position.clone();
     }
 
-    pub fn reset_model(&mut self, position: &BoardPosition) {
+    pub fn reset_model(&mut self, position: &ChessPosition) {
         self.clear();
         self.accumulator.king_squares_rotated = get_king_squares_rotated(
             position.get_king_square(White),
@@ -303,7 +303,7 @@ impl HalfKPModel {
         self.update_last_position(position);
     }
 
-    fn update_king(&mut self, position: &BoardPosition, color: Color) {
+    fn update_king(&mut self, position: &ChessPosition, color: Color) {
         *get_item_unchecked_mut!(self.accumulator.king_squares_rotated, color.to_index()) =
             if color == White {
                 position.get_king_square(color)
@@ -314,7 +314,7 @@ impl HalfKPModel {
         self.update_empty_model_of_one_side(position, color);
     }
 
-    pub fn update_model(&mut self, position: &BoardPosition) {
+    pub fn update_model(&mut self, position: &ChessPosition) {
         let mut white_king_updated = false;
         let mut black_king_updated = false;
         if self.last_position.get_king_square(White) != position.get_king_square(White) {
@@ -355,7 +355,7 @@ impl HalfKPModel {
                     .flat_map(|(&piece_type, color)| {
                         let prev_occupied =
                             get_item_unchecked!(last_position_occupied_colors, color.to_index())
-                                & get_item_unchecked!(
+                                & *get_item_unchecked!(
                                     last_position_piece_masks,
                                     piece_type.to_index()
                                 );
@@ -418,12 +418,12 @@ impl HalfKPModel {
         }
     }
 
-    pub fn update_model_and_evaluate(&mut self, position: &BoardPosition) -> Score {
+    pub fn update_model_and_evaluate(&mut self, position: &ChessPosition) -> Score {
         self.update_model(position);
         self.evaluate_current_state(position.turn())
     }
 
-    pub fn slow_evaluate_from_position(&self, position: &BoardPosition) -> Score {
+    pub fn slow_evaluate_from_position(&self, position: &ChessPosition) -> Score {
         let mut model = Self {
             transformer: self.transformer.clone(),
             network: self.network.clone(),

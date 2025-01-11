@@ -254,6 +254,7 @@ fn test_passed_pawn_detection() {
             (
                 {
                     let mut board_clone = board.clone();
+                    #[expect(deprecated)]
                     board_clone.flip_vertical();
                     board_clone
                 },

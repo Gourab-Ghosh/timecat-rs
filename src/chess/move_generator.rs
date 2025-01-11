@@ -4,7 +4,7 @@ trait PieceMoves {
     fn is(piece: PieceType) -> bool;
     fn into_piece() -> PieceType;
     fn pseudo_legals(src: Square, color: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard;
-    fn legals<T>(move_list: &mut MoveList, position: &BoardPosition, mask: BitBoard)
+    fn legals<T>(move_list: &mut MoveList, position: &ChessPosition, mask: BitBoard)
     where
         T: CheckMoves,
     {
@@ -77,7 +77,7 @@ impl CheckMoves for NotInCheckMoves {
 }
 
 impl PawnMoves {
-    fn legal_ep_move(position: &BoardPosition, source: Square, dest: Square) -> bool {
+    fn legal_ep_move(position: &ChessPosition, source: Square, dest: Square) -> bool {
         let Some(ep_square) = position.ep_square() else {
             return false;
         };
@@ -126,7 +126,7 @@ impl PieceMoves for PawnMoves {
     }
 
     #[inline]
-    fn legals<T>(move_list: &mut MoveList, position: &BoardPosition, mask: BitBoard)
+    fn legals<T>(move_list: &mut MoveList, position: &ChessPosition, mask: BitBoard)
     where
         T: CheckMoves,
     {
@@ -227,7 +227,7 @@ impl PieceMoves for KnightMoves {
     }
 
     #[inline]
-    fn legals<T>(move_list: &mut MoveList, position: &BoardPosition, mask: BitBoard)
+    fn legals<T>(move_list: &mut MoveList, position: &ChessPosition, mask: BitBoard)
     where
         T: CheckMoves,
     {
@@ -304,7 +304,7 @@ impl PieceMoves for QueenMoves {
 
 impl KingMoves {
     #[inline]
-    fn legal_king_move(position: &BoardPosition, dest: Square) -> bool {
+    fn legal_king_move(position: &ChessPosition, dest: Square) -> bool {
         let occupied = position.occupied() ^ position.get_colored_piece_mask(King, position.turn())
             | dest.to_bitboard();
 
@@ -348,7 +348,7 @@ impl PieceMoves for KingMoves {
     }
 
     #[inline]
-    fn legals<T>(move_list: &mut MoveList, position: &BoardPosition, mask: BitBoard)
+    fn legals<T>(move_list: &mut MoveList, position: &ChessPosition, mask: BitBoard)
     where
         T: CheckMoves,
     {
@@ -367,7 +367,7 @@ impl PieceMoves for KingMoves {
 
         // If we are not in check, we may be able to castle.
         // We can do so iff:
-        //  * the `BoardPosition` structure says we can.
+        //  * the `ChessPosition` structure says we can.
         //  * the squares between my king and my rook are empty.
         //  * no enemy pieces are attacking the squares between the king, and the kings
         //    destination square.
@@ -443,7 +443,7 @@ pub struct MoveGenerator {
 
 impl MoveGenerator {
     #[inline]
-    fn enumerate_moves(position: &BoardPosition) -> MoveList {
+    fn enumerate_moves(position: &ChessPosition) -> MoveList {
         let checkers = position.get_checkers();
         let mask = !position.self_occupied();
         let mut move_list = ArrayVec::new();
@@ -469,7 +469,7 @@ impl MoveGenerator {
         move_list
     }
 
-    pub fn has_legal_moves(position: &BoardPosition) -> bool {
+    pub fn has_legal_moves(position: &ChessPosition) -> bool {
         let checkers = position.get_checkers();
         let mask = !position.occupied_color(position.turn());
         let mut move_list = ArrayVec::new();
@@ -509,7 +509,7 @@ impl MoveGenerator {
     }
 
     #[inline]
-    pub fn new_legal(position: &BoardPosition) -> MoveGenerator {
+    pub fn new_legal(position: &ChessPosition) -> MoveGenerator {
         MoveGenerator {
             square_and_bitboard_array: MoveGenerator::enumerate_moves(position),
             promotion_index: 0,
@@ -600,7 +600,7 @@ impl MoveGenerator {
         self.reorganize_square_and_bitboard_array();
     }
 
-    pub fn perft_test(position: &BoardPosition, depth: usize) -> usize {
+    pub fn perft_test(position: &ChessPosition, depth: usize) -> usize {
         let iterable = position.generate_legal_moves();
 
         let mut result: usize = 0;
@@ -615,7 +615,7 @@ impl MoveGenerator {
         }
     }
 
-    pub fn perft_test_piecewise(position: &BoardPosition, depth: usize) -> usize {
+    pub fn perft_test_piecewise(position: &ChessPosition, depth: usize) -> usize {
         let mut iterable = position.generate_legal_moves();
 
         let targets = position.opponent_occupied();
@@ -658,7 +658,7 @@ impl MoveGenerator {
                 } else {
                     const { &[None] }
                 };
-                promotion_pieces.into_iter().flat_map(move |&promotion| {
+                promotion_pieces.iter().flat_map(move |&promotion| {
                     (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).map(
                         move |dest| {
                             Move::new_unchecked(square_and_bitboard.square, dest, promotion)
@@ -685,7 +685,7 @@ impl MoveGenerator {
     }
 
     #[inline]
-    pub fn is_legal(position: &BoardPosition, move_: &Move) -> bool {
+    pub fn is_legal(position: &ChessPosition, move_: &Move) -> bool {
         // TODO: Scope of improvement
         let Some(piece_type) = position.get_piece_type_at(move_.get_source()) else {
             return false;

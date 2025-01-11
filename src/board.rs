@@ -34,20 +34,22 @@ impl GameResult {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Board {
-    position: BoardPosition,
-    stack: Vec<(BoardPosition, ValidOrNullMove)>,
+    position: ChessPosition,
+    stack: Vec<(ChessPosition, ValidOrNullMove)>,
     repetition_table: RepetitionTable,
     #[cfg(feature = "extras")]
     evaluator: Evaluator,
 }
 
 impl Board {
+    #[inline]
     pub fn new() -> Self {
-        BoardPosition::from_str(STARTING_POSITION_FEN)
+        ChessPosition::from_str(STARTING_POSITION_FEN)
             .unwrap()
             .into()
     }
 
+    #[inline]
     pub fn shallow_clone(&self) -> Self {
         Self {
             position: self.position.clone(),
@@ -58,7 +60,7 @@ impl Board {
 
     pub fn set_fen(&mut self, fen: &str) -> Result<()> {
         self.position.set_fen(fen)?;
-        self.stack.clear();
+        self.clear_stack();
         self.update_repetition_table();
         Ok(())
     }
@@ -69,43 +71,41 @@ impl Board {
         Ok(board)
     }
 
-    pub fn get_position(&self) -> &BoardPosition {
+    #[inline]
+    pub fn get_position(&self) -> &ChessPosition {
         &self.position
     }
 
     #[cfg(feature = "extras")]
+    #[inline]
     pub fn get_evaluator(&self) -> &Evaluator {
         &self.evaluator
     }
 
     #[cfg(feature = "extras")]
+    #[inline]
     pub fn get_evaluator_mut(&mut self) -> &mut Evaluator {
         &mut self.evaluator
     }
 
+    #[inline]
     pub fn reset(&mut self) {
         self.set_fen(STARTING_POSITION_FEN).unwrap();
     }
 
-    pub fn clear(&mut self) {
-        self.set_fen(EMPTY_FEN).unwrap();
-    }
-
+    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
     pub fn flip_vertical(&mut self) {
+        #[expect(deprecated)]
         self.position.flip_vertical();
-        self.stack.clear();
+        self.clear_stack();
         self.update_repetition_table();
     }
 
-    pub fn flip_vertical_and_flip_turn_unchecked(&mut self) {
-        self.position.flip_vertical_and_flip_turn_unchecked();
-        self.stack.clear();
-        self.update_repetition_table();
-    }
-
+    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
     pub fn flip_horizontal(&mut self) {
+        #[expect(deprecated)]
         self.position.flip_horizontal();
-        self.stack.clear();
+        self.clear_stack();
         self.update_repetition_table();
     }
 
@@ -139,6 +139,11 @@ impl Board {
         self.stack.len() as NumMoves
     }
 
+    #[inline]
+    pub fn clear_stack(&mut self) {
+        self.stack.clear();
+    }
+    
     pub fn update_repetition_table(&mut self) {
         self.repetition_table.clear();
         for (position, _) in &self.stack {
@@ -502,8 +507,8 @@ impl FromStr for Board {
     }
 }
 
-impl From<BoardPosition> for Board {
-    fn from(position: BoardPosition) -> Self {
+impl From<ChessPosition> for Board {
+    fn from(position: ChessPosition) -> Self {
         let mut board = Self {
             #[cfg(feature = "extras")]
             evaluator: Evaluator::new(&position),
@@ -516,14 +521,14 @@ impl From<BoardPosition> for Board {
     }
 }
 
-impl From<&BoardPosition> for Board {
-    fn from(position: &BoardPosition) -> Self {
+impl From<&ChessPosition> for Board {
+    fn from(position: &ChessPosition) -> Self {
         position.to_owned().into()
     }
 }
 
 impl Deref for Board {
-    type Target = BoardPosition;
+    type Target = ChessPosition;
 
     fn deref(&self) -> &Self::Target {
         &self.position
@@ -533,13 +538,13 @@ impl Deref for Board {
 #[cfg(feature = "pyo3")]
 impl<'source> FromPyObject<'source> for Board {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
-        if let Ok(position) = ob.extract::<BoardPosition>() {
+        if let Ok(position) = ob.extract::<ChessPosition>() {
             let mut board = Board::from(position);
             if let (Ok(moves_py_object), Ok(states_py_object)) =
                 (ob.getattr("move_stack"), ob.getattr("_stack"))
             {
                 let states = states_py_object
-                    .extract::<Vec<BoardPosition>>()
+                    .extract::<Vec<ChessPosition>>()
                     .unwrap_or_default();
                 let moves = moves_py_object
                     .extract::<Vec<ValidOrNullMove>>()

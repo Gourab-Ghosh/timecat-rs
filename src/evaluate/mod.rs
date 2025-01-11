@@ -18,7 +18,7 @@ pub struct Evaluator {
 }
 
 impl Evaluator {
-    pub fn new(position: &BoardPosition) -> Self {
+    pub fn new(position: &ChessPosition) -> Self {
         Self {
             #[cfg(feature = "inbuilt_nnue")]
             inner_evaluator: EvaluatorNNUE::new(position),
@@ -27,7 +27,7 @@ impl Evaluator {
         }
     }
 
-    pub fn slow_evaluate(position: &BoardPosition) -> Score {
+    pub fn slow_evaluate(position: &ChessPosition) -> Score {
         #[cfg(feature = "inbuilt_nnue")]
         {
             EvaluatorNNUE::slow_evaluate(position)
@@ -40,7 +40,7 @@ impl Evaluator {
 }
 
 impl PositionEvaluation for Evaluator {
-    fn evaluate(&mut self, position: &BoardPosition) -> Score {
+    fn evaluate(&mut self, position: &ChessPosition) -> Score {
         self.inner_evaluator.evaluate(position)
     }
 
@@ -56,7 +56,7 @@ impl PositionEvaluation for Evaluator {
         self.inner_evaluator.print_info()
     }
 
-    fn evaluate_flipped(&mut self, position: &BoardPosition) -> Score {
+    fn evaluate_flipped(&mut self, position: &ChessPosition) -> Score {
         self.inner_evaluator.evaluate_flipped(position)
     }
 

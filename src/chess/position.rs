@@ -8,9 +8,10 @@ pub enum BoardStatus {
     Checkmate,
 }
 
+/// This struct is named so because the name `Position` already exists in `itertools` which is used in `timecat` as a dependency.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq)]
-pub struct BoardPosition {
+pub struct ChessPosition {
     _piece_masks: [BitBoard; NUM_PIECE_TYPES],
     _occupied_color: [BitBoard; NUM_COLORS],
     _occupied: BitBoard,
@@ -21,13 +22,13 @@ pub struct BoardPosition {
     _checkers: BitBoard,
     _pawn_transposition_hash: u64,
     _non_pawn_transposition_hash: u64,
-    // _transposition_hash: u64,
+    _transposition_hash: u64,
     _halfmove_clock: u8,
     _fullmove_number: NumMoves,
     _material_scores: [Score; 2],
 }
 
-impl UniqueIdentifier for BoardPosition {
+impl UniqueIdentifier for ChessPosition {
     #[inline]
     fn unique_identifier(&self) -> impl PartialEq + Hash {
         (
@@ -40,7 +41,7 @@ impl UniqueIdentifier for BoardPosition {
     }
 }
 
-impl PartialEq for BoardPosition {
+impl PartialEq for ChessPosition {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         if self.get_hash() != other.get_hash() {
@@ -50,7 +51,7 @@ impl PartialEq for BoardPosition {
     }
 }
 
-impl BoardPosition {
+impl ChessPosition {
     #[inline]
     fn new_empty() -> Self {
         Self {
@@ -63,7 +64,7 @@ impl BoardPosition {
             _checkers: BitBoard::EMPTY,
             _pawn_transposition_hash: 0,
             _non_pawn_transposition_hash: 0,
-            // _transposition_hash: Zobrist::color(White),
+            _transposition_hash: Zobrist::color(White),
             _ep_square: None,
             _halfmove_clock: 0,
             _fullmove_number: 1,
@@ -264,19 +265,6 @@ impl BoardPosition {
         self.remove_castle_rights(!self.turn(), remove);
     }
 
-    // fn update_transposition_hash(&mut self) {
-    //     self._transposition_hash = self.get_pawn_hash()
-    //         ^ self.get_non_pawn_hash()
-    //         ^ Zobrist::castle(self.castle_rights(self.turn()), self.turn())
-    //         ^ Zobrist::castle(self.castle_rights(!self.turn()), !self.turn());
-    //     if let Some(ep) = self.ep_square() {
-    //         self._transposition_hash ^= Zobrist::en_passant(ep.get_file());
-    //     }
-    //     if self.turn() == Black {
-    //         self._transposition_hash ^= Zobrist::color();
-    //     }
-    // }
-
     fn xor(&mut self, piece_type: PieceType, bb: BitBoard, color: Color) {
         *get_item_unchecked_mut!(self._piece_masks, piece_type.to_index()) ^= bb;
         let colored_piece_mask = get_item_unchecked_mut!(self._occupied_color, color.to_index());
@@ -312,14 +300,20 @@ impl BoardPosition {
 
     /// The hash function is defined according to the polyglot hash function.
     #[inline]
-    pub fn get_hash(&self) -> u64 {
-        self.get_pawn_hash()
+    fn update_transposition_hash(&mut self) {
+        self._transposition_hash = self.get_pawn_hash()
             ^ self.get_non_pawn_hash()
             ^ Zobrist::castle(self.castle_rights(White), self.castle_rights(Black))
             ^ self
                 .ep_square()
                 .map_or(0, |ep| Zobrist::en_passant(ep.get_file()))
-            ^ Zobrist::color(self.turn())
+            ^ Zobrist::color(self.turn());
+    }
+
+    /// The hash function is defined according to the polyglot hash function.
+    #[inline]
+    pub fn get_hash(&self) -> u64 {
+        self._transposition_hash
     }
 
     #[inline]
@@ -350,6 +344,7 @@ impl BoardPosition {
         result._halfmove_clock += 1;
         result._fullmove_number += 1;
         result.update_pin_and_checkers_info();
+        result.update_transposition_hash();
         result
     }
 
@@ -603,7 +598,7 @@ impl BoardPosition {
         }
         (pawn_mask
             & self.occupied_color(!self_color)
-            & get_item_unchecked!(
+            & *get_item_unchecked!(
                 PASSED_PAWN_CHECK_MASK,
                 self_color.to_index(),
                 square.to_index()
@@ -686,6 +681,7 @@ impl BoardPosition {
             || !(touched & self.opponent_occupied()).is_empty()
     }
 
+    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
     pub fn flip_vertical(&mut self) {
         // TODO: Change Transposition Keys
         self._piece_masks
@@ -700,6 +696,7 @@ impl BoardPosition {
         self._ep_square = self._ep_square.map(|square| square.horizontal_mirror());
     }
 
+    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
     pub fn flip_horizontal(&mut self) {
         // TODO: Change Transposition Keys
         self._piece_masks
@@ -722,11 +719,6 @@ impl BoardPosition {
     #[inline]
     pub fn flip_turn_unchecked(&mut self) {
         self._turn = !self._turn;
-    }
-
-    pub fn flip_vertical_and_flip_turn_unchecked(&mut self) {
-        self.flip_vertical();
-        self.flip_turn_unchecked();
     }
 
     fn update_pin_and_checkers_info(&mut self) {
@@ -1224,7 +1216,7 @@ impl BoardPosition {
     }
 }
 
-impl BoardPositionMethodOverload<Move> for BoardPosition {
+impl BoardPositionMethodOverload<Move> for ChessPosition {
     #[inline]
     fn parse_san(&self, san: &str) -> Result<Move> {
         Move::from_san(self, san)
@@ -1362,12 +1354,13 @@ impl BoardPositionMethodOverload<Move> for BoardPosition {
         }
 
         result.flip_turn_unchecked();
+        result.update_transposition_hash();
 
         result
     }
 }
 
-impl BoardPositionMethodOverload<ValidOrNullMove> for BoardPosition {
+impl BoardPositionMethodOverload<ValidOrNullMove> for ChessPosition {
     #[inline]
     fn parse_san(&self, san: &str) -> Result<ValidOrNullMove> {
         ValidOrNullMove::from_san(self, san)
@@ -1392,11 +1385,11 @@ impl BoardPositionMethodOverload<ValidOrNullMove> for BoardPosition {
     }
 }
 
-impl TryFrom<&BoardPositionBuilder> for BoardPosition {
+impl TryFrom<&BoardPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
     fn try_from(position_builder: &BoardPositionBuilder) -> Result<Self> {
-        let mut position = BoardPosition::new_empty();
+        let mut position = ChessPosition::new_empty();
 
         for square in ALL_SQUARES {
             if let Some(piece) = position_builder[square] {
@@ -1423,6 +1416,7 @@ impl TryFrom<&BoardPositionBuilder> for BoardPosition {
         position._fullmove_number = position_builder.get_fullmove_number();
 
         position.update_pin_and_checkers_info();
+        position.update_transposition_hash();
 
         if position.is_sane() {
             Ok(position)
@@ -1432,7 +1426,7 @@ impl TryFrom<&BoardPositionBuilder> for BoardPosition {
     }
 }
 
-impl TryFrom<BoardPositionBuilder> for BoardPosition {
+impl TryFrom<BoardPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
     fn try_from(position_builder: BoardPositionBuilder) -> Result<Self> {
@@ -1440,7 +1434,7 @@ impl TryFrom<BoardPositionBuilder> for BoardPosition {
     }
 }
 
-impl TryFrom<&mut BoardPositionBuilder> for BoardPosition {
+impl TryFrom<&mut BoardPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
     fn try_from(position_builder: &mut BoardPositionBuilder) -> Result<Self> {
@@ -1448,7 +1442,7 @@ impl TryFrom<&mut BoardPositionBuilder> for BoardPosition {
     }
 }
 
-impl FromStr for BoardPosition {
+impl FromStr for ChessPosition {
     type Err = TimecatError;
 
     #[inline]
@@ -1457,35 +1451,35 @@ impl FromStr for BoardPosition {
     }
 }
 
-impl Default for BoardPosition {
+impl Default for ChessPosition {
     #[inline]
     fn default() -> Self {
         Self::from_str(STARTING_POSITION_FEN).unwrap()
     }
 }
 
-impl fmt::Display for BoardPosition {
+impl fmt::Display for ChessPosition {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", BoardPositionBuilder::from(self))
     }
 }
 
-impl Hash for BoardPosition {
+impl Hash for ChessPosition {
     fn hash<H: Hasher>(&self, state: &mut H) {
         state.write_u64(self.get_hash())
     }
 }
 
 #[cfg(feature = "pyo3")]
-impl<'source> FromPyObject<'source> for BoardPosition {
+impl<'source> FromPyObject<'source> for ChessPosition {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(fen) = ob.extract::<&str>() {
             if let Ok(position) = Self::from_str(fen) {
                 return Ok(position);
             }
         }
-        if let Ok(position) = BoardPosition::from_py_board(ob) {
+        if let Ok(position) = ChessPosition::from_py_board(ob) {
             return Ok(position);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
