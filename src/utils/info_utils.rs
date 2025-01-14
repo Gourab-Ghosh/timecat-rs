@@ -17,6 +17,7 @@ pub fn format_info<T: fmt::Display>(desc: &str, info: T, add_info_string: bool) 
     }
 }
 
+#[inline]
 pub fn force_println_info<T: fmt::Display>(desc: &str, info: T) {
     println_wasm!("{}", format_info(desc, info, true));
 }
