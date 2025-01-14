@@ -126,14 +126,8 @@ impl UserCommand {
             }
             Self::Features => {
                 println_info("CPU Architecture", std::env::consts::ARCH);
-                for (feature, supported) in const {
-                    [
-                        ("BMI2", cfg!(target_feature = "bmi2")),
-                        ("AVX2", cfg!(target_feature = "avx2")),
-                    ]
-                } {
-                    println_info(&format!("{feature} Supported"), supported);
-                }
+                println_info("BMI2 Supported", cfg!(target_feature = "bmi2"));
+                println_info("AVX2 Supported", cfg!(target_feature = "avx2"));
             }
             Self::SelfPlay(config) => self_play(engine, config, true, None)?,
         }
