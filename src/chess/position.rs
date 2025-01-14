@@ -681,7 +681,9 @@ impl ChessPosition {
             || !(touched & self.opponent_occupied()).is_empty()
     }
 
-    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
+    #[deprecated(
+        note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method."
+    )]
     pub fn flip_vertical(&mut self) {
         // TODO: Change Transposition Keys
         self._piece_masks
@@ -696,7 +698,9 @@ impl ChessPosition {
         self._ep_square = self._ep_square.map(|square| square.horizontal_mirror());
     }
 
-    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
+    #[deprecated(
+        note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method."
+    )]
     pub fn flip_horizontal(&mut self) {
         // TODO: Change Transposition Keys
         self._piece_masks

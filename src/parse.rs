@@ -35,6 +35,7 @@ pub enum UserCommand {
     SetUCIOption {
         user_input: String,
     },
+    Features,
     SelfPlay(SearchConfig),
     // SetHashSize(u64),
     // SetThreads(u8),
@@ -122,6 +123,17 @@ impl UserCommand {
             &Self::SetColor(b) => Set::set_color(b)?,
             Self::SetUCIOption { user_input } => {
                 uci_state_manager.run_command(engine, user_input)?
+            }
+            Self::Features => {
+                println_info("CPU Architecture", std::env::consts::ARCH);
+                for (feature, supported) in const {
+                    [
+                        ("BMI2", cfg!(target_feature = "bmi2")),
+                        ("AVX2", cfg!(target_feature = "avx2")),
+                    ]
+                } {
+                    println_info(&format!("{feature} Supported"), supported);
+                }
             }
             Self::SelfPlay(config) => self_play(engine, config, true, None)?,
         }
@@ -478,6 +490,7 @@ impl Parser {
             }),
             "reset board" => UserCommand::SetFen(STARTING_POSITION_FEN.to_owned()).into(),
             "stop" => UserCommand::Stop.into(),
+            "feature" | "features" => UserCommand::Features.into(),
             "help" => UserCommand::Help.into(),
             _ => {
                 let commands = single_input.split_whitespace().collect_vec();

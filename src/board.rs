@@ -93,7 +93,9 @@ impl Board {
         self.set_fen(STARTING_POSITION_FEN).unwrap();
     }
 
-    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
+    #[deprecated(
+        note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method."
+    )]
     pub fn flip_vertical(&mut self) {
         #[expect(deprecated)]
         self.position.flip_vertical();
@@ -101,7 +103,9 @@ impl Board {
         self.update_repetition_table();
     }
 
-    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
+    #[deprecated(
+        note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method."
+    )]
     pub fn flip_horizontal(&mut self) {
         #[expect(deprecated)]
         self.position.flip_horizontal();
@@ -143,7 +147,7 @@ impl Board {
     pub fn clear_stack(&mut self) {
         self.stack.clear();
     }
-    
+
     pub fn update_repetition_table(&mut self) {
         self.repetition_table.clear();
         for (position, _) in &self.stack {
