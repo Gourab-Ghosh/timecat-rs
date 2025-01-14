@@ -126,8 +126,8 @@ impl UserCommand {
             }
             Self::Features => {
                 println_info("CPU Architecture", std::env::consts::ARCH);
-                println_info("BMI2 Supported", cfg!(target_feature = "bmi2"));
-                println_info("AVX2 Supported", cfg!(target_feature = "avx2"));
+                println_info("BMI2 Support", cfg!(target_feature = "bmi2"));
+                println_info("AVX2 Support", cfg!(target_feature = "avx2"));
             }
             Self::SelfPlay(config) => self_play(engine, config, true, None)?,
         }
