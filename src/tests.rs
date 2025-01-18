@@ -109,8 +109,7 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // parse_command(engine, "go movetime 3000");
     parse_command(engine, "go depth 15");
 
-    // let position = ChessPosition::from_fen("8/4R3/6rk/pPp4p/7P/4p1P1/7K/8 w - c6 0 48")?;
-    // println!("{}", position.is_legal(&Move::new(B5, C6, None)?));
+    // d4 d5 c4 e6 Nc3 Nf6 Nf3 Bb4 Bg5 h6 Bxf6 Bxc3+ bxc3 Qxf6 e3 O-O cxd5 exd5 Qb3 Rd8 c4 dxc4 Bxc4 Nd7 O-O Nb6 Be2 Be6 Qb1 Bf5 Qb4 a5 Qb5 Be4 Rfc1 Bc6 Qd3 Nd5 Ne5 Be8 Rab1 b6 Qe4 Qd6 Bd3 Nf6 Qf3 Nd5 Bb5 Qf6 Bxe8 Qxf3 gxf3 Rxe8 Nc6 a4 Rb5 Ne7 Nxe7+ Rxe7 a3 c5 dxc5 bxc5 Rcxc5 Rd8 Ra5 Rb7 Rc2 Rb1+ Kg2 Rdd1 f4 Rh1 Ra7 Rbg1+ Kf3 f6 Rc8+ Kh7 f5 h5 Ke4 Rc1 Rf8 Rc4+ Kd5 Rcc1 Rxf6 Rcg1 Rf8 h4 Ke4 Rc1 f6 Rc4+ Kf3 Rg1 f7 Rg6 Rh8+ Kxh8 f8=Q+ Kh7 Qf5 Rc6 Ke2 Rf6 Qe4 Re6 Qxh4+ Rh6 Qc4 Reg6 Ra8 Re6 h4 Rc6 Qg8+ Kg6 h5+ Kf6 Qf8+ Ke6 Rxa4 Rxh5 Qxg7 Kd6 Qf6+ Kc7 Qe7+ Kb8 Qd8+ Kb7 Rb4+ Ka6 Qa8#
 
     // println!("{:#?}", PAWN_MOVES);
     

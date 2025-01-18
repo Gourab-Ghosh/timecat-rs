@@ -11,7 +11,7 @@ pub struct EngineProperties {
 impl EngineProperties {
     #[inline]
     pub fn use_mate_distance_pruning(&self) -> bool {
-        self._use_mate_distance_pruning
+        self._use_mate_distance_pruning && !DISABLE_ALL_PRUNINGS
     }
 
     #[inline]
@@ -21,7 +21,7 @@ impl EngineProperties {
 
     #[inline]
     pub fn clear_table_after_each_search(&self) -> bool {
-        self._clear_table_after_each_search
+        self._clear_table_after_each_search || DISABLE_ALL_PRUNINGS
     }
 
     #[inline]
