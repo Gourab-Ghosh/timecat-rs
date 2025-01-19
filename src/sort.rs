@@ -347,17 +347,16 @@ impl MoveSorter {
         pv_move: Option<Move>,
         best_moves: &[Move],
     ) -> MoveWeight {
+        if pv_move.is_some() {
+            return 100_000;
+        }
         if !board.is_endgame() {
-            if let Some(index) = best_moves
+            if let Some(index) = best_moves[..NUM_BEST_ROOT_MOVES_TO_SEARCH_FIRST]
                 .iter()
-                .take(NUM_BEST_ROOT_MOVES_TO_SEARCH_FIRST)
                 .position(|&best_move| best_move == move_)
             {
                 return 200_000 - index as MoveWeight;
             }
-        }
-        if pv_move.is_some() {
-            return 100_000;
         }
         if board.gives_repetition(move_) {
             return -50;
