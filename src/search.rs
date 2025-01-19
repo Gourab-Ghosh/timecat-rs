@@ -236,14 +236,10 @@ impl<P: PositionEvaluation> Searcher<P> {
         &mut self,
         controller: Option<&mut impl SearchControl<Self>>,
     ) -> bool {
-        if self.stop_command.load(MEMORY_ORDERING) {
-            return true;
-        }
-        if let Some(controller) = controller {
-            controller.stop_search_at_every_node(self)
-        } else {
-            false
-        }
+        self.stop_command.load(MEMORY_ORDERING)
+            || controller.map_or(false, |controller| {
+                controller.stop_search_at_every_node(self)
+            })
     }
 
     fn pop(&mut self) -> ValidOrNullMove {
@@ -272,7 +268,12 @@ impl<P: PositionEvaluation> Searcher<P> {
             "depth".colorize(INFO_MESSAGE_STYLE),
             depth,
             "score".colorize(INFO_MESSAGE_STYLE),
-            board.score_flipped(score).stringify(),
+            if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
+                board.score_flipped(score)
+            } else {
+                score
+            }
+            .stringify(),
             "nodes".colorize(INFO_MESSAGE_STYLE),
             num_nodes_searched,
             "time".colorize(INFO_MESSAGE_STYLE),

@@ -580,7 +580,12 @@ impl SearchInfo {
             Self::format_info("seldepth", self.seldepth),
             Self::format_info(
                 "score",
-                self.get_score_flipped().map(|score| score.stringify()),
+                if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
+                    self.get_score()
+                } else {
+                    self.get_score_flipped()
+                }
+                .map(|score| score.stringify()),
             ),
             Self::format_info("nodes", self.nodes),
             Self::format_info("nps", self.get_nps()),
@@ -641,6 +646,7 @@ impl<P: PositionEvaluation> From<&Searcher<P>> for SearchInfo {
             time_elapsed: Some(searcher.get_time_elapsed()),
             pv: searcher.get_pv().copied().collect_vec(),
         };
+        // Adjust the score to reflect the perspective of the White player
         search_info.score = search_info
             .score
             .map(|score| search_info.position.score_flipped(score));
