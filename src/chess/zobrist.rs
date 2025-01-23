@@ -273,8 +273,18 @@ impl Zobrist {
 
     #[inline]
     pub fn en_passant(ep_square: Option<Square>) -> u64 {
+        const ZOBRIST_EP_DIRECT: [u64; NUM_SQUARES] = {
+            let mut array = [0; NUM_SQUARES];
+            let mut square_index = 0;
+            while square_index < NUM_SQUARES {
+                let square = Square::from_index(square_index);
+                array[square_index] = ZOBRIST_EP[square.get_file().to_index()];
+                square_index += 1;
+            }
+            array
+        };
         ep_square
-            .map_or(0, |ep| *get_item_unchecked!(ZOBRIST_EP, ep.get_file().to_index()))
+            .map_or(0, |ep| *get_item_unchecked!(ZOBRIST_EP_DIRECT, ep.to_index()))
     }
 
     #[inline]
