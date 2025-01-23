@@ -272,8 +272,9 @@ impl Zobrist {
     }
 
     #[inline]
-    pub fn en_passant(file: File) -> u64 {
-        *get_item_unchecked!(ZOBRIST_EP, file.to_index())
+    pub fn en_passant(ep_square: Option<Square>) -> u64 {
+        ep_square
+            .map_or(0, |ep| *get_item_unchecked!(ZOBRIST_EP, ep.get_file().to_index()))
     }
 
     #[inline]

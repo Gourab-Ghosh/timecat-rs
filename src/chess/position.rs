@@ -304,9 +304,7 @@ impl ChessPosition {
         self._transposition_hash = self.get_pawn_hash()
             ^ self.get_non_pawn_hash()
             ^ Zobrist::castle(self.castle_rights(White), self.castle_rights(Black))
-            ^ self
-                .ep_square()
-                .map_or(0, |ep| Zobrist::en_passant(ep.get_file()))
+            ^ Zobrist::en_passant(self.ep_square())
             ^ Zobrist::color(self.turn());
     }
 

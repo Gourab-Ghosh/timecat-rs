@@ -351,8 +351,9 @@ impl MoveSorter {
             return 100_000;
         }
         if !board.is_endgame() {
-            if let Some(index) = best_moves[..NUM_BEST_ROOT_MOVES_TO_SEARCH_FIRST]
+            if let Some(index) = best_moves
                 .iter()
+                .take(3)
                 .position(|&best_move| best_move == move_)
             {
                 return 200_000 - index as MoveWeight;
