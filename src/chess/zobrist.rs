@@ -235,18 +235,29 @@ const ZOBRIST_CASTLES: [[u64; 4]; 4] = {
     array
 };
 
-const ZOBRIST_EP: [u64; NUM_FILES] = [
-    0x70CC73D90BC26E24,
-    0xE21A6B35DF0C3AD7,
-    0x003A93D8B2806962,
-    0x1C99DED33CB890A1,
-    0xCF3145DE0ADD4289,
-    0xD0E4427A5514FB72,
-    0x77C621CC9FB3A483,
-    0x67A34DAC4356550B,
-];
+const ZOBRIST_EP: [u64; NUM_SQUARES] = {
+    let mini_zobrist_ep = [
+        0x70CC73D90BC26E24,
+        0xE21A6B35DF0C3AD7,
+        0x003A93D8B2806962,
+        0x1C99DED33CB890A1,
+        0xCF3145DE0ADD4289,
+        0xD0E4427A5514FB72,
+        0x77C621CC9FB3A483,
+        0x67A34DAC4356550B,
+    ];
 
-const TURN: u64 = 0xF8D626AAAF278509;
+    let mut array = [0; NUM_SQUARES];
+    let mut square_index = 0;
+    while square_index < NUM_SQUARES {
+        let square = Square::from_index(square_index);
+        array[square_index] = mini_zobrist_ep[square.get_file().to_index()];
+        square_index += 1;
+    }
+    array
+};
+
+const ZOBRIST_TURN: u64 = 0xF8D626AAAF278509;
 
 pub struct Zobrist;
 
@@ -272,23 +283,12 @@ impl Zobrist {
     }
 
     #[inline]
-    pub fn en_passant(ep_square: Option<Square>) -> u64 {
-        const ZOBRIST_EP_DIRECT: [u64; NUM_SQUARES] = {
-            let mut array = [0; NUM_SQUARES];
-            let mut square_index = 0;
-            while square_index < NUM_SQUARES {
-                let square = Square::from_index(square_index);
-                array[square_index] = ZOBRIST_EP[square.get_file().to_index()];
-                square_index += 1;
-            }
-            array
-        };
-        ep_square
-            .map_or(0, |ep| *get_item_unchecked!(ZOBRIST_EP_DIRECT, ep.to_index()))
+    pub fn en_passant(ep_square: Square) -> u64 {
+        *get_item_unchecked!(ZOBRIST_EP, ep_square.to_index())
     }
 
     #[inline]
     pub fn color(color: Color) -> u64 {
-        *get_item_unchecked!(const [0, TURN], color.to_index())
+        *get_item_unchecked!(const [0, ZOBRIST_TURN], color.to_index())
     }
 }

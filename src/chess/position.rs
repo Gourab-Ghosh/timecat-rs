@@ -304,7 +304,7 @@ impl ChessPosition {
         self._transposition_hash = self.get_pawn_hash()
             ^ self.get_non_pawn_hash()
             ^ Zobrist::castle(self.castle_rights(White), self.castle_rights(Black))
-            ^ Zobrist::en_passant(self.ep_square())
+            ^ self.ep_square().map_or(0, |ep| Zobrist::en_passant(ep))
             ^ Zobrist::color(self.turn());
     }
 
@@ -338,11 +338,12 @@ impl ChessPosition {
     pub fn null_move_unchecked(&self) -> Self {
         let mut result = self.to_owned();
         result.flip_turn_unchecked();
-        result.remove_ep();
-        result._halfmove_clock += 1;
-        result._fullmove_number += 1;
+        result._transposition_hash ^= Zobrist::color(Black) ^ Zobrist::color(White);
+        if let Some(ep_square) = result.ep_square() {
+            result.remove_ep();
+            result._transposition_hash ^= Zobrist::en_passant(ep_square);
+        }
         result.update_pin_and_checkers_info();
-        result.update_transposition_hash();
         result
     }
 
@@ -503,6 +504,7 @@ impl ChessPosition {
         ))
     }
 
+    #[inline]
     fn remove_ep(&mut self) {
         self._ep_square = None;
     }
@@ -518,8 +520,18 @@ impl ChessPosition {
     }
 
     #[inline]
+    pub fn set_halfmove_clock(&mut self, halfmove_clock: u8) {
+        self._halfmove_clock = halfmove_clock;
+    }
+
+    #[inline]
     pub fn get_fullmove_number(&self) -> NumMoves {
         self._fullmove_number
+    }
+
+    #[inline]
+    pub fn set_fullmove_number(&mut self, fullmove_number: NumMoves) {
+        self._fullmove_number = fullmove_number;
     }
 
     #[inline]
@@ -693,7 +705,9 @@ impl ChessPosition {
         self.update_pin_and_checkers_info();
         // self._non_pawn_transposition_hash = self._non_pawn_transposition_hash;
         // self._pawn_transposition_hash = self._pawn_transposition_hash;
-        self._ep_square = self._ep_square.map(|square| square.horizontal_mirror());
+        if let Some(ep_square) = self.ep_square() {
+            self.set_ep(ep_square.vertical_mirror());
+        }
     }
 
     #[deprecated(
@@ -710,17 +724,35 @@ impl ChessPosition {
         self.update_pin_and_checkers_info();
         // self._non_pawn_transposition_hash = self._non_pawn_transposition_hash;
         // self._pawn_transposition_hash = self._pawn_transposition_hash;
-        self._ep_square = self._ep_square.map(|square| square.vertical_mirror());
+        if let Some(ep_square) = self.ep_square() {
+            self.set_ep(ep_square.horizontal_mirror());
+        }
     }
 
     #[inline]
-    pub fn set_turn_unchecked(&mut self, turn: Color) {
+    fn set_turn_unchecked(&mut self, turn: Color) {
         self._turn = turn;
     }
 
+    /// sets turn by using `flip_turn` method which uses Null Move.
     #[inline]
-    pub fn flip_turn_unchecked(&mut self) {
+    pub fn set_turn(&mut self, turn: Color) -> Result<()> {
+        if self.turn() != turn {
+            self.flip_turn()?;
+        }
+        Ok(())
+    }
+
+    #[inline]
+    fn flip_turn_unchecked(&mut self) {
         self._turn = !self._turn;
+    }
+
+    /// Flips turn by applying Null Move.
+    #[inline]
+    pub fn flip_turn(&mut self) -> Result<()> {
+        *self = self.null_move()?;
+        Ok(())
     }
 
     fn update_pin_and_checkers_info(&mut self) {
@@ -1192,7 +1224,7 @@ impl ChessPosition {
                 },
             )
         };
-        Ok(BoardPositionBuilder::setup(
+        Ok(ChessPositionBuilder::setup(
             ALL_PIECE_TYPES
                 .iter()
                 .zip(pieces_masks)
@@ -1387,10 +1419,10 @@ impl BoardPositionMethodOverload<ValidOrNullMove> for ChessPosition {
     }
 }
 
-impl TryFrom<&BoardPositionBuilder> for ChessPosition {
+impl TryFrom<&ChessPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
-    fn try_from(position_builder: &BoardPositionBuilder) -> Result<Self> {
+    fn try_from(position_builder: &ChessPositionBuilder) -> Result<Self> {
         let mut position = ChessPosition::new_empty();
 
         for square in ALL_SQUARES {
@@ -1428,18 +1460,18 @@ impl TryFrom<&BoardPositionBuilder> for ChessPosition {
     }
 }
 
-impl TryFrom<BoardPositionBuilder> for ChessPosition {
+impl TryFrom<ChessPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
-    fn try_from(position_builder: BoardPositionBuilder) -> Result<Self> {
+    fn try_from(position_builder: ChessPositionBuilder) -> Result<Self> {
         (&position_builder).try_into()
     }
 }
 
-impl TryFrom<&mut BoardPositionBuilder> for ChessPosition {
+impl TryFrom<&mut ChessPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
-    fn try_from(position_builder: &mut BoardPositionBuilder) -> Result<Self> {
+    fn try_from(position_builder: &mut ChessPositionBuilder) -> Result<Self> {
         (position_builder.to_owned()).try_into()
     }
 }
@@ -1449,7 +1481,7 @@ impl FromStr for ChessPosition {
 
     #[inline]
     fn from_str(value: &str) -> Result<Self> {
-        BoardPositionBuilder::from_str(value)?.try_into()
+        ChessPositionBuilder::from_str(value)?.try_into()
     }
 }
 
@@ -1463,7 +1495,7 @@ impl Default for ChessPosition {
 impl fmt::Display for ChessPosition {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", BoardPositionBuilder::from(self))
+        write!(f, "{}", ChessPositionBuilder::from(self))
     }
 }
 
