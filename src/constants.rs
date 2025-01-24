@@ -75,7 +75,7 @@ pub mod bitboard_and_square {
         (A, 1), (B, 2), (C, 3), (D, 4), (E, 5), (F, 6), (G, 7), (H, 8),
     );
 
-    pub const BB_ADJACENT_FILES: [BitBoard; 8] = [
+    pub static BB_ADJACENT_FILES: [BitBoard; 8] = [
         BitBoard::new(144680345676153346),
         BitBoard::new(361700864190383365),
         BitBoard::new(723401728380766730),
@@ -113,7 +113,7 @@ pub mod bitboard_and_square {
     pub const CENTER_SQUARES_BB: BitBoard = BitBoard::new(0x0000001818000000);
     pub const PSEUDO_CENTER_SQUARES_BB: BitBoard = BitBoard::new(0x00003C24243C0000);
 
-    pub const BOARD_QUARTER_MASKS: [BitBoard; 4] = [
+    pub static BOARD_QUARTER_MASKS: [BitBoard; 4] = [
         BitBoard::new(0x0f0f_0f0f_0000_0000),
         BitBoard::new(0xf0f0_f0f0_0000_0000),
         BitBoard::new(0x0000_0000_0f0f_0f0f),
@@ -167,9 +167,9 @@ pub mod strings {
     macro_rules! generate_constants {
         ($constant_name:ident, [$( $func_name:ident ), *]) => {
             #[cfg(feature = "colored")]
-            pub const $constant_name: &[ColoredStringFunction] = &[$( colored::Colorize::$func_name ), *];
+            pub static $constant_name: &[ColoredStringFunction] = &[$( colored::Colorize::$func_name ), *];
             #[cfg(not(feature = "colored"))]
-            pub const $constant_name: &[ColoredStringFunction] = &[];
+            pub static $constant_name: &[ColoredStringFunction] = &[];
         };
     }
 
@@ -214,8 +214,7 @@ pub mod evaluate {
 pub mod cache_table {
     use super::*;
 
-    // pub const DEFAULT_HASH: NonZeroU64 = NonZeroU64::new(1).unwrap();
-    pub const DEFAULT_HASH: NonZeroU64 = unsafe { NonZeroU64::new_unchecked(1) };
+    pub const DEFAULT_HASH: NonZeroU64 = NonZeroU64::new(1).unwrap();
 }
 
 pub mod engine {
@@ -251,7 +250,7 @@ pub mod engine {
         [100, 200, 300, 400, 500, 600],
     ];
 
-    pub const LMR_TABLE: [[Depth; 64]; 64] = [[0; 64]; 64];
+    pub static LMR_TABLE: [[Depth; 64]; 64] = [[0; 64]; 64];
 }
 
 pub mod binary {
@@ -275,7 +274,7 @@ pub mod color {
     use super::*;
 
     pub const NUM_COLORS: usize = 2;
-    pub const ALL_COLORS: [Color; NUM_COLORS] = [Black, White];
+    pub static ALL_COLORS: [Color; NUM_COLORS] = [Black, White];
 }
 
 pub mod piece {
@@ -299,7 +298,7 @@ pub mod piece {
         BlackKing,
     ];
     pub const NUM_PROMOTION_PIECES: usize = 4;
-    pub const PROMOTION_PIECES: [PieceType; NUM_PROMOTION_PIECES] = [Queen, Knight, Rook, Bishop];
+    pub static PROMOTION_PIECES: [PieceType; NUM_PROMOTION_PIECES] = [Queen, Knight, Rook, Bishop];
 }
 
 pub mod ranks {
