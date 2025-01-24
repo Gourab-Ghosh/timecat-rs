@@ -21,11 +21,10 @@ impl PVTable {
         get_item_unchecked!(
             self.table,
             ply,
-            0..get_item_unchecked!(@internal self.length, ply).to_owned()
+            0..*get_item_unchecked!(@internal self.length, ply)
         )
         .iter()
-        .take_while(|opt_move| opt_move.is_some())
-        .map(|opt_move| opt_move.as_ref().unwrap())
+        .map_while(Option::as_ref)
     }
 
     pub fn update_table(&mut self, ply: Ply, move_: Move) {
