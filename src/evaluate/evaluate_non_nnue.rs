@@ -178,9 +178,9 @@ impl EvaluatorNonNNUE {
             .iter()
             .filter(|&&rank| {
                 let sq = Square::from_rank_and_file(rank, file);
-                position.get_piece_at(sq).map_or(false, |p| {
-                    p.get_piece_type() == Pawn && p.get_color() == pawn_color
-                })
+                position
+                    .get_piece_at(sq)
+                    .is_some_and(|p| p.get_piece_type() == Pawn && p.get_color() == pawn_color)
             })
             .count();
 

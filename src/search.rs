@@ -237,9 +237,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         controller: Option<&mut impl SearchControl<Self>>,
     ) -> bool {
         self.stop_command.load(MEMORY_ORDERING)
-            || controller.map_or(false, |controller| {
-                controller.stop_search_at_every_node(self)
-            })
+            || controller.is_some_and(|controller| controller.stop_search_at_every_node(self))
     }
 
     fn pop(&mut self) -> ValidOrNullMove {
@@ -518,7 +516,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 }
             }
             // razoring
-            const RAZORING_DEPTH: Depth = 3;
+            static RAZORING_DEPTH: Depth = 3;
             if !is_pv_node && depth <= RAZORING_DEPTH && !is_checkmate(beta) {
                 let mut score = static_evaluation + const { (5 * PAWN_VALUE) / 4 };
                 if score < beta {

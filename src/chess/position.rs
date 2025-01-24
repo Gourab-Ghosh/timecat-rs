@@ -304,7 +304,7 @@ impl ChessPosition {
         self._transposition_hash = self.get_pawn_hash()
             ^ self.get_non_pawn_hash()
             ^ Zobrist::castle(self.castle_rights(White), self.castle_rights(Black))
-            ^ self.ep_square().map_or(0, |ep| Zobrist::en_passant(ep))
+            ^ self.ep_square().map_or(0, Zobrist::en_passant)
             ^ Zobrist::color(self.turn());
     }
 
@@ -567,7 +567,7 @@ impl ChessPosition {
 
     #[inline]
     pub fn is_en_passant(&self, move_: Move) -> bool {
-        self.ep_square().map_or(false, |ep_square| {
+        self.ep_square().is_some_and(|ep_square| {
             let source = move_.get_source();
             let dest = move_.get_dest();
             ep_square == dest

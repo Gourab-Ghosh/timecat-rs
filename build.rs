@@ -197,7 +197,7 @@ mod bitboards_generation {
 
         writeln!(
             file,
-            "const PAWN_MOVES_AND_ATTACKS: [[[BitBoard; 64]; 2]; 2] = {:#?};",
+            "static PAWN_MOVES_AND_ATTACKS: [[[BitBoard; 64]; 2]; 2] = {:#?};",
             [moves_array, attacks_array],
         )?;
 
@@ -207,7 +207,7 @@ mod bitboards_generation {
     fn create_knight_moves(file: &mut File) -> Result<()> {
         writeln!(
             file,
-            "const KNIGHT_MOVES: [BitBoard; 64] = {:#?};",
+            "static KNIGHT_MOVES: [BitBoard; 64] = {:#?};",
             std::array::from_fn::<_, 64, _>(|index| {
                 let bb_square = 1 << index;
                 let two_up_and_down =
@@ -228,7 +228,7 @@ mod bitboards_generation {
     fn create_king_moves(file: &mut File) -> Result<()> {
         writeln!(
             file,
-            "const KING_MOVES: [BitBoard; 64] = {:#?};",
+            "static KING_MOVES: [BitBoard; 64] = {:#?};",
             std::array::from_fn::<_, 64, _>(|index| {
                 let mut bb = 1 << index;
                 bb ^= shift_left(bb) ^ shift_right(bb);
@@ -366,31 +366,31 @@ mod bitboards_generation {
 
         writeln!(
             file,
-            "const BISHOP_DIAGONAL_RAYS: [BitBoard; 64] = {:#?};",
+            "static BISHOP_DIAGONAL_RAYS: [BitBoard; 64] = {:#?};",
             bishop_diagonal_rays
         )?;
         writeln!(
             file,
-            "const BISHOP_ANTI_DIAGONAL_RAYS: [BitBoard; 64] = {:#?};",
+            "static BISHOP_ANTI_DIAGONAL_RAYS: [BitBoard; 64] = {:#?};",
             bishop_anti_diagonal_rays
         )?;
         writeln!(
             file,
-            "const BISHOP_RAYS: [BitBoard; 64] = {:#?};",
+            "static BISHOP_RAYS: [BitBoard; 64] = {:#?};",
             bishop_rays
         )?;
-        writeln!(file, "const ROOK_RAYS: [BitBoard; 64] = {:#?};", rook_rays)?;
+        writeln!(file, "static ROOK_RAYS: [BitBoard; 64] = {:#?};", rook_rays)?;
         writeln!(
             file,
-            "const ALL_DIRECTION_RAYS: [BitBoard; 64] = {:#?};",
+            "static ALL_DIRECTION_RAYS: [BitBoard; 64] = {:#?};",
             all_direction_rays
         )?;
         writeln!(
             file,
-            "const BETWEEN: [[BitBoard; 64]; 64] = {:#?};",
+            "static BETWEEN: [[BitBoard; 64]; 64] = {:#?};",
             between
         )?;
-        writeln!(file, "const LINE: [[BitBoard; 64]; 64] = {:#?};", line)?;
+        writeln!(file, "static LINE: [[BitBoard; 64]; 64] = {:#?};", line)?;
 
         Ok((bishop_rays, rook_rays))
     }
@@ -416,7 +416,7 @@ mod bitboards_generation {
         }
 
         #[rustfmt::skip]
-        let magic_numbers = const{[
+        const MAGIC_NUMBERS: [u64; 128] = [
             0x204022080a222040, 0x0020042400404100, 0x421073004500023a, 0x0008048100401040,
             0x8004042100840000, 0x0001040240828006, 0x00818c0520300620, 0x0a10210048200900,
             0x2090210202180100, 0x88050c1816004209, 0x88050c1816004209, 0x0040040404840000,
@@ -449,7 +449,7 @@ mod bitboards_generation {
             0x0000180224008080, 0x002e001004080a00, 0x3021006a00040100, 0x2a402d4104108200,
             0x0404402010800301, 0x0041001082204001, 0x5000501900422001, 0x0800182005005001,
             0x0006001410592006, 0x0001006802140005, 0x1020080210028904, 0xc000192040840102,
-        ]};
+        ];
 
         const NUM_MOVES: usize = 64 * (1 << 12) + 64 * (1 << 9);
 
@@ -474,7 +474,7 @@ mod bitboards_generation {
                 }[square_index];
 
                 let magic = &mut bishop_and_rook_magic_numbers[piece_index][square_index];
-                magic.magic_number = magic_numbers[64 * piece_index + square_index];
+                magic.magic_number = MAGIC_NUMBERS[64 * piece_index + square_index];
                 magic.mask.0 = ray.0
                     & match piece_index {
                         0 => 0x007E7E7E7E7E7E00,
@@ -561,12 +561,12 @@ mod bitboards_generation {
 
         writeln!(
             file,
-            r"const BISHOP_AND_ROOK_MAGIC_NUMBERS: [[Magic; 64]; 2] = {:#?};",
+            "static BISHOP_AND_ROOK_MAGIC_NUMBERS: [[Magic; 64]; 2] = {:#?};",
             bishop_and_rook_magic_numbers
         )?;
         writeln!(
             file,
-            r"static MOVES: [BitBoard; {}] = {:#?};",
+            "static MOVES: [BitBoard; {}] = {:#?};",
             offset,
             &moves[0..offset]
         )?;
@@ -581,12 +581,12 @@ mod bitboards_generation {
 
             writeln!(
                 file,
-                r"const BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
+                "static BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
                 bishop_and_rook_bmi_masks,
             )?;
             writeln!(
                 file,
-                r"static BMI_MOVES: [u16; {}] = {:#?};",
+                "static BMI_MOVES: [u16; {}] = {:#?};",
                 bmi_offset,
                 &bmi_moves[0..bmi_offset]
             )?;

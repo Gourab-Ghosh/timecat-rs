@@ -1,6 +1,6 @@
 use super::*;
 
-const BOARD_SKELETON: &str = r"
+static BOARD_SKELETON: &str = r"
 
      A   B   C   D   E   F   G   H
    +---+---+---+---+---+---+---+---+
