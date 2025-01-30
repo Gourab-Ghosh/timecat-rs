@@ -163,7 +163,7 @@ impl GoAndPerft {
             println_wasm!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
-        let position_count = engine.get_board_mut().perft(depth);
+        let position_count = engine.get_board_mut().perft_verbose(depth);
         let elapsed_time = clock.elapsed();
         let nps: String = format!(
             "{} nodes/sec",

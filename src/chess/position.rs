@@ -1164,6 +1164,36 @@ impl ChessPosition {
         self.custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS, BB_ALL)
     }
 
+    pub fn perft(&self, depth: Depth, print_move: bool) -> usize {
+        let moves = self.generate_legal_moves();
+        if depth == 1 {
+            return moves.len();
+        }
+        let mut count: usize = 0;
+        for move_ in moves {
+            let c_count = self.make_move_new(move_).perft(depth - 1, false);
+            if print_move {
+                println_wasm!(
+                    "{}: {}",
+                    move_.colorize(PERFT_MOVE_STYLE),
+                    c_count.colorize(PERFT_COUNT_STYLE),
+                );
+            }
+            count += c_count;
+        }
+        count
+    }
+
+    #[inline]
+    pub fn perft_quiet(&self, depth: Depth) -> usize {
+        self.perft(depth, false)
+    }
+
+    #[inline]
+    pub fn perft_verbose(&self, depth: Depth) -> usize {
+        self.perft(depth, true)
+    }
+
     #[cfg(feature = "pyo3")]
     fn from_py_board(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
         let pieces_masks = [

@@ -361,33 +361,6 @@ impl Board {
         pgn
     }
 
-    fn perft_helper(&mut self, depth: Depth, print_move: bool) -> usize {
-        let moves = self.generate_legal_moves();
-        if depth == 1 {
-            return moves.len();
-        }
-        let mut count: usize = 0;
-        for move_ in moves {
-            self.push_unchecked(move_);
-            let c_count = self.perft_helper(depth - 1, false);
-            self.pop();
-            if print_move {
-                println_wasm!(
-                    "{}: {}",
-                    move_.colorize(PERFT_MOVE_STYLE),
-                    c_count.colorize(PERFT_COUNT_STYLE),
-                );
-            }
-            count += c_count;
-        }
-        count
-    }
-
-    #[inline]
-    pub fn perft(&mut self, depth: Depth) -> usize {
-        self.perft_helper(depth, true)
-    }
-
     #[inline]
     #[cfg(feature = "extras")]
     pub fn evaluate(&mut self) -> Score {
