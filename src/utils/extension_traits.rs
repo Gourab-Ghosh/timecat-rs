@@ -138,23 +138,26 @@ pub trait PositionEvaluation: Clone + Send + 'static {
 
 macro_rules! generate_chess_engine_methods {
     ($func_name:ident, ( $( $parameter_name:ident: $parameter_type:ty ),+ $(,)? ) , $input:expr $(,)?) => {
+        #[inline]
+        #[must_use = "If you don't need the search info, you can just search the position."]
+        fn $func_name(&mut self, $($parameter_name: $parameter_type),+, verbose: bool) -> SearchInfo {
+            self.search($input, verbose)
+        }
+        generate_chess_engine_methods!(@quiet_and_verbose $func_name, ( $($parameter_name: $parameter_type),+ ));
+    };
+
+    (@quiet_and_verbose $func_name:ident, ( $( $parameter_name:ident: $parameter_type:ty ),+ $(,)? ) $(,)?) => {
         paste::item! {
             #[inline]
             #[must_use = "If you don't need the search info, you can just search the position."]
-            fn [<search_$func_name>](&mut self, $($parameter_name: $parameter_type),+, verbose: bool) -> SearchInfo {
-                self.search($input, verbose)
+            fn [<$func_name _quiet>](&mut self, $($parameter_name: $parameter_type),+) -> SearchInfo {
+                self.[<$func_name>]( $($parameter_name),+, false)
             }
 
             #[inline]
             #[must_use = "If you don't need the search info, you can just search the position."]
-            fn [<search_$func_name _quiet>](&mut self, $($parameter_name: $parameter_type),+) -> SearchInfo {
-                self.[<search_$func_name>]( $($parameter_name),+, false)
-            }
-
-            #[inline]
-            #[must_use = "If you don't need the search info, you can just search the position."]
-            fn [<search_$func_name _verbose>](&mut self, $($parameter_name: $parameter_type),+) -> SearchInfo {
-                self.[<search_$func_name>]( $($parameter_name),+, true)
+            fn [<$func_name _verbose>](&mut self, $($parameter_name: $parameter_type),+) -> SearchInfo {
+                self.[<$func_name>]( $($parameter_name),+, true)
             }
         }
     };
@@ -192,18 +195,6 @@ pub trait ChessEngine {
             .filter(|WeightedMove { move_, .. }| self.get_board().is_legal(move_))
     }
 
-    #[inline]
-    #[must_use = "If you don't need the search info, you can just search the position."]
-    fn search_quiet(&mut self, config: &SearchConfig) -> SearchInfo {
-        self.search(config, false)
-    }
-
-    #[inline]
-    #[must_use = "If you don't need the search info, you can just search the position."]
-    fn search_verbose(&mut self, config: &SearchConfig) -> SearchInfo {
-        self.search(config, true)
-    }
-
     fn with_io_reader(mut self, optional_io_reader: Self::IoReader) -> Self
     where
         Self: Sized,
@@ -212,13 +203,14 @@ pub trait ChessEngine {
         self
     }
 
-    generate_chess_engine_methods!(depth, (depth: Depth), &GoCommand::from_depth(depth).into());
-    generate_chess_engine_methods!(nodes, (nodes: usize), &GoCommand::from_nodes(nodes).into());
-    generate_chess_engine_methods!(mate, (mate: Ply), &GoCommand::from_mate(mate).into());
-    generate_chess_engine_methods!(movetime, (movetime: Duration), &GoCommand::from_movetime(movetime).into());
-    generate_chess_engine_methods!(millis, (millis: u64), &GoCommand::from_millis(millis).into());
+    generate_chess_engine_methods!(@quiet_and_verbose search, (config: &SearchConfig));
+    generate_chess_engine_methods!(search_depth, (depth: Depth), &GoCommand::from_depth(depth).into());
+    generate_chess_engine_methods!(search_nodes, (nodes: usize), &GoCommand::from_nodes(nodes).into());
+    generate_chess_engine_methods!(search_mate, (mate: Ply), &GoCommand::from_mate(mate).into());
+    generate_chess_engine_methods!(search_movetime, (movetime: Duration), &GoCommand::from_movetime(movetime).into());
+    generate_chess_engine_methods!(search_millis, (millis: u64), &GoCommand::from_millis(millis).into());
     generate_chess_engine_methods!(
-        timed,
+        search_timed,
         (
             wtime: Duration,
             btime: Duration,
@@ -234,6 +226,7 @@ pub trait ChessEngine {
             moves_to_go.into(),
         ).into(),
     );
+    generate_chess_engine_methods!(go, (go_command: GoCommand), &go_command.into());
 }
 
 pub trait BoardPositionMethodOverload<T> {
