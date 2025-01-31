@@ -136,6 +136,30 @@ pub trait PositionEvaluation: Clone + Send + 'static {
     }
 }
 
+macro_rules! generate_chess_engine_methods {
+    ($func_name:ident, ( $( $parameter_name:ident: $parameter_type:ty ),+ $(,)? ) , $input:expr $(,)?) => {
+        paste::item! {
+            #[inline]
+            #[must_use = "If you don't need the search info, you can just search the position."]
+            fn [<search_$func_name>](&mut self, $($parameter_name: $parameter_type),+, verbose: bool) -> SearchInfo {
+                self.search($input, verbose)
+            }
+
+            #[inline]
+            #[must_use = "If you don't need the search info, you can just search the position."]
+            fn [<search_$func_name _quiet>](&mut self, $($parameter_name: $parameter_type),+) -> SearchInfo {
+                self.[<search_$func_name>]( $($parameter_name),+, false)
+            }
+
+            #[inline]
+            #[must_use = "If you don't need the search info, you can just search the position."]
+            fn [<search_$func_name _verbose>](&mut self, $($parameter_name: $parameter_type),+) -> SearchInfo {
+                self.[<search_$func_name>]( $($parameter_name),+, true)
+            }
+        }
+    };
+}
+
 pub trait ChessEngine {
     type IoReader;
 
@@ -152,7 +176,7 @@ pub trait ChessEngine {
     fn clear_hash(&mut self);
     fn evaluate_current_position(&mut self) -> Score;
     fn evaluate_current_position_flipped(&mut self) -> Score;
-    fn go(&mut self, config: &SearchConfig, verbose: bool) -> SearchInfo;
+    fn search(&mut self, config: &SearchConfig, verbose: bool) -> SearchInfo;
 
     #[inline]
     fn print_info(&self) {}
@@ -170,14 +194,14 @@ pub trait ChessEngine {
 
     #[inline]
     #[must_use = "If you don't need the search info, you can just search the position."]
-    fn go_quiet(&mut self, config: &SearchConfig) -> SearchInfo {
-        self.go(config, false)
+    fn search_quiet(&mut self, config: &SearchConfig) -> SearchInfo {
+        self.search(config, false)
     }
 
     #[inline]
     #[must_use = "If you don't need the search info, you can just search the position."]
-    fn go_verbose(&mut self, config: &SearchConfig) -> SearchInfo {
-        self.go(config, true)
+    fn search_verbose(&mut self, config: &SearchConfig) -> SearchInfo {
+        self.search(config, true)
     }
 
     fn with_io_reader(mut self, optional_io_reader: Self::IoReader) -> Self
@@ -187,6 +211,29 @@ pub trait ChessEngine {
         self.set_optional_io_reader(optional_io_reader);
         self
     }
+
+    generate_chess_engine_methods!(depth, (depth: Depth), &GoCommand::from_depth(depth).into());
+    generate_chess_engine_methods!(nodes, (nodes: usize), &GoCommand::from_nodes(nodes).into());
+    generate_chess_engine_methods!(mate, (mate: Ply), &GoCommand::from_mate(mate).into());
+    generate_chess_engine_methods!(movetime, (movetime: Duration), &GoCommand::from_movetime(movetime).into());
+    generate_chess_engine_methods!(millis, (millis: u64), &GoCommand::from_millis(millis).into());
+    generate_chess_engine_methods!(
+        timed,
+        (
+            wtime: Duration,
+            btime: Duration,
+            winc: Duration,
+            binc: Duration,
+            moves_to_go: impl Into<Option<NumMoves>>,
+        ),
+        &GoCommand::from_timed(
+            wtime,
+            btime,
+            winc,
+            binc,
+            moves_to_go.into(),
+        ).into(),
+    );
 }
 
 pub trait BoardPositionMethodOverload<T> {

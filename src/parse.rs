@@ -196,7 +196,7 @@ impl GoAndPerft {
             println_wasm!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
-        let response = engine.go_verbose(config);
+        let response = engine.search_verbose(config);
         let best_move = response.get_best_move().ok_or(BestMoveNotFound {
             fen: engine.get_board().get_fen(),
         })?;

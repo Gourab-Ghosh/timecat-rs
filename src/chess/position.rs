@@ -1169,19 +1169,19 @@ impl ChessPosition {
         if depth == 1 {
             return moves.len();
         }
-        let mut count: usize = 0;
-        for move_ in moves {
-            let c_count = self.make_move_new(move_).perft(depth - 1, false);
-            if print_move {
-                println_wasm!(
-                    "{}: {}",
-                    move_.colorize(PERFT_MOVE_STYLE),
-                    c_count.colorize(PERFT_COUNT_STYLE),
-                );
-            }
-            count += c_count;
-        }
-        count
+        moves
+            .map(|move_| {
+                let count = self.make_move_new(move_).perft(depth - 1, false);
+                if print_move {
+                    println_wasm!(
+                        "{}: {}",
+                        move_.colorize(PERFT_MOVE_STYLE),
+                        count.colorize(PERFT_COUNT_STYLE),
+                    );
+                }
+                count
+            })
+            .sum()
     }
 
     #[inline]

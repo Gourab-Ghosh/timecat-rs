@@ -330,7 +330,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         moves_vec_sorted
     }
 
-    fn search(
+    fn search_root(
         &mut self,
         depth: Depth,
         mut alpha: Score,
@@ -716,7 +716,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         Some(alpha)
     }
 
-    pub fn go(
+    pub fn search(
         &mut self,
         mut config: &SearchConfig,
         mut controller: impl SearchControl<Self>,
@@ -735,7 +735,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         {
             let last_score = self.score;
             self.score = self
-                .search(
+                .search_root(
                     self.depth_completed + 1,
                     alpha,
                     beta,
