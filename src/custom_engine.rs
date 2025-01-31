@@ -11,7 +11,7 @@ pub struct EngineProperties {
 impl EngineProperties {
     #[inline]
     pub fn use_mate_distance_pruning(&self) -> bool {
-        self._use_mate_distance_pruning
+        self._use_mate_distance_pruning && !DISABLE_ALL_PRUNINGS
     }
 
     #[inline]
@@ -21,7 +21,7 @@ impl EngineProperties {
 
     #[inline]
     pub fn clear_table_after_each_search(&self) -> bool {
-        self._clear_table_after_each_search
+        self._clear_table_after_each_search || DISABLE_ALL_PRUNINGS
     }
 
     #[inline]
@@ -293,7 +293,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
     }
 
     #[must_use = "If you don't need the search info, you can just search the position."]
-    fn go(&mut self, config: &SearchConfig, verbose: bool) -> SearchInfo {
+    fn search(&mut self, config: &SearchConfig, verbose: bool) -> SearchInfo {
         if let Some(WeightedMove { move_, weight }) = self.get_opening_book_weighted_move() {
             return SearchInfoBuilder::new(self.board.get_position().clone(), vec![move_])
                 .set_score(weight as Score)
@@ -305,7 +305,11 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
             let mut threaded_searcher = self.generate_searcher(id);
             let controller = self.controller.clone();
             let join_handle = thread::spawn(move || {
-                threaded_searcher.go(const { &SearchConfig::new_infinite() }, controller, false);
+                threaded_searcher.search(
+                    const { &SearchConfig::new_infinite() },
+                    controller,
+                    false,
+                );
             });
             join_handles.push(join_handle);
         }
@@ -318,7 +322,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
             }));
         }
         let mut main_thread_searcher = self.generate_searcher(0);
-        main_thread_searcher.go(config, self.controller.clone(), verbose);
+        main_thread_searcher.search(config, self.controller.clone(), verbose);
         self.set_stop_command(true);
         for join_handle in join_handles {
             join_handle.join().unwrap();

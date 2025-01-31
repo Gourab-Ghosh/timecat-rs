@@ -181,7 +181,7 @@ impl HalfKPModelReader {
         white_king_square: Square,
         black_king_square: Square,
     ) -> Result<HalfKPModel> {
-        let position: ChessPosition = BoardPositionBuilder::new()
+        let position: ChessPosition = ChessPositionBuilder::new()
             .add_piece(white_king_square, WhiteKing)
             .add_piece(black_king_square, BlackKing)
             .try_into()?;

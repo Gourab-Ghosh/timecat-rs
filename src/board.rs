@@ -93,7 +93,9 @@ impl Board {
         self.set_fen(STARTING_POSITION_FEN).unwrap();
     }
 
-    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
+    #[deprecated(
+        note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method."
+    )]
     pub fn flip_vertical(&mut self) {
         #[expect(deprecated)]
         self.position.flip_vertical();
@@ -101,7 +103,9 @@ impl Board {
         self.update_repetition_table();
     }
 
-    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
+    #[deprecated(
+        note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method."
+    )]
     pub fn flip_horizontal(&mut self) {
         #[expect(deprecated)]
         self.position.flip_horizontal();
@@ -143,7 +147,7 @@ impl Board {
     pub fn clear_stack(&mut self) {
         self.stack.clear();
     }
-    
+
     pub fn update_repetition_table(&mut self) {
         self.repetition_table.clear();
         for (position, _) in &self.stack {
@@ -355,33 +359,6 @@ impl Board {
                 .map(|(_, optional_m)| optional_m),
         );
         pgn
-    }
-
-    fn perft_helper(&mut self, depth: Depth, print_move: bool) -> usize {
-        let moves = self.generate_legal_moves();
-        if depth == 1 {
-            return moves.len();
-        }
-        let mut count: usize = 0;
-        for move_ in moves {
-            self.push_unchecked(move_);
-            let c_count = self.perft_helper(depth - 1, false);
-            self.pop();
-            if print_move {
-                println_wasm!(
-                    "{}: {}",
-                    move_.colorize(PERFT_MOVE_STYLE),
-                    c_count.colorize(PERFT_COUNT_STYLE),
-                );
-            }
-            count += c_count;
-        }
-        count
-    }
-
-    #[inline]
-    pub fn perft(&mut self, depth: Depth) -> usize {
-        self.perft_helper(depth, true)
     }
 
     #[inline]

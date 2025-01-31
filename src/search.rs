@@ -21,11 +21,10 @@ impl PVTable {
         get_item_unchecked!(
             self.table,
             ply,
-            0..get_item_unchecked!(@internal self.length, ply).to_owned()
+            0..*get_item_unchecked!(@internal self.length, ply)
         )
         .iter()
-        .take_while(|opt_move| opt_move.is_some())
-        .map(|opt_move| opt_move.as_ref().unwrap())
+        .map_while(Option::as_ref)
     }
 
     pub fn update_table(&mut self, ply: Ply, move_: Move) {
@@ -236,14 +235,8 @@ impl<P: PositionEvaluation> Searcher<P> {
         &mut self,
         controller: Option<&mut impl SearchControl<Self>>,
     ) -> bool {
-        if self.stop_command.load(MEMORY_ORDERING) {
-            return true;
-        }
-        if let Some(controller) = controller {
-            controller.stop_search_at_every_node(self)
-        } else {
-            false
-        }
+        self.stop_command.load(MEMORY_ORDERING)
+            || controller.is_some_and(|controller| controller.stop_search_at_every_node(self))
     }
 
     fn pop(&mut self) -> ValidOrNullMove {
@@ -272,7 +265,12 @@ impl<P: PositionEvaluation> Searcher<P> {
             "depth".colorize(INFO_MESSAGE_STYLE),
             depth,
             "score".colorize(INFO_MESSAGE_STYLE),
-            board.score_flipped(score).stringify(),
+            if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
+                board.score_flipped(score)
+            } else {
+                score
+            }
+            .stringify(),
             "nodes".colorize(INFO_MESSAGE_STYLE),
             num_nodes_searched,
             "time".colorize(INFO_MESSAGE_STYLE),
@@ -332,7 +330,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         moves_vec_sorted
     }
 
-    fn search(
+    fn search_root(
         &mut self,
         depth: Depth,
         mut alpha: Score,
@@ -517,7 +515,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 }
             }
             // razoring
-            const RAZORING_DEPTH: Depth = 3;
+            static RAZORING_DEPTH: Depth = 3;
             if !is_pv_node && depth <= RAZORING_DEPTH && !is_checkmate(beta) {
                 let mut score = static_evaluation + const { (5 * PAWN_VALUE) / 4 };
                 if score < beta {
@@ -718,7 +716,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         Some(alpha)
     }
 
-    pub fn go(
+    pub fn search(
         &mut self,
         mut config: &SearchConfig,
         mut controller: impl SearchControl<Self>,
@@ -737,7 +735,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         {
             let last_score = self.score;
             self.score = self
-                .search(
+                .search_root(
                     self.depth_completed + 1,
                     alpha,
                     beta,

@@ -20,7 +20,7 @@ pub enum GoCommand {
         nodes: Option<usize>,
         mate: Option<Ply>,
         movetime: Option<Duration>,
-        time_clock: Option<TimedGoCommand>,
+        timed: Option<TimedGoCommand>,
     },
 }
 
@@ -30,50 +30,55 @@ impl GoCommand {
         nodes: None,
         mate: None,
         movetime: None,
-        time_clock: None,
+        timed: None,
     };
 
+    #[inline]
     pub const fn from_depth(depth: Depth) -> Self {
         Self::Limit {
             depth: Some(depth),
             nodes: None,
             mate: None,
             movetime: None,
-            time_clock: None,
+            timed: None,
         }
     }
 
+    #[inline]
     pub const fn from_nodes(nodes: usize) -> Self {
         Self::Limit {
             depth: None,
             nodes: Some(nodes),
             mate: None,
             movetime: None,
-            time_clock: None,
+            timed: None,
         }
     }
 
+    #[inline]
     pub const fn from_mate(mate: Ply) -> Self {
         Self::Limit {
             depth: None,
             nodes: None,
             mate: Some(mate),
             movetime: None,
-            time_clock: None,
+            timed: None,
         }
     }
 
+    #[inline]
     pub const fn from_movetime(movetime: Duration) -> Self {
         Self::Limit {
             depth: None,
             nodes: None,
             mate: None,
             movetime: Some(movetime),
-            time_clock: None,
+            timed: None,
         }
     }
 
-    pub const fn from_time_clock(
+    #[inline]
+    pub const fn from_timed(
         wtime: Duration,
         btime: Duration,
         winc: Duration,
@@ -85,7 +90,7 @@ impl GoCommand {
             nodes: None,
             mate: None,
             movetime: None,
-            time_clock: Some(TimedGoCommand {
+            timed: Some(TimedGoCommand {
                 wtime,
                 btime,
                 winc,
@@ -95,14 +100,17 @@ impl GoCommand {
         }
     }
 
+    #[inline]
     pub const fn from_millis(millis: u64) -> Self {
         Self::from_movetime(Duration::from_millis(millis))
     }
 
+    #[inline]
     pub fn has_infinite_config_info(&self) -> bool {
         *self == Self::Infinite
     }
 
+    #[inline]
     pub fn has_movetime_config_info(&self) -> bool {
         matches!(
             self,
@@ -113,18 +121,14 @@ impl GoCommand {
         )
     }
 
+    #[inline]
     pub fn has_depth_config_info(&self) -> bool {
         matches!(self, Self::Limit { depth: Some(_), .. })
     }
 
+    #[inline]
     pub fn has_time_clock_config_info(&self) -> bool {
-        matches!(
-            self,
-            Self::Limit {
-                time_clock: Some(_),
-                ..
-            }
-        )
+        matches!(self, Self::Limit { timed: Some(_), .. })
     }
 }
 
@@ -168,7 +172,7 @@ impl TryInto<GoCommand> for LimitParser {
             nodes: self.nodes,
             mate: self.mate,
             movetime: self.movetime,
-            time_clock: timed_go_command,
+            timed: timed_go_command,
         })
     }
 }
@@ -580,7 +584,12 @@ impl SearchInfo {
             Self::format_info("seldepth", self.seldepth),
             Self::format_info(
                 "score",
-                self.get_score_flipped().map(|score| score.stringify()),
+                if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
+                    self.get_score()
+                } else {
+                    self.get_score_flipped()
+                }
+                .map(|score| score.stringify()),
             ),
             Self::format_info("nodes", self.nodes),
             Self::format_info("nps", self.get_nps()),
@@ -641,6 +650,7 @@ impl<P: PositionEvaluation> From<&Searcher<P>> for SearchInfo {
             time_elapsed: Some(searcher.get_time_elapsed()),
             pv: searcher.get_pv().copied().collect_vec(),
         };
+        // Adjust the score to reflect the perspective of the White player
         search_info.score = search_info
             .score
             .map(|score| search_info.position.score_flipped(score));

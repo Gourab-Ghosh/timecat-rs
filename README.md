@@ -109,7 +109,7 @@ fn main() {
     let mut engine = Engine::from_board(board);
 
     // Configure the engine to search for the best move up to a depth of 10 plies.
-    let response = engine.go_verbose(&GoCommand::from_depth(10).into());
+    let response = engine.search_verbose(&GoCommand::from_depth(10).into());
     let best_move = response.get_best_move().expect("No best move found");
 
     // Output the best move found by the engine.

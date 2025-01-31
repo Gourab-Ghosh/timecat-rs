@@ -2,7 +2,7 @@ use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
-pub struct BoardPositionBuilder {
+pub struct ChessPositionBuilder {
     #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     pieces: [Option<Piece>; 64],
     turn: Color,
@@ -12,7 +12,7 @@ pub struct BoardPositionBuilder {
     fullmove_number: NumMoves,
 }
 
-impl BoardPositionBuilder {
+impl ChessPositionBuilder {
     /// Returns empty board builder with white to move
     pub fn new() -> Self {
         Self {
@@ -33,8 +33,8 @@ impl BoardPositionBuilder {
         ep_file: Option<File>,
         halfmove_clock: u8,
         fullmove_number: u16,
-    ) -> BoardPositionBuilder {
-        let mut result = BoardPositionBuilder {
+    ) -> ChessPositionBuilder {
+        let mut result = ChessPositionBuilder {
             pieces: [None; 64],
             turn,
             castle_rights: std::array::from_fn(|index| {
@@ -118,7 +118,7 @@ impl BoardPositionBuilder {
     }
 }
 
-impl Index<Square> for BoardPositionBuilder {
+impl Index<Square> for ChessPositionBuilder {
     type Output = Option<Piece>;
 
     fn index(&self, index: Square) -> &Self::Output {
@@ -126,13 +126,13 @@ impl Index<Square> for BoardPositionBuilder {
     }
 }
 
-impl IndexMut<Square> for BoardPositionBuilder {
+impl IndexMut<Square> for ChessPositionBuilder {
     fn index_mut(&mut self, index: Square) -> &mut Self::Output {
         get_item_unchecked_mut!(self.pieces, index.to_index())
     }
 }
 
-impl fmt::Display for BoardPositionBuilder {
+impl fmt::Display for ChessPositionBuilder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut count = 0;
         for &rank in ALL_RANKS.iter().rev() {
@@ -196,19 +196,19 @@ impl fmt::Display for BoardPositionBuilder {
     }
 }
 
-impl Default for BoardPositionBuilder {
-    fn default() -> BoardPositionBuilder {
-        BoardPositionBuilder::from_str(STARTING_POSITION_FEN).unwrap()
+impl Default for ChessPositionBuilder {
+    fn default() -> ChessPositionBuilder {
+        ChessPositionBuilder::from_str(STARTING_POSITION_FEN).unwrap()
     }
 }
 
-impl FromStr for BoardPositionBuilder {
+impl FromStr for ChessPositionBuilder {
     type Err = TimecatError;
 
     fn from_str(value: &str) -> Result<Self> {
         let mut cur_rank = Rank::Eighth;
         let mut cur_file = File::A;
-        let mut position_builder = BoardPositionBuilder::new();
+        let mut position_builder = ChessPositionBuilder::new();
 
         let tokens: Vec<&str> = value.split(' ').collect();
         if tokens.len() < 4 {
@@ -343,9 +343,9 @@ impl FromStr for BoardPositionBuilder {
     }
 }
 
-impl From<&ChessPosition> for BoardPositionBuilder {
+impl From<&ChessPosition> for ChessPositionBuilder {
     fn from(board: &ChessPosition) -> Self {
-        BoardPositionBuilder::setup(
+        ChessPositionBuilder::setup(
             board.iter(),
             board.turn(),
             board.castle_rights(White),
@@ -357,7 +357,7 @@ impl From<&ChessPosition> for BoardPositionBuilder {
     }
 }
 
-impl From<ChessPosition> for BoardPositionBuilder {
+impl From<ChessPosition> for ChessPositionBuilder {
     fn from(board: ChessPosition) -> Self {
         (&board).into()
     }

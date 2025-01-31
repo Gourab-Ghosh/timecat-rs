@@ -35,6 +35,7 @@ pub enum UserCommand {
     SetUCIOption {
         user_input: String,
     },
+    Features,
     SelfPlay(SearchConfig),
     // SetHashSize(u64),
     // SetThreads(u8),
@@ -123,6 +124,11 @@ impl UserCommand {
             Self::SetUCIOption { user_input } => {
                 uci_state_manager.run_command(engine, user_input)?
             }
+            Self::Features => {
+                println_info("CPU Architecture", std::env::consts::ARCH);
+                println_info("BMI2 Support", cfg!(target_feature = "bmi2"));
+                println_info("AVX2 Support", cfg!(target_feature = "avx2"));
+            }
             Self::SelfPlay(config) => self_play(engine, config, true, None)?,
         }
 
@@ -157,7 +163,7 @@ impl GoAndPerft {
             println_wasm!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
-        let position_count = engine.get_board_mut().perft(depth);
+        let position_count = engine.get_board_mut().perft_verbose(depth);
         let elapsed_time = clock.elapsed();
         let nps: String = format!(
             "{} nodes/sec",
@@ -190,7 +196,7 @@ impl GoAndPerft {
             println_wasm!("{}\n", engine.get_board());
         }
         let clock = Instant::now();
-        let response = engine.go_verbose(config);
+        let response = engine.search_verbose(config);
         let best_move = response.get_best_move().ok_or(BestMoveNotFound {
             fen: engine.get_board().get_fen(),
         })?;
@@ -478,6 +484,7 @@ impl Parser {
             }),
             "reset board" => UserCommand::SetFen(STARTING_POSITION_FEN.to_owned()).into(),
             "stop" => UserCommand::Stop.into(),
+            "feature" | "features" => UserCommand::Features.into(),
             "help" => UserCommand::Help.into(),
             _ => {
                 let commands = single_input.split_whitespace().collect_vec();

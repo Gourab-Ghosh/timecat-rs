@@ -38,22 +38,22 @@ pub mod bitboard_and_square {
                 $(
                     pub const [<BB_$file$rank>]: BitBoard = BitBoard::new(1 << (8 * ($rank - 1) + $file as usize));
                 )*
-                pub const ALL_SQUARES: [Square; NUM_SQUARES] = [$( Square::[<$file$rank>] ), *];
-                pub const BB_SQUARES: [BitBoard; NUM_SQUARES] = [$( [<BB_$file$rank>] ), *];
-                pub const SQUARES_VERTICAL_MIRROR: [Square; NUM_SQUARES] = [$( ALL_SQUARES[[<$file$rank>].to_index() ^ 7] ), *];
-                pub const SQUARES_HORIZONTAL_MIRROR: [Square; NUM_SQUARES] = [$( ALL_SQUARES[[<$file$rank>].to_index() ^ 0x38] ), *];
-                pub const SQUARES_ROTATED: [Square; NUM_SQUARES] = [$( ALL_SQUARES[[<$file$rank>].to_index() ^ 0x3f] ), *];
+                pub static ALL_SQUARES: [Square; NUM_SQUARES] = [$( Square::[<$file$rank>] ), *];
+                pub static BB_SQUARES: [BitBoard; NUM_SQUARES] = [$( [<BB_$file$rank>] ), *];
+                pub static SQUARES_VERTICAL_MIRROR: [Square; NUM_SQUARES] = [$( ALL_SQUARES[[<$file$rank>].to_index() ^ 7] ), *];
+                pub static SQUARES_HORIZONTAL_MIRROR: [Square; NUM_SQUARES] = [$( ALL_SQUARES[[<$file$rank>].to_index() ^ 0x38] ), *];
+                pub static SQUARES_ROTATED: [Square; NUM_SQUARES] = [$( ALL_SQUARES[[<$file$rank>].to_index() ^ 0x3f] ), *];
             }
         };
 
         (@bb_ranks_and_files $(($file:expr, $rank:expr)),+ $(,)?) => {
-            paste!{
+            paste! {
                 $(
                     pub const [<BB_RANK_$rank>]: BitBoard = BitBoard::new(0xff << (($rank - 1) << 3));
                     pub const [<BB_FILE_$file>]: BitBoard = BitBoard::new(0x0101_0101_0101_0101 << ($rank - 1));
                 )*
-                pub const BB_RANKS: [BitBoard; NUM_RANKS] = [$( [<BB_RANK_$rank>] ), *];
-                pub const BB_FILES: [BitBoard; NUM_FILES] = [$( [<BB_FILE_$file>] ), *];
+                pub static BB_RANKS: [BitBoard; NUM_RANKS] = [$( [<BB_RANK_$rank>] ), *];
+                pub static BB_FILES: [BitBoard; NUM_FILES] = [$( [<BB_FILE_$file>] ), *];
             }
         };
     }
@@ -75,7 +75,7 @@ pub mod bitboard_and_square {
         (A, 1), (B, 2), (C, 3), (D, 4), (E, 5), (F, 6), (G, 7), (H, 8),
     );
 
-    pub const BB_ADJACENT_FILES: [BitBoard; 8] = [
+    pub static BB_ADJACENT_FILES: [BitBoard; 8] = [
         BitBoard::new(144680345676153346),
         BitBoard::new(361700864190383365),
         BitBoard::new(723401728380766730),
@@ -113,7 +113,7 @@ pub mod bitboard_and_square {
     pub const CENTER_SQUARES_BB: BitBoard = BitBoard::new(0x0000001818000000);
     pub const PSEUDO_CENTER_SQUARES_BB: BitBoard = BitBoard::new(0x00003C24243C0000);
 
-    pub const BOARD_QUARTER_MASKS: [BitBoard; 4] = [
+    pub static BOARD_QUARTER_MASKS: [BitBoard; 4] = [
         BitBoard::new(0x0f0f_0f0f_0000_0000),
         BitBoard::new(0xf0f0_f0f0_0000_0000),
         BitBoard::new(0x0000_0000_0f0f_0f0f),
@@ -123,7 +123,7 @@ pub mod bitboard_and_square {
     pub const DIAGONAL_RAY: BitBoard = BitBoard::new(0x8040201008040201);
     pub const ANTI_DIAGONAL_RAY: BitBoard = DIAGONAL_RAY.flip_horizontal();
 
-    pub const UPPER_BOARD_MASK: [[BitBoard; 8]; 2] = [
+    pub static UPPER_BOARD_MASK: [[BitBoard; 8]; 2] = [
         [
             BitBoard::new(0x0000_0000_0000_0000),
             BitBoard::new(0x0000_0000_0000_00ff),
@@ -167,9 +167,9 @@ pub mod strings {
     macro_rules! generate_constants {
         ($constant_name:ident, [$( $func_name:ident ), *]) => {
             #[cfg(feature = "colored")]
-            pub const $constant_name: &[ColoredStringFunction] = &[$( colored::Colorize::$func_name ), *];
+            pub static $constant_name: &[ColoredStringFunction] = &[$( colored::Colorize::$func_name ), *];
             #[cfg(not(feature = "colored"))]
-            pub const $constant_name: &[ColoredStringFunction] = &[];
+            pub static $constant_name: &[ColoredStringFunction] = &[];
         };
     }
 
@@ -214,8 +214,7 @@ pub mod evaluate {
 pub mod cache_table {
     use super::*;
 
-    // pub const DEFAULT_HASH: NonZeroU64 = NonZeroU64::new(1).unwrap();
-    pub const DEFAULT_HASH: NonZeroU64 = unsafe { NonZeroU64::new_unchecked(1) };
+    pub const DEFAULT_HASH: NonZeroU64 = NonZeroU64::new(1).unwrap();
 }
 
 pub mod engine {
@@ -242,7 +241,7 @@ pub mod engine {
     pub const NUM_BEST_ROOT_MOVES_TO_SEARCH_FIRST: usize = 3;
 
     #[rustfmt::skip]
-    pub const MVV_LVA: [[MoveWeight; 6]; 6] = [
+    pub static MVV_LVA: [[MoveWeight; 6]; 6] = [
         [105, 205, 305, 405, 505, 605],
         [104, 204, 304, 404, 504, 604],
         [103, 203, 303, 403, 503, 603],
@@ -251,7 +250,7 @@ pub mod engine {
         [100, 200, 300, 400, 500, 600],
     ];
 
-    pub const LMR_TABLE: [[Depth; 64]; 64] = [[0; 64]; 64];
+    pub static LMR_TABLE: [[Depth; 64]; 64] = [[0; 64]; 64];
 }
 
 pub mod binary {
@@ -275,16 +274,16 @@ pub mod color {
     use super::*;
 
     pub const NUM_COLORS: usize = 2;
-    pub const ALL_COLORS: [Color; NUM_COLORS] = [Black, White];
+    pub static ALL_COLORS: [Color; NUM_COLORS] = [Black, White];
 }
 
 pub mod piece {
     use super::*;
 
     pub const NUM_PIECE_TYPES: usize = 6;
-    pub const ALL_PIECE_TYPES: [PieceType; NUM_PIECE_TYPES] =
+    pub static ALL_PIECE_TYPES: [PieceType; NUM_PIECE_TYPES] =
         [Pawn, Knight, Bishop, Rook, Queen, King];
-    pub const ALL_PIECES: [Piece; NUM_PIECE_TYPES * NUM_COLORS] = [
+    pub static ALL_PIECES: [Piece; NUM_PIECE_TYPES * NUM_COLORS] = [
         WhitePawn,
         WhiteKnight,
         WhiteBishop,
@@ -299,14 +298,14 @@ pub mod piece {
         BlackKing,
     ];
     pub const NUM_PROMOTION_PIECES: usize = 4;
-    pub const PROMOTION_PIECES: [PieceType; NUM_PROMOTION_PIECES] = [Queen, Knight, Rook, Bishop];
+    pub static PROMOTION_PIECES: [PieceType; NUM_PROMOTION_PIECES] = [Queen, Knight, Rook, Bishop];
 }
 
 pub mod ranks {
     use super::*;
 
     pub const NUM_RANKS: usize = 8;
-    pub const ALL_RANKS: [Rank; NUM_RANKS] = [
+    pub static ALL_RANKS: [Rank; NUM_RANKS] = [
         Rank::First,
         Rank::Second,
         Rank::Third,
@@ -322,7 +321,7 @@ pub mod files {
     use super::*;
 
     pub const NUM_FILES: usize = 8;
-    pub const ALL_FILES: [File; NUM_FILES] = [
+    pub static ALL_FILES: [File; NUM_FILES] = [
         File::A,
         File::B,
         File::C,

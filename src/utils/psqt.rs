@@ -1,7 +1,7 @@
 use super::*;
 
 #[rustfmt::skip]
-pub const PSQT_ARRAY: [Score; 768] = [
+static PSQT_ARRAY: [Score; 768] = [
     // Pawn Opening Phase:
       0,  0,  0,  0,  0,  0,  0,  0,
      50, 50, 50, 50, 50, 50, 50, 50,

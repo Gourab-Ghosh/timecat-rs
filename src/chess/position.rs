@@ -304,9 +304,7 @@ impl ChessPosition {
         self._transposition_hash = self.get_pawn_hash()
             ^ self.get_non_pawn_hash()
             ^ Zobrist::castle(self.castle_rights(White), self.castle_rights(Black))
-            ^ self
-                .ep_square()
-                .map_or(0, |ep| Zobrist::en_passant(ep.get_file()))
+            ^ self.ep_square().map_or(0, Zobrist::en_passant)
             ^ Zobrist::color(self.turn());
     }
 
@@ -340,11 +338,12 @@ impl ChessPosition {
     pub fn null_move_unchecked(&self) -> Self {
         let mut result = self.to_owned();
         result.flip_turn_unchecked();
-        result.remove_ep();
-        result._halfmove_clock += 1;
-        result._fullmove_number += 1;
+        result._transposition_hash ^= Zobrist::color(Black) ^ Zobrist::color(White);
+        if let Some(ep_square) = result.ep_square() {
+            result.remove_ep();
+            result._transposition_hash ^= Zobrist::en_passant(ep_square);
+        }
         result.update_pin_and_checkers_info();
-        result.update_transposition_hash();
         result
     }
 
@@ -505,6 +504,7 @@ impl ChessPosition {
         ))
     }
 
+    #[inline]
     fn remove_ep(&mut self) {
         self._ep_square = None;
     }
@@ -520,8 +520,18 @@ impl ChessPosition {
     }
 
     #[inline]
+    pub fn set_halfmove_clock(&mut self, halfmove_clock: u8) {
+        self._halfmove_clock = halfmove_clock;
+    }
+
+    #[inline]
     pub fn get_fullmove_number(&self) -> NumMoves {
         self._fullmove_number
+    }
+
+    #[inline]
+    pub fn set_fullmove_number(&mut self, fullmove_number: NumMoves) {
+        self._fullmove_number = fullmove_number;
     }
 
     #[inline]
@@ -557,7 +567,7 @@ impl ChessPosition {
 
     #[inline]
     pub fn is_en_passant(&self, move_: Move) -> bool {
-        self.ep_square().map_or(false, |ep_square| {
+        self.ep_square().is_some_and(|ep_square| {
             let source = move_.get_source();
             let dest = move_.get_dest();
             ep_square == dest
@@ -681,7 +691,9 @@ impl ChessPosition {
             || !(touched & self.opponent_occupied()).is_empty()
     }
 
-    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
+    #[deprecated(
+        note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method."
+    )]
     pub fn flip_vertical(&mut self) {
         // TODO: Change Transposition Keys
         self._piece_masks
@@ -693,10 +705,14 @@ impl ChessPosition {
         self.update_pin_and_checkers_info();
         // self._non_pawn_transposition_hash = self._non_pawn_transposition_hash;
         // self._pawn_transposition_hash = self._pawn_transposition_hash;
-        self._ep_square = self._ep_square.map(|square| square.horizontal_mirror());
+        if let Some(ep_square) = self.ep_square() {
+            self.set_ep(ep_square.vertical_mirror());
+        }
     }
 
-    #[deprecated(note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method.")]
+    #[deprecated(
+        note = "This method is unstable and may contain bugs. Hence, it is recommended not to use this method."
+    )]
     pub fn flip_horizontal(&mut self) {
         // TODO: Change Transposition Keys
         self._piece_masks
@@ -708,17 +724,35 @@ impl ChessPosition {
         self.update_pin_and_checkers_info();
         // self._non_pawn_transposition_hash = self._non_pawn_transposition_hash;
         // self._pawn_transposition_hash = self._pawn_transposition_hash;
-        self._ep_square = self._ep_square.map(|square| square.vertical_mirror());
+        if let Some(ep_square) = self.ep_square() {
+            self.set_ep(ep_square.horizontal_mirror());
+        }
     }
 
     #[inline]
-    pub fn set_turn_unchecked(&mut self, turn: Color) {
+    fn set_turn_unchecked(&mut self, turn: Color) {
         self._turn = turn;
     }
 
+    /// sets turn by using `flip_turn` method which uses Null Move.
     #[inline]
-    pub fn flip_turn_unchecked(&mut self) {
+    pub fn set_turn(&mut self, turn: Color) -> Result<()> {
+        if self.turn() != turn {
+            self.flip_turn()?;
+        }
+        Ok(())
+    }
+
+    #[inline]
+    fn flip_turn_unchecked(&mut self) {
         self._turn = !self._turn;
+    }
+
+    /// Flips turn by applying Null Move.
+    #[inline]
+    pub fn flip_turn(&mut self) -> Result<()> {
+        *self = self.null_move()?;
+        Ok(())
     }
 
     fn update_pin_and_checkers_info(&mut self) {
@@ -1130,6 +1164,36 @@ impl ChessPosition {
         self.custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS, BB_ALL)
     }
 
+    pub fn perft(&self, depth: Depth, print_move: bool) -> usize {
+        let moves = self.generate_legal_moves();
+        if depth == 1 {
+            return moves.len();
+        }
+        moves
+            .map(|move_| {
+                let count = self.make_move_new(move_).perft(depth - 1, false);
+                if print_move {
+                    println_wasm!(
+                        "{}: {}",
+                        move_.colorize(PERFT_MOVE_STYLE),
+                        count.colorize(PERFT_COUNT_STYLE),
+                    );
+                }
+                count
+            })
+            .sum()
+    }
+
+    #[inline]
+    pub fn perft_quiet(&self, depth: Depth) -> usize {
+        self.perft(depth, false)
+    }
+
+    #[inline]
+    pub fn perft_verbose(&self, depth: Depth) -> usize {
+        self.perft(depth, true)
+    }
+
     #[cfg(feature = "pyo3")]
     fn from_py_board(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
         let pieces_masks = [
@@ -1190,7 +1254,7 @@ impl ChessPosition {
                 },
             )
         };
-        Ok(BoardPositionBuilder::setup(
+        Ok(ChessPositionBuilder::setup(
             ALL_PIECE_TYPES
                 .iter()
                 .zip(pieces_masks)
@@ -1385,10 +1449,10 @@ impl BoardPositionMethodOverload<ValidOrNullMove> for ChessPosition {
     }
 }
 
-impl TryFrom<&BoardPositionBuilder> for ChessPosition {
+impl TryFrom<&ChessPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
-    fn try_from(position_builder: &BoardPositionBuilder) -> Result<Self> {
+    fn try_from(position_builder: &ChessPositionBuilder) -> Result<Self> {
         let mut position = ChessPosition::new_empty();
 
         for square in ALL_SQUARES {
@@ -1426,18 +1490,18 @@ impl TryFrom<&BoardPositionBuilder> for ChessPosition {
     }
 }
 
-impl TryFrom<BoardPositionBuilder> for ChessPosition {
+impl TryFrom<ChessPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
-    fn try_from(position_builder: BoardPositionBuilder) -> Result<Self> {
+    fn try_from(position_builder: ChessPositionBuilder) -> Result<Self> {
         (&position_builder).try_into()
     }
 }
 
-impl TryFrom<&mut BoardPositionBuilder> for ChessPosition {
+impl TryFrom<&mut ChessPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
-    fn try_from(position_builder: &mut BoardPositionBuilder) -> Result<Self> {
+    fn try_from(position_builder: &mut ChessPositionBuilder) -> Result<Self> {
         (position_builder.to_owned()).try_into()
     }
 }
@@ -1447,7 +1511,7 @@ impl FromStr for ChessPosition {
 
     #[inline]
     fn from_str(value: &str) -> Result<Self> {
-        BoardPositionBuilder::from_str(value)?.try_into()
+        ChessPositionBuilder::from_str(value)?.try_into()
     }
 }
 
@@ -1461,7 +1525,7 @@ impl Default for ChessPosition {
 impl fmt::Display for ChessPosition {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", BoardPositionBuilder::from(self))
+        write!(f, "{}", ChessPositionBuilder::from(self))
     }
 }
 

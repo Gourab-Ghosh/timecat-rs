@@ -38,8 +38,8 @@ pub mod prelude {
         get_bishop_moves, get_castle_moves, get_pv_as_san, get_pv_as_uci, get_pv_string,
         get_queen_moves, get_rook_moves, is_checkmate, self_play, simplify_fen, Bishop, BitBoard,
         Black, BlackBishop, BlackKing, BlackKnight, BlackPawn, BlackQueen, BlackRook, Board,
-        ChessPosition, BoardPositionBuilder, BoardStatus, CacheTable, CacheTableSize,
-        CastleMoveType, CastleRights, Color, Depth, Engine, Evaluator, File, GameResult, GoCommand,
+        BoardStatus, CacheTable, CacheTableSize, CastleMoveType, CastleRights, ChessPosition,
+        ChessPositionBuilder, Color, Depth, Engine, Evaluator, File, GameResult, GoCommand,
         IoReader, King, Knight, Move, MoveWeight, Pawn, Piece, PieceType, Ply, Queen, Rank,
         RepetitionTable, Rook, Score, SearchConfig, SearchInfo, SearchInfoBuilder, Square,
         TimecatError, TranspositionTable, ValidOrNullMove, WeightedMove, White, WhiteBishop,
@@ -55,9 +55,9 @@ pub mod prelude {
         BB_LEFT_HALF_BOARD, BB_LIGHT_SQUARES, BB_LOWER_HALF_BOARD, BB_RANK_1, BB_RANK_2, BB_RANK_3,
         BB_RANK_4, BB_RANK_5, BB_RANK_6, BB_RANK_7, BB_RANK_8, BB_RIGHT_HALF_BOARD, BB_SQUARES,
         BB_UPPER_HALF_BOARD, C1, C2, C3, C4, C5, C6, C7, C8, CHECKMATE_SCORE, CHECKMATE_THRESHOLD,
-        D1, D2, D3, D4, D5, D6, D7, D8, E1, E2, E3, E4, E5, E6, E7, E8, EMPTY_POSITION_FEN, ENGINE_AUTHOR,
-        ENGINE_NAME, ENGINE_VERSION, F1, F2, F3, F4, F5, F6, F7, F8, G1, G2, G3, G4, G5, G6, G7,
-        G8, H1, H2, H3, H4, H5, H6, H7, H8, INFINITY, PAWN_VALUE, PROMOTION_PIECES,
+        D1, D2, D3, D4, D5, D6, D7, D8, E1, E2, E3, E4, E5, E6, E7, E8, EMPTY_POSITION_FEN,
+        ENGINE_AUTHOR, ENGINE_NAME, ENGINE_VERSION, F1, F2, F3, F4, F5, F6, F7, F8, G1, G2, G3, G4,
+        G5, G6, G7, G8, H1, H2, H3, H4, H5, H6, H7, H8, INFINITY, PAWN_VALUE, PROMOTION_PIECES,
         STARTING_POSITION_FEN,
     };
 

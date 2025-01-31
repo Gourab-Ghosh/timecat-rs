@@ -2,7 +2,7 @@
 use super::*;
 
 #[rustfmt::skip]
-const ZOBRIST_PIECES: [[[u64; NUM_SQUARES]; NUM_COLORS]; NUM_PIECE_TYPES] = [[[
+static ZOBRIST_PIECES: [[[u64; NUM_SQUARES]; NUM_COLORS]; NUM_PIECE_TYPES] = [[[
     0x9D39247E33776D41, 0x2AF7398005AAA5C7, 0x44DB015024623547, 0x9C15F73E62A76AE2,
     0x75834465489C0C89, 0x3290AC3A203001BF, 0x0FBBAD1F61042279, 0xE83A908FF2FB60CA,
     0x0D7E765D58755C10, 0x1A083822CEAFE02D, 0x9605D5F0E25EC3B0, 0xD021FF5CD13A2ED5,
@@ -208,7 +208,7 @@ const ZOBRIST_PIECES: [[[u64; NUM_SQUARES]; NUM_COLORS]; NUM_PIECE_TYPES] = [[[
     0x5FA7867CAF35E149, 0x56986E2EF3ED091B, 0x917F1DD5F8886C61, 0xD20D8C88C8FFE65F,
 ]]];
 
-const ZOBRIST_CASTLES: [[u64; 4]; 4] = {
+static ZOBRIST_CASTLES: [[u64; 4]; 4] = {
     let mini_zobrist_castles = [
         0x31D71DCE64B2C310,
         0xF165B587DF898190,
@@ -235,18 +235,29 @@ const ZOBRIST_CASTLES: [[u64; 4]; 4] = {
     array
 };
 
-const ZOBRIST_EP: [u64; NUM_FILES] = [
-    0x70CC73D90BC26E24,
-    0xE21A6B35DF0C3AD7,
-    0x003A93D8B2806962,
-    0x1C99DED33CB890A1,
-    0xCF3145DE0ADD4289,
-    0xD0E4427A5514FB72,
-    0x77C621CC9FB3A483,
-    0x67A34DAC4356550B,
-];
+static ZOBRIST_EP: [u64; NUM_SQUARES] = {
+    let mini_zobrist_ep = [
+        0x70CC73D90BC26E24,
+        0xE21A6B35DF0C3AD7,
+        0x003A93D8B2806962,
+        0x1C99DED33CB890A1,
+        0xCF3145DE0ADD4289,
+        0xD0E4427A5514FB72,
+        0x77C621CC9FB3A483,
+        0x67A34DAC4356550B,
+    ];
 
-const TURN: u64 = 0xF8D626AAAF278509;
+    let mut array = [0; NUM_SQUARES];
+    let mut square_index = 0;
+    while square_index < NUM_SQUARES {
+        let square = Square::from_index(square_index);
+        array[square_index] = mini_zobrist_ep[square.get_file().to_index()];
+        square_index += 1;
+    }
+    array
+};
+
+const ZOBRIST_TURN: u64 = 0xF8D626AAAF278509;
 
 pub struct Zobrist;
 
@@ -272,12 +283,12 @@ impl Zobrist {
     }
 
     #[inline]
-    pub fn en_passant(file: File) -> u64 {
-        *get_item_unchecked!(ZOBRIST_EP, file.to_index())
+    pub fn en_passant(ep_square: Square) -> u64 {
+        *get_item_unchecked!(ZOBRIST_EP, ep_square.to_index())
     }
 
     #[inline]
     pub fn color(color: Color) -> u64 {
-        *get_item_unchecked!(const [0, TURN], color.to_index())
+        *get_item_unchecked!(const [0, ZOBRIST_TURN], color.to_index())
     }
 }

@@ -2,11 +2,11 @@
 #[macro_export]
 macro_rules! get_item_unchecked {
     (@internal $indexable:expr, $index:expr $(,)?) => {
-        $indexable[$index]
+        &$indexable[$index]
     };
 
     (@internal const $indexable:expr, $index:expr $(,)?) => {
-        const { $indexable }[$index]
+        &const { $indexable }[$index]
     };
 
     (@internal $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
@@ -26,7 +26,7 @@ macro_rules! get_item_unchecked {
     };
 
     ($($arg:tt)*) => {
-        &get_item_unchecked!(@internal $($arg)*)
+        get_item_unchecked!(@internal $($arg)*)
     };
 }
 
@@ -34,11 +34,11 @@ macro_rules! get_item_unchecked {
 #[macro_export]
 macro_rules! get_item_unchecked_mut {
     (@internal $indexable:expr, $index:expr $(,)?) => {
-        $indexable[$index]
+        &mut $indexable[$index]
     };
 
     (@internal const $indexable:expr, $index:expr $(,)?) => {
-        const { $indexable }[$index]
+        &mut const { $indexable }[$index]
     };
 
     (@internal $indexable:expr, $index:expr, $($rest:expr),+ $(,)?) => {
@@ -58,7 +58,7 @@ macro_rules! get_item_unchecked_mut {
     };
 
     ($($arg:tt)*) => {
-        &mut get_item_unchecked_mut!(@internal $($arg)*)
+        get_item_unchecked_mut!(@internal $($arg)*)
     };
 }
 

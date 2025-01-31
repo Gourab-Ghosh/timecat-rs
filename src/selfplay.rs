@@ -37,7 +37,7 @@ pub fn self_play(
         if verbose {
             println_wasm!();
         }
-        let response = engine.go(search_config, verbose);
+        let response = engine.search(search_config, verbose);
         let Some(best_move) = response.get_best_move() else {
             return Err(TimecatError::BestMoveNotFound {
                 fen: engine.get_board().get_fen(),
