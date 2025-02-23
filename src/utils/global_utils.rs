@@ -9,14 +9,15 @@ pub fn print_uci_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>
     if !GLOBAL_TIMECAT_STATE.is_in_debug_mode() {
         return;
     }
-    let mut to_print = if let Some(info_message) = info.into() {
-        format!(
-            "{} {}",
-            message.colorize(SUCCESS_MESSAGE_STYLE),
-            info_message.colorize(INFO_MESSAGE_STYLE),
-        )
-    } else {
-        message.colorize(SUCCESS_MESSAGE_STYLE)
+    let mut to_print = match info.into() {
+        Some(info_message) => {
+            format!(
+                "{} {}",
+                message.colorize(SUCCESS_MESSAGE_STYLE),
+                info_message.colorize(INFO_MESSAGE_STYLE),
+            )
+        }
+        _ => message.colorize(SUCCESS_MESSAGE_STYLE),
     };
     if GLOBAL_TIMECAT_STATE.is_in_uci_mode() {
         to_print = format!("{} {to_print}", "info string".colorize(INFO_MESSAGE_STYLE))

@@ -307,7 +307,7 @@ impl FromStr for ChessPositionBuilder {
             _ => {
                 return Err(TimecatError::BadFen {
                     fen: value.to_string(),
-                })
+                });
             }
         }
 

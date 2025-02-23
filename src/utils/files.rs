@@ -28,16 +28,18 @@ impl File {
     #[inline]
     pub fn left(self) -> Option<Self> {
         *get_item_unchecked!(
-            const [
-                None,
-                Some(Self::A),
-                Some(Self::B),
-                Some(Self::C),
-                Some(Self::D),
-                Some(Self::E),
-                Some(Self::F),
-                Some(Self::G),
-            ],
+            const {
+                [
+                    None,
+                    Some(Self::A),
+                    Some(Self::B),
+                    Some(Self::C),
+                    Some(Self::D),
+                    Some(Self::E),
+                    Some(Self::F),
+                    Some(Self::G),
+                ]
+            },
             self.to_index(),
         )
     }
@@ -45,16 +47,18 @@ impl File {
     #[inline]
     pub fn right(self) -> Option<Self> {
         *get_item_unchecked!(
-            const [
-                Some(Self::B),
-                Some(Self::C),
-                Some(Self::D),
-                Some(Self::E),
-                Some(Self::F),
-                Some(Self::G),
-                Some(Self::H),
-                None,
-            ],
+            const {
+                [
+                    Some(Self::B),
+                    Some(Self::C),
+                    Some(Self::D),
+                    Some(Self::E),
+                    Some(Self::F),
+                    Some(Self::G),
+                    Some(Self::H),
+                    None,
+                ]
+            },
             self.to_index(),
         )
     }

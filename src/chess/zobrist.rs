@@ -289,6 +289,6 @@ impl Zobrist {
 
     #[inline]
     pub fn color(color: Color) -> u64 {
-        *get_item_unchecked!(const [0, ZOBRIST_TURN], color.to_index())
+        *get_item_unchecked!(const { [0, ZOBRIST_TURN] }, color.to_index())
     }
 }

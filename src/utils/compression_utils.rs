@@ -87,7 +87,7 @@ impl Decompress<Option<Move>> for u16 {
             return None;
         }
         Some(Move::new_unchecked(
-            (self >> 6 & 0x3F).decompress(),
+            ((self >> 6) & 0x3F).decompress(),
             (self & 0x3F).decompress(),
             (self >> 12).decompress(),
         ))

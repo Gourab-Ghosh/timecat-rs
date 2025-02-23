@@ -16,7 +16,7 @@ fn main() {
     #[cfg(feature = "debug")]
     if !args.contains(&"--disable-backtrace") {
         println!("{}", "Running in Debug Mode\n".colorize(INFO_MESSAGE_STYLE));
-        std::env::set_var("RUST_BACKTRACE", "1");
+        unsafe { std::env::set_var("RUST_BACKTRACE", "1") };
     }
     if !std::io::stdin().is_terminal() {
         GLOBAL_TIMECAT_STATE.set_to_uci_mode();

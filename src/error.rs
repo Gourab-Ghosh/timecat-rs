@@ -125,42 +125,116 @@ impl TimecatError {
 impl fmt::Display for TimecatError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            UnknownCommand => write!(f, "{}", UnknownCommand.stringify_with_optional_raw_input(None)),
+            UnknownCommand => write!(
+                f,
+                "{}",
+                UnknownCommand.stringify_with_optional_raw_input(None)
+            ),
             NoInput => write!(f, "No input! Please try again!"),
             NotImplemented => write!(f, "Sorry, this command is not implemented yet :("),
             EngineNotRunning => write!(f, "Engine is not running! Please try again!"),
             BadFen { fen } => write!(f, "Bad FEN string: {fen}! Please try Again!"),
             InvalidDepth { depth } => write!(f, "Invalid depth {depth}! Please try again!"),
-            IllegalMove { valid_or_null_move, board_fen } => write!(f, "Illegal move {valid_or_null_move} in position {board_fen}! Please try again!"),
-            ColoredOutputUnchanged { b } => write!(f, "Colored output already set to {b}! Please try again!"),
+            IllegalMove {
+                valid_or_null_move,
+                board_fen,
+            } => write!(
+                f,
+                "Illegal move {valid_or_null_move} in position {board_fen}! Please try again!"
+            ),
+            ColoredOutputUnchanged { b } => {
+                write!(f, "Colored output already set to {b}! Please try again!")
+            }
             UCIModeUnchanged => write!(f, "Already in UCI Mode! Please try again!"),
             ConsoleModeUnchanged => write!(f, "Already in Console Mode! Please try again!"),
-            EmptyStack => write!(f, "Move Stack is empty, pop not possible! Please try again!"),
-            BestMoveNotFound { fen } => write!(f, "Best move not found in position {fen}! Please try again!"),
-            NullMoveInCheck { fen } => write!(f, "Cannot apply null move in position {fen}, as king is in check! Please try again!"),
+            EmptyStack => write!(
+                f,
+                "Move Stack is empty, pop not possible! Please try again!"
+            ),
+            BestMoveNotFound { fen } => write!(
+                f,
+                "Best move not found in position {fen}! Please try again!"
+            ),
+            NullMoveInCheck { fen } => write!(
+                f,
+                "Cannot apply null move in position {fen}, as king is in check! Please try again!"
+            ),
             WTimeNotMentioned => write!(f, "You didn't mention wtime! Please try again!"),
             BTimeNotMentioned => write!(f, "You didn't mention btime! Please try again!"),
-            GameAlreadyOver => write!(f, "Game is already over! Please start a game from another position!"),
-            UnknownDebugCommand { command } => write!(f, "Debug command {command} is unknown! The possible commands are on or off! Please try again!"),
-            InvalidSpinValue {name, value, min, max} => write!(f, "Cannot set value of {name} to {value}, the value must be from {min} to {max}! Please try again!"),
-            InvalidMoveStructGeneration => write!(f, "The from square and to square of a move cannot be same!"),
-            InvalidSanOrLanMove { valid_or_null_move, fen } => write!(f, "san() and lan() expect move to be legal or null, but got {} in {}", valid_or_null_move, fen),
-            InvalidSanMoveString { s } => write!(f, "Got invalid SAN move string {s}! Please try again!"),
-            InvalidLanMoveString { s } => write!(f, "Got invalid LAN move string {s}! Please try again!"),
+            GameAlreadyOver => write!(
+                f,
+                "Game is already over! Please start a game from another position!"
+            ),
+            UnknownDebugCommand { command } => write!(
+                f,
+                "Debug command {command} is unknown! The possible commands are on or off! Please try again!"
+            ),
+            InvalidSpinValue {
+                name,
+                value,
+                min,
+                max,
+            } => write!(
+                f,
+                "Cannot set value of {name} to {value}, the value must be from {min} to {max}! Please try again!"
+            ),
+            InvalidMoveStructGeneration => {
+                write!(f, "The from square and to square of a move cannot be same!")
+            }
+            InvalidSanOrLanMove {
+                valid_or_null_move,
+                fen,
+            } => write!(
+                f,
+                "san() and lan() expect move to be legal or null, but got {} in {}",
+                valid_or_null_move, fen
+            ),
+            InvalidSanMoveString { s } => {
+                write!(f, "Got invalid SAN move string {s}! Please try again!")
+            }
+            InvalidLanMoveString { s } => {
+                write!(f, "Got invalid LAN move string {s}! Please try again!")
+            }
             InvalidMoveString { s } => write!(f, "Got invalid move string {s}! Please try again!"),
             InvalidRankString { s } => write!(f, "Got invalid rank string {s}! Please try again!"),
             InvalidFileString { s } => write!(f, "Got invalid file string {s}! Please try again!"),
-            InvalidSquareString { s } => write!(f, "Got invalid square string {s}! Please try again!"),
-            InvalidPieceTypeString { s } => write!(f, "Got invalid piece type string {s}! Please try again!"),
-            InvalidPieceString { s } => write!(f, "Got invalid piece string {s}! Please try again!"),
-            InvalidUciMoveString { s } => write!(f, "Invalid uci move string {s}! Please try again!"),
-            InvalidBoardPosition { position } => write!(f, "Invalid position generated:\n\n{position:#?}"),
+            InvalidSquareString { s } => {
+                write!(f, "Got invalid square string {s}! Please try again!")
+            }
+            InvalidPieceTypeString { s } => {
+                write!(f, "Got invalid piece type string {s}! Please try again!")
+            }
+            InvalidPieceString { s } => {
+                write!(f, "Got invalid piece string {s}! Please try again!")
+            }
+            InvalidUciMoveString { s } => {
+                write!(f, "Invalid uci move string {s}! Please try again!")
+            }
+            InvalidBoardPosition { position } => {
+                write!(f, "Invalid position generated:\n\n{position:#?}")
+            }
             InvalidGoCommand { s } => write!(f, "Got invalid go command: {s:?}! Please try again!"),
-            IllegalSearchMoves { illegal_moves } => write!(f, "Got illegal search moves: {}! Please try again!", illegal_moves.iter().map(ToString::to_string).join(", ")),
-            FeatureNotEnabled { s } => write!(f, "The feature {s:?} is not enabled. Please recompile the chess engine with this feature enabled!"),
-            BadNNUEFile => write!(f, "The NNUE file cannot be parsed properly! Try again with a different NNUE file!"),
-            BadPolyglotFile => write!(f, "The Polyglot file cannot be parsed properly! Try again with a different Polyglot file!"),
-            PolyglotTableParseError => write!(f, "The Polyglot Table cannot be parsed properly! Try again with a different Polyglot file!"),
+            IllegalSearchMoves { illegal_moves } => write!(
+                f,
+                "Got illegal search moves: {}! Please try again!",
+                illegal_moves.iter().map(ToString::to_string).join(", ")
+            ),
+            FeatureNotEnabled { s } => write!(
+                f,
+                "The feature {s:?} is not enabled. Please recompile the chess engine with this feature enabled!"
+            ),
+            BadNNUEFile => write!(
+                f,
+                "The NNUE file cannot be parsed properly! Try again with a different NNUE file!"
+            ),
+            BadPolyglotFile => write!(
+                f,
+                "The Polyglot file cannot be parsed properly! Try again with a different Polyglot file!"
+            ),
+            PolyglotTableParseError => write!(
+                f,
+                "The Polyglot Table cannot be parsed properly! Try again with a different Polyglot file!"
+            ),
             CustomError { err_msg } => write!(f, "{err_msg}"),
         }
     }

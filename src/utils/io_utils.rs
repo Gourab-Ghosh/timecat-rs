@@ -1,7 +1,7 @@
 use super::*;
 use std::io::{self, Write};
-use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Mutex;
+use std::sync::mpsc::{Receiver, Sender, channel};
 
 pub fn print_line<T: fmt::Display>(line: T) {
     let to_print = format!("{line}");
@@ -92,12 +92,14 @@ impl IoReader {
 
     pub fn start_reader_in_parallel(&self) -> thread::JoinHandle<()> {
         let sender = self.sender.clone();
-        thread::spawn(move || loop {
-            let mut user_input = String::new();
-            std::io::stdin()
-                .read_line(&mut user_input)
-                .expect("Failed to read line!");
-            _ = sender.send(user_input);
+        thread::spawn(move || {
+            loop {
+                let mut user_input = String::new();
+                std::io::stdin()
+                    .read_line(&mut user_input)
+                    .expect("Failed to read line!");
+                _ = sender.send(user_input);
+            }
         })
     }
 

@@ -551,7 +551,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             // futility pruning condition
             if depth < 4 && alpha < mate_score {
                 let futility_margin = get_item_unchecked!(
-                    const [0, PAWN_VALUE, Knight.evaluate(), Rook.evaluate()],
+                    const { [0, PAWN_VALUE, Knight.evaluate(), Rook.evaluate()] },
                     depth as usize,
                 );
                 futility_pruning = static_evaluation + futility_margin <= alpha;

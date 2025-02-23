@@ -28,16 +28,18 @@ impl Rank {
     #[inline]
     pub fn up(self) -> Option<Self> {
         *get_item_unchecked!(
-            const [
-                Some(Self::Second),
-                Some(Self::Third),
-                Some(Self::Fourth),
-                Some(Self::Fifth),
-                Some(Self::Sixth),
-                Some(Self::Seventh),
-                Some(Self::Eighth),
-                None,
-            ],
+            const {
+                [
+                    Some(Self::Second),
+                    Some(Self::Third),
+                    Some(Self::Fourth),
+                    Some(Self::Fifth),
+                    Some(Self::Sixth),
+                    Some(Self::Seventh),
+                    Some(Self::Eighth),
+                    None,
+                ]
+            },
             self.to_index(),
         )
     }
@@ -45,16 +47,18 @@ impl Rank {
     #[inline]
     pub fn down(self) -> Option<Self> {
         *get_item_unchecked!(
-            const [
-                None,
-                Some(Self::First),
-                Some(Self::Second),
-                Some(Self::Third),
-                Some(Self::Fourth),
-                Some(Self::Fifth),
-                Some(Self::Sixth),
-                Some(Self::Seventh),
-            ],
+            const {
+                [
+                    None,
+                    Some(Self::First),
+                    Some(Self::Second),
+                    Some(Self::Third),
+                    Some(Self::Fourth),
+                    Some(Self::Fifth),
+                    Some(Self::Sixth),
+                    Some(Self::Seventh),
+                ]
+            },
             self.to_index(),
         )
     }

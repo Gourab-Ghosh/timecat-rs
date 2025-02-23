@@ -3,7 +3,7 @@ use super::*;
 #[inline]
 fn polyglot_move_int_to_move(move_int: u16) -> Result<Move> {
     Move::new(
-        (move_int >> 6 & 0x3F).decompress(),
+        ((move_int >> 6) & 0x3F).decompress(),
         (move_int & 0x3F).decompress(),
         *const { [None, Some(Knight), Some(Bishop), Some(Rook), Some(Queen)] }
             .get((move_int >> 12) as usize)
@@ -21,8 +21,8 @@ fn move_to_polyglot_move_int(move_: Move) -> Result<u16> {
         Some(Queen) => 4,
         _ => return Err(TimecatError::PolyglotTableParseError),
     };
-    move_int = move_int << 6 ^ move_.get_source().compress();
-    move_int = move_int << 6 ^ move_.get_dest().compress();
+    move_int = (move_int << 6) ^ move_.get_source().compress();
+    move_int = (move_int << 6) ^ move_.get_dest().compress();
     Ok(move_int)
 }
 
@@ -285,7 +285,7 @@ impl PolyglotBookHashMap {
             .iter()
             .flat_map(|(hash, entries)| entries.iter().map(move |entry| (hash, entry)))
             .collect_vec();
-        data.sort_unstable_by_key(|(&hash, entry)| (hash, Reverse(entry.weight)));
+        data.sort_unstable_by_key(|&(&hash, entry)| (hash, Reverse(entry.weight)));
         let mut file = fs::File::create(file_path)?;
         for (hash, entry) in data {
             file.write_all(&hash.to_be_bytes())?;

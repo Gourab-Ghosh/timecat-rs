@@ -89,7 +89,7 @@ impl fmt::Display for PieceType {
         write!(
             f,
             "{}",
-            get_item_unchecked!(const ["p", "n", "b", "r", "q", "k"], self.to_index()),
+            get_item_unchecked!(const { ["p", "n", "b", "r", "q", "k"] }, self.to_index()),
         )
     }
 }
