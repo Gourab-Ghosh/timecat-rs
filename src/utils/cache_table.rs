@@ -219,11 +219,7 @@ impl<T: Copy + PartialEq> CacheTable<T> {
             let table = self.table.read().unwrap();
             *get_item_unchecked!(table, self.get_index(hash.get()))
         }?;
-        if entry.hash == hash {
-            Some(entry.entry)
-        } else {
-            None
-        }
+        (entry.hash == hash).then_some(entry.entry)
     }
 
     #[inline]

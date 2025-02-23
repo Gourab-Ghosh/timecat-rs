@@ -454,9 +454,7 @@ impl ChessPosition {
     pub fn get_piece_type_at(&self, square: Square) -> Option<PieceType> {
         // TODO: check speed on Naive Algorithm
         let opp = square.to_bitboard();
-        if (self.occupied() & opp).is_empty() {
-            None
-        } else {
+        (!(self.occupied() & opp).is_empty()).then(|| {
             //naive algorithm
             /*
             for &p in ALL_PIECE_TYPES {
@@ -471,20 +469,20 @@ impl ChessPosition {
                 .is_empty()
             {
                 if !(self.get_piece_mask(Pawn) & opp).is_empty() {
-                    Some(Pawn)
+                    Pawn
                 } else if !(self.get_piece_mask(Knight) & opp).is_empty() {
-                    Some(Knight)
+                    Knight
                 } else {
-                    Some(Bishop)
+                    Bishop
                 }
             } else if !(self.get_piece_mask(Rook) & opp).is_empty() {
-                Some(Rook)
+                Rook
             } else if !(self.get_piece_mask(Queen) & opp).is_empty() {
-                Some(Queen)
+                Queen
             } else {
-                Some(King)
+                King
             }
-        }
+        })
     }
 
     #[inline]
