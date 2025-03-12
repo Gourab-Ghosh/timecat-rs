@@ -215,12 +215,11 @@ impl<T: Copy + PartialEq> CacheTable<T> {
     #[inline]
     pub fn get(&self, hash: u64) -> Option<T> {
         let hash = NonZeroU64::new(hash).unwrap_or(DEFAULT_HASH);
-        let entry = (*get_item_unchecked!(self.table.read().unwrap(), self.get_index(hash.get())))?;
-        if entry.hash == hash {
-            Some(entry.entry)
-        } else {
-            None
-        }
+        let entry = {
+            let table = self.table.read().unwrap();
+            *get_item_unchecked!(table, self.get_index(hash.get()))
+        }?;
+        (entry.hash == hash).then_some(entry.entry)
     }
 
     #[inline]

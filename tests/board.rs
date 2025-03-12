@@ -106,7 +106,10 @@ fn test_attackers_mask() {
                     }
                 }
             }
-            assert_eq!(expected, result, "Expected\n\n{expected}\n\nfound\n\n{result}\n\nin position\n\n{board}\n\n for square {square}");
+            assert_eq!(
+                expected, result,
+                "Expected\n\n{expected}\n\nfound\n\n{result}\n\nin position\n\n{board}\n\n for square {square}"
+            );
         }
     }
 }

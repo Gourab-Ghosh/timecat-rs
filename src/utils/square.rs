@@ -1,14 +1,16 @@
 use super::*;
+pub use Square::*;
 #[cfg(target_feature = "bmi2")]
 use std::arch::x86_64::{_pdep_u64, _pext_u64};
-pub use Square::*;
 
 include!(concat!(env!("OUT_DIR"), "/magic.rs"));
 
 /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
 fn get_bishop_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
-    let magic: Magic =
-        *get_item_unchecked!(const BISHOP_AND_ROOK_MAGIC_NUMBERS[0], square.to_index());
+    let magic: Magic = *get_item_unchecked!(
+        const { BISHOP_AND_ROOK_MAGIC_NUMBERS[0] },
+        square.to_index()
+    );
     *get_item_unchecked!(
         MOVES,
         magic.offset
@@ -22,7 +24,8 @@ fn get_bishop_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
 /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
 #[cfg(target_feature = "bmi2")]
 fn get_bishop_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
-    let bmi2_magic = *get_item_unchecked!(const BISHOP_AND_ROOK_BMI_MASKS[0], square.to_index());
+    let bmi2_magic =
+        *get_item_unchecked!(const { BISHOP_AND_ROOK_BMI_MASKS[0] }, square.to_index());
     let index = unsafe { _pext_u64(blockers.into_inner(), bmi2_magic.blockers_mask.into_inner()) }
         as usize
         + bmi2_magic.offset;
@@ -37,8 +40,10 @@ fn get_bishop_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
 
 /// Get the moves for a rook on a particular square, given blockers blocking my movement.
 fn get_rook_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
-    let magic: Magic =
-        *get_item_unchecked!(const BISHOP_AND_ROOK_MAGIC_NUMBERS[1], square.to_index());
+    let magic: Magic = *get_item_unchecked!(
+        const { BISHOP_AND_ROOK_MAGIC_NUMBERS[1] },
+        square.to_index()
+    );
     *get_item_unchecked!(
         MOVES,
         magic.offset
@@ -52,7 +57,8 @@ fn get_rook_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
 /// Get the moves for a rook on a particular square, given blockers blocking my movement.
 #[cfg(target_feature = "bmi2")]
 fn get_rook_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
-    let bmi2_magic = *get_item_unchecked!(const BISHOP_AND_ROOK_BMI_MASKS[1], square.to_index());
+    let bmi2_magic =
+        *get_item_unchecked!(const { BISHOP_AND_ROOK_BMI_MASKS[1] }, square.to_index());
     let index = unsafe { _pext_u64(blockers.into_inner(), bmi2_magic.blockers_mask.into_inner()) }
         as usize
         + bmi2_magic.offset;
@@ -402,8 +408,11 @@ impl Square {
     /// victims
     #[inline]
     pub fn get_pawn_attacks(self, color: Color, blockers: BitBoard) -> BitBoard {
-        *get_item_unchecked!(const PAWN_MOVES_AND_ATTACKS[1], color.to_index(), self.to_index())
-            & blockers
+        *get_item_unchecked!(
+            const { PAWN_MOVES_AND_ATTACKS[1] },
+            color.to_index(),
+            self.to_index()
+        ) & blockers
     }
 
     /// Get the quiet pawn moves (non-captures) for a particular square, given the pawn's color and
@@ -412,8 +421,11 @@ impl Square {
     pub fn get_pawn_quiets(self, color: Color, blockers: BitBoard) -> BitBoard {
         // TODO: Maybe optimization possible?
         if (self.to_bitboard().shift_forward(color) & blockers).is_empty() {
-            *get_item_unchecked!(const PAWN_MOVES_AND_ATTACKS[0], color.to_index(), self.to_index())
-                & !blockers
+            *get_item_unchecked!(
+                const { PAWN_MOVES_AND_ATTACKS[0] },
+                color.to_index(),
+                self.to_index()
+            ) & !blockers
         } else {
             BitBoard::EMPTY
         }

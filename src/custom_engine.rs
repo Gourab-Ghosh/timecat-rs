@@ -105,12 +105,14 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
     }
 
     #[inline]
-    pub fn get_search_controller(&self) -> &impl SearchControl<Searcher<P>> {
+    pub fn get_search_controller(&self) -> &(impl SearchControl<Searcher<P>> + use<T, P>) {
         &self.controller
     }
 
     #[inline]
-    pub fn get_search_controller_mut(&mut self) -> &mut impl SearchControl<Searcher<P>> {
+    pub fn get_search_controller_mut(
+        &mut self,
+    ) -> &mut (impl SearchControl<Searcher<P>> + use<T, P>) {
         &mut self.controller
     }
 

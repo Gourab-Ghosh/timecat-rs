@@ -106,7 +106,7 @@ mod bitboards_generation {
 
     #[inline]
     const fn bb_contains(bb: u64, square: u8) -> bool {
-        bb & 1 << square != 0
+        bb & (1 << square) != 0
     }
 
     fn generate_moves_bb(sub_mask: u64, square: u8, piece_type: u8) -> u64 {
@@ -233,7 +233,7 @@ mod bitboards_generation {
                 let mut bb = 1 << index;
                 bb ^= shift_left(bb) ^ shift_right(bb);
                 bb ^= shift_down(bb) ^ shift_up(bb);
-                BitBoard(bb ^ 1 << index)
+                BitBoard(bb ^ (1 << index))
             })
         )?;
         Ok(())

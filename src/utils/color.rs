@@ -11,7 +11,7 @@ pub enum Color {
 impl Color {
     #[inline]
     pub fn from_index(index: usize) -> Self {
-        *get_item_unchecked!(const [Black, White], index)
+        *get_item_unchecked!(const { [Black, White] }, index)
     }
 
     #[inline]
@@ -21,32 +21,32 @@ impl Color {
 
     #[inline]
     pub fn to_my_backrank(self) -> Rank {
-        *get_item_unchecked!(const [Rank::Eighth, Rank::First], self.to_index())
+        *get_item_unchecked!(const { [Rank::Eighth, Rank::First] }, self.to_index())
     }
 
     #[inline]
     pub fn to_their_backrank(self) -> Rank {
-        *get_item_unchecked!(const [Rank::First, Rank::Eighth], self.to_index())
+        *get_item_unchecked!(const { [Rank::First, Rank::Eighth] }, self.to_index())
     }
 
     #[inline]
     pub fn to_second_rank(self) -> Rank {
-        *get_item_unchecked!(const [Rank::Seventh, Rank::Second], self.to_index())
+        *get_item_unchecked!(const { [Rank::Seventh, Rank::Second] }, self.to_index())
     }
 
     #[inline]
     pub fn to_third_rank(self) -> Rank {
-        *get_item_unchecked!(const [Rank::Sixth, Rank::Third], self.to_index())
+        *get_item_unchecked!(const { [Rank::Sixth, Rank::Third] }, self.to_index())
     }
 
     #[inline]
     pub fn to_fourth_rank(self) -> Rank {
-        *get_item_unchecked!(const [Rank::Fifth, Rank::Fourth], self.to_index())
+        *get_item_unchecked!(const { [Rank::Fifth, Rank::Fourth] }, self.to_index())
     }
 
     #[inline]
     pub fn to_seventh_rank(self) -> Rank {
-        *get_item_unchecked!(const [Rank::Second, Rank::Seventh], self.to_index())
+        *get_item_unchecked!(const { [Rank::Second, Rank::Seventh] }, self.to_index())
     }
 }
 
@@ -55,7 +55,7 @@ impl Not for Color {
 
     #[inline]
     fn not(self) -> Self {
-        *get_item_unchecked!(const [White, Black], self.to_index())
+        *get_item_unchecked!(const { [White, Black] }, self.to_index())
     }
 }
 
@@ -64,7 +64,7 @@ impl fmt::Display for Color {
         write!(
             f,
             "{}",
-            get_item_unchecked!(const ["Black", "White"], self.to_index())
+            get_item_unchecked!(const { ["Black", "White"] }, self.to_index())
         )
     }
 }

@@ -198,23 +198,25 @@ impl ChessPosition {
 
     pub fn clean_castling_rights(&self) -> BitBoard {
         let white_castling_rights = get_item_unchecked!(
-            const
-            [
-                BitBoard::EMPTY,
-                BB_H1,
-                BB_A1,
-                BitBoard::new(BB_A1.into_inner() ^ BB_H1.into_inner()),
-            ],
+            const {
+                [
+                    BitBoard::EMPTY,
+                    BB_H1,
+                    BB_A1,
+                    BitBoard::new(BB_A1.into_inner() ^ BB_H1.into_inner()),
+                ]
+            },
             self.castle_rights(White).to_index(),
         );
         let black_castling_rights = get_item_unchecked!(
-            const
-            [
-                BitBoard::EMPTY,
-                BB_H8,
-                BB_A8,
-                BitBoard::new(BB_A8.into_inner() ^ BB_H8.into_inner()),
-            ],
+            const {
+                [
+                    BitBoard::EMPTY,
+                    BB_H8,
+                    BB_A8,
+                    BitBoard::new(BB_A8.into_inner() ^ BB_H8.into_inner()),
+                ]
+            },
             self.castle_rights(Black).to_index(),
         );
         white_castling_rights ^ black_castling_rights
@@ -452,9 +454,7 @@ impl ChessPosition {
     pub fn get_piece_type_at(&self, square: Square) -> Option<PieceType> {
         // TODO: check speed on Naive Algorithm
         let opp = square.to_bitboard();
-        if (self.occupied() & opp).is_empty() {
-            None
-        } else {
+        (!(self.occupied() & opp).is_empty()).then(|| {
             //naive algorithm
             /*
             for &p in ALL_PIECE_TYPES {
@@ -469,20 +469,20 @@ impl ChessPosition {
                 .is_empty()
             {
                 if !(self.get_piece_mask(Pawn) & opp).is_empty() {
-                    Some(Pawn)
+                    Pawn
                 } else if !(self.get_piece_mask(Knight) & opp).is_empty() {
-                    Some(Knight)
+                    Knight
                 } else {
-                    Some(Bishop)
+                    Bishop
                 }
             } else if !(self.get_piece_mask(Rook) & opp).is_empty() {
-                Some(Rook)
+                Rook
             } else if !(self.get_piece_mask(Queen) & opp).is_empty() {
-                Some(Queen)
+                Queen
             } else {
-                Some(King)
+                King
             }
-        }
+        })
     }
 
     #[inline]
@@ -1086,11 +1086,7 @@ impl ChessPosition {
 
     #[inline]
     pub fn score_flipped(&self, score: Score) -> Score {
-        if self.turn() == White {
-            score
-        } else {
-            -score
-        }
+        if self.turn() == White { score } else { -score }
     }
 
     #[inline]
@@ -1205,20 +1201,19 @@ impl ChessPosition {
             BitBoard::new(ob.getattr("kings")?.extract()?),
         ];
         let (black_occupied, white_occupied) = {
-            if let Ok(occupied_color_py_object) = ob.getattr("occupied_color") {
-                (
+            match ob.getattr("occupied_color") {
+                Ok(occupied_color_py_object) => (
                     occupied_color_py_object
                         .get_item(0)?
                         .extract::<BitBoard>()?,
                     occupied_color_py_object
                         .get_item(1)?
                         .extract::<BitBoard>()?,
-                )
-            } else {
-                (
+                ),
+                _ => (
                     ob.getattr("occupied_b")?.extract::<BitBoard>()?,
                     ob.getattr("occupied_w")?.extract::<BitBoard>()?,
-                )
+                ),
             }
         };
         let (white_castle_rights, black_castle_rights) = {
@@ -1236,7 +1231,7 @@ impl ChessPosition {
                             from: ob.to_string(),
                             to: std::any::type_name::<Self>().to_string(),
                         }
-                        .into())
+                        .into());
                     }
                 },
                 match castling_rights_bb & Black.to_my_backrank().to_bitboard() {
@@ -1249,7 +1244,7 @@ impl ChessPosition {
                             from: ob.to_string(),
                             to: std::any::type_name::<Self>().to_string(),
                         }
-                        .into())
+                        .into());
                     }
                 },
             )
@@ -1367,34 +1362,36 @@ impl BoardPositionMethodOverload<Move> for ChessPosition {
             let start = BitBoard::from_rank_and_file(
                 my_backrank,
                 *get_item_unchecked!(
-                    const
-                    [
-                        File::A,
-                        File::A,
-                        File::A,
-                        File::A,
-                        File::H,
-                        File::H,
-                        File::H,
-                        File::H,
-                    ],
+                    const {
+                        [
+                            File::A,
+                            File::A,
+                            File::A,
+                            File::A,
+                            File::H,
+                            File::H,
+                            File::H,
+                            File::H,
+                        ]
+                    },
                     index,
                 ),
             );
             let end = BitBoard::from_rank_and_file(
                 my_backrank,
                 *get_item_unchecked!(
-                    const
-                    [
-                        File::D,
-                        File::D,
-                        File::D,
-                        File::D,
-                        File::F,
-                        File::F,
-                        File::F,
-                        File::F,
-                    ],
+                    const {
+                        [
+                            File::D,
+                            File::D,
+                            File::D,
+                            File::D,
+                            File::F,
+                            File::F,
+                            File::F,
+                            File::F,
+                        ]
+                    },
                     index,
                 ),
             );

@@ -16,7 +16,7 @@ impl std::hash::Hasher for IdentityHasher {
     fn write(&mut self, bytes: &[u8]) {
         // TODO: Maybe make the logic better?
         for &byte in bytes {
-            self.0 = self.0 << 3 ^ byte as u64;
+            self.0 = (self.0 << 3) ^ byte as u64;
         }
     }
 

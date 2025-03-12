@@ -1,9 +1,9 @@
 [package]
 name = "timecat"
 authors = ["Gourab Ghosh"]
-version = "1.42.1"
-rust-version = "1.83"
-edition = "2021"
+version = "1.44.1"
+rust-version = "1.85"
+edition = "2024"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
 description = "A NNUE-based chess engine that implements the Negamax algorithm and can be integrated into any project as a library. It features move generation, advanced position evaluation through NNUE, and move searching capabilities."
@@ -66,7 +66,7 @@ gloo = { version = "0", optional = true }
 pyo3 = { version = "0", optional = true }
 
 [build-dependencies]
-dirs = { version = "5", optional = true }
+dirs = { version = "6.0.0", optional = true }
 itertools = "0"
 minreq = { version = "2", features = ["https"], optional = true }
 sha256 = { version = "1", optional = true }

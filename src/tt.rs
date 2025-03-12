@@ -149,20 +149,15 @@ impl TranspositionTable {
             };
         }
         let old_optional_entry = self.table.get(key);
-        let optional_data = if save_score {
-            let old_optional_data = old_optional_entry.and_then(|tt_entry| tt_entry.optional_data);
-            if old_optional_data.map_or(-1, |data| data.depth) < depth {
-                Some(TranspositionTableData { depth, score, flag })
-            } else {
-                old_optional_data
-            }
-        } else {
-            None
-        };
         self.table.add(
             key,
             TranspositionTableEntry::new(
-                optional_data,
+                save_score.then(|| {
+                    old_optional_entry
+                        .and_then(|tt_entry| tt_entry.optional_data)
+                        .filter(|data| data.depth > depth)
+                        .unwrap_or(TranspositionTableData { depth, score, flag })
+                }),
                 best_move.or(old_optional_entry.and_then(|tt_entry| tt_entry.best_move)),
             ),
         );

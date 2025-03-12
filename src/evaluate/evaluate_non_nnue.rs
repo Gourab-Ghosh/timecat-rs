@@ -163,9 +163,9 @@ impl EvaluatorNonNNUE {
         let isolated = adjacent_files.iter().flatten().all(|&adj_file| {
             ALL_RANKS.iter().all(|&rank| {
                 let sq = Square::from_rank_and_file(rank, adj_file);
-                position.get_piece_at(sq).map_or(true, |p| {
-                    p.get_piece_type() != Pawn || p.get_color() != pawn_color
-                })
+                position
+                    .get_piece_at(sq)
+                    .is_none_or(|p| p.get_piece_type() != Pawn || p.get_color() != pawn_color)
             })
         });
 

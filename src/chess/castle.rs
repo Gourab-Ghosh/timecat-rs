@@ -45,7 +45,7 @@ impl CastleRights {
     #[inline]
     pub fn kingside_squares(self, color: Color) -> BitBoard {
         *get_item_unchecked!(
-            const [BitBoard::new(6917529027641081856), BitBoard::new(96)],
+            const { [BitBoard::new(6917529027641081856), BitBoard::new(96)] },
             color.to_index(),
         )
     }
@@ -54,7 +54,7 @@ impl CastleRights {
     #[inline]
     pub fn queenside_squares(self, color: Color) -> BitBoard {
         *get_item_unchecked!(
-            const [BitBoard::new(1008806316530991104), BitBoard::new(14)],
+            const { [BitBoard::new(1008806316530991104), BitBoard::new(14)] },
             color.to_index(),
         )
     }
@@ -106,7 +106,7 @@ impl CastleRights {
     }
 
     pub fn to_string(self, color: Color) -> String {
-        let result = get_item_unchecked!(const ["", "k", "q", "kq"], self.to_index());
+        let result = get_item_unchecked!(const { ["", "k", "q", "kq"] }, self.to_index());
         if color == White {
             result.to_uppercase()
         } else {

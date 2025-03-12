@@ -14,11 +14,11 @@ pub struct Layer<
 }
 
 impl<
-        W: BinRead<Args = ()> + Debug,
-        B: BinRead<Args = ()>,
-        const NUM_INPUTS: usize,
-        const NUM_OUTPUTS: usize,
-    > Layer<W, B, NUM_INPUTS, NUM_OUTPUTS>
+    W: BinRead<Args = ()> + Debug,
+    B: BinRead<Args = ()>,
+    const NUM_INPUTS: usize,
+    const NUM_OUTPUTS: usize,
+> Layer<W, B, NUM_INPUTS, NUM_OUTPUTS>
 {
     #[inline]
     pub fn get_weights_transpose(&self) -> &[MathVec<W, NUM_INPUTS>; NUM_OUTPUTS] {
@@ -32,11 +32,11 @@ impl<
 }
 
 impl<
-        W: BinRead<Args = ()> + Clone + Debug,
-        B: BinRead<Args = ()> + Clone + AddAssign + From<W> + Mul + Sum<<B as Mul>::Output>,
-        const NUM_INPUTS: usize,
-        const NUM_OUTPUTS: usize,
-    > Layer<W, B, NUM_INPUTS, NUM_OUTPUTS>
+    W: BinRead<Args = ()> + Clone + Debug,
+    B: BinRead<Args = ()> + Clone + AddAssign + From<W> + Mul + Sum<<B as Mul>::Output>,
+    const NUM_INPUTS: usize,
+    const NUM_OUTPUTS: usize,
+> Layer<W, B, NUM_INPUTS, NUM_OUTPUTS>
 {
     pub fn forward(&self, inputs: MathVec<W, NUM_INPUTS>) -> MathVec<B, NUM_OUTPUTS> {
         let mut outputs = self.get_biases().clone();
