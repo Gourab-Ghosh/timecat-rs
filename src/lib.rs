@@ -65,7 +65,7 @@ pub mod prelude {
 }
 
 pub use arrayvec::ArrayVec;
-#[cfg(feature = "nnue_reader")]
+#[cfg(feature = "binread")]
 pub use binread::{BinRead, BinResult};
 pub use board::*;
 pub use chess::*;
