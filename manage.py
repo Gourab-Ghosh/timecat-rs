@@ -26,6 +26,7 @@ def main():
         [],
         ["default"],
         ["debug"],
+        ["binread"],
         ["nnue_reader"],
         ["inbuilt_nnue"],
         ["serde"],
