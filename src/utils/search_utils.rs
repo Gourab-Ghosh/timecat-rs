@@ -539,8 +539,8 @@ impl SearchInfo {
     }
 
     #[inline]
-    pub fn set_pv(&mut self, pv: &[Move]) {
-        self.pv = pv.to_vec();
+    pub fn set_pv(&mut self, pv: Vec<Move>) {
+        self.pv = pv;
     }
 
     #[inline]

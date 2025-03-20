@@ -73,8 +73,17 @@ impl ChessPosition {
     }
 
     #[inline]
+    pub fn get_single_legal_move(
+        &self,
+        from_bitboard: BitBoard,
+        to_bitboard: BitBoard,
+    ) -> Option<Move> {
+        MoveGenerator::get_single_legal_move(self, from_bitboard, to_bitboard)
+    }
+
+    #[inline]
     pub fn has_legal_moves(&self) -> bool {
-        MoveGenerator::has_legal_moves(self)
+        MoveGenerator::has_legal_moves(self, BitBoard::ALL, BitBoard::ALL)
     }
 
     #[inline]
@@ -803,7 +812,7 @@ impl ChessPosition {
         let mut attacked_squares = BitBoard::EMPTY;
         for (piece, square) in self.custom_iter(attacker_piece_types, colors, attackers_mask) {
             attacked_squares |= match piece.get_piece_type() {
-                Pawn => square.get_pawn_attacks(piece.get_color(), BB_ALL),
+                Pawn => square.get_pawn_attacks(piece.get_color(), BitBoard::ALL),
                 Knight => square.get_knight_moves(),
                 Bishop => get_bishop_moves(square, self.occupied()),
                 Rook => get_rook_moves(square, self.occupied()),
@@ -816,7 +825,7 @@ impl ChessPosition {
 
     #[inline]
     pub fn get_attacked_squares_bb(&self) -> BitBoard {
-        self.get_custom_attacked_squares_bb(&ALL_PIECE_TYPES, &ALL_COLORS, BB_ALL)
+        self.get_custom_attacked_squares_bb(&ALL_PIECE_TYPES, &ALL_COLORS, BitBoard::ALL)
     }
 
     pub fn get_attackers_mask(
@@ -832,9 +841,9 @@ impl ChessPosition {
 
         let pawn_attacks = color.map_or(
             // TODO: make this const when it becomes stable.
-            target_square.get_pawn_attacks(White, BB_ALL)
-                ^ target_square.get_pawn_attacks(Black, BB_ALL),
-            |color| target_square.get_pawn_attacks(!color, BB_ALL),
+            target_square.get_pawn_attacks(White, BitBoard::ALL)
+                ^ target_square.get_pawn_attacks(Black, BitBoard::ALL),
+            |color| target_square.get_pawn_attacks(!color, BitBoard::ALL),
         ) & self.get_piece_mask(Pawn);
 
         // TODO: Scope for improvement?
@@ -865,11 +874,11 @@ impl ChessPosition {
 
         let attackers = match piece_type {
             Pawn => match color {
-                Some(color) => target_square.get_pawn_attacks(!color, BB_ALL),
+                Some(color) => target_square.get_pawn_attacks(!color, BitBoard::ALL),
                 None => {
                     // TODO: make this const when it becomes stable.
-                    target_square.get_pawn_attacks(White, BB_ALL)
-                        ^ target_square.get_pawn_attacks(Black, BB_ALL)
+                    target_square.get_pawn_attacks(White, BitBoard::ALL)
+                        ^ target_square.get_pawn_attacks(Black, BitBoard::ALL)
                 }
             },
             Knight => target_square.get_knight_moves(),
@@ -1156,8 +1165,8 @@ impl ChessPosition {
     }
 
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = (Piece, Square)> + '_ {
-        self.custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS, BB_ALL)
+    pub fn iter(&self) -> impl Iterator<Item = (Piece, Square)> {
+        self.custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS, BitBoard::ALL)
     }
 
     pub fn perft(&self, depth: Depth, print_move: bool) -> usize {
@@ -1166,6 +1175,7 @@ impl ChessPosition {
             return moves.len();
         }
         moves
+            .into_iter()
             .map(|move_| {
                 let count = self.make_move_new(move_).perft(depth - 1, false);
                 if print_move {

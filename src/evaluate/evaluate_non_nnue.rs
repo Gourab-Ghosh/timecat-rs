@@ -39,8 +39,8 @@ impl EvaluatorNonNNUE {
 
             // Calculate mobility (number of legal moves)
             let mobility = position
-                .generate_masked_legal_moves(square.to_bitboard(), BB_ALL)
-                .count() as Score;
+                .generate_masked_legal_moves(square.to_bitboard(), BitBoard::ALL)
+                .len() as Score;
             mobility_score += if piece.get_color() == White {
                 mobility
             } else {
@@ -225,8 +225,8 @@ impl EvaluatorNonNNUE {
 
         // Penalize pieces trapped or blocked by own pawns
         let piece_mobility = position
-            .generate_masked_legal_moves(square.to_bitboard(), BB_ALL)
-            .count() as Score;
+            .generate_masked_legal_moves(square.to_bitboard(), BitBoard::ALL)
+            .len() as Score;
         if piece_mobility < 2 {
             activity_score -= 10; // Example penalty for low mobility
         }

@@ -133,43 +133,11 @@ impl MoveSorter {
         *get_item_unchecked!(self.history_move_scores, piece.to_index(), dest.to_index())
     }
 
+    #[inline]
     fn get_least_attackers_move(square: Square, position: &ChessPosition) -> Option<Move> {
-        position
-            .generate_masked_legal_moves(position.self_occupied(), square.to_bitboard())
-            .next() // No need to find least attacker as the moves are already sorted
+        // No need to find least attacker as the moves are already sorted
+        position.get_single_legal_move(position.self_occupied(), square.to_bitboard())
     }
-
-    // fn get_least_attackers_move(square: Square, position: &ChessPosition) -> Option<Move> {
-    //     if position.is_check() {
-    //         position
-    //             .generate_masked_legal_moves(
-    //                 position.self_occupied(),
-    //                 square.to_bitboard(),
-    //             )
-    //             .next() // No need to find least attacker as the moves are already sorted
-    //     } else {
-    //         let attackers_mask = position.get_attackers_mask(square, position.turn());
-    //         for piece_type in ALL_PIECE_TYPES {
-    //             let least_attackers = position.get_piece_mask(piece_type) & attackers_mask;
-    //             if !least_attackers.is_empty() {
-    //                 return Some(
-    //                     Move::new_unchecked(
-    //                         least_attackers.to_square(),
-    //                         square,
-    //                         if piece_type == Pawn
-    //                             && square.get_rank() == position.turn().to_their_backrank()
-    //                         {
-    //                             Some(Queen)
-    //                         } else {
-    //                             None
-    //                         },
-    //                     ),
-    //                 );
-    //             }
-    //         }
-    //         None
-    //     }
-    // }
 
     fn see(square: Square, position: &ChessPosition) -> Score {
         let least_attackers_move = match Self::get_least_attackers_move(square, position) {
@@ -328,16 +296,20 @@ impl MoveSorter {
         transposition_table: &TranspositionTable,
     ) -> WeightedMoveListSorter {
         let best_move = transposition_table.read_best_move(position.get_hash());
-        WeightedMoveListSorter::from_iter(position.generate_legal_captures().enumerate().map(
-            |(idx, m)| {
-                WeightedMove::new(
-                    m,
-                    1000 * Self::score_capture(m, best_move, position)
-                        + MAX_MOVES_PER_POSITION as MoveWeight
-                        - idx as MoveWeight,
-                )
-            },
-        ))
+        WeightedMoveListSorter::from_iter(
+            position
+                .generate_legal_captures()
+                .into_iter()
+                .enumerate()
+                .map(|(idx, m)| {
+                    WeightedMove::new(
+                        m,
+                        1000 * Self::score_capture(m, best_move, position)
+                            + MAX_MOVES_PER_POSITION as MoveWeight
+                            - idx as MoveWeight,
+                    )
+                }),
+        )
     }
 
     pub fn score_root_moves<P: PositionEvaluation>(

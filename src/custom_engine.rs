@@ -331,7 +331,11 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
         }
         let mut search_info = main_thread_searcher.get_search_info();
         if search_info.get_pv().is_empty() && self.board.status() == BoardStatus::Ongoing {
-            search_info.set_pv(&[self.board.generate_legal_moves().next().unwrap()]);
+            search_info.set_pv(vec![
+                self.board
+                    .get_single_legal_move(BitBoard::ALL, BitBoard::ALL)
+                    .unwrap(),
+            ]);
         }
         search_info
     }

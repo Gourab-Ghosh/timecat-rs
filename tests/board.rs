@@ -90,7 +90,7 @@ fn test_attackers_mask() {
                 if let Some(piece) = board.get_piece_at(piece_square) {
                     if piece.get_color() == board.turn()
                         && match piece.get_piece_type() {
-                            Pawn => piece_square.get_pawn_attacks(board.turn(), BB_ALL),
+                            Pawn => piece_square.get_pawn_attacks(board.turn(), BitBoard::ALL),
                             Knight => piece_square.get_knight_moves(),
                             Bishop => get_bishop_moves(piece_square, board.occupied()),
                             Rook => get_rook_moves(piece_square, board.occupied()),
@@ -367,7 +367,7 @@ fn test_legal_capture_move_generator() {
     board.push_san_moves("e4 Nc6 e5 d5").unwrap();
 
     assert_eq!(
-        board.generate_legal_captures().collect_vec(),
+        board.generate_legal_captures().into_iter().collect_vec(),
         vec![Move::new(E5, D6, None).unwrap()]
     )
 }
