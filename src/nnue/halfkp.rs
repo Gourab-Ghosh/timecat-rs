@@ -264,7 +264,7 @@ impl HalfKPModel {
     #[inline]
     fn update_empty_model_of_one_side(&mut self, position: &ChessPosition, turn: Color) {
         position
-            .custom_iter(&ALL_PIECE_TYPES[..5], &ALL_COLORS, BB_ALL)
+            .custom_iter(&ALL_PIECE_TYPES[..5], &ALL_COLORS, BitBoard::ALL)
             .for_each(|(piece, square)| self.activate_non_king_piece(turn, piece, square))
     }
 

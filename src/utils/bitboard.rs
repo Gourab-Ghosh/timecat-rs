@@ -7,6 +7,7 @@ pub struct BitBoard(u64);
 
 impl BitBoard {
     pub const EMPTY: Self = Self(0);
+    pub const ALL: Self = BitBoard::new(0xFFFFFFFFFFFFFFFF);
 
     #[inline]
     pub const fn new(bb: u64) -> Self {
@@ -105,7 +106,7 @@ impl BitBoard {
 
     #[inline]
     pub const fn is_empty(self) -> bool {
-        self.0 == 0
+        self.0 == Self::EMPTY.0
     }
 
     /// <https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating#FlipVertically>

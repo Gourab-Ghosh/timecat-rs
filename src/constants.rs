@@ -29,7 +29,6 @@ pub mod bitboard_and_square {
     use super::*;
     use File::*;
 
-    pub const BB_ALL: BitBoard = BitBoard::new(0xFFFFFFFFFFFFFFFF);
     pub const NUM_SQUARES: usize = 64;
 
     macro_rules! generate_bitboard_and_square_constants {

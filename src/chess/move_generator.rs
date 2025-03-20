@@ -19,7 +19,7 @@ trait PieceMoves {
         let check_mask = if T::IN_CHECK {
             checkers.to_square_unchecked().between(ksq) ^ checkers
         } else {
-            BB_ALL
+            BitBoard::ALL
         };
 
         for src in pieces & !pinned {
@@ -141,7 +141,7 @@ impl PieceMoves for PawnMoves {
         let check_mask = if T::IN_CHECK {
             checkers.to_square_unchecked().between(ksq) ^ checkers
         } else {
-            BB_ALL
+            BitBoard::ALL
         };
 
         for src in pieces & !pinned {
@@ -437,8 +437,6 @@ pub struct MoveGenerator {
     promotion_index: usize,
     from_bitboard_iterator_mask: BitBoard,
     to_bitboard_iterator_mask: BitBoard,
-    index: usize,
-    last_index: usize,
 }
 
 impl MoveGenerator {
@@ -469,12 +467,17 @@ impl MoveGenerator {
         move_list
     }
 
-    pub fn has_legal_moves(position: &ChessPosition) -> bool {
+    #[inline]
+    pub fn get_single_legal_move(
+        position: &ChessPosition,
+        from_bitboard: BitBoard,
+        to_bitboard: BitBoard,
+    ) -> Option<Move> {
         let checkers = position.get_checkers();
-        let mask = !position.occupied_color(position.turn());
+        let mask = !position.self_occupied() & to_bitboard;
         let mut move_list = ArrayVec::new();
 
-        let legal_functions = if checkers == BitBoard::EMPTY {
+        let legal_functions = if checkers.is_empty() {
             [
                 PawnMoves::legals::<NotInCheckMoves>,
                 KnightMoves::legals::<NotInCheckMoves>,
@@ -494,18 +497,47 @@ impl MoveGenerator {
             ]
         } else {
             KingMoves::legals::<InCheckMoves>(&mut move_list, position, mask);
-            return !move_list.is_empty();
+            return move_list.into_iter().find_map(|square_and_bitboard| {
+                (from_bitboard.contains(square_and_bitboard.square)
+                    && !(square_and_bitboard.bitboard & to_bitboard).is_empty())
+                .then(|| {
+                    Move::new_unchecked(
+                        square_and_bitboard.square,
+                        square_and_bitboard.bitboard.to_square_unchecked(),
+                        square_and_bitboard.promotion.then_some(Queen),
+                    )
+                })
+            });
         };
+
+        let mut start_index = 0;
 
         for function in legal_functions {
             function(&mut move_list, position, mask);
-            if !move_list.is_empty() {
-                return true;
+            for square_and_bitboard in &move_list[start_index..] {
+                if from_bitboard.contains(square_and_bitboard.square)
+                    && !(square_and_bitboard.bitboard & to_bitboard).is_empty()
+                {
+                    return Some(Move::new_unchecked(
+                        square_and_bitboard.square,
+                        square_and_bitboard.bitboard.to_square_unchecked(),
+                        square_and_bitboard.promotion.then_some(Queen),
+                    ));
+                }
             }
-            move_list.clear();
+            start_index = move_list.len();
         }
 
-        false
+        None
+    }
+
+    #[inline]
+    pub fn has_legal_moves(
+        position: &ChessPosition,
+        from_bitboard: BitBoard,
+        to_bitboard: BitBoard,
+    ) -> bool {
+        Self::get_single_legal_move(position, from_bitboard, to_bitboard).is_some()
     }
 
     #[inline]
@@ -513,10 +545,8 @@ impl MoveGenerator {
         MoveGenerator {
             square_and_bitboard_array: MoveGenerator::enumerate_moves(position),
             promotion_index: 0,
-            from_bitboard_iterator_mask: BB_ALL,
-            to_bitboard_iterator_mask: BB_ALL,
-            index: 0,
-            last_index: usize::MAX,
+            from_bitboard_iterator_mask: BitBoard::ALL,
+            to_bitboard_iterator_mask: BitBoard::ALL,
         }
     }
 
@@ -568,17 +598,11 @@ impl MoveGenerator {
         square_removed
     }
 
-    pub fn reset_indices(&mut self) {
-        self.index = 0;
-        self.last_index = usize::MAX;
-    }
-
     pub fn get_from_bitboard_iterator_mask(&self) -> BitBoard {
         self.from_bitboard_iterator_mask
     }
 
     pub fn set_from_bitboard_iterator_mask(&mut self, mask: BitBoard) {
-        self.reset_indices();
         self.from_bitboard_iterator_mask = mask;
         self.reorganize_square_and_bitboard_array();
     }
@@ -588,13 +612,11 @@ impl MoveGenerator {
     }
 
     pub fn set_to_bitboard_iterator_mask(&mut self, mask: BitBoard) {
-        self.reset_indices();
         self.to_bitboard_iterator_mask = mask;
         self.reorganize_square_and_bitboard_array();
     }
 
     pub fn set_iterator_masks(&mut self, from_bitboard: BitBoard, to_bitboard: BitBoard) {
-        self.reset_indices();
         self.from_bitboard_iterator_mask = from_bitboard;
         self.to_bitboard_iterator_mask = to_bitboard;
         self.reorganize_square_and_bitboard_array();
@@ -630,11 +652,11 @@ impl MoveGenerator {
                 result += iterable.len();
             } else {
                 iterable.set_to_bitboard_iterator_mask(targets);
-                for x in &mut iterable {
+                for x in iterable.iter() {
                     result += MoveGenerator::perft_test(&position.make_move_new(x), depth - 1);
                 }
                 iterable.set_to_bitboard_iterator_mask(!targets);
-                for x in &mut iterable {
+                for x in iterable.iter() {
                     result += MoveGenerator::perft_test(&position.make_move_new(x), depth - 1);
                 }
             }
@@ -642,7 +664,8 @@ impl MoveGenerator {
         result
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = Move> + '_ {
+    #[inline]
+    pub fn iter(&self) -> impl Iterator<Item = Move> {
         self.square_and_bitboard_array
             .iter()
             .filter(|square_and_bitboard| {
@@ -666,6 +689,33 @@ impl MoveGenerator {
                     )
                 })
             })
+    }
+
+    pub fn len(&self) -> usize {
+        let mut result = 0;
+        for square_and_bitboard in &self.square_and_bitboard_array {
+            let bitboard_and_to_bitboard_iterator_mask =
+                square_and_bitboard.bitboard & self.to_bitboard_iterator_mask;
+            if !self
+                .from_bitboard_iterator_mask
+                .contains(square_and_bitboard.square)
+                || bitboard_and_to_bitboard_iterator_mask.is_empty()
+            {
+                break;
+            }
+            if square_and_bitboard.promotion {
+                result += (bitboard_and_to_bitboard_iterator_mask.popcnt() as usize)
+                    * NUM_PROMOTION_PIECES;
+            } else {
+                result += bitboard_and_to_bitboard_iterator_mask.popcnt() as usize;
+            }
+        }
+        result
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     #[inline]
@@ -723,31 +773,20 @@ impl MoveGenerator {
     }
 }
 
-impl ExactSizeIterator for MoveGenerator {
+pub struct MoveGeneratorIterator {
+    move_generator: MoveGenerator,
+    index: usize,
+    last_index: usize,
+}
+
+impl ExactSizeIterator for MoveGeneratorIterator {
+    #[inline]
     fn len(&self) -> usize {
-        let mut result = 0;
-        for square_and_bitboard in &self.square_and_bitboard_array {
-            let bitboard_and_to_bitboard_iterator_mask =
-                square_and_bitboard.bitboard & self.to_bitboard_iterator_mask;
-            if !self
-                .from_bitboard_iterator_mask
-                .contains(square_and_bitboard.square)
-                || bitboard_and_to_bitboard_iterator_mask.is_empty()
-            {
-                break;
-            }
-            if square_and_bitboard.promotion {
-                result += (bitboard_and_to_bitboard_iterator_mask.popcnt() as usize)
-                    * NUM_PROMOTION_PIECES;
-            } else {
-                result += bitboard_and_to_bitboard_iterator_mask.popcnt() as usize;
-            }
-        }
-        result
+        self.move_generator.len()
     }
 }
 
-impl Iterator for MoveGenerator {
+impl Iterator for MoveGeneratorIterator {
     type Item = Move;
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -758,13 +797,14 @@ impl Iterator for MoveGenerator {
     fn next(&mut self) -> Option<Move> {
         // TODO: Check Logic
 
-        let square_and_bitboard_array_len = self.square_and_bitboard_array.len();
+        let square_and_bitboard_array_len = self.move_generator.square_and_bitboard_array.len();
         if self.index >= square_and_bitboard_array_len {
             return None;
         }
         if self.index != self.last_index {
-            while !self.from_bitboard_iterator_mask.contains(
-                get_item_unchecked_mut!(self.square_and_bitboard_array, self.index).square,
+            while !self.move_generator.from_bitboard_iterator_mask.contains(
+                get_item_unchecked_mut!(self.move_generator.square_and_bitboard_array, self.index)
+                    .square,
             ) {
                 self.index += 1;
                 if self.index >= square_and_bitboard_array_len {
@@ -774,44 +814,69 @@ impl Iterator for MoveGenerator {
             self.last_index = self.index;
         }
         let square_and_bitboard =
-            get_item_unchecked_mut!(self.square_and_bitboard_array, self.index);
+            get_item_unchecked_mut!(self.move_generator.square_and_bitboard_array, self.index);
 
         if !self
+            .move_generator
             .from_bitboard_iterator_mask
             .contains(square_and_bitboard.square)
-            || (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty()
+            || (square_and_bitboard.bitboard & self.move_generator.to_bitboard_iterator_mask)
+                .is_empty()
         {
             // are we done?
             None
         } else if square_and_bitboard.promotion {
-            let dest = (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask)
+            let dest = (square_and_bitboard.bitboard
+                & self.move_generator.to_bitboard_iterator_mask)
                 .to_square_unchecked();
 
             // deal with potential promotions for this pawn
             let result = Move::new_unchecked(
                 square_and_bitboard.square,
                 dest,
-                Some(*get_item_unchecked!(PROMOTION_PIECES, self.promotion_index)),
+                Some(*get_item_unchecked!(
+                    PROMOTION_PIECES,
+                    self.move_generator.promotion_index
+                )),
             );
-            self.promotion_index += 1;
-            if self.promotion_index >= NUM_PROMOTION_PIECES {
+            self.move_generator.promotion_index += 1;
+            if self.move_generator.promotion_index >= NUM_PROMOTION_PIECES {
                 square_and_bitboard.bitboard ^= dest.to_bitboard();
-                self.promotion_index = 0;
-                if (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty() {
+                self.move_generator.promotion_index = 0;
+                if (square_and_bitboard.bitboard & self.move_generator.to_bitboard_iterator_mask)
+                    .is_empty()
+                {
                     self.index += 1;
                 }
             }
             Some(result)
         } else {
             // not a promotion move, so its a 'normal' move as far as this function is concerned
-            let dest = (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask)
+            let dest = (square_and_bitboard.bitboard
+                & self.move_generator.to_bitboard_iterator_mask)
                 .to_square_unchecked();
 
             square_and_bitboard.bitboard ^= dest.to_bitboard();
-            if (square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty() {
+            if (square_and_bitboard.bitboard & self.move_generator.to_bitboard_iterator_mask)
+                .is_empty()
+            {
                 self.index += 1;
             }
             Some(Move::new_unchecked(square_and_bitboard.square, dest, None))
+        }
+    }
+}
+
+// TODO: Replace MoveGeneratorIterator with MoveGenerator::iter() when `type IntoIter = impl Iterator<Item = Move>` is stable
+impl IntoIterator for MoveGenerator {
+    type Item = Move;
+    type IntoIter = MoveGeneratorIterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        MoveGeneratorIterator {
+            move_generator: self,
+            index: 0,
+            last_index: usize::MAX,
         }
     }
 }

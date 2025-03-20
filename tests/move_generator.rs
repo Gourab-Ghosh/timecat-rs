@@ -242,7 +242,7 @@ fn test_masked_move_generator() {
     ];
 
     assert_eq!(
-        masked_moves.collect::<HashSet<_>>(),
+        masked_moves.into_iter().collect::<HashSet<_>>(),
         expected.into_iter().collect()
     );
 }
