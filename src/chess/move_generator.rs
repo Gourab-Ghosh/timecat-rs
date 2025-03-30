@@ -541,9 +541,9 @@ impl MoveGenerator {
     }
 
     #[inline]
-    pub fn new_legal(position: &ChessPosition) -> MoveGenerator {
-        MoveGenerator {
-            square_and_bitboard_array: MoveGenerator::enumerate_moves(position),
+    pub fn new_legal(position: &ChessPosition) -> Self {
+        Self {
+            square_and_bitboard_array: Self::enumerate_moves(position),
             promotion_index: 0,
             from_bitboard_iterator_mask: BitBoard::ALL,
             to_bitboard_iterator_mask: BitBoard::ALL,
@@ -631,7 +631,7 @@ impl MoveGenerator {
         } else {
             for m in iterable {
                 let board_result = position.make_move_new(m);
-                result += MoveGenerator::perft_test(&board_result, depth - 1);
+                result += Self::perft_test(&board_result, depth - 1);
             }
             result
         }
@@ -652,12 +652,12 @@ impl MoveGenerator {
                 result += iterable.len();
             } else {
                 iterable.set_to_bitboard_iterator_mask(targets);
-                for x in iterable.iter() {
-                    result += MoveGenerator::perft_test(&position.make_move_new(x), depth - 1);
+                for x in &iterable {
+                    result += Self::perft_test(&position.make_move_new(x), depth - 1);
                 }
                 iterable.set_to_bitboard_iterator_mask(!targets);
-                for x in iterable.iter() {
-                    result += MoveGenerator::perft_test(&position.make_move_new(x), depth - 1);
+                for x in &iterable {
+                    result += Self::perft_test(&position.make_move_new(x), depth - 1);
                 }
             }
         }
@@ -668,12 +668,12 @@ impl MoveGenerator {
     pub fn iter(&self) -> impl Iterator<Item = Move> {
         self.square_and_bitboard_array
             .iter()
+            .take_while(|square_and_bitboard| {
+                !(square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty()
+            })
             .filter(|square_and_bitboard| {
                 self.from_bitboard_iterator_mask
                     .contains(square_and_bitboard.square)
-            })
-            .take_while(|square_and_bitboard| {
-                !(square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty()
             })
             .flat_map(move |square_and_bitboard| {
                 let promotion_pieces: &[Option<PieceType>] = if square_and_bitboard.promotion {
@@ -773,20 +773,19 @@ impl MoveGenerator {
     }
 }
 
-pub struct MoveGeneratorIterator {
-    move_generator: MoveGenerator,
-    index: usize,
-    last_index: usize,
+pub struct MoveGeneratorReferencedIterator<'a, T: Iterator<Item = Move>> {
+    move_generator: &'a MoveGenerator,
+    iterator: T,
 }
 
-impl ExactSizeIterator for MoveGeneratorIterator {
+impl<T: Iterator<Item = Move>> ExactSizeIterator for MoveGeneratorReferencedIterator<'_, T> {
     #[inline]
     fn len(&self) -> usize {
         self.move_generator.len()
     }
 }
 
-impl Iterator for MoveGeneratorIterator {
+impl<T: Iterator<Item = Move>> Iterator for MoveGeneratorReferencedIterator<'_, T> {
     type Item = Move;
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -795,8 +794,39 @@ impl Iterator for MoveGeneratorIterator {
     }
 
     fn next(&mut self) -> Option<Move> {
-        // TODO: Check Logic
+        self.iterator.next()
+    }
+}
 
+impl<'a> IntoIterator for &'a MoveGenerator {
+    type Item = Move;
+    type IntoIter = MoveGeneratorReferencedIterator<'a, Box<dyn Iterator<Item = Move> + 'a>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        MoveGeneratorReferencedIterator {
+            move_generator: self,
+            // TODO: Avoid Heap Allocation.
+            iterator: Box::new(self.iter()),
+        }
+    }
+}
+
+pub struct MoveGeneratorIterator {
+    move_generator: MoveGenerator,
+    index: usize,
+    last_index: usize,
+}
+
+impl Iterator for MoveGeneratorIterator {
+    type Item = Move;
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.move_generator.len();
+        (len, Some(len))
+    }
+
+    fn next(&mut self) -> Option<Move> {
+        // TODO: Check Logic
         let square_and_bitboard_array_len = self.move_generator.square_and_bitboard_array.len();
         if self.index >= square_and_bitboard_array_len {
             return None;
@@ -867,7 +897,13 @@ impl Iterator for MoveGeneratorIterator {
     }
 }
 
-// TODO: Replace MoveGeneratorIterator with MoveGenerator::iter() when `type IntoIter = impl Iterator<Item = Move>` is stable
+impl ExactSizeIterator for MoveGeneratorIterator {
+    #[inline]
+    fn len(&self) -> usize {
+        self.move_generator.len()
+    }
+}
+
 impl IntoIterator for MoveGenerator {
     type Item = Move;
     type IntoIter = MoveGeneratorIterator;

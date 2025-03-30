@@ -226,12 +226,12 @@ impl EvaluatorNNUE {
 
     fn hashed_evaluate(&mut self, position: &ChessPosition) -> Score {
         let hash = position.get_hash();
-        if let Some(score) = self.score_cache.get(hash) {
-            return score;
-        }
-        let score = Self::evaluate_raw(position, || self.model.update_model_and_evaluate(position));
-        self.score_cache.add(hash, score);
-        score
+        self.score_cache.get(hash).unwrap_or_else(|| {
+            let score =
+                Self::evaluate_raw(position, || self.model.update_model_and_evaluate(position));
+            self.score_cache.add(hash, score);
+            score
+        })
     }
 
     #[cfg(feature = "inbuilt_nnue")]
