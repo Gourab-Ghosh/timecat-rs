@@ -15,18 +15,6 @@ impl BitBoard {
     }
 
     #[inline]
-    pub fn from_array(array: [u64; 8]) -> Self {
-        Self::new(
-            array
-                .into_iter()
-                .rev()
-                .enumerate()
-                .map(|(i, bb)| bb << (i << 3))
-                .fold(0, |acc, bb| acc ^ bb),
-        )
-    }
-
-    #[inline]
     pub const fn set_mask(&mut self, mask: u64) {
         self.0 = mask;
     }
@@ -289,11 +277,6 @@ macro_rules! implement_bitwise_operations {
         implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, u32);
         implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, u16);
         implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, u8);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, isize);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, i64);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, i32);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, i16);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, i8);
 
         impl $assign_trait<&BitBoard> for BitBoard {
             #[inline]
@@ -328,6 +311,15 @@ macro_rules! implement_bitwise_operations {
         }
     };
 
+    (@bit_shifting $direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident) => {
+        implement_bitwise_operations!($direct_trait, $assign_trait, $direct_func, $assign_func);
+        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, isize);
+        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, i64);
+        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, i32);
+        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, i16);
+        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, i8);
+    };
+
     (@integer_implementation_smaller $direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident, $int_type: ident) => {
         impl $assign_trait<$int_type> for BitBoard {
 
@@ -335,7 +327,7 @@ macro_rules! implement_bitwise_operations {
             fn $assign_func(&mut self, rhs: $int_type) {
                 #[allow(unused_comparisons)]
                 {
-                    debug_assert!(rhs >= 0);
+                    debug_assert!(rhs >= 0, "Cannot convert negative integer to u64");
                 }
                 self.0 = self.0.$direct_func(rhs as u64)
             }
@@ -407,8 +399,8 @@ implement_bitwise_operations!(BitAnd, BitAndAssign, bitand, bitand_assign);
 implement_bitwise_operations!(BitOr, BitOrAssign, bitor, bitor_assign);
 implement_bitwise_operations!(BitXor, BitXorAssign, bitxor, bitxor_assign);
 implement_bitwise_operations!(Mul, MulAssign, mul, mul_assign);
-implement_bitwise_operations!(Shl, ShlAssign, shl, shl_assign);
-implement_bitwise_operations!(Shr, ShrAssign, shr, shr_assign);
+implement_bitwise_operations!(@bit_shifting Shl, ShlAssign, shl, shl_assign);
+implement_bitwise_operations!(@bit_shifting Shr, ShrAssign, shr, shr_assign);
 
 impl Not for &BitBoard {
     type Output = BitBoard;
