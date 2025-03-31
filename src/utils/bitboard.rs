@@ -247,6 +247,20 @@ impl BitBoard {
     }
 }
 
+impl From<&BitBoard> for u64 {
+    #[inline]
+    fn from(value: &BitBoard) -> Self {
+        value.0
+    }
+}
+
+impl From<BitBoard> for u64 {
+    #[inline]
+    fn from(value: BitBoard) -> Self {
+        (&value).into()
+    }
+}
+
 macro_rules! implement_u64_methods {
     ($($visibility:vis const fn $function:ident(self $(, $argument:ident: $argument_type:ty)* $(,)?) -> $return_type:ty),* $(,)?) => {
         impl BitBoard {
@@ -267,41 +281,29 @@ implement_u64_methods!(
 
 macro_rules! implement_bitwise_operations {
     ($direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident) => {
-        implement_bitwise_operations!(@integer_implementation_bigger $direct_trait, $assign_trait, $direct_func, $assign_func, u128);
-        #[cfg(target_pointer_width = "64")]
-        implement_bitwise_operations!(@integer_implementation_bigger $direct_trait, $assign_trait, $direct_func, $assign_func, usize);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, usize);
-        implement_bitwise_operations!(@integer_implementation_bigger $direct_trait, $assign_trait, $direct_func, $assign_func, u64);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, u64);
-        implement_bitwise_operations!(@integer_implementation_bigger $direct_trait, $assign_trait, $direct_func, $assign_func, i128);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, u32);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, u16);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, u8);
+        implement_bitwise_operations!(@bigger_integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, u128);
+        implement_bitwise_operations!(@bigger_integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, u64);
+        implement_bitwise_operations!(@bigger_integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, i128);
 
-        impl $assign_trait<&BitBoard> for BitBoard {
+        impl<T> $assign_trait<T> for BitBoard where u64: From<T> {
+
             #[inline]
-            fn $assign_func(&mut self, rhs: &Self) {
-                self.$assign_func(rhs.0)
+            fn $assign_func(&mut self, rhs: T) {
+                self.0.$assign_func(u64::from(rhs))
             }
         }
 
-        impl $assign_trait for BitBoard {
-            #[inline]
-            fn $assign_func(&mut self, rhs: Self) {
-                self.$assign_func(&rhs)
-            }
-        }
-
-        impl<T> $direct_trait<T> for BitBoard where Self: $assign_trait<T> {
+        impl<T> $direct_trait<T> for BitBoard where u64: From<T> {
             type Output = Self;
 
+            #[inline]
             fn $direct_func(mut self, rhs: T) -> Self::Output {
                 self.$assign_func(rhs);
                 self
             }
         }
 
-        impl<T> $direct_trait<T> for &BitBoard where BitBoard: $assign_trait<T> {
+        impl<T> $direct_trait<T> for &BitBoard where u64: From<T> {
             type Output = BitBoard;
 
             #[inline]
@@ -312,36 +314,35 @@ macro_rules! implement_bitwise_operations {
     };
 
     (@bit_shifting $direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident) => {
-        implement_bitwise_operations!($direct_trait, $assign_trait, $direct_func, $assign_func);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, isize);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, i64);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, i32);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, i16);
-        implement_bitwise_operations!(@integer_implementation_smaller $direct_trait, $assign_trait, $direct_func, $assign_func, i8);
-    };
-
-    (@integer_implementation_smaller $direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident, $int_type: ident) => {
-        impl $assign_trait<$int_type> for BitBoard {
+        impl<T> $assign_trait<T> for BitBoard where u64: $assign_trait<T> {
 
             #[inline]
-            fn $assign_func(&mut self, rhs: $int_type) {
-                #[allow(unused_comparisons)]
-                {
-                    debug_assert!(rhs >= 0, "Cannot convert negative integer to u64");
-                }
-                self.0 = self.0.$direct_func(rhs as u64)
+            fn $assign_func(&mut self, rhs: T) {
+                self.0.$assign_func(rhs)
             }
         }
 
-        impl $assign_trait<&$int_type> for BitBoard {
+        impl<T> $direct_trait<T> for BitBoard where Self: $assign_trait<T> {
+            type Output = Self;
+
             #[inline]
-            fn $assign_func(&mut self, rhs: &$int_type) {
-                self.$assign_func(*rhs)
+            fn $direct_func(mut self, rhs: T) -> Self::Output {
+                self.$assign_func(rhs);
+                self
+            }
+        }
+
+        impl<T> $direct_trait<T> for &BitBoard where BitBoard: $direct_trait<T> {
+            type Output = <BitBoard as $direct_trait<T>>::Output;
+
+            #[inline]
+            fn $direct_func(self, rhs: T) -> Self::Output {
+                (*self).$direct_func(rhs)
             }
         }
     };
 
-    (@integer_implementation_bigger $direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident, $int_type: ident) => {
+    (@bigger_integer_implementation $direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident, $int_type: ident) => {
         impl $assign_trait<&BitBoard> for $int_type {
             #[inline]
             fn $assign_func(&mut self, rhs: &BitBoard) {
