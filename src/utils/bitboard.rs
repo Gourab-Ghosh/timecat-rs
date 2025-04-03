@@ -261,6 +261,20 @@ impl From<BitBoard> for u64 {
     }
 }
 
+impl From<u64> for BitBoard {
+    #[inline]
+    fn from(value: u64) -> Self {
+        Self::new(value)
+    }
+}
+
+impl From<&u64> for BitBoard {
+    #[inline]
+    fn from(value: &u64) -> Self {
+        (*value).into()
+    }
+}
+
 macro_rules! implement_u64_methods {
     ($($visibility:vis const fn $function:ident(self $(, $argument:ident: $argument_type:ty)* $(,)?) -> $return_type:ty),* $(,)?) => {
         impl BitBoard {
@@ -280,6 +294,35 @@ implement_u64_methods!(
 );
 
 macro_rules! implement_bitwise_operations {
+    (@bit_shifting $direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident) => {
+        impl<T> $assign_trait<T> for BitBoard where u64: $assign_trait<T> {
+
+            #[inline]
+            fn $assign_func(&mut self, rhs: T) {
+                self.0.$assign_func(rhs)
+            }
+        }
+
+        impl<T> $direct_trait<T> for BitBoard where Self: $assign_trait<T> {
+            type Output = Self;
+
+            #[inline]
+            fn $direct_func(mut self, rhs: T) -> Self::Output {
+                self.$assign_func(rhs);
+                self
+            }
+        }
+
+        impl<T> $direct_trait<T> for &BitBoard where BitBoard: $direct_trait<T> {
+            type Output = <BitBoard as $direct_trait<T>>::Output;
+
+            #[inline]
+            fn $direct_func(self, rhs: T) -> Self::Output {
+                (*self).$direct_func(rhs)
+            }
+        }
+    };
+
     ($direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident) => {
         implement_bitwise_operations!(@bigger_integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, u128);
         implement_bitwise_operations!(@bigger_integer_implementation $direct_trait, $assign_trait, $direct_func, $assign_func, u64);
@@ -305,35 +348,6 @@ macro_rules! implement_bitwise_operations {
 
         impl<T> $direct_trait<T> for &BitBoard where u64: From<T> {
             type Output = BitBoard;
-
-            #[inline]
-            fn $direct_func(self, rhs: T) -> Self::Output {
-                (*self).$direct_func(rhs)
-            }
-        }
-    };
-
-    (@bit_shifting $direct_trait: ident, $assign_trait: ident, $direct_func: ident, $assign_func: ident) => {
-        impl<T> $assign_trait<T> for BitBoard where u64: $assign_trait<T> {
-
-            #[inline]
-            fn $assign_func(&mut self, rhs: T) {
-                self.0.$assign_func(rhs)
-            }
-        }
-
-        impl<T> $direct_trait<T> for BitBoard where Self: $assign_trait<T> {
-            type Output = Self;
-
-            #[inline]
-            fn $direct_func(mut self, rhs: T) -> Self::Output {
-                self.$assign_func(rhs);
-                self
-            }
-        }
-
-        impl<T> $direct_trait<T> for &BitBoard where BitBoard: $direct_trait<T> {
-            type Output = <BitBoard as $direct_trait<T>>::Output;
 
             #[inline]
             fn $direct_func(self, rhs: T) -> Self::Output {

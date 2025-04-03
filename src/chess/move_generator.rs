@@ -666,7 +666,8 @@ impl MoveGenerator {
 
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = Move> {
-        self.square_and_bitboard_array
+        let iterator = self
+            .square_and_bitboard_array
             .iter()
             .take_while(|square_and_bitboard| {
                 !(square_and_bitboard.bitboard & self.to_bitboard_iterator_mask).is_empty()
@@ -688,7 +689,12 @@ impl MoveGenerator {
                         },
                     )
                 })
-            })
+            });
+
+        MoveGeneratorReferencedIterator {
+            move_generator: self,
+            iterator,
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -800,14 +806,11 @@ impl<T: Iterator<Item = Move>> Iterator for MoveGeneratorReferencedIterator<'_, 
 
 impl<'a> IntoIterator for &'a MoveGenerator {
     type Item = Move;
-    type IntoIter = MoveGeneratorReferencedIterator<'a, Box<dyn Iterator<Item = Move> + 'a>>;
+    // TODO: Avoid Heap Allocation.
+    type IntoIter = Box<dyn Iterator<Item = Move> + 'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        MoveGeneratorReferencedIterator {
-            move_generator: self,
-            // TODO: Avoid Heap Allocation.
-            iterator: Box::new(self.iter()),
-        }
+        Box::new(self.iter())
     }
 }
 
