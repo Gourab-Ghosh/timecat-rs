@@ -212,6 +212,11 @@ impl Board {
     }
 
     #[inline]
+    pub fn get_stack(&self) -> &[(ChessPosition, ValidOrNullMove)] {
+        &self.stack
+    }
+
+    #[inline]
     pub fn get_all_stack_moves(&self) -> impl Iterator<Item = ValidOrNullMove> {
         self.stack.iter().map(|(_, m)| *m)
     }
