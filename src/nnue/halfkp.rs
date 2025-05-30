@@ -325,7 +325,7 @@ impl HalfKPModel {
             self.update_king(position, Black);
             black_king_updated = true;
         }
-        let mut colors_to_update = Vec::with_capacity(2);
+        let mut colors_to_update: ArrayVec<Color, 2> = ArrayVec::new();
         if !black_king_updated {
             colors_to_update.push(Black);
         }

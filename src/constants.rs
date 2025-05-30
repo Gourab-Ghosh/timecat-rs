@@ -341,7 +341,7 @@ pub mod default_parameters {
         console_mode: true,
         t_table_size: CacheTableSize::Exact(16),
         long_algebraic_notation: false,
-        num_threads: unsafe { NonZeroUsize::new_unchecked(1) },
+        num_threads: NonZeroUsize::new(1).unwrap(),
         move_overhead: Duration::from_millis(10),
         use_own_book: false,
         book_path: None,

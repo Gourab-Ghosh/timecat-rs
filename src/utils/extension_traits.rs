@@ -179,6 +179,7 @@ pub trait ChessEngine {
     fn clear_hash(&mut self);
     fn evaluate_current_position(&mut self) -> Score;
     fn evaluate_current_position_flipped(&mut self) -> Score;
+    #[must_use = "If you don't need the search info, you can just search the position."]
     fn search(&mut self, config: &SearchConfig, verbose: bool) -> SearchInfo;
 
     #[inline]

@@ -294,7 +294,6 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
         self.evaluator.evaluate_flipped(&self.board)
     }
 
-    #[must_use = "If you don't need the search info, you can just search the position."]
     fn search(&mut self, config: &SearchConfig, verbose: bool) -> SearchInfo {
         if let Some(WeightedMove { move_, weight }) = self.get_opening_book_weighted_move() {
             return SearchInfoBuilder::new(self.board.get_position().clone(), vec![move_])

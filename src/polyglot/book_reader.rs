@@ -147,8 +147,7 @@ impl TryFrom<&PolyglotBookReader> for PolyglotBookHashMap {
     fn try_from(value: &PolyglotBookReader) -> std::result::Result<Self, Self::Error> {
         value.get_file().try_clone().map_or_else(
             |_| {
-                value
-                    .get_file()
+                BufReader::new(value.get_file())
                     .bytes()
                     .collect::<std::result::Result<Vec<_>, _>>()?
                     .try_into()
