@@ -314,33 +314,21 @@ impl Board {
     pub fn variation_san(
         board: &Board,
         variation: impl Iterator<Item = ValidOrNullMove>,
-    ) -> String {
+    ) -> Result<String> {
         let mut board = board.clone();
-        let mut san = Vec::new();
+        let mut san = String::new();
         for valid_or_null_move in variation {
             if board.turn() == White {
                 let san_str = board.san_and_push(valid_or_null_move);
-                san.push(format!(
-                    "{}. {}",
-                    board.get_fullmove_number(),
-                    san_str.unwrap()
-                ));
+                san += &format!("{}. {}", board.get_fullmove_number(), san_str.unwrap());
             } else if san.is_empty() {
                 let san_str = board.san_and_push(valid_or_null_move);
-                san.push(format!(
-                    "{}...{}",
-                    board.get_fullmove_number(),
-                    san_str.unwrap()
-                ));
+                san += &format!("{}...{}", board.get_fullmove_number(), san_str.unwrap());
             } else {
-                san.push(board.san_and_push(valid_or_null_move).unwrap().to_string());
+                san += &board.san_and_push(valid_or_null_move)?;
             }
         }
-        let mut san_string = String::new();
-        for s in san {
-            san_string += &(s + " ");
-        }
-        san_string.trim().to_string()
+        Ok(san)
     }
 
     pub fn get_starting_board_fen(&self) -> String {
@@ -351,7 +339,7 @@ impl Board {
         }
     }
 
-    pub fn get_pgn(&self) -> String {
+    pub fn get_pgn(&self) -> Result<String> {
         let mut pgn = String::new();
         let starting_fen = &self.get_starting_board_fen();
         if starting_fen != STARTING_POSITION_FEN {
@@ -363,8 +351,8 @@ impl Board {
                 .clone()
                 .into_iter()
                 .map(|(_, optional_m)| optional_m),
-        );
-        pgn
+        )?;
+        Ok(pgn)
     }
 
     #[inline]

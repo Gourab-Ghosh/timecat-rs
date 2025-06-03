@@ -40,6 +40,7 @@ mod model_update_test {
                             &Board::from_fen($fen).unwrap(),
                             variation.into_iter()
                         )
+                        .unwrap()
                     );
                 }
             }
