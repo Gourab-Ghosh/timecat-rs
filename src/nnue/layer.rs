@@ -40,9 +40,10 @@ impl<
 {
     pub fn forward(&self, inputs: MathVec<W, NUM_INPUTS>) -> MathVec<B, NUM_OUTPUTS> {
         let mut outputs = self.get_biases().clone();
-        for (o, w) in outputs.iter_mut().zip(self.weights_transpose.iter()) {
-            *o += inputs.dot(w);
-        }
+        outputs
+            .iter_mut()
+            .zip(self.weights_transpose.iter())
+            .for_each(|(o, w)| *o += inputs.dot(w));
         outputs
     }
 }
