@@ -317,7 +317,7 @@ impl MoveSorter {
         pv_move: Option<Move>,
         best_moves: &[Move],
     ) -> MoveWeight {
-        if pv_move.is_some() {
+        if pv_move == Some(move_) {
             return 100_000;
         }
         if !board.is_endgame() {
