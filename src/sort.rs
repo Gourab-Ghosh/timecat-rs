@@ -264,9 +264,7 @@ impl MoveSorter {
         mut best_move: Option<Move>,
         pv_move: Option<Move>,
     ) -> WeightedMoveListSorter {
-        if best_move.is_none() {
-            best_move = transposition_table.read_best_move(position.get_hash());
-        }
+        best_move = best_move.or_else(|| transposition_table.read_best_move(position.get_hash()));
         let moves_vec = moves.into_iter().collect_vec();
         if self.follow_pv {
             self.follow_pv = false;

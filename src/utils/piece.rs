@@ -97,15 +97,15 @@ impl fmt::Display for PieceType {
 #[cfg(feature = "pyo3")]
 impl<'source> FromPyObject<'source> for PieceType {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
-        if let Ok(piece_type_text) = ob.extract::<&str>() {
-            if let Ok(piece_type) = Self::from_str(piece_type_text) {
-                return Ok(piece_type);
-            }
+        if let Ok(piece_type_text) = ob.extract::<&str>()
+            && let Ok(piece_type) = Self::from_str(piece_type_text)
+        {
+            return Ok(piece_type);
         }
-        if let Ok(piece_type_index) = ob.extract::<usize>() {
-            if let Some(&piece_type) = ALL_PIECE_TYPES.get(piece_type_index) {
-                return Ok(piece_type);
-            }
+        if let Ok(piece_type_index) = ob.extract::<usize>()
+            && let Some(&piece_type) = ALL_PIECE_TYPES.get(piece_type_index)
+        {
+            return Ok(piece_type);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),
@@ -209,10 +209,10 @@ impl fmt::Display for Piece {
 #[cfg(feature = "pyo3")]
 impl<'source> FromPyObject<'source> for Piece {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
-        if let Ok(piece_text) = ob.extract::<&str>() {
-            if let Ok(piece) = Self::from_str(piece_text) {
-                return Ok(piece);
-            }
+        if let Ok(piece_text) = ob.extract::<&str>()
+            && let Ok(piece) = Self::from_str(piece_text)
+        {
+            return Ok(piece);
         }
         if let Ok(piece) = Self::from_py_piece(ob) {
             return Ok(piece);

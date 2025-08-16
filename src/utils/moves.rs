@@ -230,10 +230,10 @@ impl fmt::Display for Move {
 #[cfg(feature = "pyo3")]
 impl<'source> FromPyObject<'source> for Move {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
-        if let Ok(move_text) = ob.extract::<&str>() {
-            if let Ok(move_) = Self::from_str(move_text) {
-                return Ok(move_);
-            }
+        if let Ok(move_text) = ob.extract::<&str>()
+            && let Ok(move_) = Self::from_str(move_text)
+        {
+            return Ok(move_);
         }
         if let Ok(move_) = Self::from_py_move(ob) {
             return Ok(move_);
@@ -407,10 +407,10 @@ impl<'source> FromPyObject<'source> for ValidOrNullMove {
         if let Ok(move_) = ob.extract::<Move>() {
             return Ok(move_.into());
         }
-        if let Ok(move_text) = ob.extract::<&str>() {
-            if let Ok(valid_or_null_move) = Self::from_str(move_text) {
-                return Ok(valid_or_null_move);
-            }
+        if let Ok(move_text) = ob.extract::<&str>()
+            && let Ok(valid_or_null_move) = Self::from_str(move_text)
+        {
+            return Ok(valid_or_null_move);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
             from: ob.to_string(),
