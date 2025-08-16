@@ -8,6 +8,7 @@ pub struct MathVec<T, const N: usize> {
 
 #[cfg(feature = "serde")]
 impl<T: Serialize, const N: usize> Serialize for MathVec<T, N> {
+    #[inline]
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -18,6 +19,7 @@ impl<T: Serialize, const N: usize> Serialize for MathVec<T, N> {
 
 #[cfg(feature = "serde")]
 impl<'de, T: Deserialize<'de>, const N: usize> Deserialize<'de> for MathVec<T, N> {
+    #[inline]
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -31,6 +33,7 @@ impl<'de, T: Deserialize<'de>, const N: usize> Deserialize<'de> for MathVec<T, N
 impl<T: BinRead<Args = ()>, const N: usize> BinRead for MathVec<T, N> {
     type Args = ();
 
+    #[inline]
     fn read_options<R: Read + std::io::Seek>(
         reader: &mut R,
         options: &binread::ReadOptions,
@@ -42,22 +45,26 @@ impl<T: BinRead<Args = ()>, const N: usize> BinRead for MathVec<T, N> {
 }
 
 impl<T, const N: usize> MathVec<T, N> {
+    #[inline]
     pub const fn new(array: [T; N]) -> Self {
         Self { array }
     }
 
+    #[inline]
     pub fn into_inner(self) -> [T; N] {
         self.array
     }
 }
 
 impl<T: Copy + Sum, const N: usize> MathVec<T, N> {
+    #[inline]
     pub fn sum(&self) -> T {
         self.into_iter().sum()
     }
 }
 
 impl<T: Clone, const N: usize> MathVec<T, N> {
+    #[inline]
     pub fn dot<U: From<T> + Mul + Sum<<U as Mul>::Output>>(&self, other: &Self) -> U {
         self.iter()
             .cloned()
@@ -69,6 +76,7 @@ impl<T: Clone, const N: usize> MathVec<T, N> {
 }
 
 impl<T, const N: usize> From<[T; N]> for MathVec<T, N> {
+    #[inline]
     fn from(value: [T; N]) -> Self {
         Self::new(value)
     }
@@ -77,12 +85,14 @@ impl<T, const N: usize> From<[T; N]> for MathVec<T, N> {
 impl<T, const N: usize> Deref for MathVec<T, N> {
     type Target = [T; N];
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.array
     }
 }
 
 impl<T, const N: usize> DerefMut for MathVec<T, N> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.array
     }
@@ -107,6 +117,7 @@ macro_rules! impl_operation {
         impl<T: $trait_assign + Clone, const N: usize> $trait_assign<&MathVec<T, N>>
             for MathVec<T, N>
         {
+            #[inline]
             fn $func_assign(&mut self, rhs: &Self) {
                 self.array
                     .iter_mut()
@@ -116,6 +127,7 @@ macro_rules! impl_operation {
         }
 
         impl<T: $trait_assign, const N: usize> $trait_assign for MathVec<T, N> {
+            #[inline]
             fn $func_assign(&mut self, rhs: Self) {
                 self.array
                     .iter_mut()
@@ -153,6 +165,7 @@ macro_rules! impl_operation {
         impl<T: $trait_assign<$int_type>, const N: usize> $trait_assign<$int_type>
             for MathVec<T, N>
         {
+            #[inline]
             fn $func_assign(&mut self, rhs: $int_type) {
                 self.array.iter_mut().for_each(|i| i.$func_assign(rhs));
             }
@@ -161,6 +174,7 @@ macro_rules! impl_operation {
         impl<T: $trait_assign<$int_type>, const N: usize> $trait<$int_type> for MathVec<T, N> {
             type Output = Self;
 
+            #[inline]
             fn $func(mut self, rhs: $int_type) -> Self {
                 self.$func_assign(rhs);
                 self
@@ -173,6 +187,7 @@ macro_rules! impl_operation {
         {
             type Output = MathVec<T, N>;
 
+            #[inline]
             fn $func(self, mut rhs: MathVec<T, N>) -> MathVec<T, N> {
                 rhs.array
                     .iter_mut()
@@ -212,16 +227,19 @@ impl_operation!(@zero_implementation u64);
 impl_operation!(@zero_implementation u128);
 impl_operation!(@zero_implementation usize);
 
-impl<T: Neg<Output = T> + Clone, const N: usize> Neg for MathVec<T, N> {
+impl<T: Neg<Output = T>, const N: usize> Neg for MathVec<T, N> {
     type Output = Self;
 
     fn neg(mut self) -> Self::Output {
-        self.array.iter_mut().for_each(|x| *x = x.clone().neg());
+        self.array
+            .iter_mut()
+            .for_each(|x| *x = -std::mem::replace(x, const { unsafe { std::mem::zeroed() } }));
         self
     }
 }
 
 impl<T: fmt::Display, const N: usize> fmt::Display for MathVec<T, N> {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -232,6 +250,7 @@ impl<T: fmt::Display, const N: usize> fmt::Display for MathVec<T, N> {
 }
 
 impl<T: Default + Copy, const N: usize> Default for MathVec<T, N> {
+    #[inline]
     fn default() -> Self {
         Self {
             array: [T::default(); N],
@@ -244,12 +263,14 @@ impl<T: Default + Copy, const N: usize> Default for MathVec<T, N> {
 impl<T, const N: usize> Index<usize> for MathVec<T, N> {
     type Output = T;
 
+    #[inline]
     fn index(&self, index: usize) -> &Self::Output {
         self.array.index(index)
     }
 }
 
 impl<T, const N: usize> IndexMut<usize> for MathVec<T, N> {
+    #[inline]
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         self.array.index_mut(index)
     }
@@ -258,6 +279,7 @@ impl<T, const N: usize> IndexMut<usize> for MathVec<T, N> {
 macro_rules! impl_clipped_relu {
     ($from: ty, $to: ty) => {
         impl<const N: usize> ClippedRelu<$from, $to, N> for MathVec<$from, N> {
+            #[inline]
             fn clipped_relu(
                 &self,
                 scale_by_pow_of_two: $to,
@@ -271,6 +293,7 @@ macro_rules! impl_clipped_relu {
                 .into()
             }
 
+            #[inline]
             fn clipped_relu_into(
                 &self,
                 scale_by_pow_of_two: $to,
@@ -320,6 +343,7 @@ impl_clipped_relu!(usize);
 impl<T, const N: usize> TryFrom<Vec<T>> for MathVec<T, N> {
     type Error = Vec<T>;
 
+    #[inline]
     fn try_from(value: Vec<T>) -> std::result::Result<Self, Self::Error> {
         let array: [T; N] = value.try_into()?;
         Ok(array.into())
@@ -338,6 +362,7 @@ impl<T, const N: usize> TryFrom<Vec<T>> for MathVec<T, N> {
 // }
 
 impl<T: Clone, U: From<T> + Debug, const N: usize> From<&MathVec<T, N>> for MathVec<U, N> {
+    #[inline]
     fn from(value: &MathVec<T, N>) -> Self {
         std::array::from_fn(|i| get_item_unchecked!(value, i).clone().into()).into()
     }

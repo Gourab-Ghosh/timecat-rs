@@ -1545,10 +1545,10 @@ impl Hash for ChessPosition {
 #[cfg(feature = "pyo3")]
 impl<'source> FromPyObject<'source> for ChessPosition {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
-        if let Ok(fen) = ob.extract::<&str>() {
-            if let Ok(position) = Self::from_str(fen) {
-                return Ok(position);
-            }
+        if let Ok(fen) = ob.extract::<&str>()
+            && let Ok(position) = Self::from_str(fen)
+        {
+            return Ok(position);
         }
         if let Ok(position) = ChessPosition::from_py_board(ob) {
             return Ok(position);

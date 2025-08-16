@@ -105,7 +105,7 @@ pub fn self_play(
     println_wasm!(
         "\n{}:\n\n{}",
         "Game PGN".colorize(INFO_MESSAGE_STYLE),
-        engine.get_board().get_pgn(),
+        engine.get_board().get_pgn()?,
     );
     println_wasm!(
         "\n{}:\n\n[{}]",

@@ -1,8 +1,8 @@
 [package]
 name = "timecat"
 authors = ["Gourab Ghosh"]
-version = "1.45.5"
-rust-version = "1.85"
+version = "1.45.6"
+rust-version = "1.88"
 edition = "2024"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"
@@ -57,16 +57,15 @@ inherits = "release"
 arrayvec = ">=0.6"
 binread = { version = "2", features = ["const_generics"], optional = true}
 colored = { version = "3", optional = true }
-dirs = { version = "5", optional = true }
 itertools = "0"
 paste = "1"
-serde = { version = "1", features = ["derive"], optional = true }
+serde = { version = "1", features = ["derive", "rc"], optional = true }
 web-time = { version = "1", optional = true }
 gloo = { version = "0", optional = true }
 pyo3 = { version = "0", optional = true }
 
 [build-dependencies]
-dirs = { version = "6.0.0", optional = true }
+dirs = { version = "6", optional = true }
 itertools = "0"
 minreq = { version = "2", features = ["https"], optional = true }
 sha256 = { version = "1", optional = true }

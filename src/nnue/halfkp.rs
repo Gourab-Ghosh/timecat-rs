@@ -164,13 +164,11 @@ pub struct HalfKPModelReader {
     description: String,
     #[br(args(TRANSFORMER_ARCHITECTURE))]
     transformer_architecture: BinaryMagic<u32>,
-    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     #[br(map = Arc::new)]
     // #[br(map = |transformer: HalfKPFeatureTransformer<i16>| Arc::new((&transformer).into()))]
     transformer: Arc<HalfKPFeatureTransformer<AccumulatorDataType>>,
     #[br(args(NETWORK_ARCHITECTURE))]
     network_architecture: BinaryMagic<u32>,
-    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     #[br(map = Arc::new)]
     network: Arc<HalfKPNetwork>,
 }
@@ -229,9 +227,7 @@ struct Accumulator {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct HalfKPModel {
-    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     transformer: Arc<HalfKPFeatureTransformer<AccumulatorDataType>>,
-    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
     network: Arc<HalfKPNetwork>,
     accumulator: Accumulator,
     last_position: ChessPosition,
@@ -325,7 +321,7 @@ impl HalfKPModel {
             self.update_king(position, Black);
             black_king_updated = true;
         }
-        let mut colors_to_update = Vec::with_capacity(2);
+        let mut colors_to_update: ArrayVec<Color, 2> = ArrayVec::new();
         if !black_king_updated {
             colors_to_update.push(Black);
         }

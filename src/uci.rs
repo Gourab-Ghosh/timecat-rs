@@ -85,7 +85,7 @@ impl<T: Clone + Copy + IntoSpin> SpinValue<T> {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UCIOption<T: ChessEngine> {
     name: String,
-    sorted_alias: Vec<String>,
+    sorted_aliases: Vec<String>,
     option_type: UCIOptionType<T>,
 }
 
@@ -93,14 +93,14 @@ impl<T: ChessEngine> UCIOption<T> {
     fn new(name: &str, option_type: UCIOptionType<T>) -> Self {
         Self {
             name: name.trim().to_string(),
-            sorted_alias: vec![],
+            sorted_aliases: vec![],
             option_type,
         }
     }
 
     fn alias(mut self, name: &str) -> Self {
-        self.sorted_alias.push(name.trim().to_lowercase());
-        self.sorted_alias.sort_unstable();
+        self.sorted_aliases.push(name.trim().to_lowercase());
+        self.sorted_aliases.sort_unstable();
         self
     }
 
@@ -247,10 +247,12 @@ impl<T: ChessEngine> UCIStateManager<T> {
         let command_name = command_name.to_string();
         self.options.iter().find(
             |UCIOption {
-                 name, sorted_alias, ..
+                 name,
+                 sorted_aliases,
+                 ..
              }| {
                 name.eq_ignore_ascii_case(&command_name)
-                    || sorted_alias.binary_search(&command_name).is_ok()
+                    || sorted_aliases.binary_search(&command_name).is_ok()
             },
         )
     }
@@ -319,8 +321,8 @@ fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
             "Hash",
             SpinValue::new(
                 TIMECAT_DEFAULTS.t_table_size,
-                CacheTableSize::Exact(1),
-                CacheTableSize::Exact(1 << 25),
+                const { CacheTableSize::Exact(1) },
+                const { CacheTableSize::Exact(1 << 25) },
             ),
             {
                 |engine, value| {
@@ -344,7 +346,7 @@ fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
             SpinValue::new(
                 TIMECAT_DEFAULTS.move_overhead,
                 Duration::ZERO,
-                Duration::from_secs(60),
+                const { Duration::from_secs(60) },
             ),
             |engine, value| {
                 let duration = Duration::from_millis(value as u64);
@@ -355,12 +357,10 @@ fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
         ),
         UCIOption::new_string(
             "BookFile",
-            TIMECAT_DEFAULTS
-                .book_path
-                .map_or_else(|| "None".to_string(), |path| format!("{:?}", path)),
+            TIMECAT_DEFAULTS.book_path.unwrap_or("None").to_string(),
             |engine, book_path| {
                 engine.set_opening_book(Some(Arc::new(PolyglotBookReader::from_str(book_path)?)));
-                print_uci_info("BookFile is set to", format!("{:?}", book_path));
+                print_uci_info("BookFile is set to", book_path.to_string());
                 Ok(())
             },
         ),

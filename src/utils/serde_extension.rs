@@ -112,17 +112,6 @@ mod serde_implementations {
 }
 
 #[cfg(feature = "serde")]
-impl<'de, T: Serialize + Deserialize<'de>> SerdeHandler<'de> for Arc<T> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
-        self.as_ref().serialize(serializer)
-    }
-
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
-        T::deserialize(deserializer).map(Arc::new)
-    }
-}
-
-#[cfg(feature = "serde")]
 struct ArrayVisitor<T, const N: usize> {
     marker: PhantomData<T>,
 }
