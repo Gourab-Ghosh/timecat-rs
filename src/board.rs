@@ -327,7 +327,7 @@ impl Board {
             } else {
                 san += &board.san_and_push(valid_or_null_move)?;
             }
-            san += " ";
+            san.push(' ');
         }
         san.pop(); // Remove the trailing space.
 
