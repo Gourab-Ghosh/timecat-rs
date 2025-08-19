@@ -1,8 +1,8 @@
 [package]
 name = "timecat"
 authors = ["Gourab Ghosh"]
-version = "1.45.6"
-rust-version = "1.88"
+version = "1.46.0"
+rust-version = "1.89"
 edition = "2024"
 homepage = "https://github.com/Gourab-Ghosh/timecat-rs/"
 repository = "https://github.com/Gourab-Ghosh/timecat-rs/"

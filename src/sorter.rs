@@ -268,11 +268,11 @@ impl MoveSorter {
         let moves_vec = moves.into_iter().collect_vec();
         if self.follow_pv {
             self.follow_pv = false;
-            if let Some(move_) = pv_move {
-                if moves_vec.contains(&move_) {
-                    self.follow_pv = true;
-                    self.score_pv = true;
-                }
+            if let Some(move_) = pv_move
+                && moves_vec.contains(&move_)
+            {
+                self.follow_pv = true;
+                self.score_pv = true;
             }
         }
         if moves_vec.len() < 2 {
@@ -318,16 +318,15 @@ impl MoveSorter {
         best_moves: &[Move],
     ) -> MoveWeight {
         if pv_move == Some(move_) {
-            return 100_000;
+            return 500_000;
         }
-        if !board.is_endgame() {
-            if let Some(index) = best_moves
+        if !board.is_endgame()
+            && let Some(index) = best_moves
                 .iter()
                 .take(3)
                 .position(|&best_move| best_move == move_)
-            {
-                return 200_000 - index as MoveWeight;
-            }
+        {
+            return 200_000 - index as MoveWeight;
         }
         if board.gives_repetition(move_) {
             return -50;
@@ -337,16 +336,13 @@ impl MoveSorter {
             return -40;
         }
         let mut score = 0;
-        let mut evaluation = evaluator.evaluate_flipped(board) as MoveWeight;
-        if evaluation == 0 {
-            evaluation = 1;
-        }
         if is_endgame {
             if move_.get_promotion().is_some() {
                 score += 30_000;
             }
             if board.is_capture(move_) {
-                score += 2000 * evaluation.signum() + Self::score_capture(move_, None, board);
+                score += 2000 * evaluator.evaluate_flipped(board).signum() as MoveWeight
+                    + Self::score_capture(move_, None, board);
             }
             let source = move_.get_source();
             if board.is_passed_pawn(source) {
