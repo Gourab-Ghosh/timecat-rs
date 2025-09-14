@@ -938,23 +938,22 @@ impl ChessPosition {
         EMPTY_SPACE_UNICODE_SYMBOL.to_string()
     }
 
-    pub fn to_board_string(&self, last_move: ValidOrNullMove, use_unicode: bool) -> String {
-        let mut board_string = String::new();
+    pub fn to_board_string(
+        &self,
+        last_move: ValidOrNullMove,
+        use_unicode: bool,
+        colored: bool,
+    ) -> String {
         let checkers = self.get_checkers();
         let king_square = self.get_king_square(self.turn());
-        let mut squares_horizontal_iter = SQUARES_HORIZONTAL_MIRROR.iter();
-        for c in get_board_skeleton(true).chars() {
-            if c == '?' {
-                let square = squares_horizontal_iter
-                    .next()
-                    .copied()
-                    .expect("More 'O's in board skeleton than squares");
-                let symbol = if use_unicode {
-                    self.piece_unicode_symbol_at(square, false)
-                } else {
-                    self.piece_symbol_at(square)
-                };
-                let mut styles = vec![];
+        let mut board_string = get_board_string(colored, |square| {
+            let symbol = if use_unicode {
+                self.piece_unicode_symbol_at(square, false)
+            } else {
+                self.piece_symbol_at(square)
+            };
+            let mut styles = vec![];
+            if colored {
                 if symbol != " " {
                     styles.extend_from_slice(match self.color_at(square).unwrap() {
                         White => WHITE_PIECES_STYLE,
@@ -967,15 +966,9 @@ impl ChessPosition {
                 if [last_move.get_source(), last_move.get_dest()].contains(&Some(square)) {
                     styles.extend_from_slice(LAST_MOVE_HIGHLIGHT_STYLE);
                 }
-                board_string += &symbol.colorize(&styles);
-            } else {
-                board_string.push(c);
             }
-        }
-        debug_assert!(
-            squares_horizontal_iter.next().is_none(),
-            "Fewer 'O's in board skeleton than squares"
-        );
+            symbol.colorize(&styles).into()
+        });
         board_string.push('\n');
         board_string.push_str(
             &[
@@ -999,8 +992,8 @@ impl ChessPosition {
     }
 
     #[inline]
-    pub fn to_unicode_string(&self, last_move: ValidOrNullMove) -> String {
-        self.to_board_string(last_move, true)
+    pub fn to_unicode_string(&self, last_move: ValidOrNullMove, colored: bool) -> String {
+        self.to_board_string(last_move, true, colored)
     }
 
     #[inline]

@@ -447,20 +447,16 @@ impl Iterator for BitBoard {
 impl fmt::Display for BitBoard {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut skeleton = get_board_skeleton();
         let occupied_symbol = "X".colorize(BITBOARD_OCCUPIED_SQUARE_STYLE);
-        for square in SQUARES_HORIZONTAL_MIRROR {
-            skeleton = skeleton.replacen(
-                'O',
-                if self.contains(square) {
-                    &occupied_symbol
-                } else {
-                    " "
-                },
-                1,
-            );
-        }
-        write!(f, "{skeleton}")
+        write!(
+            f,
+            "{}",
+            get_board_string(true, |square| if self.contains(square) {
+                occupied_symbol.as_str().into()
+            } else {
+                " ".into()
+            })
+        )
     }
 }
 

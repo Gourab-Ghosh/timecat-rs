@@ -121,6 +121,7 @@ pub use std::ops::{
     Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 pub use std::path::{Path, PathBuf};
+pub use std::borrow::Cow;
 pub use std::str::{FromStr, ParseBoolError};
 pub use std::sync::atomic::{AtomicBool, AtomicUsize};
 pub use std::sync::{Arc, LazyLock, RwLock};
