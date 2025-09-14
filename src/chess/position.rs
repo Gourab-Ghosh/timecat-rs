@@ -952,8 +952,8 @@ impl ChessPosition {
             } else {
                 self.piece_symbol_at(square)
             };
-            let mut styles = vec![];
             if colored {
+                let mut styles = vec![];
                 if symbol != " " {
                     styles.extend_from_slice(match self.color_at(square).unwrap() {
                         White => WHITE_PIECES_STYLE,
@@ -966,8 +966,10 @@ impl ChessPosition {
                 if [last_move.get_source(), last_move.get_dest()].contains(&Some(square)) {
                     styles.extend_from_slice(LAST_MOVE_HIGHLIGHT_STYLE);
                 }
+                symbol.colorize(&styles).into()
+            } else {
+                symbol.into()
             }
-            symbol.colorize(&styles).into()
         });
         board_string.push('\n');
         board_string.push_str(
