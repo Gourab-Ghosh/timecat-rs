@@ -943,8 +943,8 @@ impl ChessPosition {
         let checkers = self.get_checkers();
         let king_square = self.get_king_square(self.turn());
         let mut squares_horizontal_iter = SQUARES_HORIZONTAL_MIRROR.iter();
-        for c in get_board_skeleton().chars() {
-            if c == 'O' {
+        for c in get_board_skeleton_colored().chars() {
+            if c == '?' {
                 let square = squares_horizontal_iter
                     .next()
                     .copied()
@@ -967,12 +967,15 @@ impl ChessPosition {
                 if [last_move.get_source(), last_move.get_dest()].contains(&Some(square)) {
                     styles.extend_from_slice(LAST_MOVE_HIGHLIGHT_STYLE);
                 }
-                styles.dedup();
                 board_string += &symbol.colorize(&styles);
             } else {
                 board_string.push(c);
             }
         }
+        debug_assert!(
+            squares_horizontal_iter.next().is_none(),
+            "Fewer 'O's in board skeleton than squares"
+        );
         board_string.push('\n');
         board_string.push_str(
             &[

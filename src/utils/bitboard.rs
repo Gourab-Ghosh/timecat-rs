@@ -447,7 +447,7 @@ impl Iterator for BitBoard {
 impl fmt::Display for BitBoard {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut skeleton = get_board_skeleton();
+        let mut skeleton = get_board_skeleton_colored();
         let occupied_symbol = "X".colorize(BITBOARD_OCCUPIED_SQUARE_STYLE);
         for square in SQUARES_HORIZONTAL_MIRROR {
             skeleton = skeleton.replacen(
