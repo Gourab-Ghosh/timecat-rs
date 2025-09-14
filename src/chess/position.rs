@@ -939,33 +939,42 @@ impl ChessPosition {
     }
 
     pub fn to_board_string(&self, last_move: ValidOrNullMove, use_unicode: bool) -> String {
-        let mut skeleton = get_board_skeleton();
+        let mut board_string = String::new();
         let checkers = self.get_checkers();
         let king_square = self.get_king_square(self.turn());
-        for square in SQUARES_HORIZONTAL_MIRROR {
-            let symbol = if use_unicode {
-                self.piece_unicode_symbol_at(square, false)
-            } else {
-                self.piece_symbol_at(square)
-            };
-            let mut styles = vec![];
-            if symbol != " " {
-                styles.extend_from_slice(match self.color_at(square).unwrap() {
-                    White => WHITE_PIECES_STYLE,
-                    Black => BLACK_PIECES_STYLE,
-                });
-                if square == king_square && !checkers.is_empty() {
-                    styles.extend_from_slice(CHECK_STYLE);
+        let mut squares_horizontal_iter = SQUARES_HORIZONTAL_MIRROR.iter();
+        for c in get_board_skeleton().chars() {
+            if c == 'O' {
+                let square = squares_horizontal_iter
+                    .next()
+                    .copied()
+                    .expect("More 'O's in board skeleton than squares");
+                let symbol = if use_unicode {
+                    self.piece_unicode_symbol_at(square, false)
+                } else {
+                    self.piece_symbol_at(square)
+                };
+                let mut styles = vec![];
+                if symbol != " " {
+                    styles.extend_from_slice(match self.color_at(square).unwrap() {
+                        White => WHITE_PIECES_STYLE,
+                        Black => BLACK_PIECES_STYLE,
+                    });
+                    if square == king_square && !checkers.is_empty() {
+                        styles.extend_from_slice(CHECK_STYLE);
+                    }
                 }
+                if [last_move.get_source(), last_move.get_dest()].contains(&Some(square)) {
+                    styles.extend_from_slice(LAST_MOVE_HIGHLIGHT_STYLE);
+                }
+                styles.dedup();
+                board_string += &symbol.colorize(&styles);
+            } else {
+                board_string.push(c);
             }
-            if [last_move.get_source(), last_move.get_dest()].contains(&Some(square)) {
-                styles.extend_from_slice(LAST_MOVE_HIGHLIGHT_STYLE);
-            }
-            styles.dedup();
-            skeleton = skeleton.replacen('O', &symbol.colorize(&styles), 1);
         }
-        skeleton.push('\n');
-        skeleton.push_str(
+        board_string.push('\n');
+        board_string.push_str(
             &[
                 String::new(),
                 format_info("Fen", self.get_fen(), true),
@@ -979,11 +988,11 @@ impl ChessPosition {
             .join("\n"),
         );
         #[cfg(feature = "inbuilt_nnue")]
-        skeleton.push_str(&format!(
+        board_string.push_str(&format!(
             "\n{}",
             format_info("Current Evaluation", self.slow_evaluate().stringify(), true)
         ));
-        skeleton
+        board_string
     }
 
     #[inline]
