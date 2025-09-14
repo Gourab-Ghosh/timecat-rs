@@ -163,26 +163,24 @@ impl<T: Copy + PartialEq> CacheTable<T> {
     }
 
     #[inline]
-    const fn is_safe_to_do_bitwise_and(size: usize) -> bool {
-        size.count_ones() == 1 && size > 1
-    }
-
-    #[inline]
-    const fn into_inner(table: &[Option<CacheTableEntry<T>>]) -> usize {
-        if Self::is_safe_to_do_bitwise_and(table.len()) {
-            table.len() - 1
+    const fn generate_mask(table_len: usize) -> (usize, bool) {
+        // Is power of two and greater than 1
+        let is_safe_to_do_bitwise_and = table_len.count_ones() == 1 && table_len > 1;
+        let mask = if is_safe_to_do_bitwise_and {
+            table_len - 1
         } else {
-            table.len()
-        }
+            table_len
+        };
+        (mask, is_safe_to_do_bitwise_and)
     }
 
     #[inline]
-    fn reset_mask(&self, table: &[Option<CacheTableEntry<T>>]) {
-        self.mask.store(Self::into_inner(table), MEMORY_ORDERING);
-        self.is_safe_to_do_bitwise_and.store(
-            Self::is_safe_to_do_bitwise_and(table.len()),
-            MEMORY_ORDERING,
-        );
+    fn reset_mask(&self) {
+        let table_len = self.table.read().unwrap().len();
+        let (mask, is_safe_to_do_bitwise_and) = Self::generate_mask(table_len);
+        self.mask.store(mask, MEMORY_ORDERING);
+        self.is_safe_to_do_bitwise_and
+            .store(is_safe_to_do_bitwise_and, MEMORY_ORDERING);
     }
 
     pub fn new(size: CacheTableSize) -> CacheTable<T> {
@@ -199,7 +197,7 @@ impl<T: Copy + PartialEq> CacheTable<T> {
             #[cfg(feature = "extras")]
             zero_hit: AtomicUsize::new(0),
         };
-        cache_table.reset_mask(&cache_table.table.read().unwrap());
+        cache_table.reset_mask();
         cache_table
     }
 
@@ -353,11 +351,13 @@ impl<T: Copy + PartialEq> CacheTable<T> {
 
     pub fn set_size(&self, size: CacheTableSize) {
         *self.size.write().unwrap() = size;
-        let current_table_copy = self.table.read().unwrap().clone();
-        *self.table.write().unwrap() = Self::generate_table(size);
-        self.reset_mask(&current_table_copy);
+        let old_table = std::mem::replace(
+            &mut *self.table.write().unwrap(),
+            Self::generate_table(size),
+        );
+        self.reset_mask();
         self.reset_variables();
-        for entry in current_table_copy.iter().flatten() {
+        for entry in old_table.into_iter().flatten() {
             self.add(entry.hash.get(), entry.entry);
         }
     }
