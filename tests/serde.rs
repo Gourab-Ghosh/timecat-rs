@@ -25,7 +25,7 @@ mod serde_tests {
         ($func_name: ident, $type: ty) => {
             #[test]
             fn $func_name() -> std::result::Result<(), Box<dyn Error>> {
-                let empty_array: [$type; 0] = [];
+                let empty_array: [$type; _] = [];
                 test_serde(SerdeWrapper::new(empty_array))
             }
         };
@@ -40,9 +40,9 @@ mod serde_tests {
 
     #[test]
     fn serde_wrapper_empty_array_test_str_1() -> std::result::Result<(), Box<dyn Error>> {
-        let data: SerdeWrapper<[&str; 0]> = SerdeWrapper::new([]);
+        let data: SerdeWrapper<[&str; _]> = SerdeWrapper::new([]);
         let json = serde_json::to_string(&data)?;
-        let de_data: SerdeWrapper<[&str; 0]> = serde_json::from_str(&json)?;
+        let de_data: SerdeWrapper<[&str; _]> = serde_json::from_str(&json)?;
         assert_eq!(data, de_data);
         Ok(())
     }

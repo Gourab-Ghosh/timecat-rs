@@ -26,7 +26,7 @@ impl_into_spin!(usize);
 impl_into_spin!(CacheTableSize, unwrap);
 impl_into_spin!(Duration, as_millis);
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug)]
 enum UCIOptionType<T: ChessEngine> {
     Button {
         function: fn(&mut T) -> Result<()>,
@@ -82,7 +82,7 @@ impl<T: Clone + Copy + IntoSpin> SpinValue<T> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug)]
 pub struct UCIOption<T: ChessEngine> {
     name: String,
     sorted_aliases: Vec<String>,

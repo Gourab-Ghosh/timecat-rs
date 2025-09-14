@@ -55,6 +55,7 @@ impl Default for PVTable {
 #[derive(Clone, Debug)]
 pub struct Searcher<P: PositionEvaluation> {
     id: usize,
+    score: Score,
     initial_position: ChessPosition,
     board: Board,
     evaluator: P,
@@ -65,7 +66,7 @@ pub struct Searcher<P: PositionEvaluation> {
     num_nodes_searched: Arc<AtomicUsize>,
     selective_depth: Arc<AtomicUsize>,
     ply: Ply,
-    score: Score,
+    root_score_cached: Score,
     depth_completed: Depth,
     is_outside_aspiration_window: bool,
     clock: Instant,
@@ -76,8 +77,9 @@ pub struct Searcher<P: PositionEvaluation> {
 impl<P: PositionEvaluation> Searcher<P> {
     pub fn new(
         id: usize,
+        last_score: Option<Score>,
         board: Board,
-        evaluator: P,
+        mut evaluator: P,
         transposition_table: Arc<TranspositionTable>,
         num_nodes_searched: Arc<AtomicUsize>,
         selective_depth: Arc<AtomicUsize>,
@@ -86,6 +88,7 @@ impl<P: PositionEvaluation> Searcher<P> {
     ) -> Self {
         Self {
             id,
+            score: board.score_flipped(last_score.unwrap_or_else(|| evaluator.evaluate(&board))),
             initial_position: board.get_position().to_owned(),
             board,
             evaluator,
@@ -96,7 +99,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             num_nodes_searched,
             selective_depth,
             ply: 0,
-            score: 0,
+            root_score_cached: -INFINITY,
             depth_completed: 0,
             is_outside_aspiration_window: false,
             clock: Instant::now(),
@@ -337,7 +340,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         beta: Score,
         mut controller: Option<&mut impl SearchControl<Self>>,
         print_move_info: bool,
-    ) -> Option<Score> {
+    ) -> Option<Infallible> {
         if FOLLOW_PV {
             self.move_sorter.follow_pv();
         }
@@ -345,11 +348,12 @@ impl<P: PositionEvaluation> Searcher<P> {
             self.selective_depth.store(0, MEMORY_ORDERING);
         }
         if self.board.is_game_over() {
-            return if self.board.is_checkmate() {
-                Some(-self.evaluator.evaluate_checkmate_in(0))
+            self.root_score_cached = if self.board.is_checkmate() {
+                -self.evaluator.evaluate_checkmate_in(0)
             } else {
-                Some(self.evaluator.evaluate_draw())
+                self.evaluator.evaluate_draw()
             };
+            return None;
         }
         if !(depth > 1 && self.is_main_threaded()) {
             controller = None;
@@ -358,12 +362,15 @@ impl<P: PositionEvaluation> Searcher<P> {
             return None;
         }
         let key = self.board.get_hash();
-        let mut score = -INFINITY;
+        self.root_score_cached = -INFINITY;
         let mut flag = EntryFlagHash::Alpha;
         let is_endgame = self.board.is_endgame();
         let moves = self.get_sorted_root_node_moves(controller.as_deref_mut());
         for (move_index, &(move_, _)) in moves.iter().enumerate() {
-            if !is_endgame && self.is_draw_move(move_.into()) && score > -DRAW_SCORE {
+            if !is_endgame
+                && self.is_draw_move(move_.into())
+                && self.root_score_cached > -DRAW_SCORE
+            {
                 continue;
             }
             let clock = Instant::now();
@@ -372,7 +379,8 @@ impl<P: PositionEvaluation> Searcher<P> {
                 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, controller.as_deref_mut())?
                     > alpha
             {
-                score = -self.alpha_beta(depth - 1, -beta, -alpha, controller.as_deref_mut())?;
+                self.root_score_cached =
+                    -self.alpha_beta(depth - 1, -beta, -alpha, controller.as_deref_mut())?;
             }
             self.pop();
             if print_move_info && self.is_main_threaded() {
@@ -382,17 +390,17 @@ impl<P: PositionEvaluation> Searcher<P> {
                         &self.board,
                         move_,
                         depth,
-                        score,
+                        self.root_score_cached,
                         self.get_num_nodes_searched(),
                         time_elapsed,
                     )
                 }
             }
-            if score > alpha {
+            if self.root_score_cached > alpha {
                 flag = EntryFlagHash::Exact;
-                alpha = score;
+                alpha = self.root_score_cached;
                 self.pv_table.update_table(self.ply, move_);
-                if score >= beta {
+                if self.root_score_cached >= beta {
                     self.transposition_table.write(
                         key,
                         depth,
@@ -401,22 +409,22 @@ impl<P: PositionEvaluation> Searcher<P> {
                         EntryFlagHash::Beta,
                         Some(move_),
                     );
-                    return Some(beta);
+                    self.root_score_cached = beta;
+                    return None;
                 }
             }
         }
-        if !self.stop_search_at_every_node(controller) {
-            self.transposition_table.write(
-                key,
-                depth,
-                self.ply,
-                alpha,
-                flag,
-                self.get_best_move().copied(),
-            );
-        }
+        self.transposition_table.write(
+            key,
+            depth,
+            self.ply,
+            alpha,
+            flag,
+            self.get_best_move().copied(),
+        );
         self.update_best_moves();
-        Some(alpha)
+        self.root_score_cached = alpha;
+        None
     }
 
     fn get_lmr_reduction(depth: Depth, move_index: usize, is_pv_node: bool) -> Depth {
@@ -648,16 +656,14 @@ impl<P: PositionEvaluation> Searcher<P> {
                 }
             }
         }
-        if !self.stop_search_at_every_node(controller) {
-            self.transposition_table.write(
-                key,
-                depth,
-                self.ply,
-                alpha,
-                flag,
-                self.get_nth_pv_move(self.ply).copied(),
-            );
-        }
+        self.transposition_table.write(
+            key,
+            depth,
+            self.ply,
+            alpha,
+            flag,
+            self.get_nth_pv_move(self.ply).copied(),
+        );
         Some(alpha)
     }
 
@@ -718,12 +724,15 @@ impl<P: PositionEvaluation> Searcher<P> {
 
     pub fn search(
         &mut self,
-        mut config: &SearchConfig,
+        config: &SearchConfig,
         mut controller: impl SearchControl<Self>,
         verbose: bool,
     ) {
-        if self.board.generate_legal_moves().len() == 1 {
-            config = const { &SearchConfig::new_depth(1) };
+        let legal_moves = self.board.generate_legal_moves();
+        if legal_moves.len() == 1 {
+            self.pv_table
+                .update_table(self.ply, legal_moves.into_iter().next().unwrap());
+            return;
         }
         controller.on_receiving_search_config(config, self);
         let mut alpha = -INFINITY;
@@ -734,15 +743,16 @@ impl<P: PositionEvaluation> Searcher<P> {
             && !controller.stop_search_at_root_node(self)
         {
             let last_score = self.score;
-            self.score = self
-                .search_root(
-                    self.depth_completed + 1,
-                    alpha,
-                    beta,
-                    Some(&mut controller),
-                    verbose,
-                )
-                .unwrap_or(last_score);
+            self.search_root(
+                self.depth_completed + 1,
+                alpha,
+                beta,
+                Some(&mut controller),
+                verbose,
+            );
+            if self.root_score_cached != -INFINITY {
+                self.score = self.root_score_cached;
+            }
             let search_info = self.get_search_info();
             if verbose && self.is_main_threaded() {
                 search_info.print_info();
@@ -758,13 +768,8 @@ impl<P: PositionEvaluation> Searcher<P> {
                 self.score = last_score;
                 continue;
             }
-            let cutoff = if is_checkmate(self.score) {
-                5
-            } else {
-                ASPIRATION_WINDOW_CUTOFF
-            };
-            alpha = self.score - cutoff;
-            beta = self.score + cutoff;
+            alpha = self.score - ASPIRATION_WINDOW_CUTOFF;
+            beta = self.score + ASPIRATION_WINDOW_CUTOFF;
             self.depth_completed += 1;
         }
     }

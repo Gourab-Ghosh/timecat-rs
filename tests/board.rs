@@ -87,23 +87,22 @@ fn test_attackers_mask() {
             let result = board.get_attackers_mask(square, board.turn());
             let mut expected = BitBoard::EMPTY;
             for piece_square in ALL_SQUARES {
-                if let Some(piece) = board.get_piece_at(piece_square) {
-                    if piece.get_color() == board.turn()
-                        && match piece.get_piece_type() {
-                            Pawn => piece_square.get_pawn_attacks(board.turn(), BitBoard::ALL),
-                            Knight => piece_square.get_knight_moves(),
-                            Bishop => get_bishop_moves(piece_square, board.occupied()),
-                            Rook => get_rook_moves(piece_square, board.occupied()),
-                            Queen => {
-                                get_bishop_moves(piece_square, board.occupied())
-                                    | get_rook_moves(piece_square, board.occupied())
-                            }
-                            King => piece_square.get_king_moves(),
+                if let Some(piece) = board.get_piece_at(piece_square)
+                    && piece.get_color() == board.turn()
+                    && match piece.get_piece_type() {
+                        Pawn => piece_square.get_pawn_attacks(board.turn(), BitBoard::ALL),
+                        Knight => piece_square.get_knight_moves(),
+                        Bishop => get_bishop_moves(piece_square, board.occupied()),
+                        Rook => get_rook_moves(piece_square, board.occupied()),
+                        Queen => {
+                            get_bishop_moves(piece_square, board.occupied())
+                                | get_rook_moves(piece_square, board.occupied())
                         }
-                        .contains(square)
-                    {
-                        expected |= piece_square.to_bitboard();
+                        King => piece_square.get_king_moves(),
                     }
+                    .contains(square)
+                {
+                    expected |= piece_square.to_bitboard();
                 }
             }
             assert_eq!(

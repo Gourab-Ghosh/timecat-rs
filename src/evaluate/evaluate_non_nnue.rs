@@ -123,10 +123,11 @@ impl EvaluatorNonNNUE {
         .collect_vec();
 
         for &shield_square in &pawn_shield_squares {
-            if let Some(pawn) = position.get_piece_at(shield_square) {
-                if pawn.get_piece_type() == Pawn && pawn.get_color() == king_color {
-                    safety_score += 10; // Example value for a pawn in the shield
-                }
+            if let Some(pawn) = position.get_piece_at(shield_square)
+                && pawn.get_piece_type() == Pawn
+                && pawn.get_color() == king_color
+            {
+                safety_score += 10; // Example value for a pawn in the shield
             }
         }
 

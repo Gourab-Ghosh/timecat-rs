@@ -22,7 +22,7 @@ pub mod runner;
 pub mod search;
 pub mod search_controller;
 pub mod selfplay;
-pub mod sort;
+pub mod sorter;
 #[cfg(feature = "experimental")]
 pub mod syzygy;
 #[cfg(feature = "debug")]
@@ -103,10 +103,10 @@ pub use search_controller::SearchController;
 pub use selfplay::self_play;
 #[cfg(feature = "serde")]
 pub use serde::{Deserialize, Deserializer, Serialize, Serializer};
-pub use sort::*;
+pub use sorter::*;
 pub use std::cmp::{Ordering, Reverse};
 pub use std::collections::HashSet;
-pub use std::convert::From;
+pub use std::convert::{From, Infallible};
 pub use std::env;
 pub use std::error::Error;
 pub use std::fmt::{self, Debug};

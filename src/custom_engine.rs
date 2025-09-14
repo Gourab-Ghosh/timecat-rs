@@ -55,6 +55,7 @@ pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
     board: Board,
     transposition_table: Arc<TranspositionTable>,
     evaluator: P,
+    last_score: Option<Score>,
     controller: T,
     num_threads: NonZeroUsize,
     num_nodes_searched: Arc<AtomicUsize>,
@@ -79,6 +80,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
             board,
             transposition_table: transposition_table.into(),
             evaluator,
+            last_score: None,
             controller,
             num_threads: TIMECAT_DEFAULTS.num_threads,
             num_nodes_searched: AtomicUsize::new(0).into(),
@@ -163,6 +165,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
     pub fn generate_searcher(&self, id: usize) -> Searcher<P> {
         Searcher::new(
             id,
+            self.last_score,
             self.board.clone(),
             self.evaluator.clone(),
             self.transposition_table.clone(),
@@ -331,6 +334,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
                     .unwrap(),
             ]);
         }
+        self.last_score = search_info.get_score();
         search_info
     }
 }
