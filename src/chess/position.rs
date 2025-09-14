@@ -942,17 +942,17 @@ impl ChessPosition {
         &self,
         last_move: ValidOrNullMove,
         use_unicode: bool,
-        colored: bool,
+        colored_board: bool,
     ) -> String {
         let checkers = self.get_checkers();
         let king_square = self.get_king_square(self.turn());
-        let mut board_string = get_board_string(colored, |square| {
+        let mut board_string = get_board_string(colored_board, |square| {
             let symbol = if use_unicode {
                 self.piece_unicode_symbol_at(square, false)
             } else {
                 self.piece_symbol_at(square)
             };
-            if colored {
+            if colored_board {
                 let mut styles = vec![];
                 if symbol != " " {
                     styles.extend_from_slice(match self.color_at(square).unwrap() {
@@ -994,8 +994,8 @@ impl ChessPosition {
     }
 
     #[inline]
-    pub fn to_unicode_string(&self, last_move: ValidOrNullMove, colored: bool) -> String {
-        self.to_board_string(last_move, true, colored)
+    pub fn to_unicode_string(&self, last_move: ValidOrNullMove, colored_board: bool) -> String {
+        self.to_board_string(last_move, true, colored_board)
     }
 
     #[inline]

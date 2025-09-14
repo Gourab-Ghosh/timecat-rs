@@ -114,19 +114,19 @@ impl Board {
     }
 
     #[inline]
-    pub fn to_board_string(&self, use_unicode: bool, colored: bool) -> String {
+    pub fn to_board_string(&self, use_unicode: bool, colored_board: bool) -> String {
         self.position.to_board_string(
             self.stack.last().map_or(Default::default(), |(_, m)| *m),
             use_unicode,
-            colored,
+            colored_board,
         )
     }
 
     #[inline]
-    pub fn to_unicode_string(&self, colored: bool) -> String {
+    pub fn to_unicode_string(&self, colored_board: bool) -> String {
         self.position.to_unicode_string(
             self.stack.last().map_or(Default::default(), |(_, m)| *m),
-            colored,
+            colored_board,
         )
     }
 
