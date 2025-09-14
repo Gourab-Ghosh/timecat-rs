@@ -114,17 +114,20 @@ impl Board {
     }
 
     #[inline]
-    pub fn to_board_string(&self, use_unicode: bool) -> String {
+    pub fn to_board_string(&self, use_unicode: bool, colored: bool) -> String {
         self.position.to_board_string(
             self.stack.last().map_or(Default::default(), |(_, m)| *m),
             use_unicode,
+            colored,
         )
     }
 
     #[inline]
-    pub fn to_unicode_string(&self) -> String {
-        self.position
-            .to_unicode_string(self.stack.last().map_or(Default::default(), |(_, m)| *m))
+    pub fn to_unicode_string(&self, colored: bool) -> String {
+        self.position.to_unicode_string(
+            self.stack.last().map_or(Default::default(), |(_, m)| *m),
+            colored,
+        )
     }
 
     pub fn result(&self) -> GameResult {
@@ -463,7 +466,7 @@ impl BoardMethodOverload<ValidOrNullMove> for Board {
 
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_board_string(false))
+        write!(f, "{}", self.to_board_string(false, true))
     }
 }
 
