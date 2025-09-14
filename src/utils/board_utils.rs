@@ -24,8 +24,11 @@ static BOARD_SKELETON: &str = r"
 
 ";
 
-pub fn get_board_skeleton_colored() -> String {
+pub fn get_board_skeleton(colored: bool) -> String {
     let skeleton = String::from(BOARD_SKELETON.trim_matches('\n'));
+    if !colored {
+        return skeleton;
+    }
     let mut colored_skeleton = String::new();
     fn get_colored_char(c: char) -> String {
         let styles = match c {

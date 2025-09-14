@@ -943,7 +943,7 @@ impl ChessPosition {
         let checkers = self.get_checkers();
         let king_square = self.get_king_square(self.turn());
         let mut squares_horizontal_iter = SQUARES_HORIZONTAL_MIRROR.iter();
-        for c in get_board_skeleton_colored().chars() {
+        for c in get_board_skeleton(true).chars() {
             if c == '?' {
                 let square = squares_horizontal_iter
                     .next()
