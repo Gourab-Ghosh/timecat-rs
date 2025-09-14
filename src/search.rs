@@ -55,6 +55,7 @@ impl Default for PVTable {
 #[derive(Clone, Debug)]
 pub struct Searcher<P: PositionEvaluation> {
     id: usize,
+    score: Score,
     initial_position: ChessPosition,
     board: Board,
     evaluator: P,
@@ -66,7 +67,6 @@ pub struct Searcher<P: PositionEvaluation> {
     selective_depth: Arc<AtomicUsize>,
     ply: Ply,
     root_score_cached: Score,
-    score: Score,
     depth_completed: Depth,
     is_outside_aspiration_window: bool,
     clock: Instant,
@@ -77,8 +77,9 @@ pub struct Searcher<P: PositionEvaluation> {
 impl<P: PositionEvaluation> Searcher<P> {
     pub fn new(
         id: usize,
+        last_score: Option<Score>,
         board: Board,
-        evaluator: P,
+        mut evaluator: P,
         transposition_table: Arc<TranspositionTable>,
         num_nodes_searched: Arc<AtomicUsize>,
         selective_depth: Arc<AtomicUsize>,
@@ -87,6 +88,7 @@ impl<P: PositionEvaluation> Searcher<P> {
     ) -> Self {
         Self {
             id,
+            score: board.score_flipped(last_score.unwrap_or_else(|| evaluator.evaluate(&board))),
             initial_position: board.get_position().to_owned(),
             board,
             evaluator,
@@ -98,7 +100,6 @@ impl<P: PositionEvaluation> Searcher<P> {
             selective_depth,
             ply: 0,
             root_score_cached: -INFINITY,
-            score: 0,
             depth_completed: 0,
             is_outside_aspiration_window: false,
             clock: Instant::now(),
@@ -366,7 +367,10 @@ impl<P: PositionEvaluation> Searcher<P> {
         let is_endgame = self.board.is_endgame();
         let moves = self.get_sorted_root_node_moves(controller.as_deref_mut());
         for (move_index, &(move_, _)) in moves.iter().enumerate() {
-            if !is_endgame && self.is_draw_move(move_.into()) && self.root_score_cached > -DRAW_SCORE {
+            if !is_endgame
+                && self.is_draw_move(move_.into())
+                && self.root_score_cached > -DRAW_SCORE
+            {
                 continue;
             }
             let clock = Instant::now();
@@ -375,7 +379,8 @@ impl<P: PositionEvaluation> Searcher<P> {
                 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, controller.as_deref_mut())?
                     > alpha
             {
-                self.root_score_cached = -self.alpha_beta(depth - 1, -beta, -alpha, controller.as_deref_mut())?;
+                self.root_score_cached =
+                    -self.alpha_beta(depth - 1, -beta, -alpha, controller.as_deref_mut())?;
             }
             self.pop();
             if print_move_info && self.is_main_threaded() {
@@ -719,12 +724,15 @@ impl<P: PositionEvaluation> Searcher<P> {
 
     pub fn search(
         &mut self,
-        mut config: &SearchConfig,
+        config: &SearchConfig,
         mut controller: impl SearchControl<Self>,
         verbose: bool,
     ) {
-        if self.board.generate_legal_moves().len() == 1 {
-            config = const { &SearchConfig::new_depth(1) };
+        let legal_moves = self.board.generate_legal_moves();
+        if legal_moves.len() == 1 {
+            self.pv_table
+                .update_table(self.ply, legal_moves.into_iter().next().unwrap());
+            return;
         }
         controller.on_receiving_search_config(config, self);
         let mut alpha = -INFINITY;
@@ -760,13 +768,8 @@ impl<P: PositionEvaluation> Searcher<P> {
                 self.score = last_score;
                 continue;
             }
-            let cutoff = if is_checkmate(self.score) {
-                5
-            } else {
-                ASPIRATION_WINDOW_CUTOFF
-            };
-            alpha = self.score - cutoff;
-            beta = self.score + cutoff;
+            alpha = self.score - ASPIRATION_WINDOW_CUTOFF;
+            beta = self.score + ASPIRATION_WINDOW_CUTOFF;
             self.depth_completed += 1;
         }
     }
