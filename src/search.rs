@@ -242,7 +242,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             || controller.is_some_and(|controller| controller.stop_search_at_every_node(self))
     }
 
-    fn pop(&mut self) -> Option<ValidOrNullMove> {
+    fn pop(&mut self) -> Result<ValidOrNullMove> {
         self.ply -= 1;
         self.board.pop()
     }
@@ -382,7 +382,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 self.root_score_cached =
                     -self.alpha_beta(depth - 1, -beta, -alpha, controller.as_deref_mut())?;
             }
-            self.pop();
+            self.pop().unwrap();
             if print_move_info && self.is_main_threaded() {
                 let time_elapsed = clock.elapsed();
                 if time_elapsed > PRINT_MOVE_INFO_DURATION_THRESHOLD {
@@ -551,7 +551,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 self.push_unchecked(ValidOrNullMove::NullMove);
                 let score =
                     -self.alpha_beta(reduced_depth, -beta, -beta + 1, controller.as_deref_mut())?;
-                self.pop();
+                self.pop().unwrap();
                 if score >= beta {
                     return Some(beta);
                 }
@@ -632,7 +632,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                     }
                 }
             }
-            self.pop();
+            self.pop().unwrap();
             if score > alpha {
                 flag = EntryFlagHash::Exact;
                 self.pv_table.update_table(self.ply, move_);
@@ -702,7 +702,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             }
             self.push_unchecked(move_);
             let score = -self.quiescence(-beta, -alpha, controller.as_deref_mut())?;
-            self.pop();
+            self.pop().unwrap();
             if score >= beta {
                 return Some(beta);
             }

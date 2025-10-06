@@ -355,9 +355,9 @@ fn test_board_material_score_track() {
     white_material_score -= PAWN_VALUE;
     board_material_check_command!(board.push_san("Qxd5").unwrap(); board; white_material_score; black_material_score);
     white_material_score += PAWN_VALUE;
-    board_material_check_command!(board.pop(); board; white_material_score; black_material_score);
+    board_material_check_command!(board.pop().unwrap(); board; white_material_score; black_material_score);
     black_material_score += PAWN_VALUE;
-    board_material_check_command!(board.pop(); board; white_material_score; black_material_score);
+    board_material_check_command!(board.pop().unwrap(); board; white_material_score; black_material_score);
 }
 
 #[test]

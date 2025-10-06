@@ -340,14 +340,13 @@ impl Pop {
             if engine.get_board().has_empty_stack() {
                 return Err(EmptyStack);
             }
-            if let Some(last_move) = engine.get_board_mut().pop() {
-                println_info(
-                    "Popped move",
-                    last_move
-                        .stringify_move(engine.get_board().get_position())
-                        .unwrap(),
-                );
-            }
+            let last_move = engine.get_board_mut().pop()?;
+            println_info(
+                "Popped move",
+                last_move
+                    .stringify_move(engine.get_board().get_position())
+                    .unwrap(),
+            );
         }
         Ok(())
     }
