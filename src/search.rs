@@ -298,7 +298,7 @@ impl<P: PositionEvaluation> Searcher<P> {
 
     fn get_sorted_root_node_moves(
         &mut self,
-        controller: Option<&mut impl SearchControl<Self>>,
+        moves_to_search: Option<Vec<Move>>,
     ) -> Vec<(Move, MoveWeight)> {
         let best_move = self.get_best_move().copied();
 
@@ -306,9 +306,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             .move_sorter
             .get_weighted_moves_sorted(
                 &self.board,
-                controller
-                    .and_then(|controller| controller.get_root_moves_to_search())
-                    .map(|moves| moves.to_vec())
+                moves_to_search
                     .unwrap_or_else(|| self.board.generate_legal_moves().into_iter().collect_vec()),
                 &self.transposition_table,
                 0,
@@ -355,6 +353,10 @@ impl<P: PositionEvaluation> Searcher<P> {
             };
             return None;
         }
+        let moves_to_search = controller
+            .as_ref()
+            .and_then(|controller| controller.get_root_moves_to_search())
+            .map(|moves| moves.to_vec());
         if !(depth > 1 && self.is_main_threaded()) {
             controller = None;
         }
@@ -365,7 +367,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         self.root_score_cached = -INFINITY;
         let mut flag = EntryFlagHash::Alpha;
         let is_endgame = self.board.is_endgame();
-        let moves = self.get_sorted_root_node_moves(controller.as_deref_mut());
+        let moves = self.get_sorted_root_node_moves(moves_to_search);
         for (move_index, &(move_, _)) in moves.iter().enumerate() {
             if !is_endgame
                 && self.is_draw_move(move_.into())
