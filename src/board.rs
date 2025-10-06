@@ -114,19 +114,19 @@ impl Board {
     }
 
     #[inline]
-    pub fn to_board_string(&self, use_unicode: bool, colored: bool) -> String {
+    pub fn to_board_string(&self, use_unicode: bool, colored_board: bool) -> String {
         self.position.to_board_string(
             self.stack.last().map_or(Default::default(), |(_, m)| *m),
             use_unicode,
-            colored,
+            colored_board,
         )
     }
 
     #[inline]
-    pub fn to_unicode_string(&self, colored: bool) -> String {
+    pub fn to_unicode_string(&self, colored_board: bool) -> String {
         self.position.to_unicode_string(
             self.stack.last().map_or(Default::default(), |(_, m)| *m),
-            colored,
+            colored_board,
         )
     }
 
@@ -207,11 +207,11 @@ impl Board {
         self.is_other_draw() || self.status() != BoardStatus::Ongoing
     }
 
-    pub fn pop(&mut self) -> ValidOrNullMove {
-        let (position, valid_or_null_move) = self.stack.pop().unwrap();
+    pub fn pop(&mut self) -> Option<ValidOrNullMove> {
+        let (position, valid_or_null_move) = self.stack.pop()?;
         self.repetition_table.remove(self.get_hash());
         self.position = position;
-        valid_or_null_move
+        Some(valid_or_null_move)
     }
 
     #[inline]

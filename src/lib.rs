@@ -104,6 +104,7 @@ pub use selfplay::self_play;
 #[cfg(feature = "serde")]
 pub use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub use sorter::*;
+pub use std::borrow::Cow;
 pub use std::cmp::{Ordering, Reverse};
 pub use std::collections::HashSet;
 pub use std::convert::{From, Infallible};
@@ -121,7 +122,6 @@ pub use std::ops::{
     Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 pub use std::path::{Path, PathBuf};
-pub use std::borrow::Cow;
 pub use std::str::{FromStr, ParseBoolError};
 pub use std::sync::atomic::{AtomicBool, AtomicUsize};
 pub use std::sync::{Arc, LazyLock, RwLock};

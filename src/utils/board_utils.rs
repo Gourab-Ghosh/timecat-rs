@@ -45,12 +45,10 @@ pub fn get_board_string<'a>(
                 .copied()
                 .expect("More 'O's in board skeleton than squares");
             board_string.push_str(&empty_symbol_replacement_func(square));
+        } else if colored {
+            board_string.push_str(&get_colored_char(c));
         } else {
-            if colored {
-                board_string.push_str(&get_colored_char(c));
-            } else {
-                board_string.push(c);
-            }
+            board_string.push(c);
         }
     }
     debug_assert!(
