@@ -1086,7 +1086,7 @@ dependencies = [
 
 [[package]]
 name = "timecat"
-version = "1.49.1"
+version = "1.49.2"
 dependencies = [
  "arrayvec",
  "binread",
