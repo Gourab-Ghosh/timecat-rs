@@ -207,11 +207,11 @@ impl Board {
         self.is_other_draw() || self.status() != BoardStatus::Ongoing
     }
 
-    pub fn pop(&mut self) -> Option<ValidOrNullMove> {
-        let (position, valid_or_null_move) = self.stack.pop()?;
+    pub fn pop(&mut self) -> Result<ValidOrNullMove> {
+        let (position, valid_or_null_move) = self.stack.pop().ok_or(TimecatError::EmptyStack)?;
         self.repetition_table.remove(self.get_hash());
         self.position = position;
-        Some(valid_or_null_move)
+        Ok(valid_or_null_move)
     }
 
     #[inline]

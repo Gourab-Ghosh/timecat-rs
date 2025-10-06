@@ -21,7 +21,7 @@ mod model_update_test {
                 return Err(board.get_all_stack_moves().collect_vec());
             }
             check_evaluation(board, depth - 1)?;
-            board.pop();
+            board.pop().unwrap();
         }
         Ok(())
     }
