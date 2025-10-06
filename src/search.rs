@@ -242,7 +242,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             || controller.is_some_and(|controller| controller.stop_search_at_every_node(self))
     }
 
-    fn pop(&mut self) -> ValidOrNullMove {
+    fn pop(&mut self) -> Option<ValidOrNullMove> {
         self.ply -= 1;
         self.board.pop()
     }
