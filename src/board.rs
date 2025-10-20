@@ -253,6 +253,10 @@ impl Board {
 
     #[inline]
     pub fn push_san_moves(&mut self, sans: &str) -> Result<Vec<ValidOrNullMove>> {
+        if sans.is_empty() {
+            return Ok(Vec::new());
+        }
+
         remove_double_spaces_and_trim(sans)
             .split(' ')
             .map(|san| self.push_san(san))
