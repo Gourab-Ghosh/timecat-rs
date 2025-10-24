@@ -197,7 +197,7 @@ impl GoAndPerft {
         }
         let clock = Instant::now();
         let response = engine.search_verbose(config);
-        let best_move = response.get_best_move().ok_or(BestMoveNotFound {
+        let best_move = response.get_best_move().ok_or_else(|| BestMoveNotFound {
             fen: engine.get_board().get_fen(),
         })?;
         let elapsed_time = clock.elapsed();

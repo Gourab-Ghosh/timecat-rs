@@ -20,10 +20,14 @@ impl Move {
 
     #[inline]
     pub const fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Result<Self> {
+        let move_ = Self::new_unchecked(source, dest, promotion);
         if source.to_int() == dest.to_int() {
-            return Err(TimecatError::InvalidMoveStructGeneration);
+            return Err(TimecatError::SameSourceAndDestination { move_ });
         }
-        Ok(Self::new_unchecked(source, dest, promotion))
+        if let Some(Pawn) | Some(King) = promotion {
+            return Err(TimecatError::InvalidPromotion { move_ });
+        }
+        Ok(move_)
     }
 
     #[inline]
@@ -43,7 +47,7 @@ impl Move {
 
     #[inline]
     pub fn from_uci(uci: &str) -> Result<Self> {
-        Self::from_str(uci)
+        uci.parse()
     }
 
     pub fn from_san(position: &ChessPosition, san: &str) -> Result<Self> {
@@ -60,10 +64,9 @@ impl Move {
     pub fn from_lan(position: &ChessPosition, lan: &str) -> Result<Self> {
         // TODO: Make the logic better
         let lan = lan.trim().replace('0', "O");
-        let lan = lan.replace('0', "O");
-        for valid_or_null_move in position.generate_legal_moves() {
-            if valid_or_null_move.lan(position).unwrap() == lan {
-                return Ok(valid_or_null_move);
+        for move_ in position.generate_legal_moves() {
+            if move_.lan(position).unwrap() == lan {
+                return Ok(move_);
             }
         }
         Err(TimecatError::InvalidLanMoveString { s: lan.to_string() })
@@ -82,13 +85,12 @@ impl Move {
             };
         }
 
-        let piece =
-            position
-                .get_piece_type_at(source)
-                .ok_or(TimecatError::InvalidSanOrLanMove {
-                    valid_or_null_move: self.into(),
-                    fen: position.get_fen(),
-                })?;
+        let piece = position.get_piece_type_at(source).ok_or_else(|| {
+            TimecatError::InvalidSanOrLanMove {
+                valid_or_null_move: self.into(),
+                fen: position.get_fen(),
+            }
+        })?;
         let capture = position.is_capture(self);
         let mut san = if piece == Pawn {
             String::new()
@@ -191,29 +193,52 @@ impl Move {
     }
 }
 
+macro_rules! generate_move_error {
+    ($s: ident) => {
+        TimecatError::InvalidUciMoveString { s: $s.to_string() }
+    };
+}
+
 impl FromStr for Move {
     type Err = TimecatError;
 
     fn from_str(mut s: &str) -> Result<Self> {
-        let error = TimecatError::InvalidUciMoveString { s: s.to_string() };
         s = s.trim();
-        if s.len() > 6 {
-            return Err(error.clone());
+        if s.len() > 5 {
+            return Err(generate_move_error!(s));
         }
-        let source = Square::from_str(s.get(0..2).ok_or(error.clone())?)?;
-        let dest = Square::from_str(s.get(2..4).ok_or(error.clone())?)?;
-
-        let mut promotion = None;
-        if s.len() == 5 {
-            promotion = Some(match s.chars().last().ok_or(error.clone())? {
-                'q' => Queen,
-                'r' => Rook,
-                'n' => Knight,
-                'b' => Bishop,
-                _ => return Err(error.clone()),
-            });
-        }
-
+        let source = s
+            .get(0..2)
+            .ok_or_else(|| generate_move_error!(s))?
+            .parse()?;
+        let dest = s
+            .get(2..4)
+            .ok_or_else(|| generate_move_error!(s))?
+            .parse()?;
+        let promotion = s
+            .as_bytes()
+            .get(5)
+            .map(|&byte| unsafe {
+                const {
+                    let mut arr = [None; 256];
+                    arr['p' as usize] = Some(Pawn);
+                    arr['n' as usize] = Some(Knight);
+                    arr['b' as usize] = Some(Bishop);
+                    arr['r' as usize] = Some(Rook);
+                    arr['q' as usize] = Some(Queen);
+                    arr['k' as usize] = Some(King);
+                    arr['P' as usize] = Some(Pawn);
+                    arr['N' as usize] = Some(Knight);
+                    arr['B' as usize] = Some(Bishop);
+                    arr['R' as usize] = Some(Rook);
+                    arr['Q' as usize] = Some(Queen);
+                    arr['K' as usize] = Some(King);
+                    arr
+                }
+                .get_unchecked(byte as usize)
+                .ok_or_else(|| generate_move_error!(s))
+            })
+            .transpose()?;
         Self::new(source, dest, promotion)
     }
 }
@@ -349,11 +374,12 @@ impl fmt::Display for ValidOrNullMove {
 impl FromStr for ValidOrNullMove {
     type Err = TimecatError;
 
+    #[inline]
     fn from_str(s: &str) -> Result<Self> {
-        if s == "--" || s == "0000" {
-            return Ok(Self::NullMove);
-        }
-        Ok(Move::from_str(s)?.into())
+        Ok(match s.trim() {
+            "--" | "0000" => Self::NullMove,
+            s_trimmed => Move::from_str(s_trimmed)?.into(),
+        })
     }
 }
 

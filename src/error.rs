@@ -62,7 +62,12 @@ pub enum TimecatError {
         min: Spin,
         max: Spin,
     },
-    InvalidMoveStructGeneration,
+    SameSourceAndDestination {
+        move_: Move,
+    },
+    InvalidPromotion {
+        move_: Move,
+    },
     InvalidSanOrLanMove {
         valid_or_null_move: ValidOrNullMove,
         fen: String,
@@ -178,8 +183,15 @@ impl fmt::Display for TimecatError {
                 f,
                 "Cannot set value of {name} to {value}, the value must be from {min} to {max}! Please try again!"
             ),
-            InvalidMoveStructGeneration => {
-                write!(f, "The from square and to square of a move cannot be same!")
+            SameSourceAndDestination { move_ } => {
+                write!(
+                    f,
+                    "The source and destination squares of the move {} cannot be the same!",
+                    move_
+                )
+            }
+            InvalidPromotion { move_ } => {
+                write!(f, "Invalid promotion for the move {}!", move_)
             }
             InvalidSanOrLanMove {
                 valid_or_null_move,
