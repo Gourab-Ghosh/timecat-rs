@@ -294,7 +294,7 @@ impl TryFrom<&[&str]> for SearchConfig {
 
         let second_command = commands
             .get(1)
-            .ok_or(generate_command_in_error_message!(commands))?;
+            .ok_or_else(|| generate_command_in_error_message!(commands))?;
         if ["infinite", "ponder"].contains(second_command) && commands.get(2).is_some() {
             return Err(generate_command_in_error_message!(commands));
         }
