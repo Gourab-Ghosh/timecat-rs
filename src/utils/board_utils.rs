@@ -43,7 +43,7 @@ pub fn get_board_string<'a>(
             let square = squares_horizontal_mirror_iter
                 .next()
                 .copied()
-                .expect("More 'O's in board skeleton than squares");
+                .expect("More '?'s in board skeleton than squares");
             board_string.push_str(&empty_symbol_replacement_func(square));
         } else if colored {
             board_string.push_str(&get_colored_char(c));
@@ -53,7 +53,7 @@ pub fn get_board_string<'a>(
     }
     debug_assert!(
         squares_horizontal_mirror_iter.next().is_none(),
-        "Fewer '?'s in board skeleton than squares"
+        "Fewer '?'s in board skeleton than squares",
     );
     board_string
 }
