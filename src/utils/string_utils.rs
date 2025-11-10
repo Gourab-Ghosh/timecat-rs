@@ -66,7 +66,7 @@ impl StringifyScore for Score {
         if is_checkmate(self) {
             let mut mate_string = String::from(if self.is_positive() { "M" } else { "-M" });
             let mate_distance = (CHECKMATE_SCORE - self.abs() + 1) / 2;
-            write_unchecked!(&mut mate_string, "{}", mate_distance);
+            write_unchecked!(mate_string, "{}", mate_distance);
             return mate_string.colorize(CHECKMATE_SCORE_STYLE);
         }
         let to_return = self as f64 / PAWN_VALUE as f64;
@@ -90,7 +90,7 @@ impl StringifyScore for Score {
             if self.is_negative() {
                 mate_distance = -mate_distance;
             }
-            write_unchecked!(&mut mate_string, "{}", mate_distance);
+            write_unchecked!(mate_string, "{}", mate_distance);
             return mate_string;
         }
         format!("cp {}", (self as i32 * 100) / PAWN_VALUE as i32)

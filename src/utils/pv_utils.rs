@@ -20,7 +20,7 @@ pub fn extract_pv_from_t_table(
 pub fn get_pv_as_uci(pv: &[Move]) -> String {
     let mut pv_string = String::new();
     for move_ in pv {
-        write_unchecked!(&mut pv_string, "{} ", move_.uci());
+        write_unchecked!(pv_string, "{} ", move_.uci());
     }
     pv_string.pop(); // Remove trailing space
     pv_string

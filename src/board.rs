@@ -370,9 +370,9 @@ impl Board {
         let mut pgn = String::new();
         let starting_fen = &self.get_starting_board_fen();
         if starting_fen != STARTING_POSITION_FEN {
-            writeln_unchecked!(&mut pgn, "[FEN \"{}\"]", starting_fen);
+            writeln_unchecked!(pgn, "[FEN \"{}\"]", starting_fen);
         }
-        writeln_unchecked!(&mut pgn, "[Result \"{}\"]", self.result(),);
+        writeln_unchecked!(pgn, "[Result \"{}\"]", self.result(),);
         write_unchecked!(
             &mut pgn,
             "\n{}",
