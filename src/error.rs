@@ -278,7 +278,7 @@ impl TimecatError {
 
 impl From<TimecatError> for String {
     fn from(error: TimecatError) -> Self {
-        error.stringify()
+        error.stringify().into()
     }
 }
 

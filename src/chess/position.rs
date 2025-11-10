@@ -917,12 +917,14 @@ impl ChessPosition {
     }
 
     #[inline]
-    pub fn piece_symbol_at(&self, square: Square) -> String {
-        self.get_piece_at(square)
-            .map_or_else(|| EMPTY_SPACE_SYMBOL.to_string(), |piece| piece.to_string())
+    pub fn piece_symbol_at(&self, square: Square) -> Cow<'static, str> {
+        self.get_piece_at(square).map_or_else(
+            || EMPTY_SPACE_SYMBOL.into(),
+            |piece| piece.to_string().into(),
+        )
     }
 
-    pub fn piece_unicode_symbol_at(&self, square: Square, flip_color: bool) -> String {
+    pub fn piece_unicode_symbol_at(&self, square: Square, flip_color: bool) -> &'static str {
         if let Some(piece) = self.get_piece_at(square) {
             let piece_index = piece.get_piece_type().to_index();
             let (white_pieces, black_pieces) = match flip_color {
@@ -932,10 +934,9 @@ impl ChessPosition {
             return match piece.get_color() {
                 White => get_item_unchecked!(white_pieces, piece_index),
                 Black => get_item_unchecked!(black_pieces, piece_index),
-            }
-            .to_string();
+            };
         }
-        EMPTY_SPACE_UNICODE_SYMBOL.to_string()
+        EMPTY_SPACE_UNICODE_SYMBOL
     }
 
     pub fn to_board_string(
@@ -948,7 +949,7 @@ impl ChessPosition {
         let king_square = self.get_king_square(self.turn());
         let mut board_string = get_board_string(colored_board, |square| {
             let symbol = if use_unicode {
-                self.piece_unicode_symbol_at(square, false)
+                self.piece_unicode_symbol_at(square, false).into()
             } else {
                 self.piece_symbol_at(square)
             };

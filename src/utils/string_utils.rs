@@ -56,33 +56,33 @@ impl<T: ToString> CustomColorize for T {
 }
 
 impl StringifyScore for Score {
-    fn stringify_score_console(self) -> String {
+    fn stringify_score_console<'a>(self) -> Cow<'a, str> {
         if self == INFINITY {
-            return "INFINITY".to_string();
+            return "INFINITY".into();
         }
         if self == -INFINITY {
-            return "-INFINITY".to_string();
+            return "-INFINITY".into();
         }
         if is_checkmate(self) {
             let mut mate_string = String::from(if self.is_positive() { "M" } else { "-M" });
             let mate_distance = (CHECKMATE_SCORE - self.abs() + 1) / 2;
             write_unchecked!(mate_string, "{}", mate_distance);
-            return mate_string.colorize(CHECKMATE_SCORE_STYLE);
+            return mate_string.colorize(CHECKMATE_SCORE_STYLE).into();
         }
         let to_return = self as f64 / PAWN_VALUE as f64;
         if to_return % 1.0 == 0.0 {
-            format!("{}", to_return as i32)
+            format!("{}", to_return as i32).into()
         } else {
-            format!("{:.2}", to_return)
+            format!("{:.2}", to_return).into()
         }
     }
 
-    fn stringify_score_uci(self) -> String {
+    fn stringify_score_uci<'a>(self) -> Cow<'a, str> {
         if self == INFINITY {
-            return "inf".to_string();
+            return "inf".into();
         }
         if self == -INFINITY {
-            return "-inf".to_string();
+            return "-inf".into();
         }
         if is_checkmate(self) {
             let mut mate_string = String::from("mate ");
@@ -91,13 +91,13 @@ impl StringifyScore for Score {
                 mate_distance = -mate_distance;
             }
             write_unchecked!(mate_string, "{}", mate_distance);
-            return mate_string;
+            return mate_string.into();
         }
-        format!("cp {}", (self as i32 * 100) / PAWN_VALUE as i32)
+        format!("cp {}", (self as i32 * 100) / PAWN_VALUE as i32).into()
     }
 
     #[inline]
-    fn stringify_score(self) -> String {
+    fn stringify_score<'a>(self) -> Cow<'a, str> {
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             self.stringify_score_console()
         } else {
@@ -108,48 +108,48 @@ impl StringifyScore for Score {
 
 impl Stringify for Score {
     #[inline]
-    fn stringify(&self) -> String {
+    fn stringify<'a>(&self) -> Cow<'a, str> {
         self.stringify_score()
     }
 }
 
 impl Stringify for TimecatError {
     #[inline]
-    fn stringify(&self) -> String {
-        self.stringify_with_optional_raw_input(None)
+    fn stringify<'a>(&self) -> Cow<'a, str> {
+        self.stringify_with_optional_raw_input(None).into()
     }
 }
 
 impl StringifyMove for Move {
-    fn uci(self) -> String {
-        self.to_string()
+    fn uci<'a>(self) -> Cow<'a, str> {
+        self.to_string().into()
     }
 
-    fn algebraic(self, position: &ChessPosition, long: bool) -> Result<String> {
-        Ok(self.algebraic_and_new_position(position, long)?.0)
+    fn algebraic<'a>(self, position: &ChessPosition, long: bool) -> Result<Cow<'a, str>> {
+        Ok(self.algebraic_and_new_position(position, long)?.0.into())
     }
 
-    fn stringify_move(self, position: &ChessPosition) -> Result<String> {
+    fn stringify_move<'a>(self, position: &ChessPosition) -> Result<Cow<'a, str>> {
         Some(self).stringify_move(position)
     }
 }
 
 impl StringifyMove for Option<Move> {
-    fn uci(self) -> String {
+    fn uci<'a>(self) -> Cow<'a, str> {
         match self {
-            Some(m) => m.uci(),
-            None => String::from("0000"),
+            Some(m) => m.uci().into(),
+            None => "0000".into(),
         }
     }
 
-    fn algebraic(self, position: &ChessPosition, long: bool) -> Result<String> {
+    fn algebraic<'a>(self, position: &ChessPosition, long: bool) -> Result<Cow<'a, str>> {
         match self {
             Some(valid_or_null_move) => valid_or_null_move.algebraic(position, long),
-            None => Ok("--".to_string()),
+            None => Ok("--".into()),
         }
     }
 
-    fn stringify_move(self, position: &ChessPosition) -> Result<String> {
+    fn stringify_move<'a>(self, position: &ChessPosition) -> Result<Cow<'a, str>> {
         match GLOBAL_TIMECAT_STATE.is_in_console_mode() {
             true => self.algebraic(position, GLOBAL_TIMECAT_STATE.use_long_algebraic_notation()),
             false => Ok(self.uci()),
@@ -164,12 +164,12 @@ impl StringifyHash for u64 {
 }
 
 impl Stringify for Duration {
-    fn stringify(&self) -> String {
+    fn stringify<'a>(&self) -> Cow<'a, str> {
         if GLOBAL_TIMECAT_STATE.is_in_uci_mode() {
-            return self.as_millis().to_string();
+            return self.as_millis().to_string().into();
         }
         if self < &Duration::from_secs(1) {
-            return self.as_millis().to_string() + " ms";
+            return format!("{} ms", self.as_millis()).into();
         }
         let precision = 3;
         let total_secs = self.as_secs_f64();
@@ -185,7 +185,7 @@ impl Stringify for Duration {
                     string.push(' ');
                     string += &Duration::from_secs_f64(secs).stringify();
                 }
-                return string;
+                return string.into();
             }
         }
         let total_secs_rounded = total_secs.round();
@@ -197,7 +197,7 @@ impl Stringify for Duration {
         if total_secs > 1.0 {
             string.push('s');
         }
-        string
+        string.into()
     }
 }
 
@@ -205,8 +205,8 @@ macro_rules! implement_stringify {
     ($($type:ty),+ $(,)?) => {
         $(
             impl Stringify for $type {
-                fn stringify(&self) -> String {
-                    self.to_string()
+                fn stringify<'a>(&self) -> Cow<'a, str> {
+                    self.to_string().into()
                 }
             }
         )*
@@ -216,31 +216,31 @@ macro_rules! implement_stringify {
 implement_stringify!(Move, ValidOrNullMove, WeightedMove, Color, PieceType, Piece);
 
 impl<T: Stringify> Stringify for Option<T> {
-    fn stringify(&self) -> String {
+    fn stringify<'a>(&self) -> Cow<'a, str> {
         match self {
             Some(t) => t.stringify(),
-            None => String::from(STRINGIFY_NONE),
+            None => STRINGIFY_NONE.into(),
         }
     }
 }
 
 impl<T: Stringify, E: Error> Stringify for std::result::Result<T, E> {
-    fn stringify(&self) -> String {
+    fn stringify<'a>(&self) -> Cow<'a, str> {
         match self {
-            Ok(t) => format!("Ok({})", t.stringify()),
-            Err(e) => format!("Err({})", e),
+            Ok(t) => format!("Ok({})", t.stringify()).into(),
+            Err(e) => format!("Err({})", e).into(),
         }
     }
 }
 
 impl<T: Stringify> Stringify for [T] {
-    fn stringify(&self) -> String {
-        format!("[{}]", self.iter().map(|t| t.stringify()).join(", "))
+    fn stringify<'a>(&self) -> Cow<'a, str> {
+        format!("[{}]", self.iter().map(|t| t.stringify()).join(", ")).into()
     }
 }
 
 impl<T: Stringify> Stringify for Vec<T> {
-    fn stringify(&self) -> String {
+    fn stringify<'a>(&self) -> Cow<'a, str> {
         self.as_slice().stringify()
     }
 }

@@ -95,7 +95,7 @@ impl Move {
         let mut san = if piece == Pawn {
             String::new()
         } else {
-            piece.to_colored_piece_string(White)
+            piece.to_colored_piece_str(White).into()
         };
 
         if long {
@@ -156,7 +156,7 @@ impl Move {
 
         // Promotion.
         if let Some(promotion) = self.get_promotion() {
-            write_unchecked!(san, "={}", promotion.to_colored_piece_string(White));
+            write_unchecked!(san, "={}", promotion.to_colored_piece_str(White));
         }
 
         Ok(san)

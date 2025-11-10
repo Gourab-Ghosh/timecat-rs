@@ -105,13 +105,12 @@ impl CastleRights {
         }
     }
 
-    pub fn to_string(self, color: Color) -> String {
-        let result = get_item_unchecked!(const { ["", "k", "q", "kq"] }, self.to_index());
-        if color == White {
-            result.to_uppercase()
-        } else {
-            result.to_string()
-        }
+    #[inline]
+    pub fn to_string(self, color: Color) -> &'static str {
+        get_item_unchecked!(
+            const { ["", "k", "q", "kq", "", "K", "Q", "KQ"] },
+            color.to_index() << 2 | self.to_index()
+        )
     }
 }
 

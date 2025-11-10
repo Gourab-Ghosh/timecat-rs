@@ -50,8 +50,14 @@ impl PieceType {
     }
 
     #[inline]
-    pub fn to_colored_piece_string(self, color: Color) -> String {
-        self.to_colored_piece(color).to_string()
+    pub fn to_colored_piece_str(self, color: Color) -> &'static str {
+        get_item_unchecked!(
+            [
+                "p", "n", "b", "r", "q", "k", // Black pieces
+                "P", "N", "B", "R", "Q", "K", // White pieces
+            ],
+            NUM_PIECE_TYPES * color.to_index() + self.to_index()
+        )
     }
 
     #[inline]
@@ -198,10 +204,7 @@ impl fmt::Display for Piece {
         write!(
             f,
             "{}",
-            match self.get_color() {
-                White => self.get_piece_type().to_string().to_uppercase(),
-                Black => self.get_piece_type().to_string(),
-            }
+            self.get_piece_type().to_colored_piece_str(self.get_color()),
         )
     }
 }

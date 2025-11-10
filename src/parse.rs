@@ -439,14 +439,9 @@ impl Position {
 pub struct Parser;
 
 impl Parser {
+    #[inline]
     pub fn sanitize_string(raw_input: &str) -> String {
-        let user_input = raw_input.trim();
-        let mut user_input = user_input.to_string();
-        for _char in [",", ":"] {
-            user_input = user_input.replace(_char, " ")
-        }
-        user_input = remove_double_spaces_and_trim(&user_input);
-        user_input
+        remove_double_spaces_and_trim(&raw_input.trim().replace([',', ':'], " "))
     }
 
     fn parse_single_command(single_input: &str) -> Result<Vec<UserCommand>> {

@@ -43,24 +43,24 @@ pub trait ClippedRelu<InputType, OutputType, const N: usize> {
 }
 
 pub trait StringifyScore {
-    fn stringify_score_console(self) -> String;
-    fn stringify_score_uci(self) -> String;
-    fn stringify_score(self) -> String;
+    fn stringify_score_console<'a>(self) -> Cow<'a, str>;
+    fn stringify_score_uci<'a>(self) -> Cow<'a, str>;
+    fn stringify_score<'a>(self) -> Cow<'a, str>;
 }
 
 pub trait StringifyMove {
-    fn uci(self) -> String;
-    fn algebraic(self, position: &ChessPosition, long: bool) -> Result<String>;
-    fn stringify_move(self, position: &ChessPosition) -> Result<String>;
+    fn uci<'a>(self) -> Cow<'a, str>;
+    fn algebraic<'a>(self, position: &ChessPosition, long: bool) -> Result<Cow<'a, str>>;
+    fn stringify_move<'a>(self, position: &ChessPosition) -> Result<Cow<'a, str>>;
 
-    fn san(self, position: &ChessPosition) -> Result<String>
+    fn san<'a>(self, position: &ChessPosition) -> Result<Cow<'a, str>>
     where
         Self: Sized,
     {
         self.algebraic(position, false)
     }
 
-    fn lan(self, position: &ChessPosition) -> Result<String>
+    fn lan<'a>(self, position: &ChessPosition) -> Result<Cow<'a, str>>
     where
         Self: Sized,
     {
@@ -73,7 +73,7 @@ pub trait StringifyHash {
 }
 
 pub trait Stringify {
-    fn stringify(&self) -> String;
+    fn stringify<'a>(&self) -> Cow<'a, str>;
 }
 
 // TODO: Try to remove static lifetime from the trait
