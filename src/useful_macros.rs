@@ -183,10 +183,6 @@ macro_rules! write_unchecked {
 
 #[macro_export]
 macro_rules! writeln_unchecked {
-    () => {{
-        let output = writeln!();
-        unsafe { output.unwrap_unchecked() }
-    }};
     ($($arg:tt)*) => {{
         let output = writeln!($($arg)*);
         unsafe { output.unwrap_unchecked() }
