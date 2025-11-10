@@ -66,7 +66,7 @@ impl StringifyScore for Score {
         if is_checkmate(self) {
             let mut mate_string = String::from(if self.is_positive() { "M" } else { "-M" });
             let mate_distance = (CHECKMATE_SCORE - self.abs() + 1) / 2;
-            mate_string += &mate_distance.to_string();
+            write_unchecked!(&mut mate_string, "{}", mate_distance);
             return mate_string.colorize(CHECKMATE_SCORE_STYLE);
         }
         let to_return = self as f64 / PAWN_VALUE as f64;
@@ -90,7 +90,7 @@ impl StringifyScore for Score {
             if self.is_negative() {
                 mate_distance = -mate_distance;
             }
-            mate_string += &mate_distance.to_string();
+            write_unchecked!(&mut mate_string, "{}", mate_distance);
             return mate_string;
         }
         format!("cp {}", (self as i32 * 100) / PAWN_VALUE as i32)
@@ -179,10 +179,10 @@ impl Stringify for Duration {
                 let secs = total_secs % threshold;
                 let mut string = format!("{} {}", time_unit, unit);
                 if time_unit > 1 {
-                    string += "s";
+                    string.push('s');
                 }
                 if secs >= 10.0_f64.powi(-(precision as i32)) {
-                    string += " ";
+                    string.push(' ');
                     string += &Duration::from_secs_f64(secs).stringify();
                 }
                 return string;
@@ -195,7 +195,7 @@ impl Stringify for Duration {
             format!("{:.1$} sec", total_secs, precision)
         };
         if total_secs > 1.0 {
-            string += "s";
+            string.push('s');
         }
         string
     }

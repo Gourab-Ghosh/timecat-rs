@@ -20,24 +20,27 @@ pub fn extract_pv_from_t_table(
 pub fn get_pv_as_uci(pv: &[Move]) -> String {
     let mut pv_string = String::new();
     for move_ in pv {
-        pv_string += &(move_.uci() + " ");
+        write_unchecked!(&mut pv_string, "{} ", move_.uci());
     }
-    pv_string.trim().to_string()
+    pv_string.pop(); // Remove trailing space
+    pv_string
 }
 
 pub fn get_pv_as_algebraic(position: &ChessPosition, pv: &[Move], long: bool) -> String {
     let mut position = position.clone();
     let mut pv_string = String::new();
     for move_ in pv {
-        pv_string += &(if position.is_legal(move_) {
+        pv_string += &if position.is_legal(move_) {
             let (san, new_position) = move_.algebraic_and_new_position(&position, long).unwrap();
             position = new_position;
             san
         } else {
             move_.uci().colorize(ERROR_MESSAGE_STYLE)
-        } + " ");
+        };
+        pv_string.push(' ');
     }
-    pv_string.trim().to_string()
+    pv_string.pop(); // Remove trailing space
+    pv_string
 }
 
 #[inline]

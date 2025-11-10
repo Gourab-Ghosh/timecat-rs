@@ -99,7 +99,7 @@ impl Move {
         };
 
         if long {
-            san += &source.to_string();
+            write_unchecked!(&mut san, "{}", source);
         } else if piece != Pawn {
             // Get ambiguous move candidates.
             // Relevant candidates: not exactly the current move,
@@ -132,7 +132,7 @@ impl Move {
                     );
                 }
                 if row {
-                    san += &(source.get_rank().to_index() + 1).to_string();
+                    write_unchecked!(&mut san, "{}", source.get_rank().to_index() + 1);
                 }
             }
         } else if capture {
@@ -146,17 +146,17 @@ impl Move {
 
         // Captures.
         if capture {
-            san += "x";
+            san.push('x');
         } else if long {
-            san += "-";
+            san.push('-');
         }
 
         // Destination square.
-        san += &dest.to_string();
+        write_unchecked!(&mut san, "{}", dest);
 
         // Promotion.
         if let Some(promotion) = self.get_promotion() {
-            san += &format!("={}", promotion.to_colored_piece_string(White))
+            write_unchecked!(&mut san, "={}", promotion.to_colored_piece_string(White));
         }
 
         Ok(san)

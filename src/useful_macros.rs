@@ -172,3 +172,20 @@ macro_rules! println_wasm {
         println!($($arg)*)
     };
 }
+
+#[macro_export]
+macro_rules! write_unchecked {
+    ($($arg:tt)*) => {
+        unsafe { write!($($arg)*).unwrap_unchecked() }
+    };
+}
+
+#[macro_export]
+macro_rules! writeln_unchecked {
+    () => {
+        unsafe { writeln!().unwrap_unchecked() }
+    };
+    ($($arg:tt)*) => {
+        unsafe { writeln!($($arg)*).unwrap_unchecked() }
+    };
+}

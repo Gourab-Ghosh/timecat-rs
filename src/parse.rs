@@ -113,10 +113,12 @@ impl UserCommand {
             Self::Help => println_wasm!("{}", Self::generate_help_message()),
             &Self::Perft(depth) => GoAndPerft::run_perft_command(engine, depth)?,
             Self::Go(config) => GoAndPerft::run_search(engine, config)?,
-            Self::PushMoves(user_input) => {
-                let binding = Parser::sanitize_string(user_input);
-                Push::push_moves(engine, &binding.split_whitespace().collect_vec())?
-            }
+            Self::PushMoves(user_input) => Push::push_moves(
+                engine,
+                &Parser::sanitize_string(user_input)
+                    .split_whitespace()
+                    .collect_vec(),
+            )?,
             &Self::PopMoves(num_moves) => Pop::pop_moves(engine, num_moves)?,
             Self::SetFen(fen) => Set::set_board_fen(engine, fen)?,
             #[cfg(feature = "colored")]
@@ -238,7 +240,7 @@ impl GoAndPerft {
                 false,
             );
             if let Some(ponder_move) = response.get_ponder_move() {
-                move_text += " ";
+                move_text.push(' ');
                 move_text += &format_info(
                     "ponder",
                     ponder_move

@@ -31,6 +31,17 @@ impl GameResult {
     }
 }
 
+impl fmt::Display for GameResult {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            GameResult::Win(Color::White) => write!(f, "1-0"),
+            GameResult::Win(Color::Black) => write!(f, "0-1"),
+            GameResult::Draw => write!(f, "1/2-1/2"),
+            GameResult::InProgress => write!(f, "*"),
+        }
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Board {
@@ -321,45 +332,55 @@ impl Board {
         variation: impl Iterator<Item = ValidOrNullMove>,
     ) -> Result<String> {
         let mut board = board.clone();
-        let mut san = String::new();
+        let mut variation_san = String::new();
         for valid_or_null_move in variation {
             if board.turn() == White {
                 let san_str = board.san_and_push(valid_or_null_move);
-                san += &format!("{}. {}", board.get_fullmove_number(), san_str.unwrap());
-            } else if san.is_empty() {
+                write_unchecked!(
+                    &mut variation_san,
+                    "{}. {}",
+                    board.get_fullmove_number(),
+                    san_str.unwrap()
+                );
+            } else if variation_san.is_empty() {
                 let san_str = board.san_and_push(valid_or_null_move);
-                san += &format!("{}...{}", board.get_fullmove_number(), san_str.unwrap());
+                write_unchecked!(
+                    &mut variation_san,
+                    "{}...{}",
+                    board.get_fullmove_number(),
+                    san_str.unwrap()
+                );
             } else {
-                san += &board.san_and_push(valid_or_null_move)?;
+                variation_san += &board.san_and_push(valid_or_null_move)?;
             }
-            san.push(' ');
+            variation_san.push(' ');
         }
-        san.pop(); // Remove the trailing space.
-
-        Ok(san)
+        variation_san.pop(); // Remove the trailing space.
+        Ok(variation_san)
     }
 
+    #[inline]
     pub fn get_starting_board_fen(&self) -> String {
-        if let Some((position, _)) = self.stack.first() {
-            position.get_fen()
-        } else {
-            self.get_fen()
-        }
+        self.stack
+            .first()
+            .map_or_else(|| self.get_fen(), |(position, _)| position.get_fen())
     }
 
     pub fn get_pgn(&self) -> Result<String> {
         let mut pgn = String::new();
         let starting_fen = &self.get_starting_board_fen();
         if starting_fen != STARTING_POSITION_FEN {
-            pgn += &format!("[FEN \"{}\"]\n", starting_fen);
+            writeln_unchecked!(&mut pgn, "[FEN \"{}\"]", starting_fen);
         }
-        pgn += &Self::variation_san(
-            &Self::from_fen(starting_fen).unwrap(),
-            self.stack
-                .clone()
-                .into_iter()
-                .map(|(_, optional_m)| optional_m),
-        )?;
+        writeln_unchecked!(&mut pgn, "[Result \"{}\"]", self.result(),);
+        write_unchecked!(
+            &mut pgn,
+            "\n{}",
+            Self::variation_san(
+                &Self::from_fen(starting_fen).unwrap(),
+                self.stack.iter().map(|(_, optional_m)| *optional_m),
+            )?
+        );
         Ok(pgn)
     }
 

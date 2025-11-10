@@ -110,10 +110,10 @@ pub use std::collections::HashSet;
 pub use std::convert::{From, Infallible};
 pub use std::env;
 pub use std::error::Error;
-pub use std::fmt::{self, Debug};
+pub use std::fmt::{self, Debug, Write as FmtWrite};
 pub use std::fs;
 pub use std::hash::{Hash, Hasher};
-pub use std::io::{BufReader, Read, Seek, Write};
+pub use std::io::{BufReader, Read, Seek, Write as IoWrite};
 pub use std::iter::Sum;
 pub use std::num::{NonZeroU64, NonZeroUsize, ParseIntError, Wrapping};
 pub use std::ops::{
