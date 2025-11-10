@@ -20,7 +20,7 @@ static BOARD_SKELETON: &str = r"
    +---+---+---+---+---+---+---+---+
  1 | ? | ? | ? | ? | ? | ? | ? | ? | 1
    +---+---+---+---+---+---+---+---+
-     A   B   C   D   E   F   G   H
+     A   B   C   D   E   F   G   H    
 
 ";
 
@@ -53,7 +53,7 @@ pub fn get_board_string<'a>(
     }
     debug_assert!(
         squares_horizontal_mirror_iter.next().is_none(),
-        "Fewer 'O's in board skeleton than squares"
+        "Fewer '?'s in board skeleton than squares"
     );
     board_string
 }
