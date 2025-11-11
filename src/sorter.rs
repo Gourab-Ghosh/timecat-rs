@@ -111,9 +111,12 @@ impl MoveSorter {
         *get_item_unchecked_mut!(arr, 0) = Some(killer_move);
     }
 
+    #[inline]
     pub fn is_killer_move(&self, move_: Move, ply: Ply) -> bool {
-        // TODO: Scope for improvement ig?
-        get_item_unchecked!(self.killer_moves, ply).contains(&Some(move_))
+        get_item_unchecked!(self.killer_moves, ply)
+            .iter()
+            .map_while(|move_| move_.as_ref())
+            .contains(&move_)
     }
 
     pub fn add_history_move(&mut self, history_move: Move, position: &ChessPosition, depth: Depth) {

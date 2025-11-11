@@ -272,3 +272,22 @@ pub trait SerdeHandler<'de> {
     where
         Self: Sized;
 }
+
+pub trait FloatExtensions {
+    fn is_integer(self) -> bool;
+}
+
+macro_rules! impl_float {
+    ($($float: ty),+ $(,)?) => {
+        $(
+            impl FloatExtensions for $float {
+                #[inline]
+                fn is_integer(self) -> bool {
+                    self.trunc().to_bits() == self.to_bits()
+                }
+            }
+        )+
+    };
+}
+
+impl_float!(f32, f64);

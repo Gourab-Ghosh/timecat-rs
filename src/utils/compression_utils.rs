@@ -19,23 +19,22 @@ impl Compress for PieceType {
 }
 
 impl Compress for Square {
-    type CompressedItem = u16;
+    type CompressedItem = u8;
 
     #[inline]
     fn compress(self) -> Self::CompressedItem {
-        self.to_index() as Self::CompressedItem
+        self as Self::CompressedItem
     }
 }
 
 impl Compress for Move {
     type CompressedItem = u16;
 
+    #[inline]
     fn compress(self) -> Self::CompressedItem {
-        let mut compressed_move = 0;
-        compressed_move ^= self.get_source().compress() << 6;
-        compressed_move ^= self.get_dest().compress();
-        compressed_move ^= (self.get_promotion().compress() as Self::CompressedItem) << 12;
-        compressed_move
+        ((self.get_source() as Self::CompressedItem) << 6)
+            ^ (self.get_dest() as Self::CompressedItem)
+            ^ ((self.get_promotion().compress() as Self::CompressedItem) << 12)
     }
 }
 

@@ -70,7 +70,7 @@ impl StringifyScore for Score {
             return mate_string.colorize(CHECKMATE_SCORE_STYLE).into();
         }
         let to_return = self as f64 / PAWN_VALUE as f64;
-        if to_return % 1.0 == 0.0 {
+        if to_return.is_integer() {
             format!("{}", to_return as i32).into()
         } else {
             format!("{:.2}", to_return).into()

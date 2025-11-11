@@ -21,7 +21,7 @@ pub fn move_to_polyglot_move_int(move_: Move) -> Result<u16> {
         Some(Queen) => 4,
         _ => return Err(TimecatError::PolyglotTableParseError),
     };
-    move_int = (move_int << 6) ^ move_.get_source().compress();
-    move_int = (move_int << 6) ^ move_.get_dest().compress();
+    move_int = (move_int << 6) ^ move_.get_source() as u16;
+    move_int = (move_int << 6) ^ move_.get_dest() as u16;
     Ok(move_int)
 }
