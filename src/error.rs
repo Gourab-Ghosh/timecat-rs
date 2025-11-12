@@ -114,6 +114,10 @@ pub enum TimecatError {
     BadNNUEFile,
     BadPolyglotFile,
     PolyglotTableParseError,
+    DecompressionFailed {
+        value: String,
+        type_name: String,
+    },
     CustomError {
         err_msg: String,
     },
@@ -246,6 +250,11 @@ impl fmt::Display for TimecatError {
             PolyglotTableParseError => write!(
                 f,
                 "The Polyglot Table cannot be parsed properly! Try again with a different Polyglot file!"
+            ),
+            DecompressionFailed { value, type_name } => write!(
+                f,
+                "Failed to decompress value {} into {:?}",
+                value, type_name
             ),
             CustomError { err_msg } => write!(f, "{err_msg}"),
         }

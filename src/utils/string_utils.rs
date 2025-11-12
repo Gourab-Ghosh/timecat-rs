@@ -137,7 +137,7 @@ impl StringifyMove for Move {
 impl StringifyMove for Option<Move> {
     fn uci<'a>(self) -> Cow<'a, str> {
         match self {
-            Some(m) => m.uci().into(),
+            Some(m) => m.uci(),
             None => "0000".into(),
         }
     }

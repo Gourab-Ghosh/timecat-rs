@@ -258,7 +258,7 @@ impl Board {
     pub fn push_san(&mut self, san: &str) -> Result<ValidOrNullMove> {
         // TODO: Generate test cases.
         let valid_or_null_move = self.parse_san(san)?;
-        self.push_unchecked(valid_or_null_move);
+        unsafe { self.push_unchecked(valid_or_null_move) };
         Ok(valid_or_null_move)
     }
 
@@ -399,7 +399,7 @@ impl Board {
 }
 
 impl BoardMethodOverload<Move> for Board {
-    fn push_unchecked(&mut self, move_: Move) {
+    unsafe fn push_unchecked(&mut self, move_: Move) {
         let position_copy = self.position.clone();
         self.position.make_move(move_);
         self.repetition_table.insert(self.get_hash());
@@ -413,7 +413,7 @@ impl BoardMethodOverload<Move> for Board {
                 board_fen: self.get_fen(),
             });
         }
-        self.push_unchecked(move_);
+        unsafe { self.push_unchecked(move_) };
         Ok(())
     }
 
@@ -442,7 +442,7 @@ impl BoardMethodOverload<Move> for Board {
 }
 
 impl BoardMethodOverload<ValidOrNullMove> for Board {
-    fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
+    unsafe fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
         let position_copy = self.position.clone();
         self.position.make_move(valid_or_null_move);
         self.repetition_table.insert(self.get_hash());
@@ -458,7 +458,7 @@ impl BoardMethodOverload<ValidOrNullMove> for Board {
                     fen: self.get_fen(),
                 });
             }
-            self.push_unchecked(valid_or_null_move);
+            unsafe { self.push_unchecked(valid_or_null_move) };
             Ok(())
         }
     }

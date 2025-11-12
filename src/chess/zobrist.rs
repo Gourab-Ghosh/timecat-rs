@@ -250,7 +250,7 @@ static ZOBRIST_EP: [u64; NUM_SQUARES] = {
     let mut array = [0; NUM_SQUARES];
     let mut square_index = 0;
     while square_index < NUM_SQUARES {
-        let square = Square::from_index(square_index);
+        let square = unsafe { Square::from_index(square_index) };
         array[square_index] = mini_zobrist_ep[square.get_file().to_index()];
         square_index += 1;
     }

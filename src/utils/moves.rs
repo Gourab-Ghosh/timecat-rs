@@ -10,7 +10,11 @@ pub struct Move {
 
 impl Move {
     #[inline]
-    pub const fn new_unchecked(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
+    pub const unsafe fn new_unchecked(
+        source: Square,
+        dest: Square,
+        promotion: Option<PieceType>,
+    ) -> Self {
         Self {
             source,
             dest,
@@ -20,7 +24,7 @@ impl Move {
 
     #[inline]
     pub const fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Result<Self> {
-        let move_ = Self::new_unchecked(source, dest, promotion);
+        let move_ = unsafe { Self::new_unchecked(source, dest, promotion) };
         if source.to_int() == dest.to_int() {
             return Err(TimecatError::SameSourceAndDestination { move_ });
         }
@@ -281,7 +285,11 @@ impl ValidOrNullMove {
     pub const NullMove: Self = Self(None);
 
     #[inline]
-    pub const fn new_unchecked(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
+    pub const unsafe fn new_unchecked(
+        source: Square,
+        dest: Square,
+        promotion: Option<PieceType>,
+    ) -> Self {
         Self(Some(Move::new_unchecked(source, dest, promotion)))
     }
 

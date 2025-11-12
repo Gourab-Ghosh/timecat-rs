@@ -35,6 +35,15 @@ pub enum PieceType {
 
 impl PieceType {
     #[inline]
+    pub const unsafe fn from_int(i: u8) -> Self {
+        std::mem::transmute(i)
+    }
+
+    #[inline]
+    pub const unsafe fn from_index(i: usize) -> Self {
+        Self::from_int(i as u8)
+    }
+
     pub const fn to_int(self) -> u8 {
         self as u8
     }

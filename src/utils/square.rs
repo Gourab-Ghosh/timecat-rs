@@ -145,39 +145,38 @@ impl Square {
     }
 
     #[inline]
-    pub const fn from_int(int: u8) -> Self {
-        // TODO: Maybe consider getting it from ALL_SQUARES? Is it faster?
+    pub const unsafe fn from_int(int: u8) -> Self {
         unsafe { std::mem::transmute(int) }
     }
 
     #[inline]
-    pub const fn from_index(index: usize) -> Self {
+    pub const unsafe fn from_index(index: usize) -> Self {
         Self::from_int(index as u8)
     }
 
     #[inline]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Self {
-        Self::from_int((rank.to_int() << 3) ^ file.to_int())
+        unsafe { Self::from_int((rank.to_int() << 3) ^ file.to_int()) }
     }
 
     #[inline]
     pub const fn get_rank(self) -> Rank {
-        Rank::from_index(self.to_index() >> 3)
+        unsafe { Rank::from_int(self.to_int() >> 3) }
     }
 
     #[inline]
-    pub fn get_rank_bb(self) -> BitBoard {
-        *get_item_unchecked!(BB_RANKS, self.to_index() >> 3)
+    pub const fn get_rank_bb(self) -> BitBoard {
+        self.get_rank().to_bitboard()
     }
 
     #[inline]
     pub const fn get_file(self) -> File {
-        File::from_index(self.to_index() & 7)
+        unsafe { File::from_int(self.to_int() & 7) }
     }
 
     #[inline]
-    pub fn get_file_bb(self) -> BitBoard {
-        *get_item_unchecked!(BB_FILES, self.to_index() & 7)
+    pub const fn get_file_bb(self) -> BitBoard {
+        self.get_file().to_bitboard()
     }
 
     #[inline]
@@ -285,24 +284,22 @@ impl Square {
     }
 
     #[inline]
-    pub fn to_bitboard(self) -> BitBoard {
-        *get_item_unchecked!(BB_SQUARES, self.to_index())
+    pub const fn to_bitboard(self) -> BitBoard {
+        BitBoard::new(1 << self.to_int())
     }
 
+    #[inline]
     pub fn distance(self, other: Square) -> u8 {
-        let (file1, rank1) = (self.get_file(), self.get_rank());
-        let (file2, rank2) = (other.get_file(), other.get_rank());
-        let file_distance = file1.to_int().abs_diff(file2.to_int());
-        let rank_distance = rank1.to_int().abs_diff(rank2.to_int());
-        file_distance.max(rank_distance)
+        self.get_file()
+            .to_int()
+            .abs_diff(other.get_file().to_int())
+            .max(self.get_rank().to_int().abs_diff(other.get_rank().to_int()))
     }
 
+    #[inline]
     pub const fn manhattan_distance(self, other: Square) -> u8 {
-        let (file1, rank1) = (self.get_file(), self.get_rank());
-        let (file2, rank2) = (other.get_file(), other.get_rank());
-        let file_distance = file1.to_int().abs_diff(file2.to_int());
-        let rank_distance = rank1.to_int().abs_diff(rank2.to_int());
-        file_distance + rank_distance
+        self.get_file().to_int().abs_diff(other.get_file().to_int())
+            + self.get_rank().to_int().abs_diff(other.get_rank().to_int())
     }
 
     pub fn knight_distance(self, other: Square) -> u8 {
@@ -335,18 +332,18 @@ impl Square {
     }
 
     #[inline]
-    pub fn vertical_mirror(self) -> Self {
-        *get_item_unchecked!(SQUARES_VERTICAL_MIRROR, self.to_index())
+    pub const fn vertical_mirror(self) -> Self {
+        unsafe { Self::from_int(self.to_int() ^ 7) }
     }
 
     #[inline]
-    pub fn horizontal_mirror(self) -> Self {
-        *get_item_unchecked!(SQUARES_HORIZONTAL_MIRROR, self.to_index())
+    pub const fn horizontal_mirror(self) -> Self {
+        unsafe { Self::from_int(self.to_int() ^ 0x38) }
     }
 
     #[inline]
-    pub fn rotate(self) -> Self {
-        *get_item_unchecked!(SQUARES_ROTATED, self.to_index())
+    pub const fn rotate(self) -> Self {
+        unsafe { Self::from_int(self.to_int() ^ 0x3f) }
     }
 
     /// Get a line (extending to infinity, which in chess is 8 squares), given two squares.
@@ -451,8 +448,8 @@ impl FromStr for Square {
             return Err(TimecatError::InvalidSquareString { s: s.to_string() });
         }
         Ok(Square::from_rank_and_file(
-            Rank::from_index(((ch[1] as usize) - ('1' as usize)) & 7),
-            File::from_index(((ch[0] as usize) - ('a' as usize)) & 7),
+            unsafe { Rank::from_index(((ch[1] as usize) - ('1' as usize)) & 7) },
+            unsafe { File::from_index(((ch[0] as usize) - ('a' as usize)) & 7) },
         ))
     }
 }
@@ -472,7 +469,7 @@ impl fmt::Display for Square {
 impl<'source> FromPyObject<'source> for Square {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(int) = ob.extract::<u8>() {
-            return Ok(Self::from_int(int));
+            return Ok(unsafe { Self::from_int(int) });
         }
         if let Ok(mut s) = ob.extract::<&str>() {
             s = s.trim();

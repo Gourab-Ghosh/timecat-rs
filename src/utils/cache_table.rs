@@ -71,8 +71,8 @@ impl CacheTableSize {
     }
 
     #[inline]
-    pub const fn is_zero(self) -> bool {
-        matches!(self, Self::ZERO)
+    pub fn is_zero(self) -> bool {
+        self == Self::ZERO
     }
 
     #[inline]

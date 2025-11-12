@@ -16,51 +16,23 @@ pub enum File {
 
 impl File {
     #[inline]
-    pub const fn from_int(i: u8) -> Self {
-        unsafe { std::mem::transmute(i) }
+    pub const unsafe fn from_int(i: u8) -> Self {
+        std::mem::transmute(i)
     }
 
     #[inline]
-    pub const fn from_index(i: usize) -> Self {
+    pub const unsafe fn from_index(i: usize) -> Self {
         Self::from_int(i as u8)
     }
 
     #[inline]
     pub fn left(self) -> Option<Self> {
-        *get_item_unchecked!(
-            const {
-                [
-                    None,
-                    Some(Self::A),
-                    Some(Self::B),
-                    Some(Self::C),
-                    Some(Self::D),
-                    Some(Self::E),
-                    Some(Self::F),
-                    Some(Self::G),
-                ]
-            },
-            self.to_index(),
-        )
+        (self != Self::A).then(|| unsafe { Self::from_int(self.to_int() - 1) })
     }
 
     #[inline]
     pub fn right(self) -> Option<Self> {
-        *get_item_unchecked!(
-            const {
-                [
-                    Some(Self::B),
-                    Some(Self::C),
-                    Some(Self::D),
-                    Some(Self::E),
-                    Some(Self::F),
-                    Some(Self::G),
-                    Some(Self::H),
-                    None,
-                ]
-            },
-            self.to_index(),
-        )
+        (self != Self::H).then(|| unsafe { Self::from_int(self.to_int() + 1) })
     }
 
     #[inline]
@@ -84,8 +56,8 @@ impl File {
     }
 
     #[inline]
-    pub fn to_bitboard(self) -> BitBoard {
-        *get_item_unchecked!(BB_FILES, self.to_index())
+    pub const fn to_bitboard(self) -> BitBoard {
+        BitBoard::new(0x0101_0101_0101_0101 << self.to_index())
     }
 
     #[inline]

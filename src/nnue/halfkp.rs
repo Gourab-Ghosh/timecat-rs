@@ -339,8 +339,10 @@ impl HalfKPModel {
         }
         let last_position_piece_masks = self.last_position.get_all_piece_masks().to_owned();
         let last_position_occupied_colors = [
-            self.last_position.occupied_color(Color::from_index(0)),
-            self.last_position.occupied_color(Color::from_index(1)),
+            self.last_position
+                .occupied_color(const { unsafe { Color::from_int(0) } }),
+            self.last_position
+                .occupied_color(const { unsafe { Color::from_int(1) } }),
         ];
         colors_to_update
             .into_iter()

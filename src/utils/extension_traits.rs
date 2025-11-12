@@ -11,7 +11,7 @@ pub trait Compress {
 }
 
 pub trait Decompress<T> {
-    fn decompress(self) -> T;
+    fn decompress(self) -> Result<T>;
 }
 
 #[cfg(feature = "colored")]
@@ -247,7 +247,7 @@ pub trait BoardPositionMethodOverload<T> {
 
 pub trait BoardMethodOverload<T> {
     // TODO: Avoid Code Repetition
-    fn push_unchecked(&mut self, _: T);
+    unsafe fn push_unchecked(&mut self, _: T);
     fn push(&mut self, _: T) -> Result<()>;
     fn gives_repetition(&self, _: T) -> bool;
     fn gives_threefold_repetition(&self, _: T) -> bool;
@@ -262,7 +262,7 @@ pub trait PolyglotBook {
 }
 
 pub trait SearcherMethodOverload<T> {
-    fn push_unchecked(&mut self, _: T);
+    unsafe fn push_unchecked(&mut self, _: T);
 }
 
 #[cfg(feature = "serde")]
@@ -274,6 +274,7 @@ pub trait SerdeHandler<'de> {
 }
 
 pub trait FloatExtensions {
+    #[allow(clippy::wrong_self_convention)]
     fn is_integer(self) -> bool;
 }
 

@@ -10,8 +10,18 @@ pub enum Color {
 
 impl Color {
     #[inline]
-    pub fn from_index(index: usize) -> Self {
-        *get_item_unchecked!(const { [Black, White] }, index)
+    pub const unsafe fn from_int(int: u8) -> Self {
+        std::mem::transmute(int)
+    }
+
+    #[inline]
+    pub const unsafe fn from_index(index: usize) -> Self {
+        Self::from_int(index as u8)
+    }
+
+    #[inline]
+    pub const fn to_int(self) -> u8 {
+        self as u8
     }
 
     #[inline]

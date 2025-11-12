@@ -134,8 +134,10 @@ impl ChessPosition {
 
     #[inline]
     pub fn get_king_square(&self, color: Color) -> Square {
-        self.get_colored_piece_mask(King, color)
-            .to_square_unchecked()
+        unsafe {
+            self.get_colored_piece_mask(King, color)
+                .to_square_unchecked()
+        }
     }
 
     #[inline]
@@ -284,10 +286,10 @@ impl ChessPosition {
         self._occupied ^= bb;
         if piece_type == Pawn {
             self._pawn_transposition_hash ^=
-                Zobrist::piece(piece_type, bb.to_square_unchecked(), color);
+                Zobrist::piece(piece_type, unsafe { bb.to_square_unchecked() }, color);
         } else {
             self._non_pawn_transposition_hash ^=
-                Zobrist::piece(piece_type, bb.to_square_unchecked(), color);
+                Zobrist::piece(piece_type, unsafe { bb.to_square_unchecked() }, color);
         }
         if piece_type != King {
             *get_item_unchecked_mut!(self._material_scores, color.to_index()) +=
@@ -346,7 +348,7 @@ impl ChessPosition {
         self.make_move_new(move_).status() == BoardStatus::Checkmate
     }
 
-    pub fn null_move_unchecked(&self) -> Self {
+    pub unsafe fn null_move_unchecked(&self) -> Self {
         let mut result = self.to_owned();
         result.flip_turn_unchecked();
         result._transposition_hash ^= Zobrist::color(Black) ^ Zobrist::color(White);
@@ -361,7 +363,7 @@ impl ChessPosition {
     #[inline]
     pub fn null_move(&self) -> Result<Self> {
         if self.get_checkers().is_empty() {
-            Ok(self.null_move_unchecked())
+            Ok(unsafe { self.null_move_unchecked() })
         } else {
             Err(TimecatError::NullMoveInCheck {
                 fen: self.get_fen(),
@@ -419,7 +421,7 @@ impl ChessPosition {
 
         // make sure my opponent is not currently in check (because that would be illegal)
         let mut board_copy = self.to_owned();
-        board_copy.flip_turn_unchecked();
+        unsafe { board_copy.flip_turn_unchecked() };
         board_copy.update_pin_and_checkers_info();
         if !board_copy.get_checkers().is_empty() {
             return false;
@@ -593,7 +595,7 @@ impl ChessPosition {
             while color_index < 2 {
                 let mut square_index = 0;
                 while square_index < 64 {
-                    let square = Square::from_index(square_index);
+                    let square = unsafe { Square::from_index(square_index) };
                     let file_index = square.get_file().to_index();
                     array[color_index][square_index] = BitBoard::new(
                         (BB_ADJACENT_FILES[file_index].into_inner()
@@ -739,7 +741,7 @@ impl ChessPosition {
     }
 
     #[inline]
-    fn set_turn_unchecked(&mut self, turn: Color) {
+    unsafe fn set_turn_unchecked(&mut self, turn: Color) {
         self._turn = turn;
     }
 
@@ -753,8 +755,8 @@ impl ChessPosition {
     }
 
     #[inline]
-    fn flip_turn_unchecked(&mut self) {
-        self._turn = !self._turn;
+    unsafe fn flip_turn_unchecked(&mut self) {
+        self.set_turn_unchecked(!self.turn());
     }
 
     /// Flips turn by applying Null Move.
@@ -969,7 +971,7 @@ impl ChessPosition {
                 }
                 symbol.colorize(&styles).into()
             } else {
-                symbol.into()
+                symbol
             }
         });
         board_string.push('\n');
@@ -1347,7 +1349,7 @@ impl BoardPositionMethodOverload<Move> for ChessPosition {
 
         let castles = moved == King && (move_bb & get_castle_moves()) == move_bb;
 
-        let ksq = opp_king.to_square_unchecked();
+        let ksq = unsafe { opp_king.to_square_unchecked() };
 
         if moved == Knight {
             result._checkers ^= ksq.get_knight_moves() & dest_bb;
@@ -1432,7 +1434,7 @@ impl BoardPositionMethodOverload<Move> for ChessPosition {
             }
         }
 
-        result.flip_turn_unchecked();
+        unsafe { result.flip_turn_unchecked() };
         result.update_transposition_hash();
 
         result
@@ -1480,7 +1482,7 @@ impl TryFrom<&ChessPositionBuilder> for ChessPosition {
             }
         }
 
-        position.set_turn_unchecked(position_builder.get_turn());
+        unsafe { position.set_turn_unchecked(position_builder.get_turn()) };
 
         if let Some(ep) = position_builder.get_en_passant() {
             position._turn = !position.turn();

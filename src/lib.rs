@@ -3,8 +3,10 @@
 #![allow(dead_code)]
 #![allow(clippy::macro_metavars_in_unsafe)]
 #![allow(clippy::result_large_err)]
+#![allow(unsafe_op_in_unsafe_fn)]
 #![expect(clippy::needless_doctest_main)]
 #![expect(clippy::too_many_arguments)]
+#![expect(clippy::missing_safety_doc)]
 // #![deny(missing_debug_implementations)]
 // #![warn(missing_docs)]
 

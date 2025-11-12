@@ -376,7 +376,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 continue;
             }
             let clock = Instant::now();
-            self.push_unchecked(move_);
+            unsafe { self.push_unchecked(move_) };
             if move_index == 0
                 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, controller.as_deref_mut())?
                     > alpha
@@ -550,7 +550,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 // let reduced_depth = depth - r - 1;
                 let r = 1920 + (depth as u32) * 2368;
                 let reduced_depth = ((depth as u32) - r / 4096) as Depth;
-                self.push_unchecked(ValidOrNullMove::NullMove);
+                unsafe { self.push_unchecked(ValidOrNullMove::NullMove) };
                 let score =
                     -self.alpha_beta(reduced_depth, -beta, -beta + 1, controller.as_deref_mut())?;
                 self.pop().unwrap();
@@ -596,7 +596,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 && move_index >= FULL_DEPTH_SEARCH_LMR
                 && depth >= REDUCTION_LIMIT_LMR
                 && not_an_interesting_position;
-            self.push_unchecked(move_);
+            unsafe { self.push_unchecked(move_) };
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
@@ -702,7 +702,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             if weight.is_negative() {
                 break;
             }
-            self.push_unchecked(move_);
+            unsafe { self.push_unchecked(move_) };
             let score = -self.quiescence(-beta, -alpha, controller.as_deref_mut())?;
             self.pop().unwrap();
             if score >= beta {
@@ -778,14 +778,14 @@ impl<P: PositionEvaluation> Searcher<P> {
 }
 
 impl<P: PositionEvaluation> SearcherMethodOverload<Move> for Searcher<P> {
-    fn push_unchecked(&mut self, move_: Move) {
+    unsafe fn push_unchecked(&mut self, move_: Move) {
         self.board.push_unchecked(move_);
         self.ply += 1;
     }
 }
 
 impl<P: PositionEvaluation> SearcherMethodOverload<ValidOrNullMove> for Searcher<P> {
-    fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
+    unsafe fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
         self.board.push_unchecked(valid_or_null_move);
         self.ply += 1;
     }

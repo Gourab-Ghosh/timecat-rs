@@ -56,47 +56,71 @@ impl Compress for ValidOrNullMove {
     }
 }
 
+impl Decompress<PieceType> for u8 {
+    #[inline]
+    fn decompress(self) -> Result<PieceType> {
+        if self >= NUM_PIECE_TYPES as u8 {
+            Err(TimecatError::DecompressionFailed {
+                value: self.to_string(),
+                type_name: std::any::type_name::<PieceType>().to_string(),
+            })
+        } else {
+            Ok(unsafe { PieceType::from_int(self) })
+        }
+    }
+}
+
 impl Decompress<Option<PieceType>> for u8 {
     #[inline]
-    fn decompress(self) -> Option<PieceType> {
+    fn decompress(self) -> Result<Option<PieceType>> {
         if self == 0 {
-            return None;
+            Ok(None)
+        } else {
+            Ok(Some(self.decompress()?))
         }
-        Some(*get_item_unchecked!(ALL_PIECE_TYPES, (self - 1) as usize))
     }
 }
 
-impl Decompress<Option<PieceType>> for u16 {
+impl Decompress<Square> for u8 {
     #[inline]
-    fn decompress(self) -> Option<PieceType> {
-        (self as u8).decompress()
+    fn decompress(self) -> Result<Square> {
+        if self > NUM_SQUARES as u8 {
+            Err(TimecatError::DecompressionFailed {
+                value: self.to_string(),
+                type_name: std::any::type_name::<Square>().to_string(),
+            })
+        } else {
+            Ok(unsafe { Square::from_int(self) })
+        }
     }
 }
 
-impl Decompress<Square> for u16 {
-    #[inline]
-    fn decompress(self) -> Square {
-        *get_item_unchecked!(ALL_SQUARES, self as usize)
+impl Decompress<Move> for u16 {
+    fn decompress(self) -> Result<Move> {
+        Ok(unsafe {
+            Move::new_unchecked(
+                (((self >> 6) & 0x3F) as u8).decompress()?,
+                ((self & 0x3F) as u8).decompress()?,
+                ((self >> 12) as u8).decompress()?,
+            )
+        })
     }
 }
 
 impl Decompress<Option<Move>> for u16 {
-    fn decompress(self) -> Option<Move> {
+    fn decompress(self) -> Result<Option<Move>> {
         if self == u16::MAX {
-            return None;
+            Ok(None)
+        } else {
+            Ok(Some(self.decompress()?))
         }
-        Some(Move::new_unchecked(
-            ((self >> 6) & 0x3F).decompress(),
-            (self & 0x3F).decompress(),
-            (self >> 12).decompress(),
-        ))
     }
 }
 
 impl Decompress<ValidOrNullMove> for u16 {
     #[inline]
-    fn decompress(self) -> ValidOrNullMove {
-        <Self as Decompress<Option<Move>>>::decompress(self).into()
+    fn decompress(self) -> Result<ValidOrNullMove> {
+        Ok(<Self as Decompress<Option<Move>>>::decompress(self)?.into())
     }
 }
 

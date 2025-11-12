@@ -231,8 +231,9 @@ impl FromStr for ChessPositionBuilder {
                     cur_file = File::A;
                 }
                 '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' => {
-                    cur_file =
-                        File::from_index((cur_file.to_index() + (x as usize) - ('0' as usize)) & 7);
+                    cur_file = unsafe {
+                        File::from_index((cur_file.to_index() + (x as usize) - ('0' as usize)) & 7)
+                    };
                 }
                 'r' => {
                     position_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
