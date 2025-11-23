@@ -24,9 +24,7 @@ impl<'de, T: Deserialize<'de>, const N: usize> Deserialize<'de> for MathVec<T, N
     where
         D: serde::Deserializer<'de>,
     {
-        Ok(SerdeWrapper::<[T; N]>::deserialize(deserializer)?
-            .into_inner()
-            .into())
+        serde_handler::deserialize::<'_, _, [T; N]>(deserializer).map(Self::from)
     }
 }
 

@@ -59,7 +59,7 @@ impl Compress for ValidOrNullMove {
 impl Decompress<PieceType> for u8 {
     #[inline]
     fn decompress(self) -> Result<PieceType> {
-        if self >= NUM_PIECE_TYPES as u8 {
+        if self >= NUM_PIECE_TYPES as Self {
             Err(TimecatError::DecompressionFailed {
                 value: self.to_string(),
                 type_name: std::any::type_name::<PieceType>().to_string(),
@@ -84,7 +84,7 @@ impl Decompress<Option<PieceType>> for u8 {
 impl Decompress<Square> for u8 {
     #[inline]
     fn decompress(self) -> Result<Square> {
-        if self > NUM_SQUARES as u8 {
+        if self > NUM_SQUARES as Self {
             Err(TimecatError::DecompressionFailed {
                 value: self.to_string(),
                 type_name: std::any::type_name::<Square>().to_string(),
@@ -109,7 +109,7 @@ impl Decompress<Move> for u16 {
 
 impl Decompress<Option<Move>> for u16 {
     fn decompress(self) -> Result<Option<Move>> {
-        if self == u16::MAX {
+        if self == Self::MAX {
             Ok(None)
         } else {
             Ok(Some(self.decompress()?))

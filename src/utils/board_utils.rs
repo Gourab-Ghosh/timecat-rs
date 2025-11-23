@@ -51,9 +51,12 @@ pub fn get_board_string<'a>(
             board_string.push(c);
         }
     }
-    debug_assert!(
-        squares_horizontal_mirror_iter.next().is_none(),
-        "Fewer '?'s in board skeleton than squares",
-    );
+    #[expect(clippy::debug_assert_with_mut_call)]
+    {
+        debug_assert!(
+            squares_horizontal_mirror_iter.next().is_none(),
+            "Fewer '?'s in board skeleton than squares",
+        );
+    }
     board_string
 }

@@ -58,10 +58,10 @@ impl<T: ToString> CustomColorize for T {
 impl StringifyScore for Score {
     fn stringify_score_console<'a>(self) -> Cow<'a, str> {
         if self == INFINITY {
-            return "INFINITY".into();
+            return Cow::Borrowed("INFINITY");
         }
         if self == -INFINITY {
-            return "-INFINITY".into();
+            return Cow::Borrowed("-INFINITY");
         }
         if is_checkmate(self) {
             let mut mate_string = String::from(if self.is_positive() { "M" } else { "-M" });
@@ -79,10 +79,10 @@ impl StringifyScore for Score {
 
     fn stringify_score_uci<'a>(self) -> Cow<'a, str> {
         if self == INFINITY {
-            return "inf".into();
+            return Cow::Borrowed("inf");
         }
         if self == -INFINITY {
-            return "-inf".into();
+            return Cow::Borrowed("-inf");
         }
         if is_checkmate(self) {
             let mut mate_string = String::from("mate ");
@@ -126,7 +126,7 @@ impl StringifyMove for Move {
     }
 
     fn algebraic<'a>(self, position: &ChessPosition, long: bool) -> Result<Cow<'a, str>> {
-        Ok(self.algebraic_and_new_position(position, long)?.0.into())
+        Ok(self.algebraic_and_new_position(position, long)?.0)
     }
 
     fn stringify_move<'a>(self, position: &ChessPosition) -> Result<Cow<'a, str>> {
@@ -136,23 +136,20 @@ impl StringifyMove for Move {
 
 impl StringifyMove for Option<Move> {
     fn uci<'a>(self) -> Cow<'a, str> {
-        match self {
-            Some(m) => m.uci(),
-            None => "0000".into(),
-        }
+        self.map_or(Cow::Borrowed("0000"), |m| m.uci())
     }
 
     fn algebraic<'a>(self, position: &ChessPosition, long: bool) -> Result<Cow<'a, str>> {
-        match self {
-            Some(valid_or_null_move) => valid_or_null_move.algebraic(position, long),
-            None => Ok("--".into()),
-        }
+        self.map_or(Ok(Cow::Borrowed("--")), |valid_or_null_move| {
+            valid_or_null_move.algebraic(position, long)
+        })
     }
 
     fn stringify_move<'a>(self, position: &ChessPosition) -> Result<Cow<'a, str>> {
-        match GLOBAL_TIMECAT_STATE.is_in_console_mode() {
-            true => self.algebraic(position, GLOBAL_TIMECAT_STATE.use_long_algebraic_notation()),
-            false => Ok(self.uci()),
+        if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
+            self.algebraic(position, GLOBAL_TIMECAT_STATE.use_long_algebraic_notation())
+        } else {
+            Ok(self.uci())
         }
     }
 }
@@ -168,7 +165,7 @@ impl Stringify for Duration {
         if GLOBAL_TIMECAT_STATE.is_in_uci_mode() {
             return self.as_millis().to_string().into();
         }
-        if self < &Duration::from_secs(1) {
+        if self < &Self::from_secs(1) {
             return format!("{} ms", self.as_millis()).into();
         }
         let precision = 3;
@@ -183,7 +180,7 @@ impl Stringify for Duration {
                 }
                 if secs >= 10.0_f64.powi(-(precision as i32)) {
                     string.push(' ');
-                    string += &Duration::from_secs_f64(secs).stringify();
+                    string += &Self::from_secs_f64(secs).stringify();
                 }
                 return string.into();
             }
@@ -217,10 +214,8 @@ implement_stringify!(Move, ValidOrNullMove, WeightedMove, Color, PieceType, Piec
 
 impl<T: Stringify> Stringify for Option<T> {
     fn stringify<'a>(&self) -> Cow<'a, str> {
-        match self {
-            Some(t) => t.stringify(),
-            None => STRINGIFY_NONE.into(),
-        }
+        self.as_ref()
+            .map_or(Cow::Borrowed(STRINGIFY_NONE), |t| t.stringify())
     }
 }
 

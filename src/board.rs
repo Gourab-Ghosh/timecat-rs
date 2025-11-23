@@ -12,20 +12,20 @@ pub enum GameResult {
 
 impl GameResult {
     pub fn is_win(&self) -> bool {
-        matches!(self, GameResult::Win(_))
+        matches!(self, Self::Win(_))
     }
 
     pub fn is_draw(&self) -> bool {
-        matches!(self, GameResult::Draw)
+        matches!(self, Self::Draw)
     }
 
     pub fn is_in_progress(&self) -> bool {
-        matches!(self, GameResult::InProgress)
+        matches!(self, Self::InProgress)
     }
 
     pub fn winner(&self) -> Option<Color> {
         match self {
-            GameResult::Win(color) => Some(*color),
+            Self::Win(color) => Some(*color),
             _ => None,
         }
     }
@@ -34,10 +34,10 @@ impl GameResult {
 impl fmt::Display for GameResult {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            GameResult::Win(Color::White) => write!(f, "1-0"),
-            GameResult::Win(Color::Black) => write!(f, "0-1"),
-            GameResult::Draw => write!(f, "1/2-1/2"),
-            GameResult::InProgress => write!(f, "*"),
+            Self::Win(Color::White) => write!(f, "1-0"),
+            Self::Win(Color::Black) => write!(f, "0-1"),
+            Self::Draw => write!(f, "1/2-1/2"),
+            Self::InProgress => write!(f, "*"),
         }
     }
 }
@@ -127,7 +127,9 @@ impl Board {
     #[inline]
     pub fn to_board_string(&self, use_unicode: bool, colored_board: bool) -> String {
         self.position.to_board_string(
-            self.stack.last().map_or(Default::default(), |(_, m)| *m),
+            self.stack
+                .last()
+                .map_or(ValidOrNullMove::NullMove, |(_, m)| *m),
             use_unicode,
             colored_board,
         )
@@ -136,7 +138,9 @@ impl Board {
     #[inline]
     pub fn to_unicode_string(&self, colored_board: bool) -> String {
         self.position.to_unicode_string(
-            self.stack.last().map_or(Default::default(), |(_, m)| *m),
+            self.stack
+                .last()
+                .map_or(ValidOrNullMove::NullMove, |(_, m)| *m),
             colored_board,
         )
     }
@@ -296,10 +300,10 @@ impl Board {
         &mut self,
         valid_or_null_move: ValidOrNullMove,
         long: bool,
-    ) -> Result<String> {
+    ) -> Result<Cow<'static, str>> {
         if valid_or_null_move.is_null() {
             self.push(valid_or_null_move)?;
-            return Ok("--".to_string());
+            return Ok(Cow::Borrowed("--"));
         }
         let san = valid_or_null_move.algebraic_without_suffix(self.get_position(), long)?;
 
@@ -318,20 +322,25 @@ impl Board {
     }
 
     #[inline]
-    pub fn san_and_push(&mut self, valid_or_null_move: ValidOrNullMove) -> Result<String> {
+    pub fn san_and_push(
+        &mut self,
+        valid_or_null_move: ValidOrNullMove,
+    ) -> Result<Cow<'static, str>> {
         self.algebraic_and_push(valid_or_null_move, false)
     }
 
     #[inline]
-    pub fn lan_and_push(&mut self, valid_or_null_move: ValidOrNullMove) -> Result<String> {
+    pub fn lan_and_push(
+        &mut self,
+        valid_or_null_move: ValidOrNullMove,
+    ) -> Result<Cow<'static, str>> {
         self.algebraic_and_push(valid_or_null_move, true)
     }
 
     pub fn variation_san(
-        board: &Board,
+        board: &mut Self,
         variation: impl Iterator<Item = ValidOrNullMove>,
     ) -> Result<String> {
-        let mut board = board.clone();
         let mut variation_san = String::new();
         for valid_or_null_move in variation {
             if board.turn() == White {
@@ -360,6 +369,13 @@ impl Board {
     }
 
     #[inline]
+    pub fn get_starting_position(&self) -> &ChessPosition {
+        self.stack
+            .first()
+            .map_or_else(|| self.get_position(), |(position, _)| position)
+    }
+
+    #[inline]
     pub fn get_starting_board_fen(&self) -> String {
         self.stack
             .first()
@@ -368,7 +384,8 @@ impl Board {
 
     pub fn get_pgn(&self) -> Result<String> {
         let mut pgn = String::new();
-        let starting_fen = &self.get_starting_board_fen();
+        let starting_position = self.get_starting_position();
+        let starting_fen = self.get_starting_position().get_fen();
         if starting_fen != STARTING_POSITION_FEN {
             writeln_unchecked!(pgn, "[FEN \"{}\"]", starting_fen);
         }
@@ -377,7 +394,7 @@ impl Board {
             &mut pgn,
             "\n{}",
             Self::variation_san(
-                &Self::from_fen(starting_fen).unwrap(),
+                &mut starting_position.into(),
                 self.stack.iter().map(|(_, optional_m)| *optional_m),
             )?
         );
@@ -539,7 +556,7 @@ impl Deref for Board {
 impl<'source> FromPyObject<'source> for Board {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(position) = ob.extract::<ChessPosition>() {
-            let mut board = Board::from(position);
+            let mut board = Self::from(position);
             if let (Ok(moves_py_object), Ok(states_py_object)) =
                 (ob.getattr("move_stack"), ob.getattr("_stack"))
             {

@@ -12,7 +12,7 @@ pub fn polyglot_move_int_to_move(move_int: u16) -> Result<Move> {
 }
 
 #[inline]
-pub fn move_to_polyglot_move_int(move_: Move) -> Result<u16> {
+pub const fn move_to_polyglot_move_int(move_: Move) -> Result<u16> {
     let mut move_int = match move_.get_promotion() {
         None => 0,
         Some(Knight) => 1,

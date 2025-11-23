@@ -62,7 +62,7 @@ impl Move {
                 return Ok(move_);
             }
         }
-        Err(TimecatError::InvalidSanMoveString { s: san.to_string() })
+        Err(TimecatError::InvalidSanMoveString { s: san })
     }
 
     pub fn from_lan(position: &ChessPosition, lan: &str) -> Result<Self> {
@@ -73,19 +73,23 @@ impl Move {
                 return Ok(move_);
             }
         }
-        Err(TimecatError::InvalidLanMoveString { s: lan.to_string() })
+        Err(TimecatError::InvalidLanMoveString { s: lan })
     }
 
-    pub fn algebraic_without_suffix(self, position: &ChessPosition, long: bool) -> Result<String> {
+    pub fn algebraic_without_suffix(
+        self,
+        position: &ChessPosition,
+        long: bool,
+    ) -> Result<Cow<'static, str>> {
         let source = self.get_source();
         let dest = self.get_dest();
 
         // Castling.
         if position.is_castling(self) {
             return if dest.get_file() < source.get_file() {
-                Ok("O-O-O".to_string())
+                Ok(Cow::Borrowed("O-O-O"))
             } else {
-                Ok("O-O".to_string())
+                Ok(Cow::Borrowed("O-O"))
             };
         }
 
@@ -163,14 +167,14 @@ impl Move {
             write_unchecked!(san, "={}", promotion.to_colored_piece_str(White));
         }
 
-        Ok(san)
+        Ok(san.into())
     }
 
     pub fn algebraic_and_new_position(
         self,
         position: &ChessPosition,
         long: bool,
-    ) -> Result<(String, ChessPosition)> {
+    ) -> Result<(Cow<'static, str>, ChessPosition)> {
         let san = self.algebraic_without_suffix(position, long)?;
 
         // Look ahead for check or checkmate.
@@ -332,7 +336,7 @@ impl ValidOrNullMove {
         // TODO: Make the logic better
         let san = san.trim();
         if san == "--" || san == "0000" {
-            return Ok(ValidOrNullMove::NullMove);
+            return Ok(Self::NullMove);
         }
         Ok(Move::from_san(position, san)?.into())
     }
@@ -341,15 +345,20 @@ impl ValidOrNullMove {
         // TODO: Make the logic better
         let lan = lan.trim();
         if lan == "--" || lan == "0000" {
-            return Ok(ValidOrNullMove::NullMove);
+            return Ok(Self::NullMove);
         }
         Ok(Move::from_lan(position, lan)?.into())
     }
 
     #[inline]
-    pub fn algebraic_without_suffix(self, position: &ChessPosition, long: bool) -> Result<String> {
-        self.map(|move_| move_.algebraic_without_suffix(position, long))
-            .unwrap_or(Ok("--".to_string()))
+    pub fn algebraic_without_suffix(
+        self,
+        position: &ChessPosition,
+        long: bool,
+    ) -> Result<Cow<'static, str>> {
+        self.map_or(Ok(Cow::Borrowed("--")), |move_| {
+            move_.algebraic_without_suffix(position, long)
+        })
     }
 
     #[inline]
@@ -357,9 +366,11 @@ impl ValidOrNullMove {
         self,
         position: &ChessPosition,
         long: bool,
-    ) -> Result<(String, ChessPosition)> {
-        self.map(|move_| move_.algebraic_and_new_position(position, long))
-            .unwrap_or(Ok(("--".to_string(), position.null_move()?)))
+    ) -> Result<(Cow<'static, str>, ChessPosition)> {
+        self.map_or_else(
+            || Ok((Cow::Borrowed("--"), position.null_move()?)),
+            |move_| move_.algebraic_and_new_position(position, long),
+        )
     }
 }
 

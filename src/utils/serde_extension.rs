@@ -47,7 +47,7 @@ impl<T: BinRead<Args = ()>> BinRead for SerdeWrapper<T> {
         options: &binread::ReadOptions,
         _: Self::Args,
     ) -> BinResult<Self> {
-        Ok(SerdeWrapper(T::read_options(reader, options, ())?))
+        Ok(Self(T::read_options(reader, options, ())?))
     }
 }
 
@@ -69,38 +69,49 @@ mod serde_implementations {
         where
             D: Deserializer<'de>,
         {
-            struct ArrayVisitor<T, const N: usize> {
-                marker: PhantomData<T>,
+            Ok(Self(<[T; N]>::deserialize(deserializer)?))
+        }
+    }
+
+    struct ArrayVisitor<T, const N: usize> {
+        marker: PhantomData<T>,
+    }
+
+    impl<'de, T, const N: usize> serde::de::Visitor<'de> for ArrayVisitor<T, N>
+    where
+        T: Deserialize<'de>,
+    {
+        type Value = [T; N];
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str(&format!("an array of {} elements", N))
+        }
+
+        fn visit_seq<V>(self, mut seq: V) -> std::result::Result<Self::Value, V::Error>
+        where
+            V: serde::de::SeqAccess<'de>,
+        {
+            let mut array: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
+            for (i, entry) in array.iter_mut().enumerate() {
+                *entry = MaybeUninit::new(
+                    seq.next_element()?
+                        .ok_or_else(|| serde::de::Error::invalid_length(i, &self))?,
+                );
             }
+            Ok(unsafe { std::ptr::read(&array as *const _ as *const [T; N]) })
+        }
+    }
 
-            impl<'de, T, const N: usize> serde::de::Visitor<'de> for ArrayVisitor<T, N>
-            where
-                T: Deserialize<'de>,
-            {
-                type Value = SerdeWrapper<[T; N]>;
+    impl<T: Serialize, const N: usize> SerdeSerialize for [T; N] {
+        fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+            self.as_slice().serialize(serializer)
+        }
+    }
 
-                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                    formatter.write_str(&format!("an array of {} elements", N))
-                }
-
-                fn visit_seq<V>(self, mut seq: V) -> std::result::Result<Self::Value, V::Error>
-                where
-                    V: serde::de::SeqAccess<'de>,
-                {
-                    let mut array: [MaybeUninit<T>; N] =
-                        unsafe { MaybeUninit::uninit().assume_init() };
-                    for (i, entry) in array.iter_mut().enumerate() {
-                        *entry = MaybeUninit::new(
-                            seq.next_element()?
-                                .ok_or_else(|| serde::de::Error::invalid_length(i, &self))?,
-                        );
-                    }
-                    Ok(SerdeWrapper(unsafe {
-                        std::ptr::read(&array as *const _ as *const [T; N])
-                    }))
-                }
-            }
-
+    impl<'de, T: Deserialize<'de>, const N: usize> SerdeDeserialize<'de> for [T; N] {
+        fn deserialize<D: Deserializer<'de>>(
+            deserializer: D,
+        ) -> std::result::Result<Self, D::Error> {
             deserializer.deserialize_tuple(
                 N,
                 ArrayVisitor {
@@ -109,62 +120,36 @@ mod serde_implementations {
             )
         }
     }
-}
 
-#[cfg(feature = "serde")]
-struct ArrayVisitor<T, const N: usize> {
-    marker: PhantomData<T>,
-}
-
-#[cfg(feature = "serde")]
-impl<'de, T, const N: usize> serde::de::Visitor<'de> for ArrayVisitor<T, N>
-where
-    T: Deserialize<'de>,
-{
-    type Value = [T; N];
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str(&format!("an array of {} elements", N))
-    }
-
-    fn visit_seq<V>(self, mut seq: V) -> std::result::Result<Self::Value, V::Error>
-    where
-        V: serde::de::SeqAccess<'de>,
-    {
-        let mut array: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
-        for (i, entry) in array.iter_mut().enumerate() {
-            *entry = MaybeUninit::new(
-                seq.next_element()?
-                    .ok_or_else(|| serde::de::Error::invalid_length(i, &self))?,
-            );
+    impl<T: Serialize, const N: usize> SerdeSerialize for Box<[T; N]> {
+        fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+            self.as_ref().serialize(serializer)
         }
-        Ok(unsafe { std::ptr::read(&array as *const _ as *const [T; N]) })
+    }
+
+    impl<'de, T: Deserialize<'de>, const N: usize> SerdeDeserialize<'de> for Box<[T; N]> {
+        fn deserialize<D: Deserializer<'de>>(
+            deserializer: D,
+        ) -> std::result::Result<Self, D::Error> {
+            <[T; N]>::deserialize(deserializer).map(Self::new)
+        }
     }
 }
 
 #[cfg(feature = "serde")]
-impl<'de, T: Serialize + Deserialize<'de>, const N: usize> SerdeHandler<'de> for [T; N] {
-    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
-        self.as_slice().serialize(serializer)
+pub mod serde_handler {
+    use super::*;
+
+    pub fn serialize<S: Serializer>(
+        obj: &impl SerdeSerialize,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error> {
+        obj.serialize(serializer)
     }
 
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
-        deserializer.deserialize_tuple(
-            N,
-            ArrayVisitor {
-                marker: PhantomData,
-            },
-        )
+    pub fn deserialize<'de, D: Deserializer<'de>, T: SerdeDeserialize<'de>>(
+        deserializer: D,
+    ) -> std::result::Result<T, D::Error> {
+        T::deserialize(deserializer)
     }
 }
-
-// #[cfg(feature = "serde")]
-// impl<'de, T: Serialize + Deserialize<'de>, const N: usize> SerdeHandler<'de> for Box<[T; N]> {
-//     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
-//         self.as_ref().serialize(serializer)
-//     }
-
-//     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
-//         <[T; N]>::deserialize(deserializer).map(Box::new)
-//     }
-// }

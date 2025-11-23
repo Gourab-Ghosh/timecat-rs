@@ -613,11 +613,10 @@ impl SearchInfo {
         }
         let warning_message = format!(
             "info string resetting alpha to -INFINITY and beta to INFINITY at depth {} having alpha {}, beta {} and score {} with time {}",
-            if let Some(current_depth) = self.current_depth {
-                current_depth.to_string()
-            } else {
-                STRINGIFY_NONE.to_string()
-            },
+            self.current_depth
+                .map_or(Cow::Borrowed(STRINGIFY_NONE), |current_depth| current_depth
+                    .to_string()
+                    .into()),
             alpha.stringify(),
             beta.stringify(),
             if GLOBAL_TIMECAT_STATE.is_in_console_mode() {

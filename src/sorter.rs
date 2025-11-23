@@ -83,9 +83,9 @@ impl FromIterator<WeightedMove> for WeightedMoveListSorter {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct MoveSorter {
-    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
+    #[cfg_attr(feature = "serde", serde(with = "serde_handler"))]
     killer_moves: [SerdeWrapper<[Option<Move>; NUM_KILLER_MOVES]>; MAX_PLY],
-    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
+    #[cfg_attr(feature = "serde", serde(with = "serde_handler"))]
     history_move_scores: [SerdeWrapper<[MoveWeight; 64]>; 12],
     follow_pv: bool,
     score_pv: bool,
@@ -106,6 +106,7 @@ impl MoveSorter {
     }
 
     pub fn update_killer_moves(&mut self, killer_move: Move, ply: Ply) {
+        // This is already optimized because arr.len() is expected to be <= 5
         let arr = get_item_unchecked_mut!(self.killer_moves, ply);
         arr.rotate_right(1);
         *get_item_unchecked_mut!(arr, 0) = Some(killer_move);

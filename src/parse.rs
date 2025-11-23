@@ -213,15 +213,21 @@ impl GoAndPerft {
         let position_count = response.get_num_nodes_searched();
         let nps = format!(
             "{} Nodes/sec",
-            position_count.map_or(STRINGIFY_NONE.to_string(), |position_count| {
-                ((position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()).to_string()
-            })
+            position_count.map_or_else(
+                || Cow::from(STRINGIFY_NONE),
+                |position_count| {
+                    ((position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos())
+                        .to_string()
+                        .into()
+                }
+            )
         );
         println_info(
             "Position Count",
-            position_count.map_or(STRINGIFY_NONE.to_string(), |position_count| {
-                position_count.to_string()
-            }),
+            position_count.map_or_else(
+                || Cow::from(STRINGIFY_NONE),
+                |position_count| position_count.to_string().into(),
+            ),
         );
         println_info("Speed", nps);
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {

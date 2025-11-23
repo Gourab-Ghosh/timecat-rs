@@ -1,14 +1,21 @@
 #![doc = include_str!("../README.md")]
+#![warn(clippy::all)]
+#![warn(clippy::nursery)]
+// #![warn(clippy::cargo)]
+#![warn(clippy::style)]
+#![warn(clippy::complexity)]
+#![warn(clippy::perf)]
+#![warn(clippy::correctness)]
+// #![warn(missing_docs)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
-#![allow(clippy::macro_metavars_in_unsafe)]
-#![allow(clippy::result_large_err)]
 #![allow(unsafe_op_in_unsafe_fn)]
+#![allow(clippy::macro_metavars_in_unsafe)]
+#![allow(clippy::missing_const_for_fn)]
 #![expect(clippy::needless_doctest_main)]
 #![expect(clippy::too_many_arguments)]
 #![expect(clippy::missing_safety_doc)]
 // #![deny(missing_debug_implementations)]
-// #![warn(missing_docs)]
 
 pub mod board;
 pub mod chess;
@@ -20,6 +27,7 @@ pub mod evaluate;
 pub mod nnue;
 pub mod parse;
 pub mod polyglot;
+pub mod pv_table;
 pub mod runner;
 pub mod search;
 pub mod search_controller;
@@ -97,6 +105,7 @@ pub use nnue::*;
 pub use parse::*;
 pub use paste::paste;
 pub use polyglot::*;
+pub use pv_table::*;
 #[cfg(feature = "pyo3")]
 pub use pyo3::prelude::*;
 pub use runner::*;

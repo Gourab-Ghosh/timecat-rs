@@ -35,7 +35,7 @@ pub fn get_pv_as_algebraic(position: &ChessPosition, pv: &[Move], long: bool) ->
             position = new_position;
             san
         } else {
-            move_.uci().colorize(ERROR_MESSAGE_STYLE)
+            move_.uci().colorize(ERROR_MESSAGE_STYLE).into()
         };
         pv_string.push(' ');
     }

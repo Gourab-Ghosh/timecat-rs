@@ -32,7 +32,7 @@ macro_rules! generate_shift_functions {
 
 impl BitBoard {
     pub const EMPTY: Self = Self(0);
-    pub const ALL: Self = BitBoard::new(0xFFFFFFFFFFFFFFFF);
+    pub const ALL: Self = Self::new(0xFFFFFFFFFFFFFFFF);
 
     #[inline]
     pub const fn new(bb: u64) -> Self {
@@ -166,21 +166,34 @@ impl BitBoard {
     }
 
     #[inline]
-    pub const fn shift_forward(self, color: Color) -> Self {
-        match color {
-            White => self.shift_up(),
-            Black => self.shift_down(),
+    pub const fn shift_up_n_times(self, n: u8) -> Self {
+        if n > 7 {
+            Self::EMPTY
+        } else {
+            Self::new(self.0 << (n << 3))
         }
     }
 
     #[inline]
+    pub const fn shift_down_n_times(self, n: u8) -> Self {
+        if n > 7 {
+            Self::EMPTY
+        } else {
+            Self::new(self.0 >> (n << 3))
+        }
+    }
+
+    generate_shift_functions!(shift_left_n_times, >>, BB_FILE_H);
+    generate_shift_functions!(shift_right_n_times, <<, BB_FILE_A);
+
+    #[inline]
     pub const fn shift_up(self) -> Self {
-        Self::new(self.0 << 8)
+        self.shift_up_n_times(1)
     }
 
     #[inline]
     pub const fn shift_down(self) -> Self {
-        Self::new(self.0 >> 8)
+        self.shift_down_n_times(1)
     }
 
     #[inline]
@@ -194,37 +207,34 @@ impl BitBoard {
     }
 
     #[inline]
-    pub const fn shift_up_n_times(self, n: u8) -> Self {
-        if n > 7 {
-            BitBoard::EMPTY
-        } else {
-            Self::new(self.0 << (n << 3))
+    pub const fn shift_forward_n_times(self, color: Color, n: u8) -> Self {
+        match color {
+            White => self.shift_up_n_times(n),
+            Black => self.shift_down_n_times(n),
         }
     }
 
     #[inline]
-    pub const fn shift_down_n_times(self, n: u8) -> Self {
-        if n > 7 {
-            BitBoard::EMPTY
-        } else {
-            Self::new(self.0 >> (n << 3))
+    pub const fn shift_backward_n_times(self, color: Color, n: u8) -> Self {
+        match color {
+            White => self.shift_down_n_times(n),
+            Black => self.shift_up_n_times(n),
         }
     }
 
-    generate_shift_functions!(shift_left_n_times, >>, BB_FILE_H);
-    generate_shift_functions!(shift_right_n_times, <<, BB_FILE_A);
+    #[inline]
+    pub const fn shift_forward(self, color: Color) -> Self {
+        self.shift_forward_n_times(color, 1)
+    }
 
     #[inline]
     pub const fn shift_backward(self, color: Color) -> Self {
-        match color {
-            White => self.shift_down(),
-            Black => self.shift_up(),
-        }
+        self.shift_backward_n_times(color, 1)
     }
 
     #[inline]
-    pub fn contains(self, square: Square) -> bool {
-        !(self & square.to_bitboard()).is_empty()
+    pub const fn contains(self, square: Square) -> bool {
+        !Self::new(self.0 & square.to_bitboard().0).is_empty()
     }
 
     #[inline]
@@ -418,10 +428,10 @@ impl Not for &BitBoard {
 }
 
 impl Not for BitBoard {
-    type Output = BitBoard;
+    type Output = Self;
 
     #[inline]
-    fn not(self) -> BitBoard {
+    fn not(self) -> Self {
         !&self
     }
 }
@@ -445,7 +455,7 @@ impl fmt::Display for BitBoard {
             get_board_string(true, |square| if self.contains(square) {
                 occupied_symbol.as_str().into()
             } else {
-                " ".into()
+                Cow::Borrowed(" ")
             })
         )
     }

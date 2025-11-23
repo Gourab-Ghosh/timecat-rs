@@ -37,7 +37,7 @@ mod model_update_test {
                         board.get_fen(),
                         $fen,
                         Board::variation_san(
-                            &Board::from_fen($fen).unwrap(),
+                            &mut Board::from_fen($fen).unwrap(),
                             variation.into_iter()
                         )
                         .unwrap()

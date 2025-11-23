@@ -109,7 +109,7 @@ impl<T: ChessEngine> UCIOption<T> {
         values: SpinValue<U>,
         function: fn(&mut T, Spin) -> Result<()>,
     ) -> Self {
-        UCIOption::new(
+        Self::new(
             name,
             UCIOptionType::Spin {
                 default: values.get_default().into_spin(),
@@ -121,15 +121,15 @@ impl<T: ChessEngine> UCIOption<T> {
     }
 
     fn new_check(name: &str, default: bool, function: fn(&mut T, bool) -> Result<()>) -> Self {
-        UCIOption::new(name, UCIOptionType::Check { default, function })
+        Self::new(name, UCIOptionType::Check { default, function })
     }
 
     fn new_button(name: &str, function: fn(&mut T) -> Result<()>) -> Self {
-        UCIOption::new(name, UCIOptionType::Button { function })
+        Self::new(name, UCIOptionType::Button { function })
     }
 
     fn new_string(name: &str, default: String, function: fn(&mut T, &str) -> Result<()>) -> Self {
-        UCIOption::new(name, UCIOptionType::String { default, function })
+        Self::new(name, UCIOptionType::String { default, function })
     }
 
     fn set_option(&self, engine: &mut T, value_string: String) -> Result<()> {

@@ -104,7 +104,7 @@ pub fn get_queen_moves(square: Square, blockers: BitBoard) -> BitBoard {
 
 /// Get the legal destination castle squares for both players
 #[inline]
-pub fn get_castle_moves() -> BitBoard {
+pub const fn get_castle_moves() -> BitBoard {
     const { BitBoard::new(0x5400000000000054) }
 }
 
@@ -180,59 +180,59 @@ impl Square {
     }
 
     #[inline]
-    pub fn up(self) -> Option<Square> {
-        Some(Square::from_rank_and_file(
+    pub fn up(self) -> Option<Self> {
+        Some(Self::from_rank_and_file(
             self.get_rank().up()?,
             self.get_file(),
         ))
     }
 
     #[inline]
-    pub fn down(self) -> Option<Square> {
-        Some(Square::from_rank_and_file(
+    pub fn down(self) -> Option<Self> {
+        Some(Self::from_rank_and_file(
             self.get_rank().down()?,
             self.get_file(),
         ))
     }
 
     #[inline]
-    pub fn left(self) -> Option<Square> {
-        Some(Square::from_rank_and_file(
+    pub fn left(self) -> Option<Self> {
+        Some(Self::from_rank_and_file(
             self.get_rank(),
             self.get_file().left()?,
         ))
     }
 
     #[inline]
-    pub fn right(self) -> Option<Square> {
-        Some(Square::from_rank_and_file(
+    pub fn right(self) -> Option<Self> {
+        Some(Self::from_rank_and_file(
             self.get_rank(),
             self.get_file().right()?,
         ))
     }
 
     #[inline]
-    pub fn up_left(self) -> Option<Square> {
+    pub fn up_left(self) -> Option<Self> {
         self.up()?.left()
     }
 
     #[inline]
-    pub fn up_right(self) -> Option<Square> {
+    pub fn up_right(self) -> Option<Self> {
         self.up()?.right()
     }
 
     #[inline]
-    pub fn down_left(self) -> Option<Square> {
+    pub fn down_left(self) -> Option<Self> {
         self.down()?.left()
     }
 
     #[inline]
-    pub fn down_right(self) -> Option<Square> {
+    pub fn down_right(self) -> Option<Self> {
         self.down()?.right()
     }
 
     #[inline]
-    pub fn forward(self, color: Color) -> Option<Square> {
+    pub fn forward(self, color: Color) -> Option<Self> {
         match color {
             White => self.up(),
             Black => self.down(),
@@ -240,7 +240,7 @@ impl Square {
     }
 
     #[inline]
-    pub fn backward(self, color: Color) -> Option<Square> {
+    pub fn backward(self, color: Color) -> Option<Self> {
         match color {
             White => self.down(),
             Black => self.up(),
@@ -248,27 +248,27 @@ impl Square {
     }
 
     #[inline]
-    pub fn wrapping_up(self) -> Square {
-        Square::from_rank_and_file(self.get_rank().wrapping_up(), self.get_file())
+    pub fn wrapping_up(self) -> Self {
+        Self::from_rank_and_file(self.get_rank().wrapping_up(), self.get_file())
     }
 
     #[inline]
-    pub fn wrapping_down(self) -> Square {
-        Square::from_rank_and_file(self.get_rank().wrapping_down(), self.get_file())
+    pub fn wrapping_down(self) -> Self {
+        Self::from_rank_and_file(self.get_rank().wrapping_down(), self.get_file())
     }
 
     #[inline]
-    pub fn wrapping_left(self) -> Square {
-        Square::from_rank_and_file(self.get_rank(), self.get_file().wrapping_left())
+    pub fn wrapping_left(self) -> Self {
+        Self::from_rank_and_file(self.get_rank(), self.get_file().wrapping_left())
     }
 
     #[inline]
-    pub fn wrapping_right(self) -> Square {
-        Square::from_rank_and_file(self.get_rank(), self.get_file().wrapping_right())
+    pub fn wrapping_right(self) -> Self {
+        Self::from_rank_and_file(self.get_rank(), self.get_file().wrapping_right())
     }
 
     #[inline]
-    pub fn wrapping_forward(self, color: Color) -> Square {
+    pub fn wrapping_forward(self, color: Color) -> Self {
         match color {
             White => self.wrapping_up(),
             Black => self.wrapping_down(),
@@ -276,7 +276,7 @@ impl Square {
     }
 
     #[inline]
-    pub fn wrapping_backward(self, color: Color) -> Square {
+    pub fn wrapping_backward(self, color: Color) -> Self {
         match color {
             White => self.wrapping_down(),
             Black => self.wrapping_up(),
@@ -289,7 +289,7 @@ impl Square {
     }
 
     #[inline]
-    pub fn distance(self, other: Square) -> u8 {
+    pub fn distance(self, other: Self) -> u8 {
         self.get_file()
             .to_int()
             .abs_diff(other.get_file().to_int())
@@ -297,12 +297,12 @@ impl Square {
     }
 
     #[inline]
-    pub const fn manhattan_distance(self, other: Square) -> u8 {
+    pub const fn manhattan_distance(self, other: Self) -> u8 {
         self.get_file().to_int().abs_diff(other.get_file().to_int())
             + self.get_rank().to_int().abs_diff(other.get_rank().to_int())
     }
 
-    pub fn knight_distance(self, other: Square) -> u8 {
+    pub fn knight_distance(self, other: Self) -> u8 {
         let dx = self.get_file().to_int().abs_diff(other.get_file().to_int());
         let dy = self.get_rank().to_int().abs_diff(other.get_rank().to_int());
 
@@ -349,13 +349,13 @@ impl Square {
     /// Get a line (extending to infinity, which in chess is 8 squares), given two squares.
     /// This line does extend past the squares.
     #[inline]
-    pub fn line(self, other: Square) -> BitBoard {
+    pub fn line(self, other: Self) -> BitBoard {
         *get_item_unchecked!(LINE, self.to_index(), other.to_index())
     }
 
     /// Get a line between these two squares, not including the squares themselves.
     #[inline]
-    pub fn between(self, other: Square) -> BitBoard {
+    pub fn between(self, other: Self) -> BitBoard {
         *get_item_unchecked!(BETWEEN, self.to_index(), other.to_index())
     }
 
@@ -447,7 +447,7 @@ impl FromStr for Square {
         if !(('a'..='h').contains(&ch[0]) && ('1'..='8').contains(&ch[1])) {
             return Err(TimecatError::InvalidSquareString { s: s.to_string() });
         }
-        Ok(Square::from_rank_and_file(
+        Ok(Self::from_rank_and_file(
             unsafe { Rank::from_index(((ch[1] as usize) - ('1' as usize)) & 7) },
             unsafe { File::from_index(((ch[0] as usize) - ('a' as usize)) & 7) },
         ))

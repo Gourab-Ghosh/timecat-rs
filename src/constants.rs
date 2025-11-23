@@ -248,8 +248,6 @@ pub mod engine {
         [101, 201, 301, 401, 501, 601],
         [100, 200, 300, 400, 500, 600],
     ];
-
-    pub static LMR_TABLE: [[Depth; 64]; 64] = [[0; 64]; 64];
 }
 
 pub mod binary {

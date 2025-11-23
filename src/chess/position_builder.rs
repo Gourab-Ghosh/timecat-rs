@@ -3,7 +3,7 @@ use super::*;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct ChessPositionBuilder {
-    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
+    #[cfg_attr(feature = "serde", serde(with = "serde_handler"))]
     pieces: [Option<Piece>; 64],
     turn: Color,
     castle_rights: [CastleRights; 2],
@@ -33,8 +33,8 @@ impl ChessPositionBuilder {
         ep_file: Option<File>,
         halfmove_clock: u8,
         fullmove_number: u16,
-    ) -> ChessPositionBuilder {
-        let mut result = ChessPositionBuilder {
+    ) -> Self {
+        let mut result = Self {
             pieces: [None; 64],
             turn,
             castle_rights: std::array::from_fn(|index| {
@@ -197,8 +197,8 @@ impl fmt::Display for ChessPositionBuilder {
 }
 
 impl Default for ChessPositionBuilder {
-    fn default() -> ChessPositionBuilder {
-        ChessPositionBuilder::from_str(STARTING_POSITION_FEN).unwrap()
+    fn default() -> Self {
+        Self::from_str(STARTING_POSITION_FEN).unwrap()
     }
 }
 
@@ -208,7 +208,7 @@ impl FromStr for ChessPositionBuilder {
     fn from_str(value: &str) -> Result<Self> {
         let mut cur_rank = Rank::Eighth;
         let mut cur_file = File::A;
-        let mut position_builder = ChessPositionBuilder::new();
+        let mut position_builder = Self::new();
 
         let tokens: Vec<&str> = value.split(' ').collect();
         if tokens.len() < 4 {
@@ -346,7 +346,7 @@ impl FromStr for ChessPositionBuilder {
 
 impl From<&ChessPosition> for ChessPositionBuilder {
     fn from(board: &ChessPosition) -> Self {
-        ChessPositionBuilder::setup(
+        Self::setup(
             board.iter(),
             board.turn(),
             board.castle_rights(White),

@@ -81,7 +81,7 @@ macro_rules! get_item_unchecked_mut {
 #[macro_export]
 macro_rules! interpolate_float {
     (@internal $start:expr, $end:expr, $alpha:expr) => {
-        (1.0 - $alpha) * $start + $alpha * $end
+        (1.0 - $alpha).mul_add($start, $alpha * $end)
     };
 
     ($start:expr, $end:expr, $alpha:expr $(,)?) => {

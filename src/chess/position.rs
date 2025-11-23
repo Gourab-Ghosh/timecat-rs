@@ -841,10 +841,12 @@ impl ChessPosition {
         let queens_and_bishops = self.get_piece_mask(Bishop) ^ self.get_piece_mask(Queen);
         let queens_and_rooks = self.get_piece_mask(Rook) ^ self.get_piece_mask(Queen);
 
-        let pawn_attacks = color.map_or(
+        let pawn_attacks = color.map_or_else(
             // TODO: make this const when it becomes stable.
-            target_square.get_pawn_attacks(White, BitBoard::ALL)
-                ^ target_square.get_pawn_attacks(Black, BitBoard::ALL),
+            || {
+                target_square.get_pawn_attacks(White, BitBoard::ALL)
+                    ^ target_square.get_pawn_attacks(Black, BitBoard::ALL)
+            },
             |color| target_square.get_pawn_attacks(!color, BitBoard::ALL),
         ) & self.get_piece_mask(Pawn);
 
@@ -875,14 +877,14 @@ impl ChessPosition {
         let color = color.into();
 
         let attackers = match piece_type {
-            Pawn => match color {
-                Some(color) => target_square.get_pawn_attacks(!color, BitBoard::ALL),
-                None => {
-                    // TODO: make this const when it becomes stable.
+            Pawn => color.map_or_else(
+                // TODO: make this const when it becomes stable.
+                || {
                     target_square.get_pawn_attacks(White, BitBoard::ALL)
                         ^ target_square.get_pawn_attacks(Black, BitBoard::ALL)
-                }
-            },
+                },
+                |color| target_square.get_pawn_attacks(!color, BitBoard::ALL),
+            ),
             Knight => target_square.get_knight_moves(),
             Bishop => get_bishop_moves(target_square, occupied),
             Rook => get_rook_moves(target_square, occupied),
@@ -1096,8 +1098,8 @@ impl ChessPosition {
     #[inline]
     pub fn parse_move(&self, move_text: &str) -> Result<ValidOrNullMove> {
         self.parse_uci(move_text)
-            .or(self.parse_san(move_text))
-            .or(self.parse_lan(move_text))
+            .or_else(|_| self.parse_san(move_text))
+            .or_else(|_| self.parse_lan(move_text))
             .map_err(|_| TimecatError::InvalidMoveString {
                 s: move_text.to_string(),
             })
@@ -1354,7 +1356,7 @@ impl BoardPositionMethodOverload<Move> for ChessPosition {
         if moved == Knight {
             result._checkers ^= ksq.get_knight_moves() & dest_bb;
         } else if moved == Pawn {
-            if let Some(Knight) = move_.get_promotion() {
+            if move_.get_promotion() == Some(Knight) {
                 result.xor(Pawn, dest_bb, self.turn());
                 result.xor(Knight, dest_bb, self.turn());
                 result._checkers ^= ksq.get_knight_moves() & dest_bb;
@@ -1458,11 +1460,10 @@ impl BoardPositionMethodOverload<ValidOrNullMove> for ChessPosition {
     }
 
     fn make_move_new(&self, valid_or_null_move: ValidOrNullMove) -> Self {
-        if let Some(move_) = *valid_or_null_move {
-            self.make_move_new(move_)
-        } else {
-            self.null_move().unwrap()
-        }
+        valid_or_null_move.map_or_else(
+            || self.null_move().unwrap(),
+            |move_| self.make_move_new(move_),
+        )
     }
 }
 
@@ -1470,7 +1471,7 @@ impl TryFrom<&ChessPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
     fn try_from(position_builder: &ChessPositionBuilder) -> Result<Self> {
-        let mut position = ChessPosition::new_empty();
+        let mut position = Self::new_empty();
 
         for square in ALL_SQUARES {
             if let Some(piece) = position_builder[square] {
@@ -1502,7 +1503,9 @@ impl TryFrom<&ChessPositionBuilder> for ChessPosition {
         if position.is_sane() {
             Ok(position)
         } else {
-            Err(TimecatError::InvalidBoardPosition { position })
+            Err(TimecatError::InvalidBoardPosition {
+                position: position.into(),
+            })
         }
     }
 }
@@ -1560,7 +1563,7 @@ impl<'source> FromPyObject<'source> for ChessPosition {
         {
             return Ok(position);
         }
-        if let Ok(position) = ChessPosition::from_py_board(ob) {
+        if let Ok(position) = Self::from_py_board(ob) {
             return Ok(position);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {

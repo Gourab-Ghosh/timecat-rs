@@ -185,7 +185,7 @@ impl PieceMoves for PawnMoves {
             };
             let files_bb = dest.get_file().get_adjacent_files_bb();
             for src in rank_bb & files_bb & pieces {
-                if PawnMoves::legal_ep_move(position, src, dest) {
+                if Self::legal_ep_move(position, src, dest) {
                     unsafe {
                         move_list.push_unchecked(SquareAndBitBoard::new(
                             src,
@@ -362,7 +362,7 @@ impl PieceMoves for KingMoves {
 
         let copy = square_and_bitboard_array;
         for dest in copy {
-            if !KingMoves::legal_king_move(position, dest) {
+            if !Self::legal_king_move(position, dest) {
                 square_and_bitboard_array ^= dest.to_bitboard();
             }
         }
@@ -381,8 +381,7 @@ impl PieceMoves for KingMoves {
             {
                 let middle = ksq.wrapping_right();
                 let right = middle.wrapping_right();
-                if KingMoves::legal_king_move(position, middle)
-                    && KingMoves::legal_king_move(position, right)
+                if Self::legal_king_move(position, middle) && Self::legal_king_move(position, right)
                 {
                     square_and_bitboard_array ^= right.to_bitboard();
                 }
@@ -393,8 +392,7 @@ impl PieceMoves for KingMoves {
             {
                 let middle = ksq.wrapping_left();
                 let left = middle.wrapping_left();
-                if KingMoves::legal_king_move(position, middle)
-                    && KingMoves::legal_king_move(position, left)
+                if Self::legal_king_move(position, middle) && Self::legal_king_move(position, left)
                 {
                     square_and_bitboard_array ^= left.to_bitboard();
                 }
@@ -421,8 +419,8 @@ struct SquareAndBitBoard {
 }
 
 impl SquareAndBitBoard {
-    fn new(square: Square, bb: BitBoard, promotion: bool) -> SquareAndBitBoard {
-        SquareAndBitBoard {
+    fn new(square: Square, bb: BitBoard, promotion: bool) -> Self {
+        Self {
             square,
             bitboard: bb,
             promotion,
@@ -649,13 +647,12 @@ impl MoveGenerator {
 
         for &piece_mask in position.get_all_piece_masks() {
             iterable.set_from_bitboard_iterator_mask(piece_mask);
+            iterable.set_to_bitboard_iterator_mask(targets);
             if depth == 1 {
-                iterable.set_to_bitboard_iterator_mask(targets);
                 result += iterable.len();
                 iterable.set_to_bitboard_iterator_mask(!targets);
                 result += iterable.len();
             } else {
-                iterable.set_to_bitboard_iterator_mask(targets);
                 for x in &iterable {
                     result += Self::perft_test(&position.make_move_new(x), depth - 1);
                 }

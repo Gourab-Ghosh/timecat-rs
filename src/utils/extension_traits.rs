@@ -266,8 +266,12 @@ pub trait SearcherMethodOverload<T> {
 }
 
 #[cfg(feature = "serde")]
-pub trait SerdeHandler<'de> {
+pub trait SerdeSerialize {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>;
+}
+
+#[cfg(feature = "serde")]
+pub trait SerdeDeserialize<'de> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         Self: Sized;

@@ -22,15 +22,13 @@ fn get_king_squares_rotated(white_king_square: Square, black_king_square: Square
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 struct HalfKPFeatureTransformer<T> {
+    #[cfg_attr(feature = "serde", serde(with = "serde_handler"))]
     weights: Box<
-        SerdeWrapper<
-            [MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>;
-                HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS],
-        >,
+        [MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; HALFKP_FEATURE_TRANSFORMER_NUM_INPUTS],
     >,
     // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=75296
-    bona_piece_zero_weights:
-        Box<SerdeWrapper<[MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; NUM_SQUARES]>>,
+    #[cfg_attr(feature = "serde", serde(with = "serde_handler"))]
+    bona_piece_zero_weights: Box<[MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>; NUM_SQUARES]>,
     biases: Box<MathVec<T, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>>,
 }
 
@@ -54,20 +52,16 @@ impl<T: BinRead<Args = ()> + Debug> BinRead for HalfKPFeatureTransformer<T> {
             }
         }
         Ok(Self {
-            weights: SerdeWrapper::from_boxed_value(weights.try_into().map_err(|_| {
+            weights: weights.try_into().map_err(|_| binread::Error::AssertFail {
+                pos: 0,
+                message: "Failed to convert weights into fixed-size array".to_string(),
+            })?,
+            bona_piece_zero_weights: bona_piece_zero_weights.try_into().map_err(|_| {
                 binread::Error::AssertFail {
                     pos: 0,
                     message: "Failed to convert weights into fixed-size array".to_string(),
                 }
-            })?),
-            bona_piece_zero_weights: SerdeWrapper::from_boxed_value(
-                bona_piece_zero_weights
-                    .try_into()
-                    .map_err(|_| binread::Error::AssertFail {
-                        pos: 0,
-                        message: "Failed to convert weights into fixed-size array".to_string(),
-                    })?,
-            ),
+            })?,
             biases,
         })
     }
@@ -96,31 +90,22 @@ impl<T> HalfKPFeatureTransformer<T> {
 //     }
 // }
 
-impl<T: Clone, U: From<T> + Debug> From<&HalfKPFeatureTransformer<T>>
+impl<T: Clone, U: From<T> + Debug> TryFrom<&HalfKPFeatureTransformer<T>>
     for HalfKPFeatureTransformer<U>
 {
-    fn from(value: &HalfKPFeatureTransformer<T>) -> Self {
-        HalfKPFeatureTransformer {
-            weights: SerdeWrapper::from_boxed_value(
-                value
-                    .weights
-                    .iter()
-                    .map_into()
-                    .collect_vec()
-                    .try_into()
-                    .unwrap(),
-            ),
-            bona_piece_zero_weights: SerdeWrapper::from_boxed_value(
-                value
-                    .bona_piece_zero_weights
-                    .iter()
-                    .map_into()
-                    .collect_vec()
-                    .try_into()
-                    .unwrap(),
-            ),
+    type Error = Vec<MathVec<U, HALFKP_FEATURE_TRANSFORMER_NUM_OUTPUTS>>;
+
+    fn try_from(value: &HalfKPFeatureTransformer<T>) -> std::result::Result<Self, Self::Error> {
+        Ok(Self {
+            weights: value.weights.iter().map_into().collect_vec().try_into()?,
+            bona_piece_zero_weights: value
+                .bona_piece_zero_weights
+                .iter()
+                .map_into()
+                .collect_vec()
+                .try_into()?,
             biases: Box::new(value.get_biases().into()),
-        }
+        })
     }
 }
 

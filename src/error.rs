@@ -10,7 +10,7 @@ pub enum Pyo3Error {
 
 #[cfg(feature = "pyo3")]
 impl From<Pyo3Error> for PyErr {
-    fn from(err: Pyo3Error) -> PyErr {
+    fn from(err: Pyo3Error) -> Self {
         match err {
             Pyo3Error::Pyo3TypeConversionError { from, to } => {
                 pyo3::exceptions::PyTypeError::new_err(format!(
@@ -100,7 +100,7 @@ pub enum TimecatError {
         s: String,
     },
     InvalidBoardPosition {
-        position: ChessPosition,
+        position: Box<ChessPosition>,
     },
     InvalidGoCommand {
         s: String,
@@ -272,13 +272,15 @@ impl TimecatError {
                 } else {
                     "UCI"
                 };
-                match optional_raw_input {
-                    Some(raw_input) => format!(
-                        "Unknown {command_type} Command: {:?}\nType help for more information!",
-                        raw_input.trim_end_matches('\n')
-                    ),
-                    None => format!("Unknown {command_type} Command!\nPlease try again!"),
-                }
+                optional_raw_input.map_or_else(
+                    || format!("Unknown {command_type} Command!\nPlease try again!"),
+                    |raw_input| {
+                        format!(
+                            "Unknown {command_type} Command: {:?}\nType help for more information!",
+                            raw_input.trim_end_matches('\n')
+                        )
+                    },
+                )
             }
             other_err => other_err.to_string(),
         }
@@ -340,7 +342,7 @@ impl From<&str> for TimecatError {
 
 #[cfg(feature = "pyo3")]
 impl From<TimecatError> for PyErr {
-    fn from(err: TimecatError) -> PyErr {
+    fn from(err: TimecatError) -> Self {
         pyo3::exceptions::PyRuntimeError::new_err(format!("TimecatError occurred: {:?}", err))
     }
 }

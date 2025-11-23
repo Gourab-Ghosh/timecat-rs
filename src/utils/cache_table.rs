@@ -9,8 +9,8 @@ pub struct CacheTableEntry<T> {
 
 impl<T> CacheTableEntry<T> {
     #[inline]
-    pub const fn new(hash: NonZeroU64, entry: T) -> CacheTableEntry<T> {
-        CacheTableEntry { hash, entry }
+    pub const fn new(hash: NonZeroU64, entry: T) -> Self {
+        Self { hash, entry }
     }
 
     #[inline]
@@ -183,8 +183,8 @@ impl<T: Copy + PartialEq> CacheTable<T> {
             .store(is_safe_to_do_bitwise_and, MEMORY_ORDERING);
     }
 
-    pub fn new(size: CacheTableSize) -> CacheTable<T> {
-        let cache_table = CacheTable {
+    pub fn new(size: CacheTableSize) -> Self {
+        let cache_table = Self {
             table: RwLock::new(Self::generate_table(size)),
             size: RwLock::new(size),
             mask: Default::default(),
@@ -365,7 +365,7 @@ impl<T: Copy + PartialEq> CacheTable<T> {
 
 impl<T: Copy + PartialEq> Clone for CacheTable<T> {
     fn clone(&self) -> Self {
-        CacheTable {
+        Self {
             table: RwLock::new(self.table.read().unwrap().clone()),
             size: RwLock::new(self.get_size()),
             mask: AtomicUsize::new(self.mask.load(MEMORY_ORDERING)),

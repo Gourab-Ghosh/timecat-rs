@@ -25,7 +25,7 @@ to_unsigned!(i128, u128);
 to_unsigned!(isize, usize);
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
+#[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Eq, Default)]
 pub enum EntryFlagHash {
     #[default]
     Exact,
@@ -158,7 +158,7 @@ impl TranspositionTable {
                         .filter(|data| data.depth > depth)
                         .unwrap_or(TranspositionTableData { depth, score, flag })
                 }),
-                best_move.or(old_optional_entry.and_then(|tt_entry| tt_entry.best_move)),
+                best_move.or_else(|| old_optional_entry.and_then(|tt_entry| tt_entry.best_move)),
             ),
         );
     }
