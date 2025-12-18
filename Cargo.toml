@@ -39,7 +39,7 @@ rpath = false
 debug-assertions = false
 overflow-checks = false
 codegen-units = 1
-lto = true
+lto = "fat"
 panic = "abort"
 # rustflags = ["-C", "target-cpu=native"]
 # strip = true
@@ -63,6 +63,7 @@ serde = { version = "1", features = ["derive", "rc"], optional = true }
 web-time = { version = "1", optional = true }
 gloo = { version = "0", optional = true }
 pyo3 = { version = "0.26.0", optional = true }
+mimalloc = { version = "0", optional = true }
 
 [build-dependencies]
 dirs = { version = "6", optional = true }
@@ -77,7 +78,7 @@ serde_json = "1"
 # default = ["serde"]
 # default = ["debug"]
 # default = ["colored"]
-default = ["inbuilt_nnue", "colored", "serde"]
+default = ["inbuilt_nnue", "colored"]
 binread = ["dep:binread"]
 nnue_reader = ["binread"]
 inbuilt_nnue = ["dep:minreq", "dep:sha256", "dep:dirs", "nnue_reader"]
@@ -86,8 +87,9 @@ colored = ["dep:colored"]
 serde = ["dep:serde", "web-time?/serde", "pyo3?/serde", "arrayvec/serde"]
 wasm = ["dep:web-time", "dep:gloo"]
 experimental = []
-debug = ["experimental", "colored", "extras", "inbuilt_nnue", "dep:dirs"]
+debug = ["experimental", "colored", "extras", "inbuilt_nnue", "dep:dirs", "extern_alloc"]
 pyo3 = ["dep:pyo3"]
+extern_alloc = ["dep:mimalloc"]
 
 [[bin]]
 name = "timecat"

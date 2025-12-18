@@ -199,6 +199,7 @@ The `selfplay` command works on the binary as well.
 - `pyo3`: Python support (Still in Testing phase).
 - `debug`: Intended solely for development use.
 - `experimental`: Codes under development for upcoming features.
+- `extern_alloc`: Using an external allocator to improve performance (currently using `mimalloc`).
 
 Default features include `inbuilt_nnue` and `colored`.
 

@@ -336,7 +336,7 @@ pub mod default_parameters {
     pub const TIMECAT_DEFAULTS: TimecatDefaults = TimecatDefaults {
         #[cfg(feature = "colored")]
         colored: true,
-        console_mode: true,
+        console_mode: cfg!(feature = "debug"),
         t_table_size: CacheTableSize::Exact(16),
         long_algebraic_notation: false,
         num_threads: NonZeroUsize::new(1).unwrap(),

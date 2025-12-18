@@ -61,8 +61,8 @@ impl Decompress<PieceType> for u8 {
     fn decompress(self) -> Result<PieceType> {
         if self >= NUM_PIECE_TYPES as Self {
             Err(TimecatError::DecompressionFailed {
-                value: self.to_string(),
-                type_name: std::any::type_name::<PieceType>().to_string(),
+                value: self.to_string().into(),
+                type_name: std::any::type_name::<PieceType>().into(),
             })
         } else {
             Ok(unsafe { PieceType::from_int(self) })
@@ -86,8 +86,8 @@ impl Decompress<Square> for u8 {
     fn decompress(self) -> Result<Square> {
         if self > NUM_SQUARES as Self {
             Err(TimecatError::DecompressionFailed {
-                value: self.to_string(),
-                type_name: std::any::type_name::<Square>().to_string(),
+                value: self.to_string().into(),
+                type_name: std::any::type_name::<Square>().into(),
             })
         } else {
             Ok(unsafe { Square::from_int(self) })

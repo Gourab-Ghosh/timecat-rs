@@ -468,8 +468,8 @@ impl<'source> FromPyObject<'source> for BitBoard {
             return Ok(Self::new(int));
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }

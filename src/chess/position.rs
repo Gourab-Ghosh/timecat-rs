@@ -44,10 +44,8 @@ impl UniqueIdentifier for ChessPosition {
 impl PartialEq for ChessPosition {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        if self.get_hash() != other.get_hash() {
-            return false;
-        }
-        self.unique_identifier().eq(&other.unique_identifier())
+        self.get_hash() == other.get_hash()
+            && self.unique_identifier().eq(&other.unique_identifier())
     }
 }
 
@@ -366,7 +364,7 @@ impl ChessPosition {
             Ok(unsafe { self.null_move_unchecked() })
         } else {
             Err(TimecatError::NullMoveInCheck {
-                fen: self.get_fen(),
+                fen: self.get_fen().into(),
             })
         }
     }
@@ -1101,7 +1099,7 @@ impl ChessPosition {
             .or_else(|_| self.parse_san(move_text))
             .or_else(|_| self.parse_lan(move_text))
             .map_err(|_| TimecatError::InvalidMoveString {
-                s: move_text.to_string(),
+                s: move_text.to_string().into(),
             })
     }
 
@@ -1250,8 +1248,8 @@ impl ChessPosition {
                     BB_A1_H1 => CastleRights::Both,
                     _ => {
                         return Err(Pyo3Error::Pyo3TypeConversionError {
-                            from: ob.to_string(),
-                            to: std::any::type_name::<Self>().to_string(),
+                            from: ob.to_string().into(),
+                            to: std::any::type_name::<Self>().into(),
                         }
                         .into());
                     }
@@ -1263,8 +1261,8 @@ impl ChessPosition {
                     BB_A8_H8 => CastleRights::Both,
                     _ => {
                         return Err(Pyo3Error::Pyo3TypeConversionError {
-                            from: ob.to_string(),
-                            to: std::any::type_name::<Self>().to_string(),
+                            from: ob.to_string().into(),
+                            to: std::any::type_name::<Self>().into(),
                         }
                         .into());
                     }
@@ -1513,6 +1511,7 @@ impl TryFrom<&ChessPositionBuilder> for ChessPosition {
 impl TryFrom<ChessPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
+    #[inline]
     fn try_from(position_builder: ChessPositionBuilder) -> Result<Self> {
         (&position_builder).try_into()
     }
@@ -1521,6 +1520,7 @@ impl TryFrom<ChessPositionBuilder> for ChessPosition {
 impl TryFrom<&mut ChessPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
+    #[inline]
     fn try_from(position_builder: &mut ChessPositionBuilder) -> Result<Self> {
         (position_builder.to_owned()).try_into()
     }
@@ -1550,8 +1550,9 @@ impl fmt::Display for ChessPosition {
 }
 
 impl Hash for ChessPosition {
+    #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write_u64(self.get_hash())
+        self.get_hash().hash(state);
     }
 }
 
@@ -1567,8 +1568,8 @@ impl<'source> FromPyObject<'source> for ChessPosition {
             return Ok(position);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }

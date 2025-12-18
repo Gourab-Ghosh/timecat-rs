@@ -412,19 +412,37 @@ impl Square {
         ) & blockers
     }
 
+    // /// Get the quiet pawn moves (non-captures) for a particular square, given the pawn's color and
+    // /// the potential blocking pieces.
+    // #[inline]
+    // pub fn get_pawn_quiets(self, color: Color, blockers: BitBoard) -> BitBoard {
+    //     // TODO: Maybe optimization possible?
+    //     if (self.to_bitboard().shift_forward(color) & blockers).is_empty() {
+    //         *get_item_unchecked!(
+    //             const { PAWN_MOVES_AND_ATTACKS[0] },
+    //             color.to_index(),
+    //             self.to_index()
+    //         ) & !blockers
+    //     } else {
+    //         BitBoard::EMPTY
+    //     }
+    // }
+
     /// Get the quiet pawn moves (non-captures) for a particular square, given the pawn's color and
     /// the potential blocking pieces.
     #[inline]
     pub fn get_pawn_quiets(self, color: Color, blockers: BitBoard) -> BitBoard {
-        // TODO: Maybe optimization possible?
-        if (self.to_bitboard().shift_forward(color) & blockers).is_empty() {
+        if self.get_rank() == color.to_second_rank()
+            && !(blockers & color.to_third_rank_bitboard() & self.get_file().to_bitboard())
+                .is_empty()
+        {
+            BitBoard::EMPTY
+        } else {
             *get_item_unchecked!(
                 const { PAWN_MOVES_AND_ATTACKS[0] },
                 color.to_index(),
                 self.to_index()
             ) & !blockers
-        } else {
-            BitBoard::EMPTY
         }
     }
 
@@ -436,32 +454,32 @@ impl Square {
     }
 }
 
+macro_rules! generate_error {
+    ($s:expr) => {
+        TimecatError::InvalidSquareString {
+            s: $s.to_string().into(),
+        }
+    };
+}
+
 impl FromStr for Square {
     type Err = TimecatError;
 
     fn from_str(s: &str) -> Result<Self> {
-        if s.len() < 2 {
-            return Err(TimecatError::InvalidSquareString { s: s.to_string() });
-        }
-        let ch = s.to_lowercase().chars().collect_vec();
-        if !(('a'..='h').contains(&ch[0]) && ('1'..='8').contains(&ch[1])) {
-            return Err(TimecatError::InvalidSquareString { s: s.to_string() });
-        }
-        Ok(Self::from_rank_and_file(
-            unsafe { Rank::from_index(((ch[1] as usize) - ('1' as usize)) & 7) },
-            unsafe { File::from_index(((ch[0] as usize) - ('a' as usize)) & 7) },
-        ))
+        let binding = s.to_lowercase();
+        let mut ch = binding.trim().chars();
+        let file = ch.next().ok_or_else(|| generate_error!(s))?.try_into()?;
+        let rank = ch.next().ok_or_else(|| generate_error!(s))?.try_into()?;
+        ch.next().map_or_else(
+            || Ok(Self::from_rank_and_file(rank, file)),
+            |_| Err(generate_error!(s)),
+        )
     }
 }
 
 impl fmt::Display for Square {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}{}",
-            (b'a' + ((self.to_index() & 7) as u8)) as char,
-            (b'1' + ((self.to_index() >> 3) as u8)) as char,
-        )
+        write!(f, "{}{}", self.get_file(), self.get_rank())
     }
 }
 
@@ -471,15 +489,14 @@ impl<'source> FromPyObject<'source> for Square {
         if let Ok(int) = ob.extract::<u8>() {
             return Ok(unsafe { Self::from_int(int) });
         }
-        if let Ok(mut s) = ob.extract::<&str>() {
-            s = s.trim();
-            if let Ok(square) = Self::from_str(s) {
-                return Ok(square);
-            }
+        if let Ok(s) = ob.extract::<&str>()
+            && let Ok(square) = s.parse()
+        {
+            return Ok(square);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }

@@ -42,6 +42,10 @@ pub mod uci;
 pub mod useful_macros;
 pub mod utils;
 
+#[cfg(feature = "extern_alloc")]
+#[global_allocator]
+static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 pub mod prelude {
     use super::*;
     pub use super::{

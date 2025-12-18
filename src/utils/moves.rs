@@ -62,7 +62,7 @@ impl Move {
                 return Ok(move_);
             }
         }
-        Err(TimecatError::InvalidSanMoveString { s: san })
+        Err(TimecatError::InvalidSanMoveString { s: san.into() })
     }
 
     pub fn from_lan(position: &ChessPosition, lan: &str) -> Result<Self> {
@@ -73,7 +73,7 @@ impl Move {
                 return Ok(move_);
             }
         }
-        Err(TimecatError::InvalidLanMoveString { s: lan })
+        Err(TimecatError::InvalidLanMoveString { s: lan.into() })
     }
 
     pub fn algebraic_without_suffix(
@@ -96,7 +96,7 @@ impl Move {
         let piece = position.get_piece_type_at(source).ok_or_else(|| {
             TimecatError::InvalidSanOrLanMove {
                 valid_or_null_move: self.into(),
-                fen: position.get_fen(),
+                fen: position.get_fen().into(),
             }
         })?;
         let capture = position.is_capture(self);
@@ -203,7 +203,9 @@ impl Move {
 
 macro_rules! generate_move_error {
     ($s: ident) => {
-        TimecatError::InvalidUciMoveString { s: $s.to_string() }
+        TimecatError::InvalidUciMoveString {
+            s: $s.to_string().into(),
+        }
     };
 }
 
@@ -218,33 +220,19 @@ impl FromStr for Move {
         let source = s
             .get(0..2)
             .ok_or_else(|| generate_move_error!(s))?
-            .parse()?;
+            .parse()
+            .map_err(|_| generate_move_error!(s))?;
         let dest = s
             .get(2..4)
             .ok_or_else(|| generate_move_error!(s))?
-            .parse()?;
-        let promotion = s
-            .as_bytes()
-            .get(5)
-            .map(|&byte| unsafe {
-                const {
-                    let mut arr = [None; 256];
-                    arr['p' as usize] = Some(Pawn);
-                    arr['n' as usize] = Some(Knight);
-                    arr['b' as usize] = Some(Bishop);
-                    arr['r' as usize] = Some(Rook);
-                    arr['q' as usize] = Some(Queen);
-                    arr['k' as usize] = Some(King);
-                    arr['P' as usize] = Some(Pawn);
-                    arr['N' as usize] = Some(Knight);
-                    arr['B' as usize] = Some(Bishop);
-                    arr['R' as usize] = Some(Rook);
-                    arr['Q' as usize] = Some(Queen);
-                    arr['K' as usize] = Some(King);
-                    arr
-                }
-                .get_unchecked(byte as usize)
-                .ok_or_else(|| generate_move_error!(s))
+            .parse()
+            .map_err(|_| generate_move_error!(s))?;
+        let promotion = (s.len() > 4)
+            .then(|| {
+                s.get(4..)
+                    .ok_or_else(|| generate_move_error!(s))?
+                    .parse()
+                    .map_err(|_| generate_move_error!(s))
             })
             .transpose()?;
         Self::new(source, dest, promotion)
@@ -264,7 +252,7 @@ impl fmt::Display for Move {
 impl<'source> FromPyObject<'source> for Move {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(move_text) = ob.extract::<&str>()
-            && let Ok(move_) = Self::from_str(move_text)
+            && let Ok(move_) = move_text.parse()
         {
             return Ok(move_);
         }
@@ -272,8 +260,8 @@ impl<'source> FromPyObject<'source> for Move {
             return Ok(move_);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }
@@ -453,13 +441,13 @@ impl<'source> FromPyObject<'source> for ValidOrNullMove {
             return Ok(move_.into());
         }
         if let Ok(move_text) = ob.extract::<&str>()
-            && let Ok(valid_or_null_move) = Self::from_str(move_text)
+            && let Ok(valid_or_null_move) = move_text.parse()
         {
             return Ok(valid_or_null_move);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }

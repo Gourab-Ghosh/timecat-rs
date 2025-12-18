@@ -146,3 +146,33 @@ impl SubAssign for CastleRights {
         *self = *self - rhs;
     }
 }
+
+impl TryFrom<char> for CastleRights {
+    type Error = TimecatError;
+
+    fn try_from(value: char) -> Result<Self> {
+        match value {
+            'K' | 'k' => Ok(Self::KingSide),
+            'Q' | 'q' => Ok(Self::QueenSide),
+            _ => Err(TimecatError::InvalidCastleRightsString {
+                s: value.to_string().into(),
+            }),
+        }
+    }
+}
+
+impl FromStr for CastleRights {
+    type Err = TimecatError;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s.trim() {
+            "" => Ok(Self::None),
+            "K" | "k" => Ok(Self::KingSide),
+            "Q" | "q" => Ok(Self::QueenSide),
+            "KQ" | "kq" | "QK" | "qk" => Ok(Self::Both),
+            _ => Err(TimecatError::InvalidCastleRightsString {
+                s: s.to_string().into(),
+            }),
+        }
+    }
+}

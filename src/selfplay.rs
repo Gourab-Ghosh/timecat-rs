@@ -40,7 +40,7 @@ pub fn self_play(
         let response = engine.search(search_config, verbose);
         let Some(best_move) = response.get_best_move() else {
             return Err(TimecatError::BestMoveNotFound {
-                fen: engine.get_board().get_fen(),
+                fen: engine.get_board().get_fen().into(),
             });
         };
         let score = response.get_score();

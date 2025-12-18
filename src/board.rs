@@ -267,12 +267,15 @@ impl Board {
     }
 
     #[inline]
-    pub fn push_san_moves(&mut self, sans: &str) -> Result<Vec<ValidOrNullMove>> {
-        let new_sans = remove_double_spaces_and_trim(sans);
-        if new_sans.is_empty() {
-            Ok(Vec::new())
+    pub fn push_san_moves(&mut self, san_moves: &str) -> Result<Vec<ValidOrNullMove>> {
+        let parsed_str = remove_double_spaces_and_trim(san_moves);
+        if parsed_str.is_empty() {
+            const { Ok(Vec::new()) }
         } else {
-            new_sans.split(' ').map(|san| self.push_san(san)).collect()
+            parsed_str
+                .split(' ')
+                .map(|san| self.push_san(san))
+                .collect()
         }
     }
 
@@ -290,10 +293,35 @@ impl Board {
 
     #[inline]
     pub fn push_uci_moves(&mut self, uci_moves: &str) -> Result<Vec<ValidOrNullMove>> {
-        remove_double_spaces_and_trim(uci_moves)
-            .split(' ')
-            .map(|san| self.push_uci(san))
-            .collect()
+        let parsed_str = remove_double_spaces_and_trim(uci_moves);
+        if parsed_str.is_empty() {
+            const { Ok(Vec::new()) }
+        } else {
+            parsed_str
+                .split(' ')
+                .map(|san| self.push_uci(san))
+                .collect()
+        }
+    }
+
+    pub fn push_move(&mut self, move_text: &str) -> Result<ValidOrNullMove> {
+        // TODO: Generate test cases.
+        let valid_or_null_move = self.parse_move(move_text)?;
+        self.push(valid_or_null_move)?;
+        Ok(valid_or_null_move)
+    }
+
+    #[inline]
+    pub fn push_moves(&mut self, uci_moves: &str) -> Result<Vec<ValidOrNullMove>> {
+        let parsed_str = remove_double_spaces_and_trim(uci_moves);
+        if parsed_str.is_empty() {
+            const { Ok(Vec::new()) }
+        } else {
+            parsed_str
+                .split(' ')
+                .map(|san| self.push_move(san))
+                .collect()
+        }
     }
 
     pub fn algebraic_and_push(
@@ -389,7 +417,7 @@ impl Board {
         if starting_fen != STARTING_POSITION_FEN {
             writeln_unchecked!(pgn, "[FEN \"{}\"]", starting_fen);
         }
-        writeln_unchecked!(pgn, "[Result \"{}\"]", self.result(),);
+        writeln_unchecked!(pgn, "[Result \"{}\"]", self.result());
         write_unchecked!(
             &mut pgn,
             "\n{}",
@@ -427,7 +455,7 @@ impl BoardMethodOverload<Move> for Board {
         if !self.is_legal(&move_) {
             return Err(TimecatError::IllegalMove {
                 valid_or_null_move: move_.into(),
-                board_fen: self.get_fen(),
+                board_fen: self.get_fen().into(),
             });
         }
         unsafe { self.push_unchecked(move_) };
@@ -472,7 +500,7 @@ impl BoardMethodOverload<ValidOrNullMove> for Board {
         } else {
             if self.is_check() {
                 return Err(TimecatError::NullMoveInCheck {
-                    fen: self.get_fen(),
+                    fen: self.get_fen().into(),
                 });
             }
             unsafe { self.push_unchecked(valid_or_null_move) };
@@ -579,8 +607,8 @@ impl<'source> FromPyObject<'source> for Board {
             return Ok(board);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }

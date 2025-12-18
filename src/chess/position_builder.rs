@@ -213,7 +213,7 @@ impl FromStr for ChessPositionBuilder {
         let tokens: Vec<&str> = value.split(' ').collect();
         if tokens.len() < 4 {
             return Err(TimecatError::BadFen {
-                fen: value.to_string(),
+                fen: value.to_string().into(),
             });
         }
 
@@ -297,7 +297,7 @@ impl FromStr for ChessPositionBuilder {
                 }
                 _ => {
                     return Err(TimecatError::BadFen {
-                        fen: value.to_string(),
+                        fen: value.to_string().into(),
                     });
                 }
             }
@@ -307,7 +307,7 @@ impl FromStr for ChessPositionBuilder {
             "b" | "B" => _ = position_builder.set_turn(Black),
             _ => {
                 return Err(TimecatError::BadFen {
-                    fen: value.to_string(),
+                    fen: value.to_string().into(),
                 });
             }
         }

@@ -17,7 +17,7 @@ pub fn flip_board_fen(fen: &str) -> Result<String> {
     // TODO: ep square not flipped.
     let fen = remove_double_spaces_and_trim(fen);
     let (position_fen, rest_fen) = fen.split_once(' ').ok_or_else(|| TimecatError::BadFen {
-        fen: fen.to_string(),
+        fen: fen.to_string().into(),
     })?;
     Ok(format!(
         "{} {rest_fen}",

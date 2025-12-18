@@ -40,7 +40,7 @@ impl<T: ChessEngine> TimecatBuilder<T> {
                 .parse()
                 .unwrap_or(TIMECAT_DEFAULTS.num_threads);
             self.user_commands.push(UserCommand::SetUCIOption {
-                user_input: format!("setoption name Threads value {}", num_threads),
+                user_input: format!("setoption name Threads value {}", num_threads).into(),
             });
         }
         if args.contains(&"--help") {
@@ -66,7 +66,14 @@ impl<T: ChessEngine> TimecatBuilder<T> {
                 .skip(1)
                 .take_while(|&&arg| !arg.starts_with("--"))
                 .join(" ");
-            match Parser::parse_command(&command_string) {
+
+            let parser_result = if command_string.is_empty() {
+                Err(TimecatError::NoInput)
+            } else {
+                Parser::parse_command(&command_string)
+            };
+
+            match parser_result {
                 Ok(user_commands) => self.user_commands.extend(user_commands),
                 Err(error) => println_wasm!(
                     "{}",
@@ -75,6 +82,7 @@ impl<T: ChessEngine> TimecatBuilder<T> {
                         .colorize(ERROR_MESSAGE_STYLE)
                 ),
             }
+
             self.user_commands.push(UserCommand::TerminateEngine);
             return self;
         }

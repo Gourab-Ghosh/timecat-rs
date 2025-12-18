@@ -57,7 +57,7 @@ impl File {
 
     #[inline]
     pub const fn to_bitboard(self) -> BitBoard {
-        BitBoard::new(0x0101_0101_0101_0101 << self.to_index())
+        BitBoard::new(0x0101_0101_0101_0101 << self.to_int())
     }
 
     #[inline]
@@ -66,20 +66,51 @@ impl File {
     }
 }
 
+impl fmt::Display for File {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", (b'a' + self.to_int()) as char)
+    }
+}
+
+impl TryFrom<char> for File {
+    type Error = TimecatError;
+
+    #[inline]
+    fn try_from(c: char) -> Result<Self> {
+        match c {
+            'a' | 'A' => Ok(Self::A),
+            'b' | 'B' => Ok(Self::B),
+            'c' | 'C' => Ok(Self::C),
+            'd' | 'D' => Ok(Self::D),
+            'e' | 'E' => Ok(Self::E),
+            'f' | 'F' => Ok(Self::F),
+            'g' | 'G' => Ok(Self::G),
+            'h' | 'H' => Ok(Self::H),
+            _ => Err(TimecatError::InvalidFileString {
+                s: c.to_string().into(),
+            }),
+        }
+    }
+}
+
 impl FromStr for File {
     type Err = TimecatError;
 
+    #[inline]
     fn from_str(s: &str) -> Result<Self> {
-        match s.to_lowercase().trim() {
-            "a" => Ok(Self::A),
-            "b" => Ok(Self::B),
-            "c" => Ok(Self::C),
-            "d" => Ok(Self::D),
-            "e" => Ok(Self::E),
-            "f" => Ok(Self::F),
-            "g" => Ok(Self::G),
-            "h" => Ok(Self::H),
-            _ => Err(TimecatError::InvalidFileString { s: s.to_string() }),
+        match s.trim() {
+            "a" | "A" => Ok(Self::A),
+            "b" | "B" => Ok(Self::B),
+            "c" | "C" => Ok(Self::C),
+            "d" | "D" => Ok(Self::D),
+            "e" | "E" => Ok(Self::E),
+            "f" | "F" => Ok(Self::F),
+            "g" | "G" => Ok(Self::G),
+            "h" | "H" => Ok(Self::H),
+            _ => Err(TimecatError::InvalidFileString {
+                s: s.to_string().into(),
+            }),
         }
     }
 }

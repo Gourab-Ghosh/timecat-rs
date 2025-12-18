@@ -71,9 +71,38 @@ impl Rank {
     }
 }
 
+impl fmt::Display for Rank {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_int() + 1)
+    }
+}
+
+impl TryFrom<char> for Rank {
+    type Error = TimecatError;
+
+    #[inline]
+    fn try_from(c: char) -> Result<Self> {
+        match c {
+            '1' => Ok(Self::First),
+            '2' => Ok(Self::Second),
+            '3' => Ok(Self::Third),
+            '4' => Ok(Self::Fourth),
+            '5' => Ok(Self::Fifth),
+            '6' => Ok(Self::Sixth),
+            '7' => Ok(Self::Seventh),
+            '8' => Ok(Self::Eighth),
+            _ => Err(TimecatError::InvalidRankString {
+                s: c.to_string().into(),
+            }),
+        }
+    }
+}
+
 impl FromStr for Rank {
     type Err = TimecatError;
 
+    #[inline]
     fn from_str(s: &str) -> Result<Self> {
         match s.trim() {
             "1" => Ok(Self::First),
@@ -84,7 +113,9 @@ impl FromStr for Rank {
             "6" => Ok(Self::Sixth),
             "7" => Ok(Self::Seventh),
             "8" => Ok(Self::Eighth),
-            _ => Err(TimecatError::InvalidRankString { s: s.to_string() }),
+            _ => Err(TimecatError::InvalidRankString {
+                s: s.to_string().into(),
+            }),
         }
     }
 }

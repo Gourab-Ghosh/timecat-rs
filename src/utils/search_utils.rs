@@ -262,7 +262,7 @@ impl From<GoCommand> for SearchConfig {
 macro_rules! generate_command_in_error_message {
     ($commands:expr) => {
         TimecatError::InvalidGoCommand {
-            s: $commands.join(" "),
+            s: $commands.join(" ").into(),
         }
     };
 }
