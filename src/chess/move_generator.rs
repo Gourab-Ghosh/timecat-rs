@@ -95,7 +95,7 @@ impl PawnMoves {
             & position.opponent_occupied();
 
         if !(ksq.get_rook_rays_bb() & rooks).is_empty()
-            && !(get_rook_moves(ksq, occupied) & rooks).is_empty()
+            && !(ksq.get_rook_moves(occupied) & rooks).is_empty()
         {
             return false;
         }
@@ -104,7 +104,7 @@ impl PawnMoves {
             & position.opponent_occupied();
 
         if !(ksq.get_bishop_rays_bb() & bishops).is_empty()
-            && !(get_bishop_moves(ksq, occupied) & bishops).is_empty()
+            && !(ksq.get_bishop_moves(occupied) & bishops).is_empty()
         {
             return false;
         }
@@ -210,7 +210,7 @@ impl PieceMoves for BishopMoves {
 
     #[inline]
     fn pseudo_legals(src: Square, _: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
-        get_bishop_moves(src, occupied) & mask
+        src.get_bishop_moves(occupied) & mask
     }
 }
 
@@ -285,7 +285,7 @@ impl PieceMoves for RookMoves {
 
     #[inline]
     fn pseudo_legals(src: Square, _: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
-        get_rook_moves(src, occupied) & mask
+        src.get_rook_moves(occupied) & mask
     }
 }
 
@@ -300,7 +300,7 @@ impl PieceMoves for QueenMoves {
 
     #[inline]
     fn pseudo_legals(src: Square, _: Color, occupied: BitBoard, mask: BitBoard) -> BitBoard {
-        get_queen_moves(src, occupied) & mask
+        src.get_queen_moves(occupied) & mask
     }
 }
 
@@ -313,12 +313,12 @@ impl KingMoves {
         let rooks = (position.get_piece_mask(Rook) ^ position.get_piece_mask(Queen))
             & position.opponent_occupied();
 
-        let mut attackers = get_rook_moves(dest, occupied) & rooks;
+        let mut attackers = dest.get_rook_moves(occupied) & rooks;
 
         let bishops = (position.get_piece_mask(Bishop) ^ position.get_piece_mask(Queen))
             & position.opponent_occupied();
 
-        attackers |= get_bishop_moves(dest, occupied) & bishops;
+        attackers |= dest.get_bishop_moves(occupied) & bishops;
 
         let knight_rays = dest.get_knight_moves();
 

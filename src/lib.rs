@@ -17,6 +17,7 @@
 #![expect(clippy::missing_safety_doc)]
 // #![deny(missing_debug_implementations)]
 
+pub mod allocator;
 pub mod board;
 pub mod chess;
 pub mod constants;
@@ -41,10 +42,6 @@ pub mod tt;
 pub mod uci;
 pub mod useful_macros;
 pub mod utils;
-
-#[cfg(feature = "extern_alloc")]
-#[global_allocator]
-static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 pub mod prelude {
     use super::*;
@@ -71,13 +68,14 @@ pub mod prelude {
         RepetitionTable, Rook, STARTING_POSITION_FEN, Score, SearchConfig, SearchInfo,
         SearchInfoBuilder, Square, TimecatError, TranspositionTable, ValidOrNullMove, WeightedMove,
         White, WhiteBishop, WhiteKing, WhiteKnight, WhitePawn, WhiteQueen, WhiteRook, Zobrist,
-        get_bishop_moves, get_castle_moves, get_pv_as_san, get_pv_as_uci, get_pv_string,
-        get_queen_moves, get_rook_moves, is_checkmate, self_play, simplify_fen,
+        get_castle_moves, get_pv_as_san, get_pv_as_uci, get_pv_string, is_checkmate, self_play,
+        simplify_fen,
     };
 
     pub use utils::extension_traits::*;
 }
 
+pub use allocator::*;
 pub use arrayvec::ArrayVec;
 #[cfg(feature = "binread")]
 pub use binread::{BinRead, BinResult};

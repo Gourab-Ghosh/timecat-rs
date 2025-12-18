@@ -357,9 +357,9 @@ impl<T: Copy + PartialEq> CacheTable<T> {
         );
         self.reset_mask();
         self.reset_variables();
-        for entry in old_table.into_iter().flatten() {
+        old_table.into_iter().flatten().for_each(|entry| {
             self.add(entry.hash.get(), entry.entry);
-        }
+        });
     }
 }
 

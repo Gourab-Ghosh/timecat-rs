@@ -1,16 +1,19 @@
 #![allow(unused_imports)]
+#![allow(clippy::needless_range_loop)]
 
 use itertools::*;
 use std::cmp::Ordering;
 use std::fmt;
-use std::fs::{self, File};
-use std::io::Write;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 mod bitboards_generation {
     use super::*;
+
+    const NUM_MOVES: usize = 64 * (1 << 12) + 64 * (1 << 9);
 
     #[derive(Clone, Copy, Default)]
     struct BitBoard(u64);
@@ -109,74 +112,7 @@ mod bitboards_generation {
         bb & (1 << square) != 0
     }
 
-    fn generate_moves_bb(sub_mask: u64, square: u8, piece_type: u8) -> u64 {
-        let direction_offset = match piece_type {
-            2 => 4,
-            3 => 0,
-            _ => unreachable!(),
-        };
-        let mut moves_bb = 0;
-        for direction_index in 0..4 {
-            let mut current_square_bb = 1 << square;
-            loop {
-                current_square_bb = match direction_index + direction_offset {
-                    0 => shift_up(current_square_bb),
-                    1 => shift_down(current_square_bb),
-                    2 => shift_left(current_square_bb),
-                    3 => shift_right(current_square_bb),
-                    4 => shift_left(shift_up(current_square_bb)),
-                    5 => shift_right(shift_up(current_square_bb)),
-                    6 => shift_left(shift_down(current_square_bb)),
-                    7 => shift_right(shift_down(current_square_bb)),
-                    _ => unreachable!(),
-                };
-                moves_bb ^= current_square_bb;
-                if current_square_bb == 0 || current_square_bb & sub_mask != 0 {
-                    break;
-                }
-            }
-        }
-        moves_bb
-    }
-
-    fn generate_all_sub_masks_and_moves(
-        mask: u64,
-        square: u8,
-        piece_type: u8,
-    ) -> [(u64, u64); 1 << 12] {
-        let mut array = [(0, 0); 1 << 12];
-
-        // Generating Squares from BitBoard
-        let mut squares = [None; 12];
-        let mut pointer = 0;
-        let mut mask_copy = mask;
-        while mask_copy != 0 {
-            let mask_square = mask_copy.trailing_zeros() as u8;
-            squares[pointer] = Some(mask_square);
-            pointer += 1;
-            mask_copy ^= 1 << mask_square;
-        }
-
-        // Generate Sub Masks
-        let mask_popcnt = mask.count_ones() as usize;
-        for mask_index in 0..1 << mask_popcnt {
-            squares
-                .iter()
-                .enumerate()
-                .take(mask_popcnt)
-                .for_each(|(bit_index, square)| {
-                    if bb_contains(mask_index, bit_index as u8) {
-                        array[mask_index as usize].0 ^= 1 << square.unwrap();
-                    }
-                });
-            array[mask_index as usize].1 =
-                generate_moves_bb(array[mask_index as usize].0, square, piece_type);
-        }
-
-        array
-    }
-
-    fn create_pawn_moves(file: &mut File) -> Result<()> {
+    fn create_pawn_moves(file: &mut impl Write) -> Result<()> {
         let mut moves_array = [[BitBoard::default(); 64]; 2];
         let mut attacks_array = [[BitBoard::default(); 64]; 2];
         for i in 0..2 {
@@ -204,7 +140,7 @@ mod bitboards_generation {
         Ok(())
     }
 
-    fn create_knight_moves(file: &mut File) -> Result<()> {
+    fn create_knight_moves(file: &mut impl Write) -> Result<()> {
         writeln!(
             file,
             "static KNIGHT_MOVES: [BitBoard; 64] = {:#?};",
@@ -225,7 +161,7 @@ mod bitboards_generation {
         Ok(())
     }
 
-    fn create_king_moves(file: &mut File) -> Result<()> {
+    fn create_king_moves(file: &mut impl Write) -> Result<()> {
         writeln!(
             file,
             "static KING_MOVES: [BitBoard; 64] = {:#?};",
@@ -305,7 +241,7 @@ mod bitboards_generation {
         unreachable!();
     }
 
-    fn create_rays(file: &mut File) -> Result<(Vec<BitBoard>, Vec<BitBoard>)> {
+    fn create_rays(file: &mut impl Write) -> Result<(Vec<BitBoard>, Vec<BitBoard>)> {
         let bishop_diagonal_rays = (0..64)
             .map(|index| {
                 let square = index as u8;
@@ -395,8 +331,170 @@ mod bitboards_generation {
         Ok((bishop_rays, rook_rays))
     }
 
-    fn create_all_slider_moves(
-        file: &mut File,
+    fn generate_all_sub_masks_and_moves(
+        mask: u64,
+        square: u8,
+        piece_type: u8,
+    ) -> [(u64, u64); 1 << 12] {
+        fn generate_moves_bb(sub_mask: u64, square: u8, piece_type: u8) -> u64 {
+            let direction_offset = match piece_type {
+                2 => 4,
+                3 => 0,
+                _ => unreachable!(),
+            };
+            let mut moves_bb = 0;
+            for direction_index in 0..4 {
+                let mut current_square_bb = 1 << square;
+                loop {
+                    current_square_bb = match direction_index + direction_offset {
+                        0 => shift_up(current_square_bb),
+                        1 => shift_down(current_square_bb),
+                        2 => shift_left(current_square_bb),
+                        3 => shift_right(current_square_bb),
+                        4 => shift_left(shift_up(current_square_bb)),
+                        5 => shift_right(shift_up(current_square_bb)),
+                        6 => shift_left(shift_down(current_square_bb)),
+                        7 => shift_right(shift_down(current_square_bb)),
+                        _ => unreachable!(),
+                    };
+                    moves_bb ^= current_square_bb;
+                    if current_square_bb == 0 || current_square_bb & sub_mask != 0 {
+                        break;
+                    }
+                }
+            }
+            moves_bb
+        }
+
+        let mut array = [(0, 0); 1 << 12];
+
+        // Generating Squares from BitBoard
+        let mut squares = [None; 12];
+        let mut pointer = 0;
+        let mut mask_copy = mask;
+        while mask_copy != 0 {
+            let mask_square = mask_copy.trailing_zeros() as u8;
+            squares[pointer] = Some(mask_square);
+            pointer += 1;
+            mask_copy ^= 1 << mask_square;
+        }
+
+        // Generate Sub Masks
+        let mask_popcnt = mask.count_ones() as usize;
+        for mask_index in 0..1 << mask_popcnt {
+            squares
+                .iter()
+                .enumerate()
+                .take(mask_popcnt)
+                .for_each(|(bit_index, square)| {
+                    if bb_contains(mask_index, bit_index as u8) {
+                        array[mask_index as usize].0 ^= 1 << square.unwrap();
+                    }
+                });
+            array[mask_index as usize].1 =
+                generate_moves_bb(array[mask_index as usize].0, square, piece_type);
+        }
+
+        array
+    }
+
+    #[cfg(target_feature = "bmi2")]
+    fn create_all_slider_moves_bmi(
+        file: &mut impl Write,
+        bishop_rays: &[BitBoard],
+        rook_rays: &[BitBoard],
+    ) -> Result<()> {
+        #[derive(Clone, Copy, Debug, Default)]
+        struct BmiMagic {
+            blockers_mask: BitBoard,
+            offset: usize,
+        }
+
+        let mut bmi_offset = 0;
+        let mut bishop_and_rook_bmi_masks = [[BmiMagic::default(); 64]; 2];
+        let mut bmi_moves = vec![0; NUM_MOVES];
+
+        for piece_index in 0..2 {
+            for square_index in 0..64 {
+                let ray = match piece_index {
+                    0 => bishop_rays,
+                    1 => rook_rays,
+                    _ => unreachable!(),
+                }[square_index];
+
+                let bmi_magic = &mut bishop_and_rook_bmi_masks[piece_index][square_index];
+                bmi_magic.blockers_mask.0 = ray.0
+                    & match piece_index {
+                        0 => 0x007E7E7E7E7E7E00,
+                        1 => {
+                            let mut restriction = 0x007E7E7E7E7E7E00;
+                            for (corner_rows, allowed) in const {
+                                [
+                                    (0x00000000000000FF, 0x000000000000007E),
+                                    (0xFF00000000000000, 0x7E00000000000000),
+                                    (0x0101010101010101, 0x0001010101010100),
+                                    (0x8080808080808080, 0x0080808080808000),
+                                ]
+                            } {
+                                if bb_contains(corner_rows, square_index as u8) {
+                                    restriction ^= allowed;
+                                }
+                            }
+                            restriction
+                        }
+                        _ => unreachable!(),
+                    };
+                bmi_magic.offset = bmi_offset;
+                let num_sub_masks = 1 << (bmi_magic.blockers_mask.0.count_ones());
+                bmi_offset += num_sub_masks;
+
+                let sub_masks_and_moves_array = generate_all_sub_masks_and_moves(
+                    bmi_magic.blockers_mask.0,
+                    square_index as u8,
+                    if piece_index == 0 { 2 } else { 3 },
+                );
+
+                for sub_masks_and_moves_array_index in 0..num_sub_masks {
+                    bmi_moves[bmi_magic.offset
+                        + unsafe {
+                            std::arch::x86_64::_pext_u64(
+                                sub_masks_and_moves_array[sub_masks_and_moves_array_index].0,
+                                bmi_magic.blockers_mask.0,
+                            ) as usize
+                        }] = unsafe {
+                        std::arch::x86_64::_pext_u64(
+                            sub_masks_and_moves_array[sub_masks_and_moves_array_index].1,
+                            ray.0,
+                        ) as u16
+                    };
+                }
+            }
+        }
+
+        writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
+        writeln!(file, r##"struct BmiMagic {{"##)?;
+        writeln!(file, r##"    blockers_mask: BitBoard,"##)?;
+        writeln!(file, r##"    offset: usize,"##)?;
+        writeln!(file, r##"}}"##)?;
+
+        writeln!(
+            file,
+            "static BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
+            bishop_and_rook_bmi_masks,
+        )?;
+        writeln!(
+            file,
+            "static BMI_MOVES: [u16; {}] = {:#?};",
+            bmi_offset,
+            &bmi_moves[0..bmi_offset]
+        )?;
+
+        Ok(())
+    }
+
+    #[cfg(not(target_feature = "bmi2"))]
+    fn create_all_slider_moves_non_bmi(
+        file: &mut impl Write,
         bishop_rays: &[BitBoard],
         rook_rays: &[BitBoard],
     ) -> Result<()> {
@@ -406,13 +504,6 @@ mod bitboards_generation {
             mask: BitBoard,
             offset: usize,
             right_shift: u8,
-        }
-
-        #[cfg(target_feature = "bmi2")]
-        #[derive(Clone, Copy, Debug, Default)]
-        struct BmiMagic {
-            blockers_mask: BitBoard,
-            offset: usize,
         }
 
         #[rustfmt::skip]
@@ -450,15 +541,6 @@ mod bitboards_generation {
             0x0404402010800301, 0x0041001082204001, 0x5000501900422001, 0x0800182005005001,
             0x0006001410592006, 0x0001006802140005, 0x1020080210028904, 0xc000192040840102,
         ];
-
-        const NUM_MOVES: usize = 64 * (1 << 12) + 64 * (1 << 9);
-
-        #[cfg(target_feature = "bmi2")]
-        let mut bmi_offset = 0;
-        #[cfg(target_feature = "bmi2")]
-        let mut bishop_and_rook_bmi_masks = [[BmiMagic::default(); 64]; 2];
-        #[cfg(target_feature = "bmi2")]
-        let mut bmi_moves = vec![0; NUM_MOVES];
 
         let mut offset = 0;
         let mut bishop_and_rook_magic_numbers = [[Magic::default(); 64]; 2];
@@ -512,41 +594,12 @@ mod bitboards_generation {
                     .unwrap_or(offset);
                 offset = offset.max(magic.offset + num_sub_masks);
 
-                #[cfg(target_feature = "bmi2")]
-                let bmi_magic = &mut bishop_and_rook_bmi_masks[piece_index][square_index];
-                #[cfg(target_feature = "bmi2")]
-                {
-                    bmi_magic.blockers_mask = magic.mask;
-                    bmi_magic.offset = bmi_offset;
-                    bmi_offset += num_sub_masks;
-                }
-
-                #[allow(clippy::needless_range_loop)]
-                for sub_masks_and_moves_array_index in 0..num_sub_masks {
-                    let (sub_mask, moves_bb) =
-                        sub_masks_and_moves_array[sub_masks_and_moves_array_index];
-                    let index = (magic.magic_number.wrapping_mul(sub_mask) >> magic.right_shift)
+                for (sub_mask, moves_bb) in sub_masks_and_moves_array.iter().take(num_sub_masks) {
+                    let index = (magic.magic_number.wrapping_mul(*sub_mask) >> magic.right_shift)
                         as usize
                         + magic.offset;
                     moves[index].0 |= moves_bb;
                     rays_cache_temp[index] |= ray.0;
-
-                    #[cfg(target_feature = "bmi2")]
-                    {
-                        use std::arch::x86_64::_pext_u64;
-                        bmi_moves[bmi_magic.offset
-                            + unsafe {
-                                _pext_u64(
-                                    sub_masks_and_moves_array[sub_masks_and_moves_array_index].0,
-                                    bmi_magic.blockers_mask.0,
-                                ) as usize
-                            }] = unsafe {
-                            _pext_u64(
-                                sub_masks_and_moves_array[sub_masks_and_moves_array_index].1,
-                                ray.0,
-                            ) as u16
-                        };
-                    }
                 }
             }
         }
@@ -571,27 +624,6 @@ mod bitboards_generation {
             &moves[0..offset]
         )?;
 
-        #[cfg(target_feature = "bmi2")]
-        {
-            writeln!(file, r##"#[derive(Clone, Copy)]"##)?;
-            writeln!(file, r##"struct BmiMagic {{"##)?;
-            writeln!(file, r##"    blockers_mask: BitBoard,"##)?;
-            writeln!(file, r##"    offset: usize,"##)?;
-            writeln!(file, r##"}}"##)?;
-
-            writeln!(
-                file,
-                "static BISHOP_AND_ROOK_BMI_MASKS: [[BmiMagic; 64]; 2] = {:#?};",
-                bishop_and_rook_bmi_masks,
-            )?;
-            writeln!(
-                file,
-                "static BMI_MOVES: [u16; {}] = {:#?};",
-                bmi_offset,
-                &bmi_moves[0..bmi_offset]
-            )?;
-        }
-
         Ok(())
     }
 
@@ -599,14 +631,19 @@ mod bitboards_generation {
         let out_dir_string = std::env::var("OUT_DIR")?;
         let output_dir = Path::new(&out_dir_string);
         let magic_file_path = output_dir.join("magic.rs");
-        let mut file = File::create(magic_file_path)?;
+        let mut file = BufWriter::new(File::create(magic_file_path)?);
 
         create_pawn_moves(&mut file)?;
         create_knight_moves(&mut file)?;
         create_king_moves(&mut file)?;
 
         let (bishop_rays, rook_rays) = create_rays(&mut file)?;
-        create_all_slider_moves(&mut file, &bishop_rays, &rook_rays)?;
+        #[cfg(target_feature = "bmi2")]
+        create_all_slider_moves_bmi(&mut file, &bishop_rays, &rook_rays)?;
+        #[cfg(not(target_feature = "bmi2"))]
+        create_all_slider_moves_non_bmi(&mut file, &bishop_rays, &rook_rays)?;
+
+        file.flush()?;
 
         Ok(())
     }
@@ -645,13 +682,14 @@ mod nnue_features {
         Ok(hash.starts_with(expected_hash_start))
     }
 
-    fn generate_nnue_file(nnue_file: &mut File) -> Result<()> {
+    fn generate_nnue_file(nnue_file: &mut impl Write) -> Result<()> {
         let url = format!("https://tests.stockfishchess.org/api/nn/{}", NNUE_FILE_NAME);
         let response = minreq::get(url).send()?;
         if response.status_code == 200 {
             nnue_file
                 .write_all(response.as_bytes())
                 .map_err(|_| "Could not copy NNUE file data to the nnue file!")?;
+            nnue_file.flush()?;
             Ok(())
         } else {
             Err(format!("Could not download NNUE file! Check your internet connection! Got response status code {}", response.status_code).into())
@@ -665,8 +703,10 @@ mod nnue_features {
         let nnue_path = nnue_dir.join("nn.nnue");
         if !nnue_downloaded_correctly(&nnue_path)? {
             remove_nnue_file(&nnue_path)?;
-            let mut nnue_file = File::create(nnue_path.clone())
-                .map_err(|_| format!("Failed to create file at {:#?}", nnue_dir))?;
+            let mut nnue_file = BufWriter::new(
+                File::create(nnue_path.clone())
+                    .map_err(|_| format!("Failed to create file at {:#?}", nnue_dir))?,
+            );
             println!("cargo:rerun-if-env-changed=DOCS_RS");
             println!("cargo:rerun-if-env-changed=NNUE_DOWNLOAD");
             if std::env::var("DOCS_RS").is_ok()

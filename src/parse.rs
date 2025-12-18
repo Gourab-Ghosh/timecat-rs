@@ -54,8 +54,8 @@ impl UserCommand {
         }
     }
 
-    pub fn generate_help_message() -> Cow<'static, str> {
-        "Sadly, the help message is till now not implemented. But type uci to go into the uci mode and visit the link \"https://backscattering.de/chess/uci/\" to know the necessary commands required to use an uci chess engine.".colorize(ERROR_MESSAGE_STYLE).into()
+    pub fn generate_help_message() -> String {
+        "Sadly, the help message is till now not implemented. But type uci to go into the uci mode and visit the link \"https://backscattering.de/chess/uci/\" to know the necessary commands required to use an uci chess engine.".colorize(ERROR_MESSAGE_STYLE)
     }
 
     pub fn run_command<T: ChessEngine>(
@@ -117,6 +117,7 @@ impl UserCommand {
             }
             Self::Features => {
                 println_info("CPU Architecture", std::env::consts::ARCH);
+                println_info("Global Allocator", GLOBAL_ALLOCATOR);
                 println_info("BMI2 Support", cfg!(target_feature = "bmi2"));
                 println_info("AVX2 Support", cfg!(target_feature = "avx2"));
             }

@@ -5,24 +5,8 @@ use std::arch::x86_64::{_pdep_u64, _pext_u64};
 
 include!(concat!(env!("OUT_DIR"), "/magic.rs"));
 
-/// Get the moves for a bishop on a particular square, given blockers blocking my movement.
-fn get_bishop_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
-    let magic: Magic = *get_item_unchecked!(
-        const { BISHOP_AND_ROOK_MAGIC_NUMBERS[0] },
-        square.to_index()
-    );
-    *get_item_unchecked!(
-        MOVES,
-        magic.offset
-            + ((blockers & magic.mask)
-                .into_inner()
-                .wrapping_mul(magic.magic_number)
-                >> magic.right_shift) as usize,
-    ) & square.get_bishop_rays_bb()
-}
-
-/// Get the moves for a bishop on a particular square, given blockers blocking my movement.
 #[cfg(target_feature = "bmi2")]
+/// Get the moves for a bishop on a particular square, given blockers blocking my movement.
 fn get_bishop_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
     let bmi2_magic =
         *get_item_unchecked!(const { BISHOP_AND_ROOK_BMI_MASKS[0] }, square.to_index());
@@ -38,24 +22,8 @@ fn get_bishop_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
     BitBoard::new(result)
 }
 
-/// Get the moves for a rook on a particular square, given blockers blocking my movement.
-fn get_rook_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
-    let magic: Magic = *get_item_unchecked!(
-        const { BISHOP_AND_ROOK_MAGIC_NUMBERS[1] },
-        square.to_index()
-    );
-    *get_item_unchecked!(
-        MOVES,
-        magic.offset
-            + ((blockers & magic.mask)
-                .into_inner()
-                .wrapping_mul(magic.magic_number)
-                >> magic.right_shift) as usize,
-    ) & square.get_rook_rays_bb()
-}
-
-/// Get the moves for a rook on a particular square, given blockers blocking my movement.
 #[cfg(target_feature = "bmi2")]
+/// Get the moves for a rook on a particular square, given blockers blocking my movement.
 fn get_rook_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
     let bmi2_magic =
         *get_item_unchecked!(const { BISHOP_AND_ROOK_BMI_MASKS[1] }, square.to_index());
@@ -72,34 +40,37 @@ fn get_rook_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
 }
 
 /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
-#[inline]
-pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
-    #[cfg(target_feature = "bmi2")]
-    {
-        get_bishop_moves_bmi(square, blockers)
-    }
-    #[cfg(not(target_feature = "bmi2"))]
-    {
-        get_bishop_moves_non_bmi(square, blockers)
-    }
+#[cfg(not(target_feature = "bmi2"))]
+fn get_bishop_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
+    let magic: Magic = *get_item_unchecked!(
+        const { BISHOP_AND_ROOK_MAGIC_NUMBERS[0] },
+        square.to_index()
+    );
+    *get_item_unchecked!(
+        MOVES,
+        magic.offset
+            + ((blockers & magic.mask)
+                .into_inner()
+                .wrapping_mul(magic.magic_number)
+                >> magic.right_shift) as usize,
+    ) & square.get_bishop_rays_bb()
 }
 
 /// Get the moves for a rook on a particular square, given blockers blocking my movement.
-#[inline]
-pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
-    #[cfg(target_feature = "bmi2")]
-    {
-        get_rook_moves_bmi(square, blockers)
-    }
-    #[cfg(not(target_feature = "bmi2"))]
-    {
-        get_rook_moves_non_bmi(square, blockers)
-    }
-}
-
-#[inline]
-pub fn get_queen_moves(square: Square, blockers: BitBoard) -> BitBoard {
-    get_bishop_moves(square, blockers) ^ get_rook_moves(square, blockers)
+#[cfg(not(target_feature = "bmi2"))]
+fn get_rook_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
+    let magic: Magic = *get_item_unchecked!(
+        const { BISHOP_AND_ROOK_MAGIC_NUMBERS[1] },
+        square.to_index()
+    );
+    *get_item_unchecked!(
+        MOVES,
+        magic.offset
+            + ((blockers & magic.mask)
+                .into_inner()
+                .wrapping_mul(magic.magic_number)
+                >> magic.right_shift) as usize,
+    ) & square.get_rook_rays_bb()
 }
 
 /// Get the legal destination castle squares for both players
@@ -346,19 +317,6 @@ impl Square {
         unsafe { Self::from_int(self.to_int() ^ 0x3f) }
     }
 
-    /// Get a line (extending to infinity, which in chess is 8 squares), given two squares.
-    /// This line does extend past the squares.
-    #[inline]
-    pub fn line(self, other: Self) -> BitBoard {
-        *get_item_unchecked!(LINE, self.to_index(), other.to_index())
-    }
-
-    /// Get a line between these two squares, not including the squares themselves.
-    #[inline]
-    pub fn between(self, other: Self) -> BitBoard {
-        *get_item_unchecked!(BETWEEN, self.to_index(), other.to_index())
-    }
-
     /// Get the rays for a bishop on a particular square.
     #[inline]
     pub fn get_diagonal_bishop_rays_bb(self) -> BitBoard {
@@ -389,44 +347,18 @@ impl Square {
         *get_item_unchecked!(ALL_DIRECTION_RAYS, self.to_index())
     }
 
-    /// Get the king moves for a particular square.
+    /// Get a line between these two squares, not including the squares themselves.
     #[inline]
-    pub fn get_king_moves(self) -> BitBoard {
-        *get_item_unchecked!(KING_MOVES, self.to_index())
+    pub fn between(self, other: Self) -> BitBoard {
+        *get_item_unchecked!(BETWEEN, self.to_index(), other.to_index())
     }
 
-    /// Get the knight moves for a particular square.
+    /// Get a line (extending to infinity, which in chess is 8 squares), given two squares.
+    /// This line does extend past the squares.
     #[inline]
-    pub fn get_knight_moves(self) -> BitBoard {
-        *get_item_unchecked!(KNIGHT_MOVES, self.to_index())
+    pub fn line(self, other: Self) -> BitBoard {
+        *get_item_unchecked!(LINE, self.to_index(), other.to_index())
     }
-
-    /// Get the pawn capture move for a particular square, given the pawn's color and the potential
-    /// victims
-    #[inline]
-    pub fn get_pawn_attacks(self, color: Color, blockers: BitBoard) -> BitBoard {
-        *get_item_unchecked!(
-            const { PAWN_MOVES_AND_ATTACKS[1] },
-            color.to_index(),
-            self.to_index()
-        ) & blockers
-    }
-
-    // /// Get the quiet pawn moves (non-captures) for a particular square, given the pawn's color and
-    // /// the potential blocking pieces.
-    // #[inline]
-    // pub fn get_pawn_quiets(self, color: Color, blockers: BitBoard) -> BitBoard {
-    //     // TODO: Maybe optimization possible?
-    //     if (self.to_bitboard().shift_forward(color) & blockers).is_empty() {
-    //         *get_item_unchecked!(
-    //             const { PAWN_MOVES_AND_ATTACKS[0] },
-    //             color.to_index(),
-    //             self.to_index()
-    //         ) & !blockers
-    //     } else {
-    //         BitBoard::EMPTY
-    //     }
-    // }
 
     /// Get the quiet pawn moves (non-captures) for a particular square, given the pawn's color and
     /// the potential blocking pieces.
@@ -446,11 +378,65 @@ impl Square {
         }
     }
 
+    /// Get the pawn capture move for a particular square, given the pawn's color and the potential
+    /// victims
+    #[inline]
+    pub fn get_pawn_attacks(self, color: Color, blockers: BitBoard) -> BitBoard {
+        *get_item_unchecked!(
+            const { PAWN_MOVES_AND_ATTACKS[1] },
+            color.to_index(),
+            self.to_index()
+        ) & blockers
+    }
+
     /// Get all the pawn moves for a particular square, given the pawn's color and the potential
     /// blocking pieces and victims.
     #[inline]
     pub fn get_pawn_moves(self, color: Color, blockers: BitBoard) -> BitBoard {
-        self.get_pawn_attacks(color, blockers) ^ self.get_pawn_quiets(color, blockers)
+        self.get_pawn_quiets(color, blockers) ^ self.get_pawn_attacks(color, blockers)
+    }
+
+    /// Get the knight moves for a particular square.
+    #[inline]
+    pub fn get_knight_moves(self) -> BitBoard {
+        *get_item_unchecked!(KNIGHT_MOVES, self.to_index())
+    }
+
+    /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
+    #[inline]
+    pub fn get_bishop_moves(self, blockers: BitBoard) -> BitBoard {
+        #[cfg(target_feature = "bmi2")]
+        {
+            get_bishop_moves_bmi(self, blockers)
+        }
+        #[cfg(not(target_feature = "bmi2"))]
+        {
+            get_bishop_moves_non_bmi(self, blockers)
+        }
+    }
+
+    /// Get the moves for a rook on a particular square, given blockers blocking my movement.
+    #[inline]
+    pub fn get_rook_moves(self, blockers: BitBoard) -> BitBoard {
+        #[cfg(target_feature = "bmi2")]
+        {
+            get_rook_moves_bmi(self, blockers)
+        }
+        #[cfg(not(target_feature = "bmi2"))]
+        {
+            get_rook_moves_non_bmi(self, blockers)
+        }
+    }
+
+    #[inline]
+    pub fn get_queen_moves(self, blockers: BitBoard) -> BitBoard {
+        self.get_bishop_moves(blockers) ^ self.get_rook_moves(blockers)
+    }
+
+    /// Get the king moves for a particular square.
+    #[inline]
+    pub fn get_king_moves(self) -> BitBoard {
+        *get_item_unchecked!(KING_MOVES, self.to_index())
     }
 }
 

@@ -814,9 +814,9 @@ impl ChessPosition {
             attacked_squares |= match piece.get_piece_type() {
                 Pawn => square.get_pawn_attacks(piece.get_color(), BitBoard::ALL),
                 Knight => square.get_knight_moves(),
-                Bishop => get_bishop_moves(square, self.occupied()),
-                Rook => get_rook_moves(square, self.occupied()),
-                Queen => get_queen_moves(square, self.occupied()),
+                Bishop => square.get_bishop_moves(self.occupied()),
+                Rook => square.get_rook_moves(self.occupied()),
+                Queen => square.get_queen_moves(self.occupied()),
                 King => square.get_king_moves(),
             };
         }
@@ -849,8 +849,8 @@ impl ChessPosition {
         ) & self.get_piece_mask(Pawn);
 
         // TODO: Scope for improvement?
-        let sliding_attackers = (get_bishop_moves(target_square, occupied) & queens_and_bishops)
-            | (get_rook_moves(target_square, occupied) & queens_and_rooks);
+        let sliding_attackers = (target_square.get_bishop_moves(occupied) & queens_and_bishops)
+            | (target_square.get_rook_moves(occupied) & queens_and_rooks);
         let non_sliding_attackers = pawn_attacks
             ^ (target_square.get_knight_moves() & self.get_piece_mask(Knight))
             ^ (target_square.get_king_moves() & self.get_piece_mask(King));
@@ -884,9 +884,9 @@ impl ChessPosition {
                 |color| target_square.get_pawn_attacks(!color, BitBoard::ALL),
             ),
             Knight => target_square.get_knight_moves(),
-            Bishop => get_bishop_moves(target_square, occupied),
-            Rook => get_rook_moves(target_square, occupied),
-            Queen => get_queen_moves(target_square, occupied),
+            Bishop => target_square.get_bishop_moves(occupied),
+            Rook => target_square.get_rook_moves(occupied),
+            Queen => target_square.get_queen_moves(occupied),
             King => target_square.get_king_moves(),
         } & self.get_piece_mask(piece_type);
 

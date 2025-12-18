@@ -106,7 +106,7 @@ impl FromStr for PieceType {
                     arr['K' as usize] = Some(King);
                     arr
                 },
-                *get_item_unchecked!(s.as_bytes(), 0) as usize,
+                *get_item_unchecked!(@internal s.as_bytes(), 0) as usize,
             )
             .ok_or_else(|| TimecatError::InvalidPieceTypeString {
                 s: s.to_string().into(),
