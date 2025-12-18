@@ -5,12 +5,15 @@ use TimecatError::*;
 #[derive(Debug)]
 pub enum Pyo3Error {
     #[cfg(feature = "pyo3")]
-    Pyo3TypeConversionError { from: String, to: String },
+    Pyo3TypeConversionError {
+        from: Cow<'static, str>,
+        to: Cow<'static, str>,
+    },
 }
 
 #[cfg(feature = "pyo3")]
 impl From<Pyo3Error> for PyErr {
-    fn from(err: Pyo3Error) -> PyErr {
+    fn from(err: Pyo3Error) -> Self {
         match err {
             Pyo3Error::Pyo3TypeConversionError { from, to } => {
                 pyo3::exceptions::PyTypeError::new_err(format!(
@@ -29,14 +32,14 @@ pub enum TimecatError {
     NotImplemented,
     EngineNotRunning,
     BadFen {
-        fen: String,
+        fen: Cow<'static, str>,
     },
     InvalidDepth {
         depth: Depth,
     },
     IllegalMove {
         valid_or_null_move: ValidOrNullMove,
-        board_fen: String,
+        board_fen: Cow<'static, str>,
     },
     ColoredOutputUnchanged {
         b: bool,
@@ -45,19 +48,19 @@ pub enum TimecatError {
     ConsoleModeUnchanged,
     EmptyStack,
     BestMoveNotFound {
-        fen: String,
+        fen: Cow<'static, str>,
     },
     NullMoveInCheck {
-        fen: String,
+        fen: Cow<'static, str>,
     },
     WTimeNotMentioned,
     BTimeNotMentioned,
     GameAlreadyOver,
     UnknownDebugCommand {
-        command: String,
+        command: Cow<'static, str>,
     },
     InvalidSpinValue {
-        name: String,
+        name: Cow<'static, str>,
         value: Spin,
         min: Spin,
         max: Spin,
@@ -70,59 +73,69 @@ pub enum TimecatError {
     },
     InvalidSanOrLanMove {
         valid_or_null_move: ValidOrNullMove,
-        fen: String,
+        fen: Cow<'static, str>,
     },
     InvalidSanMoveString {
-        s: String,
+        s: Cow<'static, str>,
     },
     InvalidLanMoveString {
-        s: String,
+        s: Cow<'static, str>,
     },
     InvalidMoveString {
-        s: String,
+        s: Cow<'static, str>,
     },
     InvalidRankString {
-        s: String,
+        s: Cow<'static, str>,
     },
     InvalidFileString {
-        s: String,
+        s: Cow<'static, str>,
+    },
+    InvalidColorString {
+        s: Cow<'static, str>,
+    },
+    InvalidCastleRightsString {
+        s: Cow<'static, str>,
     },
     InvalidSquareString {
-        s: String,
+        s: Cow<'static, str>,
     },
     InvalidPieceTypeString {
-        s: String,
+        s: Cow<'static, str>,
     },
     InvalidPieceString {
-        s: String,
+        s: Cow<'static, str>,
     },
     InvalidUciMoveString {
-        s: String,
+        s: Cow<'static, str>,
     },
     InvalidBoardPosition {
-        position: ChessPosition,
+        position: Box<ChessPosition>,
     },
     InvalidGoCommand {
-        s: String,
+        s: Cow<'static, str>,
     },
     IllegalSearchMoves {
         illegal_moves: Vec<Move>,
     },
     FeatureNotEnabled {
-        s: String,
+        s: Cow<'static, str>,
     },
     BadNNUEFile,
     BadPolyglotFile,
     PolyglotTableParseError,
+    DecompressionFailed {
+        value: Cow<'static, str>,
+        type_name: Cow<'static, str>,
+    },
     CustomError {
-        err_msg: String,
+        err_msg: Cow<'static, str>,
     },
 }
 
 impl TimecatError {
     pub fn get_custom_error<E: Error>(error: E) -> Self {
         Self::CustomError {
-            err_msg: format!("{error}! Please try again!"),
+            err_msg: format!("{error}! Please try again!").into(),
         }
     }
 }
@@ -210,6 +223,12 @@ impl fmt::Display for TimecatError {
             InvalidMoveString { s } => write!(f, "Got invalid move string {s}! Please try again!"),
             InvalidRankString { s } => write!(f, "Got invalid rank string {s}! Please try again!"),
             InvalidFileString { s } => write!(f, "Got invalid file string {s}! Please try again!"),
+            InvalidColorString { s } => {
+                write!(f, "Got invalid color string {s}! Please try again!")
+            }
+            InvalidCastleRightsString { s } => {
+                write!(f, "Got invalid castle rights string {s}! Please try again!")
+            }
             InvalidSquareString { s } => {
                 write!(f, "Got invalid square string {s}! Please try again!")
             }
@@ -247,6 +266,11 @@ impl fmt::Display for TimecatError {
                 f,
                 "The Polyglot Table cannot be parsed properly! Try again with a different Polyglot file!"
             ),
+            DecompressionFailed { value, type_name } => write!(
+                f,
+                "Failed to decompress value {} into {:?}",
+                value, type_name
+            ),
             CustomError { err_msg } => write!(f, "{err_msg}"),
         }
     }
@@ -263,13 +287,15 @@ impl TimecatError {
                 } else {
                     "UCI"
                 };
-                match optional_raw_input {
-                    Some(raw_input) => format!(
-                        "Unknown {command_type} Command: {:?}\nType help for more information!",
-                        raw_input.trim_end_matches('\n')
-                    ),
-                    None => format!("Unknown {command_type} Command!\nPlease try again!"),
-                }
+                optional_raw_input.map_or_else(
+                    || format!("Unknown {command_type} Command!\nPlease try again!"),
+                    |raw_input| {
+                        format!(
+                            "Unknown {command_type} Command: {:?}\nType help for more information!",
+                            raw_input.trim_end_matches('\n')
+                        )
+                    },
+                )
             }
             other_err => other_err.to_string(),
         }
@@ -278,7 +304,7 @@ impl TimecatError {
 
 impl From<TimecatError> for String {
     fn from(error: TimecatError) -> Self {
-        error.stringify()
+        error.stringify().into()
     }
 }
 
@@ -291,7 +317,7 @@ impl From<&Self> for TimecatError {
 impl From<ParseBoolError> for TimecatError {
     fn from(error: ParseBoolError) -> Self {
         CustomError {
-            err_msg: format!("Failed to parse bool, {error}! Please try again!"),
+            err_msg: format!("Failed to parse bool, {error}! Please try again!").into(),
         }
     }
 }
@@ -299,7 +325,7 @@ impl From<ParseBoolError> for TimecatError {
 impl From<ParseIntError> for TimecatError {
     fn from(error: ParseIntError) -> Self {
         CustomError {
-            err_msg: format!("Failed to parse integer, {error}! Please try again!"),
+            err_msg: format!("Failed to parse integer, {error}! Please try again!").into(),
         }
     }
 }
@@ -319,19 +345,25 @@ impl_error_convert!(std::array::TryFromSliceError);
 
 impl From<String> for TimecatError {
     fn from(err_msg: String) -> Self {
-        CustomError { err_msg }
+        Cow::from(err_msg).into()
     }
 }
 
-impl From<&str> for TimecatError {
-    fn from(err_msg: &str) -> Self {
-        err_msg.to_string().into()
+impl From<&'static str> for TimecatError {
+    fn from(err_msg: &'static str) -> Self {
+        Cow::from(err_msg).into()
+    }
+}
+
+impl From<Cow<'static, str>> for TimecatError {
+    fn from(err_msg: Cow<'static, str>) -> Self {
+        CustomError { err_msg }
     }
 }
 
 #[cfg(feature = "pyo3")]
 impl From<TimecatError> for PyErr {
-    fn from(err: TimecatError) -> PyErr {
+    fn from(err: TimecatError) -> Self {
         pyo3::exceptions::PyRuntimeError::new_err(format!("TimecatError occurred: {:?}", err))
     }
 }

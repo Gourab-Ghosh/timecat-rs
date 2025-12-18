@@ -1,56 +1,5 @@
 use super::*;
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug)]
-pub struct PVTable {
-    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
-    length: [usize; MAX_PLY],
-    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
-    table: [SerdeWrapper<[Option<Move>; MAX_PLY]>; MAX_PLY],
-}
-
-impl PVTable {
-    pub fn new() -> Self {
-        Self {
-            length: [0; MAX_PLY],
-            table: [SerdeWrapper::new([None; MAX_PLY]); MAX_PLY],
-        }
-    }
-
-    pub fn get_pv(&self, ply: Ply) -> impl Iterator<Item = &Move> {
-        get_item_unchecked!(
-            self.table,
-            ply,
-            0..*get_item_unchecked!(@internal self.length, ply)
-        )
-        .iter()
-        .map_while(Option::as_ref)
-    }
-
-    pub fn update_table(&mut self, ply: Ply, move_: Move) {
-        *get_item_unchecked_mut!(self.table, ply, ply) = Some(move_);
-        // let range = (ply + 1)..*get_item_unchecked!(self.length, ply + 1);
-        // get_item_unchecked_mut!(self.table, ply, range.clone())
-        //     .copy_from_slice(get_item_unchecked!(self.table, ply + 1, range));
-        for next_ply in (ply + 1)..*get_item_unchecked!(self.length, ply + 1) {
-            *get_item_unchecked_mut!(self.table, ply, next_ply) =
-                *get_item_unchecked!(self.table, ply + 1, next_ply);
-        }
-        self.set_length(ply, *get_item_unchecked!(self.length, ply + 1));
-    }
-
-    #[inline]
-    pub fn set_length(&mut self, ply: Ply, length: usize) {
-        *get_item_unchecked_mut!(self.length, ply) = length;
-    }
-}
-
-impl Default for PVTable {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 // #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Searcher<P: PositionEvaluation> {
@@ -376,7 +325,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 continue;
             }
             let clock = Instant::now();
-            self.push_unchecked(move_);
+            unsafe { self.push_unchecked(move_) };
             if move_index == 0
                 || -self.alpha_beta(depth - 1, -alpha - 1, -alpha, controller.as_deref_mut())?
                     > alpha
@@ -550,7 +499,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 // let reduced_depth = depth - r - 1;
                 let r = 1920 + (depth as u32) * 2368;
                 let reduced_depth = ((depth as u32) - r / 4096) as Depth;
-                self.push_unchecked(ValidOrNullMove::NullMove);
+                unsafe { self.push_unchecked(ValidOrNullMove::NullMove) };
                 let score =
                     -self.alpha_beta(reduced_depth, -beta, -beta + 1, controller.as_deref_mut())?;
                 self.pop().unwrap();
@@ -596,7 +545,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 && move_index >= FULL_DEPTH_SEARCH_LMR
                 && depth >= REDUCTION_LIMIT_LMR
                 && not_an_interesting_position;
-            self.push_unchecked(move_);
+            unsafe { self.push_unchecked(move_) };
             safe_to_apply_lmr &= !self.board.is_check();
             let mut score: Score;
             if move_index == 0 {
@@ -702,7 +651,7 @@ impl<P: PositionEvaluation> Searcher<P> {
             if weight.is_negative() {
                 break;
             }
-            self.push_unchecked(move_);
+            unsafe { self.push_unchecked(move_) };
             let score = -self.quiescence(-beta, -alpha, controller.as_deref_mut())?;
             self.pop().unwrap();
             if score >= beta {
@@ -778,14 +727,14 @@ impl<P: PositionEvaluation> Searcher<P> {
 }
 
 impl<P: PositionEvaluation> SearcherMethodOverload<Move> for Searcher<P> {
-    fn push_unchecked(&mut self, move_: Move) {
+    unsafe fn push_unchecked(&mut self, move_: Move) {
         self.board.push_unchecked(move_);
         self.ply += 1;
     }
 }
 
 impl<P: PositionEvaluation> SearcherMethodOverload<ValidOrNullMove> for Searcher<P> {
-    fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
+    unsafe fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
         self.board.push_unchecked(valid_or_null_move);
         self.ply += 1;
     }

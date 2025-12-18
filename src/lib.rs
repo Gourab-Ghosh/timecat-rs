@@ -1,13 +1,23 @@
 #![doc = include_str!("../README.md")]
+#![warn(clippy::all)]
+#![warn(clippy::nursery)]
+// #![warn(clippy::cargo)]
+#![warn(clippy::style)]
+#![warn(clippy::complexity)]
+#![warn(clippy::perf)]
+#![warn(clippy::correctness)]
+// #![warn(missing_docs)]
 #![allow(unused_imports)]
 #![allow(dead_code)]
+#![allow(unsafe_op_in_unsafe_fn)]
 #![allow(clippy::macro_metavars_in_unsafe)]
-#![allow(clippy::result_large_err)]
+#![allow(clippy::missing_const_for_fn)]
 #![expect(clippy::needless_doctest_main)]
 #![expect(clippy::too_many_arguments)]
+#![expect(clippy::missing_safety_doc)]
 // #![deny(missing_debug_implementations)]
-// #![warn(missing_docs)]
 
+pub mod allocator;
 pub mod board;
 pub mod chess;
 pub mod constants;
@@ -18,6 +28,7 @@ pub mod evaluate;
 pub mod nnue;
 pub mod parse;
 pub mod polyglot;
+pub mod pv_table;
 pub mod runner;
 pub mod search;
 pub mod search_controller;
@@ -57,13 +68,14 @@ pub mod prelude {
         RepetitionTable, Rook, STARTING_POSITION_FEN, Score, SearchConfig, SearchInfo,
         SearchInfoBuilder, Square, TimecatError, TranspositionTable, ValidOrNullMove, WeightedMove,
         White, WhiteBishop, WhiteKing, WhiteKnight, WhitePawn, WhiteQueen, WhiteRook, Zobrist,
-        get_bishop_moves, get_castle_moves, get_pv_as_san, get_pv_as_uci, get_pv_string,
-        get_queen_moves, get_rook_moves, is_checkmate, self_play, simplify_fen,
+        get_castle_moves, get_pv_as_san, get_pv_as_uci, get_pv_string, is_checkmate, self_play,
+        simplify_fen,
     };
 
     pub use utils::extension_traits::*;
 }
 
+pub use allocator::*;
 pub use arrayvec::ArrayVec;
 #[cfg(feature = "binread")]
 pub use binread::{BinRead, BinResult};
@@ -95,6 +107,7 @@ pub use nnue::*;
 pub use parse::*;
 pub use paste::paste;
 pub use polyglot::*;
+pub use pv_table::*;
 #[cfg(feature = "pyo3")]
 pub use pyo3::prelude::*;
 pub use runner::*;
@@ -110,10 +123,10 @@ pub use std::collections::HashSet;
 pub use std::convert::{From, Infallible};
 pub use std::env;
 pub use std::error::Error;
-pub use std::fmt::{self, Debug};
+pub use std::fmt::{self, Debug, Write as FmtWrite};
 pub use std::fs;
 pub use std::hash::{Hash, Hasher};
-pub use std::io::{BufReader, Read, Seek, Write};
+pub use std::io::{BufReader, Read, Seek, Write as IoWrite};
 pub use std::iter::Sum;
 pub use std::num::{NonZeroU64, NonZeroUsize, ParseIntError, Wrapping};
 pub use std::ops::{

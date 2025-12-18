@@ -5,9 +5,34 @@ use super::*;
 #[derive(Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Debug, Hash)]
 pub struct BitBoard(u64);
 
+macro_rules! generate_shift_functions {
+    ($func: ident, $operator: tt, $empty_side: ident) => {
+        #[inline]
+        pub fn $func(self, n: u8) -> Self {
+            if n > 7 {
+                BitBoard::EMPTY
+            } else {
+                (self $operator n)
+                    & get_item_unchecked!(
+                        const {
+                            let mut array = [BitBoard::ALL; 8];
+                            let mut i = 1;
+                            while i < 8 {
+                                array[i].0 = array[i - 1].0 & !($empty_side.0 $operator (i - 1));
+                                i += 1;
+                            }
+                            array
+                        },
+                        n as usize,
+                    )
+            }
+        }
+    };
+}
+
 impl BitBoard {
     pub const EMPTY: Self = Self(0);
-    pub const ALL: Self = BitBoard::new(0xFFFFFFFFFFFFFFFF);
+    pub const ALL: Self = Self::new(0xFFFFFFFFFFFFFFFF);
 
     #[inline]
     pub const fn new(bb: u64) -> Self {
@@ -19,9 +44,10 @@ impl BitBoard {
         self.0 = mask;
     }
 
+    /// Generates the bitboard of the square at the intersection of the given rank and file.
     #[inline]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Self {
-        Self::new(1 << ((rank.to_int() << 3) | file.to_int()))
+        Self::new(1 << ((rank.to_int() << 3) ^ file.to_int()))
     }
 
     #[inline]
@@ -35,13 +61,13 @@ impl BitBoard {
     }
 
     #[inline]
-    pub const fn to_square_index_unchecked(self) -> usize {
+    pub const unsafe fn to_square_index_unchecked(self) -> usize {
         self.0.trailing_zeros() as usize
     }
 
     #[inline]
-    pub fn to_square_unchecked(self) -> Square {
-        *get_item_unchecked!(ALL_SQUARES, self.to_square_index_unchecked())
+    pub const unsafe fn to_square_unchecked(self) -> Square {
+        Square::from_index(self.to_square_index_unchecked())
     }
 
     #[inline]
@@ -49,41 +75,41 @@ impl BitBoard {
         if self.is_empty() {
             None
         } else {
-            Some(self.to_square_index_unchecked())
+            Some(unsafe { self.to_square_index_unchecked() })
         }
     }
 
     #[inline]
-    pub fn to_square(self) -> Option<Square> {
+    pub const fn to_square(self) -> Option<Square> {
         if self.is_empty() {
             None
         } else {
-            Some(self.to_square_unchecked())
+            Some(unsafe { self.to_square_unchecked() })
         }
     }
 
     #[inline]
-    pub fn xor_square(&mut self, square: Square) {
-        self.0 ^= square.to_bitboard();
+    pub const fn xor_square(&mut self, square: Square) {
+        self.0 ^= square.to_bitboard().0;
     }
 
     #[inline]
-    pub fn remove_square(&mut self, square: Square) {
-        self.0 &= !square.to_bitboard();
+    pub const fn remove_square(&mut self, square: Square) {
+        self.0 &= !square.to_bitboard().0;
     }
 
-    pub fn pop_square_unchecked(&mut self) -> Square {
+    pub const unsafe fn pop_square_unchecked(&mut self) -> Square {
         let square = self.to_square_unchecked();
         self.xor_square(square);
         square
     }
 
     #[inline]
-    pub fn pop_square(&mut self) -> Option<Square> {
+    pub const fn pop_square(&mut self) -> Option<Square> {
         if self.is_empty() {
             None
         } else {
-            Some(self.pop_square_unchecked())
+            Some(unsafe { self.pop_square_unchecked() })
         }
     }
 
@@ -94,7 +120,7 @@ impl BitBoard {
 
     #[inline]
     pub const fn is_empty(self) -> bool {
-        self.0 == Self::EMPTY.0
+        self.0 == const { Self::EMPTY.0 }
     }
 
     /// <https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating#FlipVertically>
@@ -140,100 +166,75 @@ impl BitBoard {
     }
 
     #[inline]
-    pub const fn shift_forward(self, color: Color) -> Self {
-        match color {
-            White => self.shift_up(),
-            Black => self.shift_down(),
+    pub const fn shift_up_n_times(self, n: u8) -> Self {
+        if n > 7 {
+            Self::EMPTY
+        } else {
+            Self::new(self.0 << (n << 3))
         }
     }
 
     #[inline]
-    pub const fn shift_backward(self, color: Color) -> Self {
-        match color {
-            White => self.shift_down(),
-            Black => self.shift_up(),
+    pub const fn shift_down_n_times(self, n: u8) -> Self {
+        if n > 7 {
+            Self::EMPTY
+        } else {
+            Self::new(self.0 >> (n << 3))
         }
     }
+
+    generate_shift_functions!(shift_left_n_times, >>, BB_FILE_H);
+    generate_shift_functions!(shift_right_n_times, <<, BB_FILE_A);
 
     #[inline]
     pub const fn shift_up(self) -> Self {
-        Self::new((self.0 & !BB_RANK_8.0) << 8)
+        self.shift_up_n_times(1)
     }
 
     #[inline]
     pub const fn shift_down(self) -> Self {
-        Self::new(self.0 >> 8)
+        self.shift_down_n_times(1)
     }
 
     #[inline]
     pub const fn shift_left(self) -> Self {
-        Self::new((self.0 & !BB_FILE_A.0) >> 1)
+        Self::new((self.0 & const { !BB_FILE_A.0 }) >> 1)
     }
 
     #[inline]
     pub const fn shift_right(self) -> Self {
-        Self::new((self.0 & !BB_FILE_H.0) << 1)
-    }
-
-    pub const fn shift_up_n_times(self, n: u8) -> Self {
-        // TODO: Optimize the function
-        if n > 7 {
-            return BitBoard::EMPTY;
-        }
-        let mut bb = self.0;
-        let mut i = 0;
-        while i < n {
-            bb = (bb & !BB_RANK_8.0) << 8;
-            i += 1;
-        }
-        Self::new(bb)
-    }
-
-    pub const fn shift_down_n_times(self, n: u8) -> Self {
-        // TODO: Optimize the function
-        if n > 7 {
-            return BitBoard::EMPTY;
-        }
-        let mut bb = self.0;
-        let mut i = 0;
-        while i < n {
-            bb >>= 8;
-            i += 1;
-        }
-        Self::new(bb)
-    }
-
-    pub const fn shift_left_n_times(self, n: u8) -> Self {
-        // TODO: Optimize the function
-        if n > 7 {
-            return BitBoard::EMPTY;
-        }
-        let mut bb = self.0;
-        let mut i = 0;
-        while i < n {
-            bb = (bb & !BB_FILE_A.0) >> 1;
-            i += 1;
-        }
-        Self::new(bb)
-    }
-
-    pub const fn shift_right_n_times(self, n: u8) -> Self {
-        // TODO: Optimize the function
-        if n > 7 {
-            return BitBoard::EMPTY;
-        }
-        let mut bb = self.0;
-        let mut i = 0;
-        while i < n {
-            bb = (bb & !BB_FILE_H.0) << 1;
-            i += 1;
-        }
-        Self::new(bb)
+        Self::new((self.0 & const { !BB_FILE_H.0 }) << 1)
     }
 
     #[inline]
-    pub fn contains(self, square: Square) -> bool {
-        !(self & square.to_bitboard()).is_empty()
+    pub const fn shift_forward_n_times(self, color: Color, n: u8) -> Self {
+        match color {
+            White => self.shift_up_n_times(n),
+            Black => self.shift_down_n_times(n),
+        }
+    }
+
+    #[inline]
+    pub const fn shift_backward_n_times(self, color: Color, n: u8) -> Self {
+        match color {
+            White => self.shift_down_n_times(n),
+            Black => self.shift_up_n_times(n),
+        }
+    }
+
+    #[inline]
+    pub const fn shift_forward(self, color: Color) -> Self {
+        self.shift_forward_n_times(color, 1)
+    }
+
+    #[inline]
+    pub const fn shift_backward(self, color: Color) -> Self {
+        self.shift_backward_n_times(color, 1)
+    }
+
+    #[inline]
+    pub const fn contains(self, square: Square) -> bool {
+        !Self::new(self.0 & square.to_bitboard().0).is_empty()
     }
 
     #[inline]
@@ -427,10 +428,10 @@ impl Not for &BitBoard {
 }
 
 impl Not for BitBoard {
-    type Output = BitBoard;
+    type Output = Self;
 
     #[inline]
-    fn not(self) -> BitBoard {
+    fn not(self) -> Self {
         !&self
     }
 }
@@ -454,7 +455,7 @@ impl fmt::Display for BitBoard {
             get_board_string(true, |square| if self.contains(square) {
                 occupied_symbol.as_str().into()
             } else {
-                " ".into()
+                Cow::Borrowed(" ")
             })
         )
     }
@@ -467,8 +468,8 @@ impl<'source> FromPyObject<'source> for BitBoard {
             return Ok(Self::new(int));
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }

@@ -11,7 +11,7 @@ pub trait Compress {
 }
 
 pub trait Decompress<T> {
-    fn decompress(self) -> T;
+    fn decompress(self) -> Result<T>;
 }
 
 #[cfg(feature = "colored")]
@@ -43,24 +43,24 @@ pub trait ClippedRelu<InputType, OutputType, const N: usize> {
 }
 
 pub trait StringifyScore {
-    fn stringify_score_console(self) -> String;
-    fn stringify_score_uci(self) -> String;
-    fn stringify_score(self) -> String;
+    fn stringify_score_console<'a>(self) -> Cow<'a, str>;
+    fn stringify_score_uci<'a>(self) -> Cow<'a, str>;
+    fn stringify_score<'a>(self) -> Cow<'a, str>;
 }
 
 pub trait StringifyMove {
-    fn uci(self) -> String;
-    fn algebraic(self, position: &ChessPosition, long: bool) -> Result<String>;
-    fn stringify_move(self, position: &ChessPosition) -> Result<String>;
+    fn uci<'a>(self) -> Cow<'a, str>;
+    fn algebraic<'a>(self, position: &ChessPosition, long: bool) -> Result<Cow<'a, str>>;
+    fn stringify_move<'a>(self, position: &ChessPosition) -> Result<Cow<'a, str>>;
 
-    fn san(self, position: &ChessPosition) -> Result<String>
+    fn san<'a>(self, position: &ChessPosition) -> Result<Cow<'a, str>>
     where
         Self: Sized,
     {
         self.algebraic(position, false)
     }
 
-    fn lan(self, position: &ChessPosition) -> Result<String>
+    fn lan<'a>(self, position: &ChessPosition) -> Result<Cow<'a, str>>
     where
         Self: Sized,
     {
@@ -73,7 +73,7 @@ pub trait StringifyHash {
 }
 
 pub trait Stringify {
-    fn stringify(&self) -> String;
+    fn stringify<'a>(&self) -> Cow<'a, str>;
 }
 
 // TODO: Try to remove static lifetime from the trait
@@ -247,7 +247,7 @@ pub trait BoardPositionMethodOverload<T> {
 
 pub trait BoardMethodOverload<T> {
     // TODO: Avoid Code Repetition
-    fn push_unchecked(&mut self, _: T);
+    unsafe fn push_unchecked(&mut self, _: T);
     fn push(&mut self, _: T) -> Result<()>;
     fn gives_repetition(&self, _: T) -> bool;
     fn gives_threefold_repetition(&self, _: T) -> bool;
@@ -262,13 +262,37 @@ pub trait PolyglotBook {
 }
 
 pub trait SearcherMethodOverload<T> {
-    fn push_unchecked(&mut self, _: T);
+    unsafe fn push_unchecked(&mut self, _: T);
 }
 
 #[cfg(feature = "serde")]
-pub trait SerdeHandler<'de> {
+pub trait SerdeSerialize {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>;
+}
+
+#[cfg(feature = "serde")]
+pub trait SerdeDeserialize<'de> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         Self: Sized;
 }
+
+pub trait FloatExtensions {
+    #[allow(clippy::wrong_self_convention)]
+    fn is_integer(self) -> bool;
+}
+
+macro_rules! impl_float {
+    ($($float: ty),+ $(,)?) => {
+        $(
+            impl FloatExtensions for $float {
+                #[inline]
+                fn is_integer(self) -> bool {
+                    self.trunc().to_bits() == self.to_bits()
+                }
+            }
+        )+
+    };
+}
+
+impl_float!(f32, f64);

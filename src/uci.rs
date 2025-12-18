@@ -36,7 +36,7 @@ enum UCIOptionType<T: ChessEngine> {
         function: fn(&mut T, bool) -> Result<()>,
     },
     String {
-        default: String,
+        default: Cow<'static, str>,
         function: fn(&mut T, &str) -> Result<()>,
     },
     Spin {
@@ -46,8 +46,8 @@ enum UCIOptionType<T: ChessEngine> {
         function: fn(&mut T, Spin) -> Result<()>,
     },
     Combo {
-        default: String,
-        options: Vec<String>,
+        default: Cow<'static, str>,
+        options: Vec<Cow<'static, str>>,
         function: fn(&mut T, &str) -> Result<()>,
     },
 }
@@ -84,22 +84,22 @@ impl<T: Clone + Copy + IntoSpin> SpinValue<T> {
 
 #[derive(Clone, Debug)]
 pub struct UCIOption<T: ChessEngine> {
-    name: String,
-    sorted_aliases: Vec<String>,
+    name: Cow<'static, str>,
+    sorted_aliases: Vec<Cow<'static, str>>,
     option_type: UCIOptionType<T>,
 }
 
 impl<T: ChessEngine> UCIOption<T> {
     fn new(name: &str, option_type: UCIOptionType<T>) -> Self {
         Self {
-            name: name.trim().to_string(),
+            name: name.trim().to_string().into(),
             sorted_aliases: vec![],
             option_type,
         }
     }
 
     fn alias(mut self, name: &str) -> Self {
-        self.sorted_aliases.push(name.trim().to_lowercase());
+        self.sorted_aliases.push(name.trim().to_lowercase().into());
         self.sorted_aliases.sort_unstable();
         self
     }
@@ -109,7 +109,7 @@ impl<T: ChessEngine> UCIOption<T> {
         values: SpinValue<U>,
         function: fn(&mut T, Spin) -> Result<()>,
     ) -> Self {
-        UCIOption::new(
+        Self::new(
             name,
             UCIOptionType::Spin {
                 default: values.get_default().into_spin(),
@@ -121,18 +121,22 @@ impl<T: ChessEngine> UCIOption<T> {
     }
 
     fn new_check(name: &str, default: bool, function: fn(&mut T, bool) -> Result<()>) -> Self {
-        UCIOption::new(name, UCIOptionType::Check { default, function })
+        Self::new(name, UCIOptionType::Check { default, function })
     }
 
     fn new_button(name: &str, function: fn(&mut T) -> Result<()>) -> Self {
-        UCIOption::new(name, UCIOptionType::Button { function })
+        Self::new(name, UCIOptionType::Button { function })
     }
 
-    fn new_string(name: &str, default: String, function: fn(&mut T, &str) -> Result<()>) -> Self {
-        UCIOption::new(name, UCIOptionType::String { default, function })
+    fn new_string(
+        name: &str,
+        default: Cow<'static, str>,
+        function: fn(&mut T, &str) -> Result<()>,
+    ) -> Self {
+        Self::new(name, UCIOptionType::String { default, function })
     }
 
-    fn set_option(&self, engine: &mut T, value_string: String) -> Result<()> {
+    fn set_option(&self, engine: &mut T, value_string: Cow<'static, str>) -> Result<()> {
         match self.option_type {
             UCIOptionType::Check { function, .. } => {
                 function(engine, value_string.parse()?)?;
@@ -143,7 +147,7 @@ impl<T: ChessEngine> UCIOption<T> {
                 let value = value_string.parse()?;
                 if value < min || value > max {
                     return Err(TimecatError::InvalidSpinValue {
-                        name: self.name.to_owned(),
+                        name: self.name.clone(),
                         value,
                         min,
                         max,
@@ -244,15 +248,14 @@ impl<T: ChessEngine> UCIStateManager<T> {
     }
 
     pub fn get_option(&self, command_name: &str) -> Option<&UCIOption<T>> {
-        let command_name = command_name.to_string();
         self.options.iter().find(
             |UCIOption {
                  name,
                  sorted_aliases,
                  ..
              }| {
-                name.eq_ignore_ascii_case(&command_name)
-                    || sorted_aliases.binary_search(&command_name).is_ok()
+                name.eq_ignore_ascii_case(command_name)
+                    || sorted_aliases.binary_search(&command_name.into()).is_ok()
             },
         )
     }
@@ -294,7 +297,7 @@ impl<T: ChessEngine> UCIStateManager<T> {
 
         self.get_option(&command_name)
             .ok_or(TimecatError::UnknownCommand)?
-            .set_option(engine, value_string)
+            .set_option(engine, value_string.into())
     }
 }
 
@@ -305,6 +308,18 @@ impl<T: ChessEngine> Default for UCIStateManager<T> {
 }
 
 fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
+    // SetHashSize(u64),
+    // SetMultiPV(u8),
+    // SetUCIElo(u16),
+    // SetEngineMode(EngineMode),
+    // SetColor,
+    // SetConsoleMode,
+    // SetUciAnalyzeMode,
+    // SetUCIChess960,
+    // SetUCIOpponent,
+    // SetUCIShowCurrLine,
+    // SetUCIShowRefutations
+
     let options: Vec<UCIOption<T>> = vec![
         UCIOption::new_spin(
             "Threads",
@@ -357,7 +372,7 @@ fn get_uci_state_manager<T: ChessEngine>() -> Vec<UCIOption<T>> {
         ),
         UCIOption::new_string(
             "BookFile",
-            TIMECAT_DEFAULTS.book_path.unwrap_or("None").to_string(),
+            TIMECAT_DEFAULTS.book_path.unwrap_or("None").into(),
             |engine, book_path| {
                 engine.set_opening_book(Some(Arc::new(PolyglotBookReader::from_str(book_path)?)));
                 print_uci_info("BookFile is set to", book_path.to_string());

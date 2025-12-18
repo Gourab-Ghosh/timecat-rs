@@ -9,16 +9,16 @@ pub fn print_uci_info<T: fmt::Display>(message: &str, info: impl Into<Option<T>>
     if !GLOBAL_TIMECAT_STATE.is_in_debug_mode() {
         return;
     }
-    let mut to_print = match info.into() {
-        Some(info_message) => {
+    let mut to_print = info.into().map_or_else(
+        || message.colorize(SUCCESS_MESSAGE_STYLE),
+        |info_message| {
             format!(
                 "{} {}",
                 message.colorize(SUCCESS_MESSAGE_STYLE),
                 info_message.colorize(INFO_MESSAGE_STYLE),
             )
-        }
-        _ => message.colorize(SUCCESS_MESSAGE_STYLE),
-    };
+        },
+    );
     if GLOBAL_TIMECAT_STATE.is_in_uci_mode() {
         to_print = format!("{} {to_print}", "info string".colorize(INFO_MESSAGE_STYLE))
     }
@@ -59,7 +59,7 @@ impl Default for GlobalTimecatState {
 
 impl GlobalTimecatState {
     pub const fn new() -> Self {
-        GlobalTimecatState {
+        Self {
             #[cfg(feature = "colored")]
             _colored: AtomicBool::new(TIMECAT_DEFAULTS.colored),
             _console_mode: AtomicBool::new(TIMECAT_DEFAULTS.console_mode),

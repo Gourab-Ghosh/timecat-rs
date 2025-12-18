@@ -62,7 +62,7 @@ impl CastleRights {
     /// Remove castle rights, and return a new `CastleRights`.
     #[inline]
     pub fn remove(self, remove: Self) -> Self {
-        Self::from_index(self.to_index() & !remove.to_index())
+        unsafe { Self::from_int(self.to_int() & !remove.to_int()) }
     }
 
     /// Convert `CastleRights` to `u8` for table lookups
@@ -79,13 +79,13 @@ impl CastleRights {
 
     /// Convert `usize` to `CastleRights`.  Panic if invalid number.
     #[inline]
-    pub const fn from_int(i: u8) -> Self {
-        unsafe { std::mem::transmute(i) }
+    pub const unsafe fn from_int(i: u8) -> Self {
+        std::mem::transmute(i)
     }
 
     /// Convert `usize` to `CastleRights`.  Panic if invalid number.
     #[inline]
-    pub const fn from_index(i: usize) -> Self {
+    pub const unsafe fn from_index(i: usize) -> Self {
         Self::from_int(i as u8)
     }
 
@@ -105,13 +105,12 @@ impl CastleRights {
         }
     }
 
-    pub fn to_string(self, color: Color) -> String {
-        let result = get_item_unchecked!(const { ["", "k", "q", "kq"] }, self.to_index());
-        if color == White {
-            result.to_uppercase()
-        } else {
-            result.to_string()
-        }
+    #[inline]
+    pub fn to_string(self, color: Color) -> &'static str {
+        get_item_unchecked!(
+            const { ["", "k", "q", "kq", "", "K", "Q", "KQ"] },
+            color.to_index() << 2 | self.to_index()
+        )
     }
 }
 
@@ -121,7 +120,7 @@ impl Add for CastleRights {
     #[expect(clippy::suspicious_arithmetic_impl)]
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        Self::from_index(self.to_index() | rhs.to_index())
+        unsafe { Self::from_int(self.to_int() | rhs.to_int()) }
     }
 }
 
@@ -145,5 +144,35 @@ impl SubAssign for CastleRights {
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         *self = *self - rhs;
+    }
+}
+
+impl TryFrom<char> for CastleRights {
+    type Error = TimecatError;
+
+    fn try_from(value: char) -> Result<Self> {
+        match value {
+            'K' | 'k' => Ok(Self::KingSide),
+            'Q' | 'q' => Ok(Self::QueenSide),
+            _ => Err(TimecatError::InvalidCastleRightsString {
+                s: value.to_string().into(),
+            }),
+        }
+    }
+}
+
+impl FromStr for CastleRights {
+    type Err = TimecatError;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s.trim() {
+            "" => Ok(Self::None),
+            "K" | "k" => Ok(Self::KingSide),
+            "Q" | "q" => Ok(Self::QueenSide),
+            "KQ" | "kq" | "QK" | "qk" => Ok(Self::Both),
+            _ => Err(TimecatError::InvalidCastleRightsString {
+                s: s.to_string().into(),
+            }),
+        }
     }
 }

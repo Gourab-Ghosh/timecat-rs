@@ -10,7 +10,7 @@ mod model_update_test {
             return Ok(());
         }
         for valid_or_null_move in board.generate_legal_moves() {
-            board.push_unchecked(valid_or_null_move);
+            unsafe { board.push_unchecked(valid_or_null_move) };
             let position = board.get_position().to_owned();
             if board
                 .get_evaluator_mut()
@@ -37,7 +37,7 @@ mod model_update_test {
                         board.get_fen(),
                         $fen,
                         Board::variation_san(
-                            &Board::from_fen($fen).unwrap(),
+                            &mut Board::from_fen($fen).unwrap(),
                             variation.into_iter()
                         )
                         .unwrap()

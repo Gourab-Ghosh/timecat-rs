@@ -92,11 +92,11 @@ fn test_attackers_mask() {
                     && match piece.get_piece_type() {
                         Pawn => piece_square.get_pawn_attacks(board.turn(), BitBoard::ALL),
                         Knight => piece_square.get_knight_moves(),
-                        Bishop => get_bishop_moves(piece_square, board.occupied()),
-                        Rook => get_rook_moves(piece_square, board.occupied()),
+                        Bishop => piece_square.get_bishop_moves(board.occupied()),
+                        Rook => piece_square.get_rook_moves(board.occupied()),
                         Queen => {
-                            get_bishop_moves(piece_square, board.occupied())
-                                | get_rook_moves(piece_square, board.occupied())
+                            piece_square.get_bishop_moves(board.occupied())
+                                | piece_square.get_rook_moves(board.occupied())
                         }
                         King => piece_square.get_king_moves(),
                     }

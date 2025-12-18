@@ -44,10 +44,8 @@ impl UniqueIdentifier for ChessPosition {
 impl PartialEq for ChessPosition {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        if self.get_hash() != other.get_hash() {
-            return false;
-        }
-        self.unique_identifier().eq(&other.unique_identifier())
+        self.get_hash() == other.get_hash()
+            && self.unique_identifier().eq(&other.unique_identifier())
     }
 }
 
@@ -134,8 +132,10 @@ impl ChessPosition {
 
     #[inline]
     pub fn get_king_square(&self, color: Color) -> Square {
-        self.get_colored_piece_mask(King, color)
-            .to_square_unchecked()
+        unsafe {
+            self.get_colored_piece_mask(King, color)
+                .to_square_unchecked()
+        }
     }
 
     #[inline]
@@ -284,10 +284,10 @@ impl ChessPosition {
         self._occupied ^= bb;
         if piece_type == Pawn {
             self._pawn_transposition_hash ^=
-                Zobrist::piece(piece_type, bb.to_square_unchecked(), color);
+                Zobrist::piece(piece_type, unsafe { bb.to_square_unchecked() }, color);
         } else {
             self._non_pawn_transposition_hash ^=
-                Zobrist::piece(piece_type, bb.to_square_unchecked(), color);
+                Zobrist::piece(piece_type, unsafe { bb.to_square_unchecked() }, color);
         }
         if piece_type != King {
             *get_item_unchecked_mut!(self._material_scores, color.to_index()) +=
@@ -346,7 +346,7 @@ impl ChessPosition {
         self.make_move_new(move_).status() == BoardStatus::Checkmate
     }
 
-    pub fn null_move_unchecked(&self) -> Self {
+    pub unsafe fn null_move_unchecked(&self) -> Self {
         let mut result = self.to_owned();
         result.flip_turn_unchecked();
         result._transposition_hash ^= Zobrist::color(Black) ^ Zobrist::color(White);
@@ -361,10 +361,10 @@ impl ChessPosition {
     #[inline]
     pub fn null_move(&self) -> Result<Self> {
         if self.get_checkers().is_empty() {
-            Ok(self.null_move_unchecked())
+            Ok(unsafe { self.null_move_unchecked() })
         } else {
             Err(TimecatError::NullMoveInCheck {
-                fen: self.get_fen(),
+                fen: self.get_fen().into(),
             })
         }
     }
@@ -419,7 +419,7 @@ impl ChessPosition {
 
         // make sure my opponent is not currently in check (because that would be illegal)
         let mut board_copy = self.to_owned();
-        board_copy.flip_turn_unchecked();
+        unsafe { board_copy.flip_turn_unchecked() };
         board_copy.update_pin_and_checkers_info();
         if !board_copy.get_checkers().is_empty() {
             return false;
@@ -593,7 +593,7 @@ impl ChessPosition {
             while color_index < 2 {
                 let mut square_index = 0;
                 while square_index < 64 {
-                    let square = Square::from_index(square_index);
+                    let square = unsafe { Square::from_index(square_index) };
                     let file_index = square.get_file().to_index();
                     array[color_index][square_index] = BitBoard::new(
                         (BB_ADJACENT_FILES[file_index].into_inner()
@@ -739,7 +739,7 @@ impl ChessPosition {
     }
 
     #[inline]
-    fn set_turn_unchecked(&mut self, turn: Color) {
+    unsafe fn set_turn_unchecked(&mut self, turn: Color) {
         self._turn = turn;
     }
 
@@ -753,8 +753,8 @@ impl ChessPosition {
     }
 
     #[inline]
-    fn flip_turn_unchecked(&mut self) {
-        self._turn = !self._turn;
+    unsafe fn flip_turn_unchecked(&mut self) {
+        self.set_turn_unchecked(!self.turn());
     }
 
     /// Flips turn by applying Null Move.
@@ -814,9 +814,9 @@ impl ChessPosition {
             attacked_squares |= match piece.get_piece_type() {
                 Pawn => square.get_pawn_attacks(piece.get_color(), BitBoard::ALL),
                 Knight => square.get_knight_moves(),
-                Bishop => get_bishop_moves(square, self.occupied()),
-                Rook => get_rook_moves(square, self.occupied()),
-                Queen => get_queen_moves(square, self.occupied()),
+                Bishop => square.get_bishop_moves(self.occupied()),
+                Rook => square.get_rook_moves(self.occupied()),
+                Queen => square.get_queen_moves(self.occupied()),
                 King => square.get_king_moves(),
             };
         }
@@ -839,16 +839,18 @@ impl ChessPosition {
         let queens_and_bishops = self.get_piece_mask(Bishop) ^ self.get_piece_mask(Queen);
         let queens_and_rooks = self.get_piece_mask(Rook) ^ self.get_piece_mask(Queen);
 
-        let pawn_attacks = color.map_or(
+        let pawn_attacks = color.map_or_else(
             // TODO: make this const when it becomes stable.
-            target_square.get_pawn_attacks(White, BitBoard::ALL)
-                ^ target_square.get_pawn_attacks(Black, BitBoard::ALL),
+            || {
+                target_square.get_pawn_attacks(White, BitBoard::ALL)
+                    ^ target_square.get_pawn_attacks(Black, BitBoard::ALL)
+            },
             |color| target_square.get_pawn_attacks(!color, BitBoard::ALL),
         ) & self.get_piece_mask(Pawn);
 
         // TODO: Scope for improvement?
-        let sliding_attackers = (get_bishop_moves(target_square, occupied) & queens_and_bishops)
-            | (get_rook_moves(target_square, occupied) & queens_and_rooks);
+        let sliding_attackers = (target_square.get_bishop_moves(occupied) & queens_and_bishops)
+            | (target_square.get_rook_moves(occupied) & queens_and_rooks);
         let non_sliding_attackers = pawn_attacks
             ^ (target_square.get_knight_moves() & self.get_piece_mask(Knight))
             ^ (target_square.get_king_moves() & self.get_piece_mask(King));
@@ -873,18 +875,18 @@ impl ChessPosition {
         let color = color.into();
 
         let attackers = match piece_type {
-            Pawn => match color {
-                Some(color) => target_square.get_pawn_attacks(!color, BitBoard::ALL),
-                None => {
-                    // TODO: make this const when it becomes stable.
+            Pawn => color.map_or_else(
+                // TODO: make this const when it becomes stable.
+                || {
                     target_square.get_pawn_attacks(White, BitBoard::ALL)
                         ^ target_square.get_pawn_attacks(Black, BitBoard::ALL)
-                }
-            },
+                },
+                |color| target_square.get_pawn_attacks(!color, BitBoard::ALL),
+            ),
             Knight => target_square.get_knight_moves(),
-            Bishop => get_bishop_moves(target_square, occupied),
-            Rook => get_rook_moves(target_square, occupied),
-            Queen => get_queen_moves(target_square, occupied),
+            Bishop => target_square.get_bishop_moves(occupied),
+            Rook => target_square.get_rook_moves(occupied),
+            Queen => target_square.get_queen_moves(occupied),
             King => target_square.get_king_moves(),
         } & self.get_piece_mask(piece_type);
 
@@ -917,12 +919,14 @@ impl ChessPosition {
     }
 
     #[inline]
-    pub fn piece_symbol_at(&self, square: Square) -> String {
-        self.get_piece_at(square)
-            .map_or_else(|| EMPTY_SPACE_SYMBOL.to_string(), |piece| piece.to_string())
+    pub fn piece_symbol_at(&self, square: Square) -> Cow<'static, str> {
+        self.get_piece_at(square).map_or_else(
+            || EMPTY_SPACE_SYMBOL.into(),
+            |piece| piece.to_string().into(),
+        )
     }
 
-    pub fn piece_unicode_symbol_at(&self, square: Square, flip_color: bool) -> String {
+    pub fn piece_unicode_symbol_at(&self, square: Square, flip_color: bool) -> &'static str {
         if let Some(piece) = self.get_piece_at(square) {
             let piece_index = piece.get_piece_type().to_index();
             let (white_pieces, black_pieces) = match flip_color {
@@ -932,10 +936,9 @@ impl ChessPosition {
             return match piece.get_color() {
                 White => get_item_unchecked!(white_pieces, piece_index),
                 Black => get_item_unchecked!(black_pieces, piece_index),
-            }
-            .to_string();
+            };
         }
-        EMPTY_SPACE_UNICODE_SYMBOL.to_string()
+        EMPTY_SPACE_UNICODE_SYMBOL
     }
 
     pub fn to_board_string(
@@ -948,7 +951,7 @@ impl ChessPosition {
         let king_square = self.get_king_square(self.turn());
         let mut board_string = get_board_string(colored_board, |square| {
             let symbol = if use_unicode {
-                self.piece_unicode_symbol_at(square, false)
+                self.piece_unicode_symbol_at(square, false).into()
             } else {
                 self.piece_symbol_at(square)
             };
@@ -968,7 +971,7 @@ impl ChessPosition {
                 }
                 symbol.colorize(&styles).into()
             } else {
-                symbol.into()
+                symbol
             }
         });
         board_string.push('\n');
@@ -1093,10 +1096,10 @@ impl ChessPosition {
     #[inline]
     pub fn parse_move(&self, move_text: &str) -> Result<ValidOrNullMove> {
         self.parse_uci(move_text)
-            .or(self.parse_san(move_text))
-            .or(self.parse_lan(move_text))
+            .or_else(|_| self.parse_san(move_text))
+            .or_else(|_| self.parse_lan(move_text))
             .map_err(|_| TimecatError::InvalidMoveString {
-                s: move_text.to_string(),
+                s: move_text.to_string().into(),
             })
     }
 
@@ -1245,8 +1248,8 @@ impl ChessPosition {
                     BB_A1_H1 => CastleRights::Both,
                     _ => {
                         return Err(Pyo3Error::Pyo3TypeConversionError {
-                            from: ob.to_string(),
-                            to: std::any::type_name::<Self>().to_string(),
+                            from: ob.to_string().into(),
+                            to: std::any::type_name::<Self>().into(),
                         }
                         .into());
                     }
@@ -1258,8 +1261,8 @@ impl ChessPosition {
                     BB_A8_H8 => CastleRights::Both,
                     _ => {
                         return Err(Pyo3Error::Pyo3TypeConversionError {
-                            from: ob.to_string(),
-                            to: std::any::type_name::<Self>().to_string(),
+                            from: ob.to_string().into(),
+                            to: std::any::type_name::<Self>().into(),
                         }
                         .into());
                     }
@@ -1346,12 +1349,12 @@ impl BoardPositionMethodOverload<Move> for ChessPosition {
 
         let castles = moved == King && (move_bb & get_castle_moves()) == move_bb;
 
-        let ksq = opp_king.to_square_unchecked();
+        let ksq = unsafe { opp_king.to_square_unchecked() };
 
         if moved == Knight {
             result._checkers ^= ksq.get_knight_moves() & dest_bb;
         } else if moved == Pawn {
-            if let Some(Knight) = move_.get_promotion() {
+            if move_.get_promotion() == Some(Knight) {
                 result.xor(Pawn, dest_bb, self.turn());
                 result.xor(Knight, dest_bb, self.turn());
                 result._checkers ^= ksq.get_knight_moves() & dest_bb;
@@ -1431,7 +1434,7 @@ impl BoardPositionMethodOverload<Move> for ChessPosition {
             }
         }
 
-        result.flip_turn_unchecked();
+        unsafe { result.flip_turn_unchecked() };
         result.update_transposition_hash();
 
         result
@@ -1455,11 +1458,10 @@ impl BoardPositionMethodOverload<ValidOrNullMove> for ChessPosition {
     }
 
     fn make_move_new(&self, valid_or_null_move: ValidOrNullMove) -> Self {
-        if let Some(move_) = *valid_or_null_move {
-            self.make_move_new(move_)
-        } else {
-            self.null_move().unwrap()
-        }
+        valid_or_null_move.map_or_else(
+            || self.null_move().unwrap(),
+            |move_| self.make_move_new(move_),
+        )
     }
 }
 
@@ -1467,7 +1469,7 @@ impl TryFrom<&ChessPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
     fn try_from(position_builder: &ChessPositionBuilder) -> Result<Self> {
-        let mut position = ChessPosition::new_empty();
+        let mut position = Self::new_empty();
 
         for square in ALL_SQUARES {
             if let Some(piece) = position_builder[square] {
@@ -1479,7 +1481,7 @@ impl TryFrom<&ChessPositionBuilder> for ChessPosition {
             }
         }
 
-        position.set_turn_unchecked(position_builder.get_turn());
+        unsafe { position.set_turn_unchecked(position_builder.get_turn()) };
 
         if let Some(ep) = position_builder.get_en_passant() {
             position._turn = !position.turn();
@@ -1499,7 +1501,9 @@ impl TryFrom<&ChessPositionBuilder> for ChessPosition {
         if position.is_sane() {
             Ok(position)
         } else {
-            Err(TimecatError::InvalidBoardPosition { position })
+            Err(TimecatError::InvalidBoardPosition {
+                position: position.into(),
+            })
         }
     }
 }
@@ -1507,6 +1511,7 @@ impl TryFrom<&ChessPositionBuilder> for ChessPosition {
 impl TryFrom<ChessPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
+    #[inline]
     fn try_from(position_builder: ChessPositionBuilder) -> Result<Self> {
         (&position_builder).try_into()
     }
@@ -1515,6 +1520,7 @@ impl TryFrom<ChessPositionBuilder> for ChessPosition {
 impl TryFrom<&mut ChessPositionBuilder> for ChessPosition {
     type Error = TimecatError;
 
+    #[inline]
     fn try_from(position_builder: &mut ChessPositionBuilder) -> Result<Self> {
         (position_builder.to_owned()).try_into()
     }
@@ -1544,8 +1550,9 @@ impl fmt::Display for ChessPosition {
 }
 
 impl Hash for ChessPosition {
+    #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write_u64(self.get_hash())
+        self.get_hash().hash(state);
     }
 }
 
@@ -1557,12 +1564,12 @@ impl<'source> FromPyObject<'source> for ChessPosition {
         {
             return Ok(position);
         }
-        if let Ok(position) = ChessPosition::from_py_board(ob) {
+        if let Ok(position) = Self::from_py_board(ob) {
             return Ok(position);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }

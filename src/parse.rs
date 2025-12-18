@@ -15,7 +15,7 @@ pub enum UserCommand {
         verbose: bool,
     },
     SetDebugMode(bool),
-    PrintText(String),
+    PrintText(Cow<'static, str>),
     DisplayBoard,
     #[cfg(feature = "inbuilt_nnue")]
     DisplayBoardEvaluation,
@@ -27,27 +27,16 @@ pub enum UserCommand {
     Help,
     Perft(Depth),
     Go(SearchConfig),
-    PushMoves(String),
+    PushMoves(Cow<'static, str>),
     PopMoves(u16),
-    SetFen(String),
+    SetFen(Cow<'static, str>),
     #[cfg(feature = "colored")]
     SetColor(bool),
     SetUCIOption {
-        user_input: String,
+        user_input: Cow<'static, str>,
     },
     Features,
     SelfPlay(SearchConfig),
-    // SetHashSize(u64),
-    // SetThreads(u8),
-    // SetMultiPV(u8),
-    // SetUCIElo(u16),
-    // SetEngineMode(EngineMode),
-    // SetPrint,
-    // SetUciAnalyzeMode,
-    // SetUCIChess960,
-    // SetUCIOpponent,
-    // SetUCIShowCurrLine,
-    // SetUCIShowRefutations
 }
 
 impl UserCommand {
@@ -98,10 +87,10 @@ impl UserCommand {
             }
             Self::UCINewGame => {
                 Self::SetUCIOption {
-                    user_input: "setoption name Clear Hash".to_string(),
+                    user_input: "setoption name Clear Hash".into(),
                 }
                 .run_command(engine, uci_state_manager)?;
-                Self::SetFen(STARTING_POSITION_FEN.to_string())
+                Self::SetFen(STARTING_POSITION_FEN.into())
                     .run_command(engine, uci_state_manager)?;
             }
             Self::IsReady => println_wasm!("{}", "readyok".colorize(SUCCESS_MESSAGE_STYLE)),
@@ -113,10 +102,12 @@ impl UserCommand {
             Self::Help => println_wasm!("{}", Self::generate_help_message()),
             &Self::Perft(depth) => GoAndPerft::run_perft_command(engine, depth)?,
             Self::Go(config) => GoAndPerft::run_search(engine, config)?,
-            Self::PushMoves(user_input) => {
-                let binding = Parser::sanitize_string(user_input);
-                Push::push_moves(engine, &binding.split_whitespace().collect_vec())?
-            }
+            Self::PushMoves(user_input) => Push::push_moves(
+                engine,
+                &Parser::sanitize_string(user_input)
+                    .split_whitespace()
+                    .collect_vec(),
+            )?,
             &Self::PopMoves(num_moves) => Pop::pop_moves(engine, num_moves)?,
             Self::SetFen(fen) => Set::set_board_fen(engine, fen)?,
             #[cfg(feature = "colored")]
@@ -126,6 +117,7 @@ impl UserCommand {
             }
             Self::Features => {
                 println_info("CPU Architecture", std::env::consts::ARCH);
+                println_info("Global Allocator", GLOBAL_ALLOCATOR);
                 println_info("BMI2 Support", cfg!(target_feature = "bmi2"));
                 println_info("AVX2 Support", cfg!(target_feature = "avx2"));
             }
@@ -165,7 +157,7 @@ impl GoAndPerft {
         let clock = Instant::now();
         let position_count = engine.get_board_mut().perft_verbose(depth);
         let elapsed_time = clock.elapsed();
-        let nps: String = format!(
+        let nps = format!(
             "{} nodes/sec",
             (position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()
         );
@@ -198,7 +190,7 @@ impl GoAndPerft {
         let clock = Instant::now();
         let response = engine.search_verbose(config);
         let best_move = response.get_best_move().ok_or_else(|| BestMoveNotFound {
-            fen: engine.get_board().get_fen(),
+            fen: engine.get_board().get_fen().into(),
         })?;
         let elapsed_time = clock.elapsed();
         let pv_string = get_pv_string(engine.get_board().get_position(), response.get_pv());
@@ -211,15 +203,21 @@ impl GoAndPerft {
         let position_count = response.get_num_nodes_searched();
         let nps = format!(
             "{} Nodes/sec",
-            position_count.map_or(STRINGIFY_NONE.to_string(), |position_count| {
-                ((position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos()).to_string()
-            })
+            position_count.map_or_else(
+                || Cow::from(STRINGIFY_NONE),
+                |position_count| {
+                    ((position_count as u128 * 10u128.pow(9)) / elapsed_time.as_nanos())
+                        .to_string()
+                        .into()
+                }
+            )
         );
         println_info(
             "Position Count",
-            position_count.map_or(STRINGIFY_NONE.to_string(), |position_count| {
-                position_count.to_string()
-            }),
+            position_count.map_or_else(
+                || Cow::from(STRINGIFY_NONE),
+                |position_count| position_count.to_string().into(),
+            ),
         );
         println_info("Speed", nps);
         if GLOBAL_TIMECAT_STATE.is_in_console_mode() {
@@ -238,7 +236,7 @@ impl GoAndPerft {
                 false,
             );
             if let Some(ponder_move) = response.get_ponder_move() {
-                move_text += " ";
+                move_text.push(' ');
                 move_text += &format_info(
                     "ponder",
                     ponder_move
@@ -259,9 +257,9 @@ impl Set {
     fn extract_board_fen(commands: &[&str]) -> Result<Vec<UserCommand>> {
         let fen = commands[3..].join(" ");
         if fen == "startpos" {
-            return UserCommand::SetFen(STARTING_POSITION_FEN.to_string()).into();
+            return UserCommand::SetFen(STARTING_POSITION_FEN.into()).into();
         }
-        UserCommand::SetFen(fen).into()
+        UserCommand::SetFen(fen.into()).into()
     }
 
     #[cfg(feature = "colored")]
@@ -288,7 +286,7 @@ impl Set {
             "color" => Self::extract_color(commands),
             #[cfg(not(feature = "colored"))]
             "color" => Err(FeatureNotEnabled {
-                s: "colored".to_string(),
+                s: "colored".into(),
             }),
             _ => Err(UnknownCommand),
         }
@@ -379,12 +377,12 @@ impl SelfPlay {
 struct DebugMode;
 
 impl DebugMode {
-    fn get_debug_mode(second_command: &str) -> Result<bool> {
-        match second_command {
+    fn get_debug_mode(second_command: Cow<'static, str>) -> Result<bool> {
+        match second_command.as_ref() {
             "on" => Ok(true),
             "off" => Ok(false),
             _ => Err(UnknownDebugCommand {
-                command: second_command.to_string(),
+                command: second_command,
             }),
         }
     }
@@ -394,7 +392,7 @@ impl DebugMode {
             return Err(UnknownCommand);
         }
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
-        let debug_mode = Self::get_debug_mode(&second_command)?;
+        let debug_mode = Self::get_debug_mode(second_command.into())?;
         UserCommand::SetDebugMode(debug_mode).into()
     }
 }
@@ -409,26 +407,27 @@ impl Position {
         let second_command = commands.get(1).ok_or(UnknownCommand)?.to_lowercase();
         let mut user_commands = Vec::with_capacity(2);
         user_commands.push(match second_command.as_str() {
-            "startpos" => UserCommand::SetFen(STARTING_POSITION_FEN.to_string()),
+            "startpos" => UserCommand::SetFen(STARTING_POSITION_FEN.into()),
             "fen" => {
                 let fen = commands
                     .iter()
                     .skip(2)
                     .take_while(|&&s| s != "moves")
                     .join(" ");
-                UserCommand::SetFen(fen)
+                UserCommand::SetFen(fen.into())
             }
             _ => return Err(UnknownCommand),
         });
-        let move_texts_joined = commands
-            .iter()
-            .skip_while(|&&s| s != "moves")
-            .skip(1)
-            .join(" ");
-        if !move_texts_joined.is_empty() {
-            user_commands.push(UserCommand::PushMoves(format!(
-                "push moves {move_texts_joined}"
-            )));
+        let move_text = commands.iter().skip_while(|&&s| s != "moves").skip(1).fold(
+            String::from("push moves"),
+            |mut acc, x| {
+                acc.push(' ');
+                acc += x;
+                acc
+            },
+        );
+        if move_text != "push moves" {
+            user_commands.push(UserCommand::PushMoves(move_text.into()));
         }
         Ok(user_commands)
     }
@@ -437,14 +436,9 @@ impl Position {
 pub struct Parser;
 
 impl Parser {
+    #[inline]
     pub fn sanitize_string(raw_input: &str) -> String {
-        let user_input = raw_input.trim();
-        let mut user_input = user_input.to_string();
-        for _char in [",", ":"] {
-            user_input = user_input.replace(_char, " ")
-        }
-        user_input = remove_double_spaces_and_trim(&user_input);
-        user_input
+        remove_double_spaces_and_trim(&raw_input.trim().replace([',', ':'], " "))
     }
 
     fn parse_single_command(single_input: &str) -> Result<Vec<UserCommand>> {
@@ -480,9 +474,9 @@ impl Parser {
             "eval" => UserCommand::DisplayBoardEvaluation.into(),
             #[cfg(not(feature = "inbuilt_nnue"))]
             "eval" => Err(TimecatError::FeatureNotEnabled {
-                s: "inbuilt nnue".to_string(),
+                s: "inbuilt nnue".into(),
             }),
-            "reset board" => UserCommand::SetFen(STARTING_POSITION_FEN.to_owned()).into(),
+            "reset board" => UserCommand::SetFen(STARTING_POSITION_FEN.into()).into(),
             "stop" => UserCommand::Stop.into(),
             "feature" | "features" => UserCommand::Features.into(),
             "help" => UserCommand::Help.into(),
@@ -493,10 +487,10 @@ impl Parser {
                     "go" => GoAndPerft::parse_sub_commands(&commands),
                     "set" => Set::parse_sub_commands(&commands),
                     "setoption" => UserCommand::SetUCIOption {
-                        user_input: single_input.to_string(),
+                        user_input: single_input.to_string().into(),
                     }
                     .into(),
-                    "push" => UserCommand::PushMoves(single_input.to_string()).into(),
+                    "push" => UserCommand::PushMoves(single_input.to_string().into()).into(),
                     "pop" => Pop::parse_sub_commands(&commands),
                     "position" => Position::parse_sub_commands(&commands),
                     "selfplay" => SelfPlay::parse_sub_commands(&commands),
@@ -510,7 +504,7 @@ impl Parser {
     pub fn parse_command(raw_input: &str) -> Result<Vec<UserCommand>> {
         if raw_input.is_empty() {
             return Ok(vec![
-                UserCommand::PrintText("".to_string()),
+                UserCommand::PrintText("".into()),
                 UserCommand::TerminateEngine,
             ]);
         }

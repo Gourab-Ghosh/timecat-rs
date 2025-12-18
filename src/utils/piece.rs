@@ -35,6 +35,15 @@ pub enum PieceType {
 
 impl PieceType {
     #[inline]
+    pub const unsafe fn from_int(i: u8) -> Self {
+        std::mem::transmute(i)
+    }
+
+    #[inline]
+    pub const unsafe fn from_index(i: usize) -> Self {
+        Self::from_int(i as u8)
+    }
+
     pub const fn to_int(self) -> u8 {
         self as u8
     }
@@ -50,8 +59,14 @@ impl PieceType {
     }
 
     #[inline]
-    pub fn to_colored_piece_string(self, color: Color) -> String {
-        self.to_colored_piece(color).to_string()
+    pub fn to_colored_piece_str(self, color: Color) -> &'static str {
+        get_item_unchecked!(
+            [
+                "p", "n", "b", "r", "q", "k", // Black pieces
+                "P", "N", "B", "R", "Q", "K", // White pieces
+            ],
+            NUM_PIECE_TYPES * color.to_index() + self.to_index()
+        )
     }
 
     #[inline]
@@ -71,15 +86,35 @@ impl PieceType {
 impl FromStr for PieceType {
     type Err = TimecatError;
 
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s.to_lowercase().trim() {
-            "p" => Ok(Pawn),
-            "n" => Ok(Knight),
-            "b" => Ok(Bishop),
-            "r" => Ok(Rook),
-            "q" => Ok(Queen),
-            "k" => Ok(King),
-            _ => Err(TimecatError::InvalidPieceTypeString { s: s.to_string() }),
+    fn from_str(mut s: &str) -> std::result::Result<Self, Self::Err> {
+        s = s.trim();
+        if s.len() == 1 {
+            get_item_unchecked!(
+                const {
+                    let mut arr = [None; 256];
+                    arr['p' as usize] = Some(Pawn);
+                    arr['n' as usize] = Some(Knight);
+                    arr['b' as usize] = Some(Bishop);
+                    arr['r' as usize] = Some(Rook);
+                    arr['q' as usize] = Some(Queen);
+                    arr['k' as usize] = Some(King);
+                    arr['P' as usize] = Some(Pawn);
+                    arr['N' as usize] = Some(Knight);
+                    arr['B' as usize] = Some(Bishop);
+                    arr['R' as usize] = Some(Rook);
+                    arr['Q' as usize] = Some(Queen);
+                    arr['K' as usize] = Some(King);
+                    arr
+                },
+                *get_item_unchecked!(@internal s.as_bytes(), 0) as usize,
+            )
+            .ok_or_else(|| TimecatError::InvalidPieceTypeString {
+                s: s.to_string().into(),
+            })
+        } else {
+            Err(TimecatError::InvalidPieceTypeString {
+                s: s.to_string().into(),
+            })
         }
     }
 }
@@ -98,7 +133,7 @@ impl fmt::Display for PieceType {
 impl<'source> FromPyObject<'source> for PieceType {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(piece_type_text) = ob.extract::<&str>()
-            && let Ok(piece_type) = Self::from_str(piece_type_text)
+            && let Ok(piece_type) = piece_type_text.parse()
         {
             return Ok(piece_type);
         }
@@ -108,8 +143,8 @@ impl<'source> FromPyObject<'source> for PieceType {
             return Ok(piece_type);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }
@@ -188,7 +223,9 @@ impl FromStr for Piece {
             "R" => Ok(WhiteRook),
             "Q" => Ok(WhiteQueen),
             "K" => Ok(WhiteKing),
-            _ => Err(TimecatError::InvalidPieceString { s: s.to_string() }),
+            _ => Err(TimecatError::InvalidPieceString {
+                s: s.to_string().into(),
+            }),
         }
     }
 }
@@ -198,10 +235,7 @@ impl fmt::Display for Piece {
         write!(
             f,
             "{}",
-            match self.get_color() {
-                White => self.get_piece_type().to_string().to_uppercase(),
-                Black => self.get_piece_type().to_string(),
-            }
+            self.get_piece_type().to_colored_piece_str(self.get_color()),
         )
     }
 }
@@ -210,7 +244,7 @@ impl fmt::Display for Piece {
 impl<'source> FromPyObject<'source> for Piece {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(piece_text) = ob.extract::<&str>()
-            && let Ok(piece) = Self::from_str(piece_text)
+            && let Ok(piece) = piece_text.parse()
         {
             return Ok(piece);
         }
@@ -218,8 +252,8 @@ impl<'source> FromPyObject<'source> for Piece {
             return Ok(piece);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }

@@ -10,7 +10,11 @@ pub struct Move {
 
 impl Move {
     #[inline]
-    pub const fn new_unchecked(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
+    pub const unsafe fn new_unchecked(
+        source: Square,
+        dest: Square,
+        promotion: Option<PieceType>,
+    ) -> Self {
         Self {
             source,
             dest,
@@ -20,7 +24,7 @@ impl Move {
 
     #[inline]
     pub const fn new(source: Square, dest: Square, promotion: Option<PieceType>) -> Result<Self> {
-        let move_ = Self::new_unchecked(source, dest, promotion);
+        let move_ = unsafe { Self::new_unchecked(source, dest, promotion) };
         if source.to_int() == dest.to_int() {
             return Err(TimecatError::SameSourceAndDestination { move_ });
         }
@@ -58,7 +62,7 @@ impl Move {
                 return Ok(move_);
             }
         }
-        Err(TimecatError::InvalidSanMoveString { s: san.to_string() })
+        Err(TimecatError::InvalidSanMoveString { s: san.into() })
     }
 
     pub fn from_lan(position: &ChessPosition, lan: &str) -> Result<Self> {
@@ -69,37 +73,41 @@ impl Move {
                 return Ok(move_);
             }
         }
-        Err(TimecatError::InvalidLanMoveString { s: lan.to_string() })
+        Err(TimecatError::InvalidLanMoveString { s: lan.into() })
     }
 
-    pub fn algebraic_without_suffix(self, position: &ChessPosition, long: bool) -> Result<String> {
+    pub fn algebraic_without_suffix(
+        self,
+        position: &ChessPosition,
+        long: bool,
+    ) -> Result<Cow<'static, str>> {
         let source = self.get_source();
         let dest = self.get_dest();
 
         // Castling.
         if position.is_castling(self) {
             return if dest.get_file() < source.get_file() {
-                Ok("O-O-O".to_string())
+                Ok(Cow::Borrowed("O-O-O"))
             } else {
-                Ok("O-O".to_string())
+                Ok(Cow::Borrowed("O-O"))
             };
         }
 
         let piece = position.get_piece_type_at(source).ok_or_else(|| {
             TimecatError::InvalidSanOrLanMove {
                 valid_or_null_move: self.into(),
-                fen: position.get_fen(),
+                fen: position.get_fen().into(),
             }
         })?;
         let capture = position.is_capture(self);
         let mut san = if piece == Pawn {
             String::new()
         } else {
-            piece.to_colored_piece_string(White)
+            piece.to_colored_piece_str(White).into()
         };
 
         if long {
-            san += &source.to_string();
+            write_unchecked!(san, "{}", source);
         } else if piece != Pawn {
             // Get ambiguous move candidates.
             // Relevant candidates: not exactly the current move,
@@ -132,7 +140,7 @@ impl Move {
                     );
                 }
                 if row {
-                    san += &(source.get_rank().to_index() + 1).to_string();
+                    write_unchecked!(san, "{}", source.get_rank().to_index() + 1);
                 }
             }
         } else if capture {
@@ -146,27 +154,27 @@ impl Move {
 
         // Captures.
         if capture {
-            san += "x";
+            san.push('x');
         } else if long {
-            san += "-";
+            san.push('-');
         }
 
         // Destination square.
-        san += &dest.to_string();
+        write_unchecked!(san, "{}", dest);
 
         // Promotion.
         if let Some(promotion) = self.get_promotion() {
-            san += &format!("={}", promotion.to_colored_piece_string(White))
+            write_unchecked!(san, "={}", promotion.to_colored_piece_str(White));
         }
 
-        Ok(san)
+        Ok(san.into())
     }
 
     pub fn algebraic_and_new_position(
         self,
         position: &ChessPosition,
         long: bool,
-    ) -> Result<(String, ChessPosition)> {
+    ) -> Result<(Cow<'static, str>, ChessPosition)> {
         let san = self.algebraic_without_suffix(position, long)?;
 
         // Look ahead for check or checkmate.
@@ -195,7 +203,9 @@ impl Move {
 
 macro_rules! generate_move_error {
     ($s: ident) => {
-        TimecatError::InvalidUciMoveString { s: $s.to_string() }
+        TimecatError::InvalidUciMoveString {
+            s: $s.to_string().into(),
+        }
     };
 }
 
@@ -210,33 +220,19 @@ impl FromStr for Move {
         let source = s
             .get(0..2)
             .ok_or_else(|| generate_move_error!(s))?
-            .parse()?;
+            .parse()
+            .map_err(|_| generate_move_error!(s))?;
         let dest = s
             .get(2..4)
             .ok_or_else(|| generate_move_error!(s))?
-            .parse()?;
-        let promotion = s
-            .as_bytes()
-            .get(5)
-            .map(|&byte| unsafe {
-                const {
-                    let mut arr = [None; 256];
-                    arr['p' as usize] = Some(Pawn);
-                    arr['n' as usize] = Some(Knight);
-                    arr['b' as usize] = Some(Bishop);
-                    arr['r' as usize] = Some(Rook);
-                    arr['q' as usize] = Some(Queen);
-                    arr['k' as usize] = Some(King);
-                    arr['P' as usize] = Some(Pawn);
-                    arr['N' as usize] = Some(Knight);
-                    arr['B' as usize] = Some(Bishop);
-                    arr['R' as usize] = Some(Rook);
-                    arr['Q' as usize] = Some(Queen);
-                    arr['K' as usize] = Some(King);
-                    arr
-                }
-                .get_unchecked(byte as usize)
-                .ok_or_else(|| generate_move_error!(s))
+            .parse()
+            .map_err(|_| generate_move_error!(s))?;
+        let promotion = (s.len() > 4)
+            .then(|| {
+                s.get(4..)
+                    .ok_or_else(|| generate_move_error!(s))?
+                    .parse()
+                    .map_err(|_| generate_move_error!(s))
             })
             .transpose()?;
         Self::new(source, dest, promotion)
@@ -256,7 +252,7 @@ impl fmt::Display for Move {
 impl<'source> FromPyObject<'source> for Move {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(move_text) = ob.extract::<&str>()
-            && let Ok(move_) = Self::from_str(move_text)
+            && let Ok(move_) = move_text.parse()
         {
             return Ok(move_);
         }
@@ -264,8 +260,8 @@ impl<'source> FromPyObject<'source> for Move {
             return Ok(move_);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }
@@ -281,7 +277,11 @@ impl ValidOrNullMove {
     pub const NullMove: Self = Self(None);
 
     #[inline]
-    pub const fn new_unchecked(source: Square, dest: Square, promotion: Option<PieceType>) -> Self {
+    pub const unsafe fn new_unchecked(
+        source: Square,
+        dest: Square,
+        promotion: Option<PieceType>,
+    ) -> Self {
         Self(Some(Move::new_unchecked(source, dest, promotion)))
     }
 
@@ -324,7 +324,7 @@ impl ValidOrNullMove {
         // TODO: Make the logic better
         let san = san.trim();
         if san == "--" || san == "0000" {
-            return Ok(ValidOrNullMove::NullMove);
+            return Ok(Self::NullMove);
         }
         Ok(Move::from_san(position, san)?.into())
     }
@@ -333,15 +333,20 @@ impl ValidOrNullMove {
         // TODO: Make the logic better
         let lan = lan.trim();
         if lan == "--" || lan == "0000" {
-            return Ok(ValidOrNullMove::NullMove);
+            return Ok(Self::NullMove);
         }
         Ok(Move::from_lan(position, lan)?.into())
     }
 
     #[inline]
-    pub fn algebraic_without_suffix(self, position: &ChessPosition, long: bool) -> Result<String> {
-        self.map(|move_| move_.algebraic_without_suffix(position, long))
-            .unwrap_or(Ok("--".to_string()))
+    pub fn algebraic_without_suffix(
+        self,
+        position: &ChessPosition,
+        long: bool,
+    ) -> Result<Cow<'static, str>> {
+        self.map_or(Ok(Cow::Borrowed("--")), |move_| {
+            move_.algebraic_without_suffix(position, long)
+        })
     }
 
     #[inline]
@@ -349,9 +354,11 @@ impl ValidOrNullMove {
         self,
         position: &ChessPosition,
         long: bool,
-    ) -> Result<(String, ChessPosition)> {
-        self.map(|move_| move_.algebraic_and_new_position(position, long))
-            .unwrap_or(Ok(("--".to_string(), position.null_move()?)))
+    ) -> Result<(Cow<'static, str>, ChessPosition)> {
+        self.map_or_else(
+            || Ok((Cow::Borrowed("--"), position.null_move()?)),
+            |move_| move_.algebraic_and_new_position(position, long),
+        )
     }
 }
 
@@ -434,13 +441,13 @@ impl<'source> FromPyObject<'source> for ValidOrNullMove {
             return Ok(move_.into());
         }
         if let Ok(move_text) = ob.extract::<&str>()
-            && let Ok(valid_or_null_move) = Self::from_str(move_text)
+            && let Ok(valid_or_null_move) = move_text.parse()
         {
             return Ok(valid_or_null_move);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }

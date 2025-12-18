@@ -81,7 +81,7 @@ macro_rules! get_item_unchecked_mut {
 #[macro_export]
 macro_rules! interpolate_float {
     (@internal $start:expr, $end:expr, $alpha:expr) => {
-        (1.0 - $alpha) * $start + $alpha * $end
+        (1.0 - $alpha).mul_add($start, $alpha * $end)
     };
 
     ($start:expr, $end:expr, $alpha:expr $(,)?) => {
@@ -171,4 +171,20 @@ macro_rules! println_wasm {
     ($($arg:tt)*) => {
         println!($($arg)*)
     };
+}
+
+#[macro_export]
+macro_rules! write_unchecked {
+    ($($arg:tt)*) => {{
+        let output = write!($($arg)*);
+        unsafe { output.unwrap_unchecked() }
+    }};
+}
+
+#[macro_export]
+macro_rules! writeln_unchecked {
+    ($($arg:tt)*) => {{
+        let output = writeln!($($arg)*);
+        unsafe { output.unwrap_unchecked() }
+    }};
 }

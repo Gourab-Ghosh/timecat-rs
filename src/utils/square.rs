@@ -5,24 +5,8 @@ use std::arch::x86_64::{_pdep_u64, _pext_u64};
 
 include!(concat!(env!("OUT_DIR"), "/magic.rs"));
 
-/// Get the moves for a bishop on a particular square, given blockers blocking my movement.
-fn get_bishop_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
-    let magic: Magic = *get_item_unchecked!(
-        const { BISHOP_AND_ROOK_MAGIC_NUMBERS[0] },
-        square.to_index()
-    );
-    *get_item_unchecked!(
-        MOVES,
-        magic.offset
-            + ((blockers & magic.mask)
-                .into_inner()
-                .wrapping_mul(magic.magic_number)
-                >> magic.right_shift) as usize,
-    ) & square.get_bishop_rays_bb()
-}
-
-/// Get the moves for a bishop on a particular square, given blockers blocking my movement.
 #[cfg(target_feature = "bmi2")]
+/// Get the moves for a bishop on a particular square, given blockers blocking my movement.
 fn get_bishop_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
     let bmi2_magic =
         *get_item_unchecked!(const { BISHOP_AND_ROOK_BMI_MASKS[0] }, square.to_index());
@@ -38,24 +22,8 @@ fn get_bishop_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
     BitBoard::new(result)
 }
 
-/// Get the moves for a rook on a particular square, given blockers blocking my movement.
-fn get_rook_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
-    let magic: Magic = *get_item_unchecked!(
-        const { BISHOP_AND_ROOK_MAGIC_NUMBERS[1] },
-        square.to_index()
-    );
-    *get_item_unchecked!(
-        MOVES,
-        magic.offset
-            + ((blockers & magic.mask)
-                .into_inner()
-                .wrapping_mul(magic.magic_number)
-                >> magic.right_shift) as usize,
-    ) & square.get_rook_rays_bb()
-}
-
-/// Get the moves for a rook on a particular square, given blockers blocking my movement.
 #[cfg(target_feature = "bmi2")]
+/// Get the moves for a rook on a particular square, given blockers blocking my movement.
 fn get_rook_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
     let bmi2_magic =
         *get_item_unchecked!(const { BISHOP_AND_ROOK_BMI_MASKS[1] }, square.to_index());
@@ -72,39 +40,42 @@ fn get_rook_moves_bmi(square: Square, blockers: BitBoard) -> BitBoard {
 }
 
 /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
-#[inline]
-pub fn get_bishop_moves(square: Square, blockers: BitBoard) -> BitBoard {
-    #[cfg(target_feature = "bmi2")]
-    {
-        get_bishop_moves_bmi(square, blockers)
-    }
-    #[cfg(not(target_feature = "bmi2"))]
-    {
-        get_bishop_moves_non_bmi(square, blockers)
-    }
+#[cfg(not(target_feature = "bmi2"))]
+fn get_bishop_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
+    let magic: Magic = *get_item_unchecked!(
+        const { BISHOP_AND_ROOK_MAGIC_NUMBERS[0] },
+        square.to_index()
+    );
+    *get_item_unchecked!(
+        MOVES,
+        magic.offset
+            + ((blockers & magic.mask)
+                .into_inner()
+                .wrapping_mul(magic.magic_number)
+                >> magic.right_shift) as usize,
+    ) & square.get_bishop_rays_bb()
 }
 
 /// Get the moves for a rook on a particular square, given blockers blocking my movement.
-#[inline]
-pub fn get_rook_moves(square: Square, blockers: BitBoard) -> BitBoard {
-    #[cfg(target_feature = "bmi2")]
-    {
-        get_rook_moves_bmi(square, blockers)
-    }
-    #[cfg(not(target_feature = "bmi2"))]
-    {
-        get_rook_moves_non_bmi(square, blockers)
-    }
-}
-
-#[inline]
-pub fn get_queen_moves(square: Square, blockers: BitBoard) -> BitBoard {
-    get_bishop_moves(square, blockers) ^ get_rook_moves(square, blockers)
+#[cfg(not(target_feature = "bmi2"))]
+fn get_rook_moves_non_bmi(square: Square, blockers: BitBoard) -> BitBoard {
+    let magic: Magic = *get_item_unchecked!(
+        const { BISHOP_AND_ROOK_MAGIC_NUMBERS[1] },
+        square.to_index()
+    );
+    *get_item_unchecked!(
+        MOVES,
+        magic.offset
+            + ((blockers & magic.mask)
+                .into_inner()
+                .wrapping_mul(magic.magic_number)
+                >> magic.right_shift) as usize,
+    ) & square.get_rook_rays_bb()
 }
 
 /// Get the legal destination castle squares for both players
 #[inline]
-pub fn get_castle_moves() -> BitBoard {
+pub const fn get_castle_moves() -> BitBoard {
     const { BitBoard::new(0x5400000000000054) }
 }
 
@@ -145,95 +116,94 @@ impl Square {
     }
 
     #[inline]
-    pub const fn from_int(int: u8) -> Self {
-        // TODO: Maybe consider getting it from ALL_SQUARES? Is it faster?
+    pub const unsafe fn from_int(int: u8) -> Self {
         unsafe { std::mem::transmute(int) }
     }
 
     #[inline]
-    pub const fn from_index(index: usize) -> Self {
+    pub const unsafe fn from_index(index: usize) -> Self {
         Self::from_int(index as u8)
     }
 
     #[inline]
     pub const fn from_rank_and_file(rank: Rank, file: File) -> Self {
-        Self::from_int((rank.to_int() << 3) ^ file.to_int())
+        unsafe { Self::from_int((rank.to_int() << 3) ^ file.to_int()) }
     }
 
     #[inline]
     pub const fn get_rank(self) -> Rank {
-        Rank::from_index(self.to_index() >> 3)
+        unsafe { Rank::from_int(self.to_int() >> 3) }
     }
 
     #[inline]
-    pub fn get_rank_bb(self) -> BitBoard {
-        *get_item_unchecked!(BB_RANKS, self.to_index() >> 3)
+    pub const fn get_rank_bb(self) -> BitBoard {
+        self.get_rank().to_bitboard()
     }
 
     #[inline]
     pub const fn get_file(self) -> File {
-        File::from_index(self.to_index() & 7)
+        unsafe { File::from_int(self.to_int() & 7) }
     }
 
     #[inline]
-    pub fn get_file_bb(self) -> BitBoard {
-        *get_item_unchecked!(BB_FILES, self.to_index() & 7)
+    pub const fn get_file_bb(self) -> BitBoard {
+        self.get_file().to_bitboard()
     }
 
     #[inline]
-    pub fn up(self) -> Option<Square> {
-        Some(Square::from_rank_and_file(
+    pub fn up(self) -> Option<Self> {
+        Some(Self::from_rank_and_file(
             self.get_rank().up()?,
             self.get_file(),
         ))
     }
 
     #[inline]
-    pub fn down(self) -> Option<Square> {
-        Some(Square::from_rank_and_file(
+    pub fn down(self) -> Option<Self> {
+        Some(Self::from_rank_and_file(
             self.get_rank().down()?,
             self.get_file(),
         ))
     }
 
     #[inline]
-    pub fn left(self) -> Option<Square> {
-        Some(Square::from_rank_and_file(
+    pub fn left(self) -> Option<Self> {
+        Some(Self::from_rank_and_file(
             self.get_rank(),
             self.get_file().left()?,
         ))
     }
 
     #[inline]
-    pub fn right(self) -> Option<Square> {
-        Some(Square::from_rank_and_file(
+    pub fn right(self) -> Option<Self> {
+        Some(Self::from_rank_and_file(
             self.get_rank(),
             self.get_file().right()?,
         ))
     }
 
     #[inline]
-    pub fn up_left(self) -> Option<Square> {
+    pub fn up_left(self) -> Option<Self> {
         self.up()?.left()
     }
 
     #[inline]
-    pub fn up_right(self) -> Option<Square> {
+    pub fn up_right(self) -> Option<Self> {
         self.up()?.right()
     }
 
     #[inline]
-    pub fn down_left(self) -> Option<Square> {
+    pub fn down_left(self) -> Option<Self> {
         self.down()?.left()
     }
 
     #[inline]
-    pub fn down_right(self) -> Option<Square> {
+    pub fn down_right(self) -> Option<Self> {
         self.down()?.right()
     }
 
     #[inline]
-    pub fn forward(self, color: Color) -> Option<Square> {
+    pub fn forward(self, color: Color) -> Option<Self> {
         match color {
             White => self.up(),
             Black => self.down(),
@@ -241,7 +211,7 @@ impl Square {
     }
 
     #[inline]
-    pub fn backward(self, color: Color) -> Option<Square> {
+    pub fn backward(self, color: Color) -> Option<Self> {
         match color {
             White => self.down(),
             Black => self.up(),
@@ -249,27 +219,27 @@ impl Square {
     }
 
     #[inline]
-    pub fn wrapping_up(self) -> Square {
-        Square::from_rank_and_file(self.get_rank().wrapping_up(), self.get_file())
+    pub fn wrapping_up(self) -> Self {
+        Self::from_rank_and_file(self.get_rank().wrapping_up(), self.get_file())
     }
 
     #[inline]
-    pub fn wrapping_down(self) -> Square {
-        Square::from_rank_and_file(self.get_rank().wrapping_down(), self.get_file())
+    pub fn wrapping_down(self) -> Self {
+        Self::from_rank_and_file(self.get_rank().wrapping_down(), self.get_file())
     }
 
     #[inline]
-    pub fn wrapping_left(self) -> Square {
-        Square::from_rank_and_file(self.get_rank(), self.get_file().wrapping_left())
+    pub fn wrapping_left(self) -> Self {
+        Self::from_rank_and_file(self.get_rank(), self.get_file().wrapping_left())
     }
 
     #[inline]
-    pub fn wrapping_right(self) -> Square {
-        Square::from_rank_and_file(self.get_rank(), self.get_file().wrapping_right())
+    pub fn wrapping_right(self) -> Self {
+        Self::from_rank_and_file(self.get_rank(), self.get_file().wrapping_right())
     }
 
     #[inline]
-    pub fn wrapping_forward(self, color: Color) -> Square {
+    pub fn wrapping_forward(self, color: Color) -> Self {
         match color {
             White => self.wrapping_up(),
             Black => self.wrapping_down(),
@@ -277,7 +247,7 @@ impl Square {
     }
 
     #[inline]
-    pub fn wrapping_backward(self, color: Color) -> Square {
+    pub fn wrapping_backward(self, color: Color) -> Self {
         match color {
             White => self.wrapping_down(),
             Black => self.wrapping_up(),
@@ -285,27 +255,25 @@ impl Square {
     }
 
     #[inline]
-    pub fn to_bitboard(self) -> BitBoard {
-        *get_item_unchecked!(BB_SQUARES, self.to_index())
+    pub const fn to_bitboard(self) -> BitBoard {
+        BitBoard::new(1 << self.to_int())
     }
 
-    pub fn distance(self, other: Square) -> u8 {
-        let (file1, rank1) = (self.get_file(), self.get_rank());
-        let (file2, rank2) = (other.get_file(), other.get_rank());
-        let file_distance = file1.to_int().abs_diff(file2.to_int());
-        let rank_distance = rank1.to_int().abs_diff(rank2.to_int());
-        file_distance.max(rank_distance)
+    #[inline]
+    pub fn distance(self, other: Self) -> u8 {
+        self.get_file()
+            .to_int()
+            .abs_diff(other.get_file().to_int())
+            .max(self.get_rank().to_int().abs_diff(other.get_rank().to_int()))
     }
 
-    pub const fn manhattan_distance(self, other: Square) -> u8 {
-        let (file1, rank1) = (self.get_file(), self.get_rank());
-        let (file2, rank2) = (other.get_file(), other.get_rank());
-        let file_distance = file1.to_int().abs_diff(file2.to_int());
-        let rank_distance = rank1.to_int().abs_diff(rank2.to_int());
-        file_distance + rank_distance
+    #[inline]
+    pub const fn manhattan_distance(self, other: Self) -> u8 {
+        self.get_file().to_int().abs_diff(other.get_file().to_int())
+            + self.get_rank().to_int().abs_diff(other.get_rank().to_int())
     }
 
-    pub fn knight_distance(self, other: Square) -> u8 {
+    pub fn knight_distance(self, other: Self) -> u8 {
         let dx = self.get_file().to_int().abs_diff(other.get_file().to_int());
         let dy = self.get_rank().to_int().abs_diff(other.get_rank().to_int());
 
@@ -335,31 +303,18 @@ impl Square {
     }
 
     #[inline]
-    pub fn vertical_mirror(self) -> Self {
-        *get_item_unchecked!(SQUARES_VERTICAL_MIRROR, self.to_index())
+    pub const fn vertical_mirror(self) -> Self {
+        unsafe { Self::from_int(self.to_int() ^ 7) }
     }
 
     #[inline]
-    pub fn horizontal_mirror(self) -> Self {
-        *get_item_unchecked!(SQUARES_HORIZONTAL_MIRROR, self.to_index())
+    pub const fn horizontal_mirror(self) -> Self {
+        unsafe { Self::from_int(self.to_int() ^ 0x38) }
     }
 
     #[inline]
-    pub fn rotate(self) -> Self {
-        *get_item_unchecked!(SQUARES_ROTATED, self.to_index())
-    }
-
-    /// Get a line (extending to infinity, which in chess is 8 squares), given two squares.
-    /// This line does extend past the squares.
-    #[inline]
-    pub fn line(self, other: Square) -> BitBoard {
-        *get_item_unchecked!(LINE, self.to_index(), other.to_index())
-    }
-
-    /// Get a line between these two squares, not including the squares themselves.
-    #[inline]
-    pub fn between(self, other: Square) -> BitBoard {
-        *get_item_unchecked!(BETWEEN, self.to_index(), other.to_index())
+    pub const fn rotate(self) -> Self {
+        unsafe { Self::from_int(self.to_int() ^ 0x3f) }
     }
 
     /// Get the rays for a bishop on a particular square.
@@ -392,16 +347,35 @@ impl Square {
         *get_item_unchecked!(ALL_DIRECTION_RAYS, self.to_index())
     }
 
-    /// Get the king moves for a particular square.
+    /// Get a line between these two squares, not including the squares themselves.
     #[inline]
-    pub fn get_king_moves(self) -> BitBoard {
-        *get_item_unchecked!(KING_MOVES, self.to_index())
+    pub fn between(self, other: Self) -> BitBoard {
+        *get_item_unchecked!(BETWEEN, self.to_index(), other.to_index())
     }
 
-    /// Get the knight moves for a particular square.
+    /// Get a line (extending to infinity, which in chess is 8 squares), given two squares.
+    /// This line does extend past the squares.
     #[inline]
-    pub fn get_knight_moves(self) -> BitBoard {
-        *get_item_unchecked!(KNIGHT_MOVES, self.to_index())
+    pub fn line(self, other: Self) -> BitBoard {
+        *get_item_unchecked!(LINE, self.to_index(), other.to_index())
+    }
+
+    /// Get the quiet pawn moves (non-captures) for a particular square, given the pawn's color and
+    /// the potential blocking pieces.
+    #[inline]
+    pub fn get_pawn_quiets(self, color: Color, blockers: BitBoard) -> BitBoard {
+        if self.get_rank() == color.to_second_rank()
+            && !(blockers & color.to_third_rank_bitboard() & self.get_file().to_bitboard())
+                .is_empty()
+        {
+            BitBoard::EMPTY
+        } else {
+            *get_item_unchecked!(
+                const { PAWN_MOVES_AND_ATTACKS[0] },
+                color.to_index(),
+                self.to_index()
+            ) & !blockers
+        }
     }
 
     /// Get the pawn capture move for a particular square, given the pawn's color and the potential
@@ -415,56 +389,83 @@ impl Square {
         ) & blockers
     }
 
-    /// Get the quiet pawn moves (non-captures) for a particular square, given the pawn's color and
-    /// the potential blocking pieces.
-    #[inline]
-    pub fn get_pawn_quiets(self, color: Color, blockers: BitBoard) -> BitBoard {
-        // TODO: Maybe optimization possible?
-        if (self.to_bitboard().shift_forward(color) & blockers).is_empty() {
-            *get_item_unchecked!(
-                const { PAWN_MOVES_AND_ATTACKS[0] },
-                color.to_index(),
-                self.to_index()
-            ) & !blockers
-        } else {
-            BitBoard::EMPTY
-        }
-    }
-
     /// Get all the pawn moves for a particular square, given the pawn's color and the potential
     /// blocking pieces and victims.
     #[inline]
     pub fn get_pawn_moves(self, color: Color, blockers: BitBoard) -> BitBoard {
-        self.get_pawn_attacks(color, blockers) ^ self.get_pawn_quiets(color, blockers)
+        self.get_pawn_quiets(color, blockers) ^ self.get_pawn_attacks(color, blockers)
     }
+
+    /// Get the knight moves for a particular square.
+    #[inline]
+    pub fn get_knight_moves(self) -> BitBoard {
+        *get_item_unchecked!(KNIGHT_MOVES, self.to_index())
+    }
+
+    /// Get the moves for a bishop on a particular square, given blockers blocking my movement.
+    #[inline]
+    pub fn get_bishop_moves(self, blockers: BitBoard) -> BitBoard {
+        #[cfg(target_feature = "bmi2")]
+        {
+            get_bishop_moves_bmi(self, blockers)
+        }
+        #[cfg(not(target_feature = "bmi2"))]
+        {
+            get_bishop_moves_non_bmi(self, blockers)
+        }
+    }
+
+    /// Get the moves for a rook on a particular square, given blockers blocking my movement.
+    #[inline]
+    pub fn get_rook_moves(self, blockers: BitBoard) -> BitBoard {
+        #[cfg(target_feature = "bmi2")]
+        {
+            get_rook_moves_bmi(self, blockers)
+        }
+        #[cfg(not(target_feature = "bmi2"))]
+        {
+            get_rook_moves_non_bmi(self, blockers)
+        }
+    }
+
+    #[inline]
+    pub fn get_queen_moves(self, blockers: BitBoard) -> BitBoard {
+        self.get_bishop_moves(blockers) ^ self.get_rook_moves(blockers)
+    }
+
+    /// Get the king moves for a particular square.
+    #[inline]
+    pub fn get_king_moves(self) -> BitBoard {
+        *get_item_unchecked!(KING_MOVES, self.to_index())
+    }
+}
+
+macro_rules! generate_error {
+    ($s:expr) => {
+        TimecatError::InvalidSquareString {
+            s: $s.to_string().into(),
+        }
+    };
 }
 
 impl FromStr for Square {
     type Err = TimecatError;
 
     fn from_str(s: &str) -> Result<Self> {
-        if s.len() < 2 {
-            return Err(TimecatError::InvalidSquareString { s: s.to_string() });
-        }
-        let ch = s.to_lowercase().chars().collect_vec();
-        if !(('a'..='h').contains(&ch[0]) && ('1'..='8').contains(&ch[1])) {
-            return Err(TimecatError::InvalidSquareString { s: s.to_string() });
-        }
-        Ok(Square::from_rank_and_file(
-            Rank::from_index(((ch[1] as usize) - ('1' as usize)) & 7),
-            File::from_index(((ch[0] as usize) - ('a' as usize)) & 7),
-        ))
+        let binding = s.to_lowercase();
+        let mut ch = binding.trim().chars();
+        let file = ch.next().ok_or_else(|| generate_error!(s))?.try_into()?;
+        let rank = ch.next().ok_or_else(|| generate_error!(s))?.try_into()?;
+        ch.next().map_or_else(
+            || Ok(Self::from_rank_and_file(rank, file)),
+            |_| Err(generate_error!(s)),
+        )
     }
 }
 
 impl fmt::Display for Square {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}{}",
-            (b'a' + ((self.to_index() & 7) as u8)) as char,
-            (b'1' + ((self.to_index() >> 3) as u8)) as char,
-        )
+        write!(f, "{}{}", self.get_file(), self.get_rank())
     }
 }
 
@@ -472,17 +473,16 @@ impl fmt::Display for Square {
 impl<'source> FromPyObject<'source> for Square {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(int) = ob.extract::<u8>() {
-            return Ok(Self::from_int(int));
+            return Ok(unsafe { Self::from_int(int) });
         }
-        if let Ok(mut s) = ob.extract::<&str>() {
-            s = s.trim();
-            if let Ok(square) = Self::from_str(s) {
-                return Ok(square);
-            }
+        if let Ok(s) = ob.extract::<&str>()
+            && let Ok(square) = s.parse()
+        {
+            return Ok(square);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }

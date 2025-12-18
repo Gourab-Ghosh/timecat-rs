@@ -3,7 +3,7 @@ use super::*;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct ChessPositionBuilder {
-    #[cfg_attr(feature = "serde", serde(with = "SerdeHandler"))]
+    #[cfg_attr(feature = "serde", serde(with = "serde_handler"))]
     pieces: [Option<Piece>; 64],
     turn: Color,
     castle_rights: [CastleRights; 2],
@@ -33,8 +33,8 @@ impl ChessPositionBuilder {
         ep_file: Option<File>,
         halfmove_clock: u8,
         fullmove_number: u16,
-    ) -> ChessPositionBuilder {
-        let mut result = ChessPositionBuilder {
+    ) -> Self {
+        let mut result = Self {
             pieces: [None; 64],
             turn,
             castle_rights: std::array::from_fn(|index| {
@@ -197,8 +197,8 @@ impl fmt::Display for ChessPositionBuilder {
 }
 
 impl Default for ChessPositionBuilder {
-    fn default() -> ChessPositionBuilder {
-        ChessPositionBuilder::from_str(STARTING_POSITION_FEN).unwrap()
+    fn default() -> Self {
+        Self::from_str(STARTING_POSITION_FEN).unwrap()
     }
 }
 
@@ -208,12 +208,12 @@ impl FromStr for ChessPositionBuilder {
     fn from_str(value: &str) -> Result<Self> {
         let mut cur_rank = Rank::Eighth;
         let mut cur_file = File::A;
-        let mut position_builder = ChessPositionBuilder::new();
+        let mut position_builder = Self::new();
 
         let tokens: Vec<&str> = value.split(' ').collect();
         if tokens.len() < 4 {
             return Err(TimecatError::BadFen {
-                fen: value.to_string(),
+                fen: value.to_string().into(),
             });
         }
 
@@ -231,8 +231,9 @@ impl FromStr for ChessPositionBuilder {
                     cur_file = File::A;
                 }
                 '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' => {
-                    cur_file =
-                        File::from_index((cur_file.to_index() + (x as usize) - ('0' as usize)) & 7);
+                    cur_file = unsafe {
+                        File::from_index((cur_file.to_index() + (x as usize) - ('0' as usize)) & 7)
+                    };
                 }
                 'r' => {
                     position_builder[Square::from_rank_and_file(cur_rank, cur_file)] =
@@ -296,7 +297,7 @@ impl FromStr for ChessPositionBuilder {
                 }
                 _ => {
                     return Err(TimecatError::BadFen {
-                        fen: value.to_string(),
+                        fen: value.to_string().into(),
                     });
                 }
             }
@@ -306,7 +307,7 @@ impl FromStr for ChessPositionBuilder {
             "b" | "B" => _ = position_builder.set_turn(Black),
             _ => {
                 return Err(TimecatError::BadFen {
-                    fen: value.to_string(),
+                    fen: value.to_string().into(),
                 });
             }
         }
@@ -345,7 +346,7 @@ impl FromStr for ChessPositionBuilder {
 
 impl From<&ChessPosition> for ChessPositionBuilder {
     fn from(board: &ChessPosition) -> Self {
-        ChessPositionBuilder::setup(
+        Self::setup(
             board.iter(),
             board.turn(),
             board.castle_rights(White),

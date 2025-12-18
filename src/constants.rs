@@ -39,17 +39,17 @@ pub mod bitboard_and_square {
                 )*
                 pub static ALL_SQUARES: [Square; NUM_SQUARES] = [$( Square::[<$file$rank>] ), *];
                 pub static BB_SQUARES: [BitBoard; NUM_SQUARES] = [$( [<BB_$file$rank>] ), *];
-                pub static SQUARES_VERTICAL_MIRROR: [Square; NUM_SQUARES] = [$( ALL_SQUARES[[<$file$rank>].to_index() ^ 7] ), *];
-                pub static SQUARES_HORIZONTAL_MIRROR: [Square; NUM_SQUARES] = [$( ALL_SQUARES[[<$file$rank>].to_index() ^ 0x38] ), *];
-                pub static SQUARES_ROTATED: [Square; NUM_SQUARES] = [$( ALL_SQUARES[[<$file$rank>].to_index() ^ 0x3f] ), *];
+                pub static SQUARES_VERTICAL_MIRROR: [Square; NUM_SQUARES] = [$( [<$file$rank>].vertical_mirror() ), *];
+                pub static SQUARES_HORIZONTAL_MIRROR: [Square; NUM_SQUARES] = [$( [<$file$rank>].horizontal_mirror() ), *];
+                pub static SQUARES_ROTATED: [Square; NUM_SQUARES] = [$( [<$file$rank>].rotate() ), *];
             }
         };
 
         (@bb_ranks_and_files $(($file:expr, $rank:expr)),+ $(,)?) => {
             paste! {
                 $(
-                    pub const [<BB_RANK_$rank>]: BitBoard = BitBoard::new(0xff << (($rank - 1) << 3));
-                    pub const [<BB_FILE_$file>]: BitBoard = BitBoard::new(0x0101_0101_0101_0101 << ($rank - 1));
+                    pub const [<BB_RANK_$rank>]: BitBoard = unsafe { Rank::from_int($rank - 1) }.to_bitboard();
+                    pub const [<BB_FILE_$file>]: BitBoard = $file.to_bitboard();
                 )*
                 pub static BB_RANKS: [BitBoard; NUM_RANKS] = [$( [<BB_RANK_$rank>] ), *];
                 pub static BB_FILES: [BitBoard; NUM_FILES] = [$( [<BB_FILE_$file>] ), *];
@@ -248,8 +248,6 @@ pub mod engine {
         [101, 201, 301, 401, 501, 601],
         [100, 200, 300, 400, 500, 600],
     ];
-
-    pub static LMR_TABLE: [[Depth; 64]; 64] = [[0; 64]; 64];
 }
 
 pub mod binary {
@@ -338,7 +336,7 @@ pub mod default_parameters {
     pub const TIMECAT_DEFAULTS: TimecatDefaults = TimecatDefaults {
         #[cfg(feature = "colored")]
         colored: true,
-        console_mode: true,
+        console_mode: cfg!(feature = "debug"),
         t_table_size: CacheTableSize::Exact(16),
         long_algebraic_notation: false,
         num_threads: NonZeroUsize::new(1).unwrap(),

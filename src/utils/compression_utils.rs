@@ -19,23 +19,22 @@ impl Compress for PieceType {
 }
 
 impl Compress for Square {
-    type CompressedItem = u16;
+    type CompressedItem = u8;
 
     #[inline]
     fn compress(self) -> Self::CompressedItem {
-        self.to_index() as Self::CompressedItem
+        self as Self::CompressedItem
     }
 }
 
 impl Compress for Move {
     type CompressedItem = u16;
 
+    #[inline]
     fn compress(self) -> Self::CompressedItem {
-        let mut compressed_move = 0;
-        compressed_move ^= self.get_source().compress() << 6;
-        compressed_move ^= self.get_dest().compress();
-        compressed_move ^= (self.get_promotion().compress() as Self::CompressedItem) << 12;
-        compressed_move
+        ((self.get_source() as Self::CompressedItem) << 6)
+            ^ (self.get_dest() as Self::CompressedItem)
+            ^ ((self.get_promotion().compress() as Self::CompressedItem) << 12)
     }
 }
 
@@ -57,47 +56,71 @@ impl Compress for ValidOrNullMove {
     }
 }
 
+impl Decompress<PieceType> for u8 {
+    #[inline]
+    fn decompress(self) -> Result<PieceType> {
+        if self >= NUM_PIECE_TYPES as Self {
+            Err(TimecatError::DecompressionFailed {
+                value: self.to_string().into(),
+                type_name: std::any::type_name::<PieceType>().into(),
+            })
+        } else {
+            Ok(unsafe { PieceType::from_int(self) })
+        }
+    }
+}
+
 impl Decompress<Option<PieceType>> for u8 {
     #[inline]
-    fn decompress(self) -> Option<PieceType> {
+    fn decompress(self) -> Result<Option<PieceType>> {
         if self == 0 {
-            return None;
+            Ok(None)
+        } else {
+            Ok(Some(self.decompress()?))
         }
-        Some(*get_item_unchecked!(ALL_PIECE_TYPES, (self - 1) as usize))
     }
 }
 
-impl Decompress<Option<PieceType>> for u16 {
+impl Decompress<Square> for u8 {
     #[inline]
-    fn decompress(self) -> Option<PieceType> {
-        (self as u8).decompress()
+    fn decompress(self) -> Result<Square> {
+        if self > NUM_SQUARES as Self {
+            Err(TimecatError::DecompressionFailed {
+                value: self.to_string().into(),
+                type_name: std::any::type_name::<Square>().into(),
+            })
+        } else {
+            Ok(unsafe { Square::from_int(self) })
+        }
     }
 }
 
-impl Decompress<Square> for u16 {
-    #[inline]
-    fn decompress(self) -> Square {
-        *get_item_unchecked!(ALL_SQUARES, self as usize)
+impl Decompress<Move> for u16 {
+    fn decompress(self) -> Result<Move> {
+        Ok(unsafe {
+            Move::new_unchecked(
+                (((self >> 6) & 0x3F) as u8).decompress()?,
+                ((self & 0x3F) as u8).decompress()?,
+                ((self >> 12) as u8).decompress()?,
+            )
+        })
     }
 }
 
 impl Decompress<Option<Move>> for u16 {
-    fn decompress(self) -> Option<Move> {
-        if self == u16::MAX {
-            return None;
+    fn decompress(self) -> Result<Option<Move>> {
+        if self == Self::MAX {
+            Ok(None)
+        } else {
+            Ok(Some(self.decompress()?))
         }
-        Some(Move::new_unchecked(
-            ((self >> 6) & 0x3F).decompress(),
-            (self & 0x3F).decompress(),
-            (self >> 12).decompress(),
-        ))
     }
 }
 
 impl Decompress<ValidOrNullMove> for u16 {
     #[inline]
-    fn decompress(self) -> ValidOrNullMove {
-        <Self as Decompress<Option<Move>>>::decompress(self).into()
+    fn decompress(self) -> Result<ValidOrNullMove> {
+        Ok(<Self as Decompress<Option<Move>>>::decompress(self)?.into())
     }
 }
 

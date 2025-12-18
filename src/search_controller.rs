@@ -15,7 +15,7 @@ pub struct SearchController {
 
 impl SearchController {
     #[inline]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             move_overhead: TIMECAT_DEFAULTS.move_overhead,
             max_time: Duration::MAX,
@@ -29,22 +29,22 @@ impl SearchController {
     }
 
     #[inline]
-    pub fn is_infinite_search(&self) -> bool {
+    pub const fn is_infinite_search(&self) -> bool {
         self.is_infinite_search
     }
 
     #[inline]
-    pub fn reset_start_time(&mut self) {
+    pub const fn reset_start_time(&mut self) {
         self.stop_search_at_every_node = false;
     }
 
-    pub fn set_max_time(&mut self, duration: Duration) {
+    pub const fn set_max_time(&mut self, duration: Duration) {
         self.max_time = duration;
         self.stop_search_at_every_node = false;
     }
 
     #[inline]
-    pub fn max_time(&self) -> Duration {
+    pub const fn max_time(&self) -> Duration {
         self.max_time
     }
 
@@ -63,19 +63,19 @@ impl SearchController {
         winc: Duration,
         binc: Duration,
         moves_to_go: Option<NumMoves>,
-        searcher: &mut Searcher<impl PositionEvaluation>,
+        searcher: &Searcher<impl PositionEvaluation>,
     ) {
         let board = searcher.get_board();
         let (self_time, self_inc, opponent_time, _) = match board.turn() {
             White => (wtime, winc, btime, binc),
             Black => (btime, binc, wtime, winc),
         };
-        let divider = moves_to_go.unwrap_or(
+        let divider = moves_to_go.unwrap_or_else(|| {
             (20 as NumMoves)
                 .checked_sub(board.get_fullmove_number() / 2)
                 .unwrap_or_default()
-                .max(5),
-        );
+                .max(5)
+        });
         let new_inc = self_inc
             .checked_sub(Duration::from_secs(1))
             .unwrap_or_default();

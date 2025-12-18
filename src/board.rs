@@ -12,21 +12,32 @@ pub enum GameResult {
 
 impl GameResult {
     pub fn is_win(&self) -> bool {
-        matches!(self, GameResult::Win(_))
+        matches!(self, Self::Win(_))
     }
 
     pub fn is_draw(&self) -> bool {
-        matches!(self, GameResult::Draw)
+        matches!(self, Self::Draw)
     }
 
     pub fn is_in_progress(&self) -> bool {
-        matches!(self, GameResult::InProgress)
+        matches!(self, Self::InProgress)
     }
 
     pub fn winner(&self) -> Option<Color> {
         match self {
-            GameResult::Win(color) => Some(*color),
+            Self::Win(color) => Some(*color),
             _ => None,
+        }
+    }
+}
+
+impl fmt::Display for GameResult {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Win(Color::White) => write!(f, "1-0"),
+            Self::Win(Color::Black) => write!(f, "0-1"),
+            Self::Draw => write!(f, "1/2-1/2"),
+            Self::InProgress => write!(f, "*"),
         }
     }
 }
@@ -116,7 +127,9 @@ impl Board {
     #[inline]
     pub fn to_board_string(&self, use_unicode: bool, colored_board: bool) -> String {
         self.position.to_board_string(
-            self.stack.last().map_or(Default::default(), |(_, m)| *m),
+            self.stack
+                .last()
+                .map_or(ValidOrNullMove::NullMove, |(_, m)| *m),
             use_unicode,
             colored_board,
         )
@@ -125,7 +138,9 @@ impl Board {
     #[inline]
     pub fn to_unicode_string(&self, colored_board: bool) -> String {
         self.position.to_unicode_string(
-            self.stack.last().map_or(Default::default(), |(_, m)| *m),
+            self.stack
+                .last()
+                .map_or(ValidOrNullMove::NullMove, |(_, m)| *m),
             colored_board,
         )
     }
@@ -247,17 +262,20 @@ impl Board {
     pub fn push_san(&mut self, san: &str) -> Result<ValidOrNullMove> {
         // TODO: Generate test cases.
         let valid_or_null_move = self.parse_san(san)?;
-        self.push_unchecked(valid_or_null_move);
+        unsafe { self.push_unchecked(valid_or_null_move) };
         Ok(valid_or_null_move)
     }
 
     #[inline]
-    pub fn push_san_moves(&mut self, sans: &str) -> Result<Vec<ValidOrNullMove>> {
-        let new_sans = remove_double_spaces_and_trim(sans);
-        if new_sans.is_empty() {
-            Ok(Vec::new())
+    pub fn push_san_moves(&mut self, san_moves: &str) -> Result<Vec<ValidOrNullMove>> {
+        let parsed_str = remove_double_spaces_and_trim(san_moves);
+        if parsed_str.is_empty() {
+            const { Ok(Vec::new()) }
         } else {
-            new_sans.split(' ').map(|san| self.push_san(san)).collect()
+            parsed_str
+                .split(' ')
+                .map(|san| self.push_san(san))
+                .collect()
         }
     }
 
@@ -275,20 +293,45 @@ impl Board {
 
     #[inline]
     pub fn push_uci_moves(&mut self, uci_moves: &str) -> Result<Vec<ValidOrNullMove>> {
-        remove_double_spaces_and_trim(uci_moves)
-            .split(' ')
-            .map(|san| self.push_uci(san))
-            .collect()
+        let parsed_str = remove_double_spaces_and_trim(uci_moves);
+        if parsed_str.is_empty() {
+            const { Ok(Vec::new()) }
+        } else {
+            parsed_str
+                .split(' ')
+                .map(|san| self.push_uci(san))
+                .collect()
+        }
+    }
+
+    pub fn push_move(&mut self, move_text: &str) -> Result<ValidOrNullMove> {
+        // TODO: Generate test cases.
+        let valid_or_null_move = self.parse_move(move_text)?;
+        self.push(valid_or_null_move)?;
+        Ok(valid_or_null_move)
+    }
+
+    #[inline]
+    pub fn push_moves(&mut self, uci_moves: &str) -> Result<Vec<ValidOrNullMove>> {
+        let parsed_str = remove_double_spaces_and_trim(uci_moves);
+        if parsed_str.is_empty() {
+            const { Ok(Vec::new()) }
+        } else {
+            parsed_str
+                .split(' ')
+                .map(|san| self.push_move(san))
+                .collect()
+        }
     }
 
     pub fn algebraic_and_push(
         &mut self,
         valid_or_null_move: ValidOrNullMove,
         long: bool,
-    ) -> Result<String> {
+    ) -> Result<Cow<'static, str>> {
         if valid_or_null_move.is_null() {
             self.push(valid_or_null_move)?;
-            return Ok("--".to_string());
+            return Ok(Cow::Borrowed("--"));
         }
         let san = valid_or_null_move.algebraic_without_suffix(self.get_position(), long)?;
 
@@ -307,59 +350,82 @@ impl Board {
     }
 
     #[inline]
-    pub fn san_and_push(&mut self, valid_or_null_move: ValidOrNullMove) -> Result<String> {
+    pub fn san_and_push(
+        &mut self,
+        valid_or_null_move: ValidOrNullMove,
+    ) -> Result<Cow<'static, str>> {
         self.algebraic_and_push(valid_or_null_move, false)
     }
 
     #[inline]
-    pub fn lan_and_push(&mut self, valid_or_null_move: ValidOrNullMove) -> Result<String> {
+    pub fn lan_and_push(
+        &mut self,
+        valid_or_null_move: ValidOrNullMove,
+    ) -> Result<Cow<'static, str>> {
         self.algebraic_and_push(valid_or_null_move, true)
     }
 
     pub fn variation_san(
-        board: &Board,
+        board: &mut Self,
         variation: impl Iterator<Item = ValidOrNullMove>,
     ) -> Result<String> {
-        let mut board = board.clone();
-        let mut san = String::new();
+        let mut variation_san = String::new();
         for valid_or_null_move in variation {
             if board.turn() == White {
                 let san_str = board.san_and_push(valid_or_null_move);
-                san += &format!("{}. {}", board.get_fullmove_number(), san_str.unwrap());
-            } else if san.is_empty() {
+                write_unchecked!(
+                    &mut variation_san,
+                    "{}. {}",
+                    board.get_fullmove_number(),
+                    san_str.unwrap()
+                );
+            } else if variation_san.is_empty() {
                 let san_str = board.san_and_push(valid_or_null_move);
-                san += &format!("{}...{}", board.get_fullmove_number(), san_str.unwrap());
+                write_unchecked!(
+                    &mut variation_san,
+                    "{}...{}",
+                    board.get_fullmove_number(),
+                    san_str.unwrap()
+                );
             } else {
-                san += &board.san_and_push(valid_or_null_move)?;
+                variation_san += &board.san_and_push(valid_or_null_move)?;
             }
-            san.push(' ');
+            variation_san.push(' ');
         }
-        san.pop(); // Remove the trailing space.
-
-        Ok(san)
+        variation_san.pop(); // Remove the trailing space.
+        Ok(variation_san)
     }
 
+    #[inline]
+    pub fn get_starting_position(&self) -> &ChessPosition {
+        self.stack
+            .first()
+            .map_or_else(|| self.get_position(), |(position, _)| position)
+    }
+
+    #[inline]
     pub fn get_starting_board_fen(&self) -> String {
-        if let Some((position, _)) = self.stack.first() {
-            position.get_fen()
-        } else {
-            self.get_fen()
-        }
+        self.stack
+            .first()
+            .map_or_else(|| self.get_fen(), |(position, _)| position.get_fen())
     }
 
     pub fn get_pgn(&self) -> Result<String> {
         let mut pgn = String::new();
-        let starting_fen = &self.get_starting_board_fen();
+        let starting_position = self.get_starting_position();
+        let starting_fen = self.get_starting_position().get_fen();
         if starting_fen != STARTING_POSITION_FEN {
-            pgn += &format!("[FEN \"{}\"]\n", starting_fen);
+            writeln_unchecked!(pgn, "[FEN \"{}\"]", starting_fen);
         }
-        pgn += &Self::variation_san(
-            &Self::from_fen(starting_fen).unwrap(),
-            self.stack
-                .clone()
-                .into_iter()
-                .map(|(_, optional_m)| optional_m),
-        )?;
+        writeln_unchecked!(pgn, "[Result \"{}\"]", self.result());
+        write_unchecked!(
+            &mut pgn,
+            "\n{}",
+            Self::variation_san(
+                &mut starting_position.into(),
+                self.stack.iter().map(|(_, optional_m)| *optional_m),
+            )?
+        );
         Ok(pgn)
     }
 
@@ -378,7 +444,7 @@ impl Board {
 }
 
 impl BoardMethodOverload<Move> for Board {
-    fn push_unchecked(&mut self, move_: Move) {
+    unsafe fn push_unchecked(&mut self, move_: Move) {
         let position_copy = self.position.clone();
         self.position.make_move(move_);
         self.repetition_table.insert(self.get_hash());
@@ -389,10 +455,10 @@ impl BoardMethodOverload<Move> for Board {
         if !self.is_legal(&move_) {
             return Err(TimecatError::IllegalMove {
                 valid_or_null_move: move_.into(),
-                board_fen: self.get_fen(),
+                board_fen: self.get_fen().into(),
             });
         }
-        self.push_unchecked(move_);
+        unsafe { self.push_unchecked(move_) };
         Ok(())
     }
 
@@ -421,7 +487,7 @@ impl BoardMethodOverload<Move> for Board {
 }
 
 impl BoardMethodOverload<ValidOrNullMove> for Board {
-    fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
+    unsafe fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
         let position_copy = self.position.clone();
         self.position.make_move(valid_or_null_move);
         self.repetition_table.insert(self.get_hash());
@@ -434,10 +500,10 @@ impl BoardMethodOverload<ValidOrNullMove> for Board {
         } else {
             if self.is_check() {
                 return Err(TimecatError::NullMoveInCheck {
-                    fen: self.get_fen(),
+                    fen: self.get_fen().into(),
                 });
             }
-            self.push_unchecked(valid_or_null_move);
+            unsafe { self.push_unchecked(valid_or_null_move) };
             Ok(())
         }
     }
@@ -518,7 +584,7 @@ impl Deref for Board {
 impl<'source> FromPyObject<'source> for Board {
     fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
         if let Ok(position) = ob.extract::<ChessPosition>() {
-            let mut board = Board::from(position);
+            let mut board = Self::from(position);
             if let (Ok(moves_py_object), Ok(states_py_object)) =
                 (ob.getattr("move_stack"), ob.getattr("_stack"))
             {
@@ -541,8 +607,8 @@ impl<'source> FromPyObject<'source> for Board {
             return Ok(board);
         }
         Err(Pyo3Error::Pyo3TypeConversionError {
-            from: ob.to_string(),
-            to: std::any::type_name::<Self>().to_string(),
+            from: ob.to_string().into(),
+            to: std::any::type_name::<Self>().into(),
         }
         .into())
     }
