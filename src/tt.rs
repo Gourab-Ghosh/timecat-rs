@@ -165,15 +165,15 @@ impl TranspositionTable {
 
     #[inline]
     pub fn clear_best_moves(&self) {
-        self.table
-            .get_table()
-            .write()
-            .unwrap()
-            .iter_mut()
-            .flatten()
-            .for_each(|entry| {
+        self.table.apply(|entry| {
+            if let Some(entry) = entry {
                 entry.get_entry_mut().best_move = None;
-            });
+            }
+        });
+    }
+
+    pub fn set_size(&mut self, cache_table_size: CacheTableSize) {
+        self.table.set_size(cache_table_size);
     }
 }
 

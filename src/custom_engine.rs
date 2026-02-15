@@ -53,13 +53,11 @@ impl Default for EngineProperties {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
     board: Board,
-    transposition_table: Arc<TranspositionTable>,
+    transposition_table: TranspositionTable,
     evaluator: P,
     last_score: Option<Score>,
     controller: T,
     num_threads: NonZeroUsize,
-    num_nodes_searched: Arc<AtomicUsize>,
-    selective_depth: Arc<AtomicUsize>,
     #[cfg_attr(feature = "serde", serde(skip))]
     optional_io_reader: Option<IoReader>,
     stop_command: Arc<AtomicBool>,
@@ -78,13 +76,11 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
     ) -> Self {
         Self {
             board,
-            transposition_table: transposition_table.into(),
+            transposition_table,
             evaluator,
             last_score: None,
             controller,
             num_threads: TIMECAT_DEFAULTS.num_threads,
-            num_nodes_searched: AtomicUsize::new(0).into(),
-            selective_depth: AtomicUsize::new(0).into(),
             optional_io_reader: None,
             stop_command: AtomicBool::new(false).into(),
             terminate: AtomicBool::new(false).into(),
@@ -124,16 +120,6 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
     }
 
     #[inline]
-    fn get_num_nodes_searched(&self) -> usize {
-        self.num_nodes_searched.load(MEMORY_ORDERING)
-    }
-
-    #[inline]
-    pub fn get_selective_depth(&self) -> Ply {
-        self.selective_depth.load(MEMORY_ORDERING)
-    }
-
-    #[inline]
     pub fn get_num_threads(&self) -> usize {
         self.num_threads.get()
     }
@@ -149,8 +135,6 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
     }
 
     pub fn reset_variables(&mut self) {
-        self.num_nodes_searched.store(0, MEMORY_ORDERING);
-        self.selective_depth.store(0, MEMORY_ORDERING);
         self.controller.reset_variables();
         self.evaluator.reset_variables();
         if self.properties.clear_table_after_each_search() {
@@ -162,18 +146,24 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
     }
 
     #[inline]
-    pub fn generate_searcher(&self, id: usize) -> Searcher<P> {
-        Searcher::new(
-            id,
-            self.last_score,
-            self.board.clone(),
-            self.evaluator.clone(),
-            self.transposition_table.clone(),
-            self.num_nodes_searched.clone(),
-            self.selective_depth.clone(),
-            self.stop_command.clone(),
-            self.properties.clone(),
-        )
+    pub fn generate_searcher(
+        &self,
+        id: usize,
+        num_nodes_searched: &AtomicUsize,
+        selective_depth: &AtomicUsize,
+    ) -> Searcher<P> {
+        // Searcher::new(
+        //     id,
+        //     self.last_score,
+        //     self.board.clone(),
+        //     self.evaluator.clone(),
+        //     self.transposition_table.clone(),
+        //     self.num_nodes_searched.clone(),
+        //     self.selective_depth.clone(),
+        //     self.stop_command.clone(),
+        //     self.properties.clone(),
+        // )
+        todo!();
     }
 
     #[inline]
@@ -228,7 +218,7 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
         Ok(())
     }
 
-    fn set_transposition_table_size(&self, size: CacheTableSize) {
+    fn set_transposition_table_size(&mut self, size: CacheTableSize) {
         self.transposition_table.set_size(size);
         if GLOBAL_TIMECAT_STATE.is_in_debug_mode() {
             self.transposition_table.print_info();
@@ -300,8 +290,11 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
         }
         self.reset_variables();
         let mut join_handles = vec![];
+        let num_nodes_searched = AtomicUsize::new(0);
+        let selective_depth = AtomicUsize::new(0);
         for id in 1..self.num_threads.get() {
-            let mut threaded_searcher = self.generate_searcher(id);
+            let mut threaded_searcher =
+                self.generate_searcher(id, &num_nodes_searched, &selective_depth);
             let controller = self.controller.clone();
             let join_handle = thread::spawn(move || {
                 threaded_searcher.search(
@@ -320,7 +313,8 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
                 Self::update_stop_command(stop_command, reader, terminate);
             }));
         }
-        let mut main_thread_searcher = self.generate_searcher(0);
+        let mut main_thread_searcher =
+            self.generate_searcher(0, &num_nodes_searched, &selective_depth);
         main_thread_searcher.search(config, self.controller.clone(), verbose);
         self.set_stop_command(true);
         for join_handle in join_handles {
@@ -360,12 +354,9 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> Clone for CustomEngin
     fn clone(&self) -> Self {
         Self {
             board: self.board.clone(),
-            transposition_table: self.transposition_table.as_ref().clone().into(),
+            transposition_table: self.transposition_table.clone(),
             evaluator: self.evaluator.clone(),
             controller: self.controller.clone(),
-            num_nodes_searched: AtomicUsize::new(self.num_nodes_searched.load(MEMORY_ORDERING))
-                .into(),
-            selective_depth: AtomicUsize::new(self.selective_depth.load(MEMORY_ORDERING)).into(),
             optional_io_reader: self.optional_io_reader.clone(),
             stop_command: AtomicBool::new(self.stop_command.load(MEMORY_ORDERING)).into(),
             terminate: AtomicBool::new(self.terminate.load(MEMORY_ORDERING)).into(),

@@ -169,9 +169,9 @@ impl Board {
     pub fn update_repetition_table(&mut self) {
         self.repetition_table.clear();
         for (position, _) in &self.stack {
-            self.repetition_table.insert(position.get_hash())
+            self.repetition_table.insert(position.get_hash());
         }
-        self.repetition_table.insert(self.get_hash())
+        self.repetition_table.insert(self.get_hash());
     }
 
     #[inline]
@@ -224,7 +224,7 @@ impl Board {
 
     pub fn pop(&mut self) -> Result<ValidOrNullMove> {
         let (position, valid_or_null_move) = self.stack.pop().ok_or(TimecatError::EmptyStack)?;
-        self.repetition_table.remove(self.get_hash());
+        self.repetition_table.remove(self.get_hash())?;
         self.position = position;
         Ok(valid_or_null_move)
     }

@@ -243,10 +243,10 @@ impl EvaluatorNNUE {
         Self::evaluate_raw(position, || Self::slow_evaluate_nnue_raw(position))
     }
 
-    #[inline]
-    pub fn set_size(&self, size: CacheTableSize) {
-        self.score_cache.set_size(size);
-    }
+    // #[inline]
+    // pub fn set_size(&mut self, size: CacheTableSize) {
+    //     self.score_cache.set_size(size);
+    // }
 }
 
 impl PositionEvaluation for EvaluatorNNUE {

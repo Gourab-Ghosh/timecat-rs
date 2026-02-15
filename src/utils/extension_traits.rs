@@ -168,7 +168,7 @@ pub trait ChessEngine {
 
     fn get_board(&self) -> &Board;
     fn get_board_mut(&mut self) -> &mut Board;
-    fn set_transposition_table_size(&self, size: CacheTableSize);
+    fn set_transposition_table_size(&mut self, size: CacheTableSize);
     fn set_num_threads(&mut self, num_threads: NonZeroUsize);
     fn set_move_overhead(&mut self, duration: Duration);
     fn get_opening_book(&self) -> Option<&dyn PolyglotBook>;

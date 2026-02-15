@@ -7,6 +7,7 @@ pub struct RepetitionTable {
 }
 
 impl RepetitionTable {
+    #[inline]
     pub fn new() -> Self {
         Self::default()
     }
@@ -17,28 +18,24 @@ impl RepetitionTable {
     }
 
     #[inline]
-    pub fn insert(&mut self, key: u64) {
-        *self.count_map.entry(key).or_insert(0) += 1;
-    }
-
-    pub fn insert_and_get_repetition(&mut self, key: u64) -> u8 {
+    pub fn insert(&mut self, key: u64) -> u8 {
         let count_entry = self.count_map.entry(key).or_insert(0);
         *count_entry += 1;
         *count_entry
     }
 
-    pub fn remove(&mut self, key: u64) {
-        let count_entry = self.count_map.get_mut(&key).unwrap_or_else(|| {
-            panic!(
-                "Tried to remove the key {} that doesn't exist!",
-                key.stringify_hash()
-            )
-        });
-        if *count_entry == 1 {
+    pub fn remove(&mut self, key: u64) -> Result<u8> {
+        let count_entry = self
+            .count_map
+            .get_mut(&key)
+            .ok_or(TimecatError::MissingRepetitionKey { key })?;
+        Ok(if *count_entry == 1 {
             self.count_map.remove(&key);
-            return;
-        }
-        *count_entry -= 1;
+            0
+        } else {
+            *count_entry -= 1;
+            *count_entry
+        })
     }
 
     #[inline]

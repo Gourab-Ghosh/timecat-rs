@@ -1,5 +1,15 @@
 use super::*;
 
+pub struct SearcherConfig<'a, E: PositionEvaluation, T: SearchControl<Searcher<E>>> {
+    pub evaluator: &'a mut E,
+    pub transposition_table: &'a TranspositionTable,
+    pub num_nodes_searched: &'a AtomicUsize,
+    pub selective_depth: &'a AtomicUsize,
+    pub stop_command: &'a AtomicBool,
+    pub properties: &'a EngineProperties,
+    pub controller: Option<&'a mut T>,
+}
+
 // #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Searcher<P: PositionEvaluation> {

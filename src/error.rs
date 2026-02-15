@@ -47,6 +47,9 @@ pub enum TimecatError {
     UCIModeUnchanged,
     ConsoleModeUnchanged,
     EmptyStack,
+    MissingRepetitionKey {
+        key: u64,
+    },
     BestMoveNotFound {
         fen: Cow<'static, str>,
     },
@@ -168,6 +171,11 @@ impl fmt::Display for TimecatError {
             EmptyStack => write!(
                 f,
                 "Move Stack is empty, pop not possible! Please try again!"
+            ),
+            MissingRepetitionKey { key } => write!(
+                f,
+                "Tried to remove the key {} that doesn't exist in the repetition table! Please try again!",
+                key.stringify_hash()
             ),
             BestMoveNotFound { fen } => write!(
                 f,
