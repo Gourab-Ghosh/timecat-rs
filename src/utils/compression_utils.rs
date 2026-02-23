@@ -59,13 +59,13 @@ impl Compress for ValidOrNullMove {
 impl Decompress<PieceType> for u8 {
     #[inline]
     fn decompress(self) -> Result<PieceType> {
-        if self >= NUM_PIECE_TYPES as Self {
+        if self == 0 || self > NUM_PIECE_TYPES as Self {
             Err(TimecatError::DecompressionFailed {
                 value: self.to_string().into(),
                 type_name: std::any::type_name::<PieceType>().into(),
             })
         } else {
-            Ok(unsafe { PieceType::from_int(self) })
+            Ok(unsafe { PieceType::from_int(self - 1) })
         }
     }
 }
