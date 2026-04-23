@@ -1,24 +1,14 @@
 use super::*;
 
-pub struct SearcherConfig<'a, E: PositionEvaluation, T: SearchControl<Searcher<E>>> {
-    pub evaluator: &'a mut E,
-    pub transposition_table: &'a TranspositionTable,
-    pub num_nodes_searched: &'a AtomicUsize,
-    pub selective_depth: &'a AtomicUsize,
-    pub stop_command: &'a AtomicBool,
-    pub properties: &'a EngineProperties,
-    pub controller: Option<&'a mut T>,
-}
-
 // #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
-pub struct Searcher<P: PositionEvaluation> {
+pub struct Searcher<'a, P: PositionEvaluation> {
     id: usize,
     score: Score,
     initial_position: ChessPosition,
     board: Board,
     evaluator: P,
-    transposition_table: Arc<TranspositionTable>,
+    transposition_table: &'a TranspositionTable,
     pv_table: PVTable,
     best_moves: Vec<Move>,
     move_sorter: MoveSorter,
@@ -29,20 +19,20 @@ pub struct Searcher<P: PositionEvaluation> {
     depth_completed: Depth,
     is_outside_aspiration_window: bool,
     clock: Instant,
-    stop_command: Arc<AtomicBool>,
+    stop_command: &'a AtomicBool,
     properties: EngineProperties,
 }
 
-impl<P: PositionEvaluation> Searcher<P> {
+impl<'a, P: PositionEvaluation> Searcher<'a, P> {
     pub fn new(
         id: usize,
         last_score: Option<Score>,
         board: Board,
         mut evaluator: P,
-        transposition_table: Arc<TranspositionTable>,
+        transposition_table: &'a TranspositionTable,
         num_nodes_searched: Arc<AtomicUsize>,
         selective_depth: Arc<AtomicUsize>,
-        stop_command: Arc<AtomicBool>,
+        stop_command: &'a AtomicBool,
         properties: EngineProperties,
     ) -> Self {
         Self {
@@ -66,7 +56,9 @@ impl<P: PositionEvaluation> Searcher<P> {
             properties,
         }
     }
+}
 
+impl<P: PositionEvaluation> Searcher<'_, P> {
     #[inline]
     pub fn is_main_threaded(&self) -> bool {
         self.get_id() == 0
@@ -99,7 +91,7 @@ impl<P: PositionEvaluation> Searcher<P> {
 
     #[inline]
     pub fn get_transposition_table(&self) -> &TranspositionTable {
-        &self.transposition_table
+        self.transposition_table
     }
 
     #[inline]
@@ -123,8 +115,8 @@ impl<P: PositionEvaluation> Searcher<P> {
     }
 
     #[inline]
-    pub fn get_stop_command(&self) -> Arc<AtomicBool> {
-        self.stop_command.clone()
+    pub fn get_stop_command(&self) -> &AtomicBool {
+        self.stop_command
     }
 
     #[inline]
@@ -154,7 +146,7 @@ impl<P: PositionEvaluation> Searcher<P> {
 
     #[inline]
     pub fn get_pv_from_t_table(&self) -> Vec<Move> {
-        extract_pv_from_t_table(&self.initial_position, &self.transposition_table)
+        extract_pv_from_t_table(&self.initial_position, self.transposition_table)
     }
 
     #[inline]
@@ -267,7 +259,7 @@ impl<P: PositionEvaluation> Searcher<P> {
                 &self.board,
                 moves_to_search
                     .unwrap_or_else(|| self.board.generate_legal_moves().into_iter().collect_vec()),
-                &self.transposition_table,
+                self.transposition_table,
                 0,
                 self.transposition_table
                     .read_best_move(self.board.get_hash()),
@@ -530,7 +522,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         let weighted_moves = self.move_sorter.get_weighted_moves_sorted(
             &self.board,
             self.board.generate_legal_moves(),
-            &self.transposition_table,
+            self.transposition_table,
             self.ply,
             best_move,
             self.get_nth_pv_move(self.ply).copied(),
@@ -656,7 +648,7 @@ impl<P: PositionEvaluation> Searcher<P> {
         alpha = alpha.max(evaluation);
         for WeightedMove { move_, weight } in self
             .move_sorter
-            .get_weighted_capture_moves_sorted(&self.board, &self.transposition_table)
+            .get_weighted_capture_moves_sorted(&self.board, self.transposition_table)
         {
             if weight.is_negative() {
                 break;
@@ -736,14 +728,14 @@ impl<P: PositionEvaluation> Searcher<P> {
     }
 }
 
-impl<P: PositionEvaluation> SearcherMethodOverload<Move> for Searcher<P> {
+impl<P: PositionEvaluation> SearcherMethodOverload<Move> for Searcher<'_, P> {
     unsafe fn push_unchecked(&mut self, move_: Move) {
         self.board.push_unchecked(move_);
         self.ply += 1;
     }
 }
 
-impl<P: PositionEvaluation> SearcherMethodOverload<ValidOrNullMove> for Searcher<P> {
+impl<P: PositionEvaluation> SearcherMethodOverload<ValidOrNullMove> for Searcher<'_, P> {
     unsafe fn push_unchecked(&mut self, valid_or_null_move: ValidOrNullMove) {
         self.board.push_unchecked(valid_or_null_move);
         self.ply += 1;

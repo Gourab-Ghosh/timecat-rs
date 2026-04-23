@@ -98,7 +98,7 @@ impl SearchController {
     }
 }
 
-impl<P: PositionEvaluation> SearchControl<Searcher<P>> for SearchController {
+impl<P: PositionEvaluation> SearchControl<Searcher<'_, P>> for SearchController {
     #[inline]
     fn get_move_overhead(&self) -> Duration {
         self.move_overhead

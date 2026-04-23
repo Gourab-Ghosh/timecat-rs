@@ -631,7 +631,7 @@ impl SearchInfo {
     }
 }
 
-impl<P: PositionEvaluation> From<&Searcher<P>> for SearchInfo {
+impl<P: PositionEvaluation> From<&Searcher<'_, P>> for SearchInfo {
     fn from(searcher: &Searcher<P>) -> Self {
         #[cfg(feature = "extras")]
         let (overwrites, collisions, zero_hit) = (

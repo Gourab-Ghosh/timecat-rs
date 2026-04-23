@@ -1,7 +1,7 @@
 use super::*;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct EngineProperties {
     _use_mate_distance_pruning: bool,
     _clear_table_after_each_search: bool,
@@ -51,7 +51,7 @@ impl Default for EngineProperties {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
+pub struct CustomEngine<T, P: PositionEvaluation> {
     board: Board,
     transposition_table: TranspositionTable,
     evaluator: P,
@@ -67,7 +67,11 @@ pub struct CustomEngine<T: SearchControl<Searcher<P>>, P: PositionEvaluation> {
     opening_book: Option<Arc<dyn PolyglotBook>>,
 }
 
-impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
+impl<T, P> CustomEngine<T, P>
+where
+    P: PositionEvaluation,
+    for<'s> T: SearchControl<Searcher<'s, P>>,
+{
     pub fn new(
         board: Board,
         transposition_table: TranspositionTable,
@@ -97,17 +101,17 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
         &self.transposition_table
     }
 
-    #[inline]
-    pub fn get_search_controller(&self) -> &(impl SearchControl<Searcher<P>> + use<T, P>) {
-        &self.controller
-    }
+    // #[inline]
+    // pub fn get_search_controller<'a, S : SearchControl<Searcher<'a, P>>>(&self) -> &S {
+    //     &self.controller
+    // }
 
-    #[inline]
-    pub fn get_search_controller_mut(
-        &mut self,
-    ) -> &mut (impl SearchControl<Searcher<P>> + use<T, P>) {
-        &mut self.controller
-    }
+    // #[inline]
+    // pub fn get_search_controller_mut<'a, S : SearchControl<Searcher<'a, P>>>(
+    //     &mut self,
+    // ) -> &mut S {
+    //     &mut self.controller
+    // }
 
     #[inline]
     pub fn get_properties(&self) -> &EngineProperties {
@@ -146,27 +150,6 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
     }
 
     #[inline]
-    pub fn generate_searcher(
-        &self,
-        id: usize,
-        num_nodes_searched: &AtomicUsize,
-        selective_depth: &AtomicUsize,
-    ) -> Searcher<P> {
-        // Searcher::new(
-        //     id,
-        //     self.last_score,
-        //     self.board.clone(),
-        //     self.evaluator.clone(),
-        //     self.transposition_table.clone(),
-        //     self.num_nodes_searched.clone(),
-        //     self.selective_depth.clone(),
-        //     self.stop_command.clone(),
-        //     self.properties.clone(),
-        // )
-        todo!();
-    }
-
-    #[inline]
     pub fn get_stop_command(&self) -> bool {
         self.stop_command.load(MEMORY_ORDERING)
     }
@@ -199,7 +182,11 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> CustomEngine<T, P> {
     }
 }
 
-impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for CustomEngine<T, P> {
+impl<T, P> ChessEngine for CustomEngine<T, P>
+where
+    P: PositionEvaluation,
+    for<'s> T: SearchControl<Searcher<'s, P>>,
+{
     type IoReader = IoReader;
 
     #[inline]
@@ -289,38 +276,58 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
                 .build();
         }
         self.reset_variables();
-        let mut join_handles = vec![];
-        let num_nodes_searched = AtomicUsize::new(0);
-        let selective_depth = AtomicUsize::new(0);
-        for id in 1..self.num_threads.get() {
-            let mut threaded_searcher =
-                self.generate_searcher(id, &num_nodes_searched, &selective_depth);
-            let controller = self.controller.clone();
-            let join_handle = thread::spawn(move || {
-                threaded_searcher.search(
-                    const { &SearchConfig::new_infinite() },
-                    controller,
-                    false,
-                );
+        let mut search_info = std::thread::scope(|scope| {
+            let mut join_handles = vec![];
+            let num_nodes_searched = Arc::new(AtomicUsize::new(0));
+            let selective_depth = Arc::new(AtomicUsize::new(0));
+
+            let mut searchers = (0..self.num_threads.get()).map(|id| {
+                Searcher::new(
+                    id,
+                    self.last_score,
+                    self.board.clone(),
+                    self.evaluator.clone(),
+                    &self.transposition_table,
+                    num_nodes_searched.clone(),
+                    selective_depth.clone(),
+                    &self.stop_command,
+                    self.properties,
+                )
             });
-            join_handles.push(join_handle);
-        }
-        if let Some(io_reader) = self.optional_io_reader.as_ref() {
-            let stop_command = self.stop_command.clone();
-            let reader = io_reader.clone();
-            let terminate = self.terminate.clone();
-            join_handles.push(thread::spawn(move || {
-                Self::update_stop_command(stop_command, reader, terminate);
-            }));
-        }
-        let mut main_thread_searcher =
-            self.generate_searcher(0, &num_nodes_searched, &selective_depth);
-        main_thread_searcher.search(config, self.controller.clone(), verbose);
-        self.set_stop_command(true);
-        for join_handle in join_handles {
-            join_handle.join().unwrap();
-        }
-        let mut search_info = main_thread_searcher.get_search_info();
+
+            // main thread searcher
+            let mut main_thread_searcher = searchers.next().unwrap();
+
+            // worker search threads
+            searchers.for_each(|mut threaded_searcher| {
+                let controller = self.controller.clone();
+                join_handles.push(scope.spawn(move || {
+                    threaded_searcher.search(&SearchConfig::new_infinite(), controller, false);
+                }));
+            });
+
+            // stop/quit listener thread
+            if let Some(io_reader) = self.optional_io_reader.as_ref() {
+                let stop_command = self.stop_command.clone();
+                let reader = io_reader.clone();
+                let terminate = self.terminate.clone();
+
+                join_handles.push(scope.spawn(move || {
+                    Self::update_stop_command(stop_command, reader, terminate);
+                }));
+            }
+
+            main_thread_searcher.search(config, self.controller.clone(), verbose);
+
+            // signal everyone to stop; scoped threads will be joined automatically on scope exit
+            self.set_stop_command(true);
+
+            for join_handle in join_handles {
+                join_handle.join().unwrap();
+            }
+
+            main_thread_searcher.get_search_info()
+        });
         if search_info.get_pv().is_empty() && self.board.status() == BoardStatus::Ongoing {
             search_info.set_pv(vec![
                 self.board
@@ -333,7 +340,11 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> ChessEngine for Custo
     }
 }
 
-impl<T: SearchControl<Searcher<P>> + Default, P: PositionEvaluation + Default> CustomEngine<T, P> {
+impl<T, P> CustomEngine<T, P>
+where
+    P: PositionEvaluation + Default,
+    for<'s> T: SearchControl<Searcher<'s, P>> + Default,
+{
     #[inline]
     pub fn from_board(board: Board) -> Self {
         Self::new(
@@ -350,7 +361,11 @@ impl<T: SearchControl<Searcher<P>> + Default, P: PositionEvaluation + Default> C
     }
 }
 
-impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> Clone for CustomEngine<T, P> {
+impl<T, P> Clone for CustomEngine<T, P>
+where
+    P: PositionEvaluation,
+    for<'s> T: SearchControl<Searcher<'s, P>>,
+{
     fn clone(&self) -> Self {
         Self {
             board: self.board.clone(),
@@ -360,15 +375,17 @@ impl<T: SearchControl<Searcher<P>>, P: PositionEvaluation> Clone for CustomEngin
             optional_io_reader: self.optional_io_reader.clone(),
             stop_command: AtomicBool::new(self.stop_command.load(MEMORY_ORDERING)).into(),
             terminate: AtomicBool::new(self.terminate.load(MEMORY_ORDERING)).into(),
-            properties: self.properties.clone(),
+            properties: self.properties,
             opening_book: self.opening_book.clone(),
             ..*self
         }
     }
 }
 
-impl<T: SearchControl<Searcher<P>> + Default, P: PositionEvaluation + Default> Default
-    for CustomEngine<T, P>
+impl<T, P> Default for CustomEngine<T, P>
+where
+    P: PositionEvaluation + Default,
+    for<'s> T: SearchControl<Searcher<'s, P>> + Default,
 {
     fn default() -> Self {
         Self::new(

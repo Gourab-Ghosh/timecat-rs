@@ -179,23 +179,21 @@ macro_rules! impl_operation {
             }
         }
 
-        impl<T: Clone, const N: usize> $trait<MathVec<T, N>> for $int_type
-        where
-            $int_type: $trait<T, Output = T>,
-        {
-            type Output = MathVec<T, N>;
+        // impl<T: Clone, const N: usize> $trait<MathVec<T, N>> for $int_type
+        // where
+        //     $int_type: $trait<T, Output = T>,
+        // {
+        //     type Output = MathVec<T, N>;
 
-            #[inline]
-            fn $func(self, mut rhs: MathVec<T, N>) -> MathVec<T, N> {
-                rhs.array
-                    .iter_mut()
-                    .for_each(|i| *i = self.$func(i.clone()));
-                rhs
-            }
-        }
+        //     #[inline]
+        //     fn $func(self, mut rhs: MathVec<T, N>) -> MathVec<T, N> {
+        //         rhs.array
+        //             .iter_mut()
+        //             .for_each(|i| *i = self.$func(i.clone()));
+        //         rhs
+        //     }
+        // }
     };
-
-    // (@ops_implementation $type1: ty, $type2: ty) => {};
 }
 
 // BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Neg, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign
