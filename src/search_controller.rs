@@ -72,8 +72,7 @@ impl SearchController {
         };
         let divider = moves_to_go.unwrap_or_else(|| {
             (20 as NumMoves)
-                .checked_sub(board.get_fullmove_number() / 2)
-                .unwrap_or_default()
+                .saturating_sub(board.get_fullmove_number() / 2)
                 .max(5)
         });
         let new_inc = self_inc
