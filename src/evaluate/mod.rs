@@ -34,7 +34,7 @@ impl Evaluator {
         }
         #[cfg(not(feature = "inbuilt_nnue"))]
         {
-            EvaluatorNonNNUE::slow_evaluate(position)
+            EvaluatorNonNNUE::slow_evaluate(&position)
         }
     }
 }

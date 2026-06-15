@@ -181,7 +181,10 @@ impl EvaluatorNNUE {
         false
     }
 
-    fn evaluate_raw(position: &ChessPosition, mut nnue_eval_func: impl FnMut() -> Score) -> Score {
+    fn evaluate_raw(
+        position: &ChessPosition,
+        mut nnue_eval_func: impl FnMut(&ChessPosition) -> Score,
+    ) -> Score {
         let knights_mask = position.get_piece_mask(Knight);
         if position.get_non_king_pieces_mask() == knights_mask && knights_mask.popcnt() < 3 {
             return 0;
@@ -190,7 +193,7 @@ impl EvaluatorNNUE {
         if Self::is_easily_winning_position(position, material_score) {
             return Self::king_corner_forcing_evaluation(position, material_score);
         }
-        let mut nnue_eval = nnue_eval_func();
+        let mut nnue_eval = nnue_eval_func(position);
         if nnue_eval.abs() > WINNING_SCORE_THRESHOLD {
             let multiplier = match_interpolate_float!(
                 0,
@@ -222,8 +225,9 @@ impl EvaluatorNNUE {
     fn hashed_evaluate(&mut self, position: &ChessPosition) -> Score {
         let hash = position.get_hash();
         self.score_cache.get(hash).unwrap_or_else(|| {
-            let score =
-                Self::evaluate_raw(position, || self.model.update_model_and_evaluate(position));
+            let score = Self::evaluate_raw(position, |position| {
+                self.model.update_model_and_evaluate(position)
+            });
             self.score_cache.add(hash, score);
             score
         })
@@ -232,15 +236,16 @@ impl EvaluatorNNUE {
     #[cfg(feature = "inbuilt_nnue")]
     #[inline]
     pub fn slow_evaluate_nnue_raw(position: &ChessPosition) -> Score {
+        let turn = position.turn();
         HALFKP_MODEL_READER
             .to_model(position)
-            .evaluate_current_state(position.turn())
+            .evaluate_current_state(turn)
     }
 
     #[cfg(feature = "inbuilt_nnue")]
     #[inline]
     pub fn slow_evaluate(position: &ChessPosition) -> Score {
-        Self::evaluate_raw(position, || Self::slow_evaluate_nnue_raw(position))
+        Self::evaluate_raw(position, Self::slow_evaluate_nnue_raw)
     }
 
     // #[inline]

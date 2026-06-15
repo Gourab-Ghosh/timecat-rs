@@ -164,10 +164,20 @@ impl HalfKPModelReader {
         white_king_square: Square,
         black_king_square: Square,
     ) -> Result<HalfKPModel> {
-        let position: ChessPosition = ChessPositionBuilder::new()
-            .add_piece(white_king_square, WhiteKing)
-            .add_piece(black_king_square, BlackKing)
-            .try_into()?;
+        let black_king_bb = black_king_square.to_bitboard();
+        let white_king_bb = white_king_square.to_bitboard();
+        let last_position: MinimalChessPosition = MinimalChessPosition {
+            piece_masks: [
+                BitBoard::EMPTY,
+                BitBoard::EMPTY,
+                BitBoard::EMPTY,
+                BitBoard::EMPTY,
+                BitBoard::EMPTY,
+                black_king_bb ^ white_king_bb,
+            ],
+            occupied_colors: [black_king_bb, white_king_bb],
+            turn: White,
+        };
         Ok(HalfKPModel {
             accumulator: Accumulator {
                 king_squares_rotated: get_king_squares_rotated(
@@ -181,7 +191,7 @@ impl HalfKPModelReader {
             },
             transformer: self.transformer.clone(),
             network: self.network.clone(),
-            last_position: position,
+            last_position,
         })
     }
 
@@ -211,11 +221,48 @@ struct Accumulator {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
+struct MinimalChessPosition {
+    piece_masks: [BitBoard; NUM_PIECE_TYPES],
+    occupied_colors: [BitBoard; NUM_COLORS],
+    turn: Color,
+}
+
+impl MinimalChessPosition {
+    fn get_colored_piece_mask(&self, piece: Piece) -> BitBoard {
+        *get_item_unchecked!(self.piece_masks, piece.get_piece_type().to_index())
+            & *get_item_unchecked!(self.occupied_colors, piece.get_color().to_index())
+    }
+
+    fn get_turn(&self) -> Color {
+        self.turn
+    }
+
+    #[inline]
+    fn get_king_square(&self, color: Color) -> Square {
+        unsafe {
+            self.get_colored_piece_mask(Piece::new(King, color))
+                .to_square_unchecked()
+        }
+    }
+}
+
+impl From<&ChessPosition> for MinimalChessPosition {
+    fn from(position: &ChessPosition) -> Self {
+        Self {
+            piece_masks: unsafe { position.get_all_piece_masks().try_into().unwrap_unchecked() },
+            occupied_colors: unsafe { position.occupied_colors().try_into().unwrap_unchecked() },
+            turn: position.turn(),
+        }
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug)]
 pub struct HalfKPModel {
     transformer: Arc<HalfKPFeatureTransformer<AccumulatorDataType>>,
     network: Arc<HalfKPNetwork>,
     accumulator: Accumulator,
-    last_position: ChessPosition,
+    last_position: MinimalChessPosition,
 }
 
 impl HalfKPModel {
@@ -245,7 +292,7 @@ impl HalfKPModel {
     #[inline]
     fn update_empty_model_of_one_side(&mut self, position: &ChessPosition, turn: Color) {
         position
-            .custom_iter(&ALL_PIECE_TYPES[..5], &ALL_COLORS, BitBoard::ALL)
+            .iter_piecewise(&ALL_PIECE_TYPES[..5], &ALL_COLORS, BitBoard::ALL)
             .for_each(|(piece, square)| self.activate_non_king_piece(turn, piece, square))
     }
 
@@ -271,7 +318,7 @@ impl HalfKPModel {
 
     #[inline]
     fn update_last_position(&mut self, position: &ChessPosition) {
-        self.last_position = position.clone();
+        self.last_position = position.into();
     }
 
     pub fn reset_model(&mut self, position: &ChessPosition) {
@@ -280,7 +327,7 @@ impl HalfKPModel {
             position.get_king_square(White),
             position.get_king_square(Black),
         );
-        self.update_empty_model(position);
+        self.update_empty_model(&position);
         self.update_last_position(position);
     }
 
@@ -296,52 +343,45 @@ impl HalfKPModel {
     }
 
     pub fn update_model(&mut self, position: &ChessPosition) {
-        let mut white_king_updated = false;
-        let mut black_king_updated = false;
-        if self.last_position.get_king_square(White) != position.get_king_square(White) {
-            self.update_king(position, White);
-            white_king_updated = true;
-        }
-        if self.last_position.get_king_square(Black) != position.get_king_square(Black) {
-            self.update_king(position, Black);
-            black_king_updated = true;
-        }
-        let mut colors_to_update: ArrayVec<Color, 2> = ArrayVec::new();
-        if !black_king_updated {
-            colors_to_update.push(Black);
-        }
-        if !white_king_updated {
-            colors_to_update.push(White);
-        }
-        if colors_to_update.is_empty() {
-            self.update_last_position(position);
-            return;
-        }
+        let colors_to_update = if self.last_position.piece_masks[const { King.to_index() }]
+            == position.get_piece_mask(King)
+        {
+            const { [true, true] }
+        } else {
+            let mut colors_to_update = [true, true];
+            for color in ALL_COLORS {
+                if self.last_position.get_king_square(color) != position.get_king_square(color) {
+                    self.update_king(&position, color);
+                    colors_to_update[color.to_index()] = false;
+                }
+            }
+            if colors_to_update == const { [false, false] } {
+                self.update_last_position(position);
+                return;
+            }
+            colors_to_update
+        };
         #[derive(Clone)]
         enum Change {
             Added((Piece, Square)),
             Removed((Piece, Square)),
         }
-        let last_position_piece_masks = self.last_position.get_all_piece_masks().to_owned();
-        let last_position_occupied_colors = [
-            self.last_position
-                .occupied_color(const { unsafe { Color::from_int(0) } }),
-            self.last_position
-                .occupied_color(const { unsafe { Color::from_int(1) } }),
-        ];
-        colors_to_update
+        let last_position_clone = self.last_position.clone();
+        ALL_COLORS
             .into_iter()
+            .filter(|color| colors_to_update[color.to_index()])
             .cartesian_product(
                 ALL_PIECE_TYPES[..5]
                     .iter()
                     .cartesian_product(ALL_COLORS)
                     .flat_map(|(&piece_type, color)| {
-                        let prev_occupied =
-                            get_item_unchecked!(last_position_occupied_colors, color.to_index())
-                                & *get_item_unchecked!(
-                                    last_position_piece_masks,
-                                    piece_type.to_index()
-                                );
+                        let prev_occupied = get_item_unchecked!(
+                            last_position_clone.occupied_colors,
+                            color.to_index()
+                        ) & *get_item_unchecked!(
+                            last_position_clone.piece_masks,
+                            piece_type.to_index()
+                        );
                         let new_occupied =
                             position.occupied_color(color) & position.get_piece_mask(piece_type);
                         (!prev_occupied & new_occupied)
@@ -402,8 +442,9 @@ impl HalfKPModel {
     }
 
     pub fn update_model_and_evaluate(&mut self, position: &ChessPosition) -> Score {
+        let turn = position.turn();
         self.update_model(position);
-        self.evaluate_current_state(position.turn())
+        self.evaluate_current_state(turn)
     }
 
     pub fn slow_evaluate_from_position(&self, position: &ChessPosition) -> Score {
@@ -420,7 +461,7 @@ impl HalfKPModel {
                     position.get_king_square(Black),
                 ),
             },
-            last_position: position.clone(),
+            last_position: position.into(),
         };
         model.update_empty_model(position);
         model.evaluate_current_state(position.turn())

@@ -264,11 +264,11 @@ pub struct Zobrist;
 impl Zobrist {
     /// Get the value for a particular piece
     #[inline]
-    pub fn piece(piece: PieceType, square: Square, color: Color) -> u64 {
+    pub fn piece(piece: Piece, square: Square) -> u64 {
         *get_item_unchecked!(
             ZOBRIST_PIECES,
-            piece.to_index(),
-            color.to_index(),
+            piece.get_piece_type().to_index(),
+            piece.get_color().to_index(),
             square.to_index(),
         )
     }
@@ -288,7 +288,7 @@ impl Zobrist {
     }
 
     #[inline]
-    pub fn color(color: Color) -> u64 {
+    pub fn turn(color: Color) -> u64 {
         *get_item_unchecked!(const { [0, ZOBRIST_TURN] }, color.to_index())
     }
 }

@@ -13,7 +13,7 @@ pub enum BoardStatus {
 #[derive(Clone, Debug, Eq)]
 pub struct ChessPosition {
     _piece_masks: [BitBoard; NUM_PIECE_TYPES],
-    _occupied_color: [BitBoard; NUM_COLORS],
+    _occupied_colors: [BitBoard; NUM_COLORS],
     _occupied: BitBoard,
     _turn: Color,
     _castle_rights: [CastleRights; NUM_COLORS],
@@ -33,7 +33,7 @@ impl UniqueIdentifier for ChessPosition {
     fn unique_identifier(&self) -> impl PartialEq + Hash {
         (
             &self._piece_masks,
-            &self._occupied_color,
+            &self._occupied_colors,
             &self._castle_rights,
             &self._turn,
             &self._ep_square,
@@ -54,7 +54,7 @@ impl ChessPosition {
     fn new_empty() -> Self {
         Self {
             _piece_masks: [BitBoard::EMPTY; NUM_PIECE_TYPES],
-            _occupied_color: [BitBoard::EMPTY; NUM_COLORS],
+            _occupied_colors: [BitBoard::EMPTY; NUM_COLORS],
             _occupied: BitBoard::EMPTY,
             _turn: White,
             _castle_rights: [CastleRights::None; NUM_COLORS],
@@ -62,7 +62,7 @@ impl ChessPosition {
             _checkers: BitBoard::EMPTY,
             _pawn_transposition_hash: 0,
             _non_pawn_transposition_hash: 0,
-            _transposition_hash: Zobrist::color(White),
+            _transposition_hash: Zobrist::turn(White),
             _ep_square: None,
             _halfmove_clock: 0,
             _fullmove_number: 1,
@@ -101,13 +101,18 @@ impl ChessPosition {
     }
 
     #[inline]
+    pub fn occupied_colors(&self) -> &[BitBoard] {
+        &self._occupied_colors
+    }
+
+    #[inline]
     pub fn get_num_pieces(&self) -> u32 {
         self.occupied().popcnt()
     }
 
     #[inline]
     pub fn occupied_color(&self, color: Color) -> BitBoard {
-        *get_item_unchecked!(self._occupied_color, color.to_index())
+        *get_item_unchecked!(self._occupied_colors, color.to_index())
     }
 
     #[inline]
@@ -278,19 +283,21 @@ impl ChessPosition {
 
     fn xor(&mut self, piece_type: PieceType, bb: BitBoard, color: Color) {
         *get_item_unchecked_mut!(self._piece_masks, piece_type.to_index()) ^= bb;
-        let colored_piece_mask = get_item_unchecked_mut!(self._occupied_color, color.to_index());
+        let colored_piece_mask = get_item_unchecked_mut!(self._occupied_colors, color.to_index());
         let colored_piece_mask_before = *colored_piece_mask;
         *colored_piece_mask ^= bb;
         self._occupied ^= bb;
+        let zobrist_hash = Zobrist::piece(Piece::new(piece_type, color), unsafe {
+            bb.to_square_unchecked()
+        });
         if piece_type == Pawn {
-            self._pawn_transposition_hash ^=
-                Zobrist::piece(piece_type, unsafe { bb.to_square_unchecked() }, color);
+            self._pawn_transposition_hash ^= zobrist_hash;
         } else {
-            self._non_pawn_transposition_hash ^=
-                Zobrist::piece(piece_type, unsafe { bb.to_square_unchecked() }, color);
+            self._non_pawn_transposition_hash ^= zobrist_hash;
         }
         if piece_type != King {
             *get_item_unchecked_mut!(self._material_scores, color.to_index()) +=
+                // We don't need to check popcnt here because if a new square is added in a bitboard then the new bitboard will be greater than the previous bitboard. Same logic when a piece is removed.
                 if *colored_piece_mask > colored_piece_mask_before {
                     piece_type.evaluate()
                 } else {
@@ -316,7 +323,7 @@ impl ChessPosition {
             ^ self.get_non_pawn_hash()
             ^ Zobrist::castle(self.castle_rights(White), self.castle_rights(Black))
             ^ self.ep_square().map_or(0, Zobrist::en_passant)
-            ^ Zobrist::color(self.turn());
+            ^ Zobrist::turn(self.turn());
     }
 
     /// The hash function is defined according to the polyglot hash function.
@@ -349,7 +356,7 @@ impl ChessPosition {
     pub unsafe fn null_move_unchecked(&self) -> Self {
         let mut result = self.to_owned();
         result.flip_turn_unchecked();
-        result._transposition_hash ^= Zobrist::color(Black) ^ Zobrist::color(White);
+        result._transposition_hash ^= Zobrist::turn(Black) ^ Zobrist::turn(White);
         if let Some(ep_square) = result.ep_square() {
             result.remove_ep();
             result._transposition_hash ^= Zobrist::en_passant(ep_square);
@@ -707,7 +714,7 @@ impl ChessPosition {
         // TODO: Change Transposition Keys
         self._piece_masks
             .iter_mut()
-            .chain(self._occupied_color.iter_mut())
+            .chain(self._occupied_colors.iter_mut())
             .for_each(|bb| *bb = bb.flip_vertical());
         self._occupied = self._occupied.flip_vertical();
         self._castle_rights = [CastleRights::None; NUM_COLORS];
@@ -726,7 +733,7 @@ impl ChessPosition {
         // TODO: Change Transposition Keys
         self._piece_masks
             .iter_mut()
-            .chain(self._occupied_color.iter_mut())
+            .chain(self._occupied_colors.iter_mut())
             .for_each(|bb| *bb = bb.flip_horizontal());
         self._occupied = self._occupied.flip_horizontal();
         self._castle_rights = [CastleRights::None; NUM_COLORS];
@@ -810,7 +817,7 @@ impl ChessPosition {
         attackers_mask: BitBoard,
     ) -> BitBoard {
         let mut attacked_squares = BitBoard::EMPTY;
-        for (piece, square) in self.custom_iter(attacker_piece_types, colors, attackers_mask) {
+        for (piece, square) in self.iter_piecewise(attacker_piece_types, colors, attackers_mask) {
             attacked_squares |= match piece.get_piece_type() {
                 Pawn => square.get_pawn_attacks(piece.get_color(), BitBoard::ALL),
                 Knight => square.get_knight_moves(),
@@ -1158,7 +1165,7 @@ impl ChessPosition {
     }
 
     #[inline]
-    pub fn custom_iter<'a>(
+    pub fn iter_piecewise<'a>(
         &'a self,
         piece_types: &'a [PieceType],
         colors: &'a [Color],
@@ -1176,7 +1183,7 @@ impl ChessPosition {
 
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = (Piece, Square)> {
-        self.custom_iter(&ALL_PIECE_TYPES, &ALL_COLORS, BitBoard::ALL)
+        self.iter_piecewise(&ALL_PIECE_TYPES, &ALL_COLORS, BitBoard::ALL)
     }
 
     pub fn perft(&self, depth: Depth, print_move: bool) -> usize {
