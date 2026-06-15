@@ -327,7 +327,7 @@ impl HalfKPModel {
             position.get_king_square(White),
             position.get_king_square(Black),
         );
-        self.update_empty_model(&position);
+        self.update_empty_model(position);
         self.update_last_position(position);
     }
 
@@ -351,7 +351,7 @@ impl HalfKPModel {
             let mut colors_to_update = [true, true];
             for color in ALL_COLORS {
                 if self.last_position.get_king_square(color) != position.get_king_square(color) {
-                    self.update_king(&position, color);
+                    self.update_king(position, color);
                     colors_to_update[color.to_index()] = false;
                 }
             }
