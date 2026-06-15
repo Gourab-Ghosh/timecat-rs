@@ -228,9 +228,9 @@ struct MinimalChessPosition {
 }
 
 impl MinimalChessPosition {
-    fn get_colored_piece_mask(&self, piece: Piece) -> BitBoard {
-        *get_item_unchecked!(self.piece_masks, piece.get_piece_type().to_index())
-            & *get_item_unchecked!(self.occupied_colors, piece.get_color().to_index())
+    fn get_colored_king_piece_mask(&self, color: Color) -> BitBoard {
+        *get_item_unchecked!(self.piece_masks, const { PieceType::King.to_index() })
+            & *get_item_unchecked!(self.occupied_colors, color.to_index())
     }
 
     fn get_turn(&self) -> Color {
@@ -240,7 +240,7 @@ impl MinimalChessPosition {
     #[inline]
     fn get_king_square(&self, color: Color) -> Square {
         unsafe {
-            self.get_colored_piece_mask(Piece::new(King, color))
+            self.get_colored_king_piece_mask(color)
                 .to_square_unchecked()
         }
     }
