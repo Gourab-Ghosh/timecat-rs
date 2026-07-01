@@ -263,7 +263,7 @@ fn test_passed_pawn_detection() {
                 squares_vec
                     .iter()
                     .copied()
-                    .map(Square::horizontal_mirror)
+                    .map(Square::vertical_mirror)
                     .collect_vec(),
             ),
             (board, squares_vec),

@@ -54,10 +54,12 @@ impl<T: ChessEngine> TimecatBuilder<T> {
             return self;
         }
         #[cfg(feature = "debug")]
-        if args.contains(&"--test") {
-            self.user_commands.push(UserCommand::RunTest);
-            self.user_commands.push(UserCommand::TerminateEngine);
-            return self;
+        for flag in ["--debug", "--test"] {
+            if args.contains(&flag) {
+                self.user_commands.push(UserCommand::RunTest);
+                self.user_commands.push(UserCommand::TerminateEngine);
+                return self;
+            }
         }
         if args.contains(&"-c") || args.contains(&"--command") {
             let command_string = args

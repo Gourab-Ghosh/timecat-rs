@@ -303,12 +303,12 @@ impl Square {
     }
 
     #[inline]
-    pub const fn vertical_mirror(self) -> Self {
+    pub const fn horizontal_mirror(self) -> Self {
         unsafe { Self::from_int(self.to_int() ^ 7) }
     }
 
     #[inline]
-    pub const fn horizontal_mirror(self) -> Self {
+    pub const fn vertical_mirror(self) -> Self {
         unsafe { Self::from_int(self.to_int() ^ 0x38) }
     }
 

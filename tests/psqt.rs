@@ -12,7 +12,7 @@ fn check_index_choosing() {
                 };
 
                 if piece.get_color() == White {
-                    square = square.horizontal_mirror();
+                    square = square.vertical_mirror();
                 }
                 let mut expected = 128 * piece.get_piece_type().to_index() + square.to_index();
                 if is_endgame {

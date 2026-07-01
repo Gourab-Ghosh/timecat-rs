@@ -125,7 +125,7 @@ static PSQT_ARRAY: [Score; 768] = [
 
 pub fn get_psqt_score_index_opening(piece: Piece, mut square: Square) -> usize {
     if piece.get_color() == White {
-        square = square.horizontal_mirror();
+        square = square.vertical_mirror();
     }
     (piece.get_piece_type().to_index() << 7) ^ square.to_index()
 }
@@ -148,7 +148,7 @@ pub fn get_psqt_score_endgame(piece: Piece, square: Square) -> Score {
 pub fn get_psqt_score(piece: Piece, mut square: Square, alpha: f64) -> Score {
     let alpha = (1000.0 * alpha) as i32;
     if piece.get_color() == White {
-        square = square.horizontal_mirror();
+        square = square.vertical_mirror();
     }
     let opening_index = (piece.get_piece_type().to_index() << 7) ^ square.to_index();
     let opening_score = *get_item_unchecked!(PSQT_ARRAY, opening_index) as i32;
