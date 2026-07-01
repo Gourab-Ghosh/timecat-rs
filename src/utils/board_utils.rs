@@ -37,10 +37,10 @@ pub fn get_board_string<'a>(
         c.colorize(styles)
     };
     let mut board_string = String::new();
-    let mut squares_horizontal_mirror_iter = SQUARES_HORIZONTAL_MIRROR.iter();
+    let mut squares_vertical_mirror_iter = SQUARES_VERTICAL_MIRROR.iter();
     for c in BOARD_SKELETON.trim_matches('\n').chars() {
         if c == '?' {
-            let square = squares_horizontal_mirror_iter
+            let square = squares_vertical_mirror_iter
                 .next()
                 .copied()
                 .expect("More '?'s in board skeleton than squares");
@@ -54,7 +54,7 @@ pub fn get_board_string<'a>(
     #[expect(clippy::debug_assert_with_mut_call)]
     {
         debug_assert!(
-            squares_horizontal_mirror_iter.next().is_none(),
+            squares_vertical_mirror_iter.next().is_none(),
             "Fewer '?'s in board skeleton than squares",
         );
     }
