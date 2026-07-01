@@ -1025,14 +1025,9 @@ impl ChessPosition {
 
     pub fn is_double_pawn_push(&self, move_: Move) -> bool {
         let source = move_.get_source();
-        let dest = move_.get_dest();
         source.get_rank() == self.turn().to_second_rank()
-            && source
-                .get_rank()
-                .to_int()
-                .abs_diff(dest.get_rank().to_int())
-                == 2
-            && !self.get_piece_mask(Pawn).contains(source)
+            && move_.get_dest().get_rank() == self.turn().to_fourth_rank()
+            && self.get_piece_mask(Pawn).contains(source)
     }
 
     #[inline]
@@ -1045,29 +1040,15 @@ impl ChessPosition {
         self.ep_square().is_some()
     }
 
-    // fn reduces_castling_rights(&self, move_: Move) -> bool {
-    //     let cr = self.clean_castling_rights();
-    //     let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
-    //     let touched_cr = touched & cr;
-    //     let kings = self.get_piece_mask(King);
-    //     let touched_kings_cr = touched_cr & kings;
-    //     !touched_cr.is_empty()
-    //         || !(BB_RANK_1 & touched_kings_cr & self.occupied_color(White)).is_empty()
-    //         || !(BB_RANK_8 & touched_kings_cr & self.occupied_color(Black)).is_empty()
-    // }
-
-    pub fn reduces_castling_rights(&self, move_: Move) -> bool {
-        // TODO: Check Logic
+    fn reduces_castling_rights(&self, move_: Move) -> bool {
         let cr = self.clean_castling_rights();
         let touched = move_.get_source().to_bitboard() ^ move_.get_dest().to_bitboard();
-        let touched_cr = touched & cr;
-        let touched_kings_cr_is_empty = (touched_cr & self.get_piece_mask(King)).is_empty();
-        !(touched_cr.is_empty()
-            && touched_kings_cr_is_empty
-            && BB_RANK_1.is_empty()
-            && self.occupied_color(White).is_empty()
-            && BB_RANK_8.is_empty()
-            && self.occupied_color(Black).is_empty())
+        let kings = self.get_piece_mask(King);
+        !(touched & cr).is_empty()
+            || (!(cr & BB_RANK_1).is_empty()
+                && !(touched & kings & self.occupied_color(White)).is_empty())
+            || (!(cr & BB_RANK_8).is_empty()
+                && !(touched & kings & self.occupied_color(Black)).is_empty())
     }
 
     #[inline]
