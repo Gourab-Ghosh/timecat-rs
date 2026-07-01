@@ -221,7 +221,7 @@ static ZOBRIST_CASTLES: [[u64; 4]; 4] = {
     let mut i = 0;
     while i < 16 {
         let (wcr, bcr) = (i / 4, i % 4);
-        let conditions = [wcr / 2 == 1, wcr % 2 == 1, bcr / 2 == 1, bcr % 2 == 1];
+        let conditions = [wcr % 2 == 1, wcr / 2 == 1, bcr % 2 == 1, bcr / 2 == 1];
         let mut condition_index = 0;
         while condition_index < 4 {
             if conditions[condition_index] {
