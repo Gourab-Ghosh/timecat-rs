@@ -493,8 +493,13 @@ impl<P: PositionEvaluation> Searcher<'_, P> {
                     }
                 }
             }
-            // null move pruning
-            if !is_pv_node && depth >= NULL_MOVE_MIN_DEPTH && static_evaluation >= beta {
+            // null move pruning (guarded against zugzwang: require non-pawn material, else a
+            // "pass" can be better than every legal move and produce a false fail-high)
+            if !is_pv_node
+                && depth >= NULL_MOVE_MIN_DEPTH
+                && static_evaluation >= beta
+                && self.board.has_non_pawn_material()
+            {
                 // let r = NULL_MOVE_MIN_REDUCTION
                 //     + (depth.max(NULL_MOVE_MIN_DEPTH) as f64 / NULL_MOVE_DEPTH_DIVIDER as f64)
                 //         .round() as Depth;

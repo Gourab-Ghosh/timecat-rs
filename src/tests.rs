@@ -107,13 +107,13 @@ pub fn test(engine: &mut impl ChessEngine) -> Result<()> {
     // engine.set_fen("6k1/p2b1ppp/3r4/6q1/1p2Pb2/1N1B3P/PP2QPP1/4R1K1 w - - 1 33")?; // Missed tactics in 3 sec move
     // engine.get_board_mut().push_san_moves("Kh1")?;
     // parse_command(engine, "go movetime 3000");
-    // parse_command(engine, "go depth 15");
+    parse_command(engine, "go depth 15");
 
-    let board = Board::from_fen("rnbqkb1r/ppp1p1Pp/8/3p3n/8/8/PPPP1PPP/RNB1KBNR w KQkq - 0 6")?;
-    for move_ in board.generate_legal_moves() {
-        let move_check: Move = move_.compress().decompress()?;
-        println_wasm!("{}, {}, {}", move_, move_.san(&board)?, move_check);
-    }
+    // let board = Board::from_fen("rnbqkb1r/ppp1p1Pp/8/3p3n/8/8/PPPP1PPP/RNB1KBNR w KQkq - 0 6")?;
+    // for move_ in board.generate_legal_moves() {
+    //     let move_check: Move = move_.compress().decompress()?;
+    //     println_wasm!("{}, {}, {}", move_, move_.san(&board)?, move_check);
+    // }
 
     // while !engine.get_board().is_game_over() {
     //     let move_ = engine.search_movetime(Duration::from_millis(50), true).get_best_move().unwrap();

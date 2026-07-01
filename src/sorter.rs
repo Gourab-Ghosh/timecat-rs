@@ -125,6 +125,7 @@ impl MoveSorter {
         let src = history_move.get_source();
         let dest = history_move.get_dest();
         let piece = position.get_piece_at(src).unwrap();
+        // depth values are too small to cause overflow.
         *get_item_unchecked_mut!(self.history_move_scores, piece.to_index(), dest.to_index()) +=
             depth;
     }

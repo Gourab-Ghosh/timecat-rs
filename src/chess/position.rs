@@ -1502,16 +1502,19 @@ impl TryFrom<&ChessPositionBuilder> for ChessPosition {
         position._halfmove_clock = position_builder.get_halfmove_clock();
         position._fullmove_number = position_builder.get_fullmove_number();
 
+        // Validate the position (king counts, overlaps, ep sanity) BEFORE computing pin/checker
+        // info, because update_pin_and_checkers_info() reads the king squares and would abort
+        // (invalid Square transmute / OOB) on a kingless position.
+        if !position.is_sane() {
+            return Err(TimecatError::InvalidBoardPosition {
+                position: position.into(),
+            });
+        }
+
         position.update_pin_and_checkers_info();
         position.update_transposition_hash();
 
-        if position.is_sane() {
-            Ok(position)
-        } else {
-            Err(TimecatError::InvalidBoardPosition {
-                position: position.into(),
-            })
-        }
+        Ok(position)
     }
 }
 
